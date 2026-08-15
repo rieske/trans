@@ -62,6 +62,16 @@ TEST(SysVClassify, int128IsTwoIntegerEightbytes) {
     EXPECT_EQ(u.gprExtend, type::sysv::GprExtend::None);
 }
 
+TEST(SysVClassify, integerScalarSetsExtendFromObjectSize) {
+    using type::sysv::GprExtend;
+    using type::sysv::integerScalar;
+    EXPECT_EQ(integerScalar(1).gprExtend, GprExtend::Zero);
+    EXPECT_EQ(integerScalar(2).gprExtend, GprExtend::Zero);
+    EXPECT_EQ(integerScalar(4).gprExtend, GprExtend::Zero);
+    EXPECT_EQ(integerScalar(8).gprExtend, GprExtend::None);
+    EXPECT_EQ(integerScalar().gprExtend, GprExtend::None);
+}
+
 TEST(SysVClassify, narrowIntegerGprExtend) {
     using type::sysv::GprExtend;
     EXPECT_EQ(classify(type::unsignedCharacter()).gprExtend, GprExtend::Zero);

@@ -367,6 +367,31 @@ int scanf(const char *, ...);
     program.runAndExpect("2");
 }
 
+TEST(Compiler, pointerDifferenceWorksWhenPointersLiveInMemory) {
+    SourceProgram program{R"prg(int printf(const char *, ...);
+        int *gp;
+        int *gq;
+        int main() {
+            int a[3];
+            int *p;
+            int *q;
+            a[0] = 1;
+            a[1] = 2;
+            a[2] = 3;
+            gp = &a[2];
+            gq = &a[0];
+            p = &a[2];
+            q = &a[0];
+            printf("%d ", gp - gq);
+            printf("%d ", gp - q);
+            printf("%d", p - gq);
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("2 2 2");
+}
+
 TEST(Compiler, pointerNegativeSubscriptIsPreviousElement) {
     SourceProgram program{R"prg(int printf(const char *, ...);
         int main() {

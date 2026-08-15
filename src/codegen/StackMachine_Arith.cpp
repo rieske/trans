@@ -6,13 +6,19 @@
 
 namespace codegen {
 
-int StackMachine::integerWidth(const Value& value) const {
-    return (value.getType() == Type::INTEGRAL && value.getSizeInBytes() == 4) ? 4 : 8;
+int StackMachine::promotedBytes(const Value& value) const {
+    return value.getClassification().gprExtend == type::sysv::GprExtend::None ? 8 : 4;
 }
 
-bool StackMachine::extendsFromMemory(const Value& value) const {
-    return value.getType() == Type::INTEGRAL
-            && value.getClassification().gprExtend != type::sysv::GprExtend::None;
+void StackMachine::copyToRegister(Value& symbol, Register& dest) {
+    if (residesInMemory(symbol)) {
+        loadPromoted(symbol, dest);
+        return;
+    }
+    Register& cur = symbol.getAssignedRegister();
+    if (&cur != &dest) {
+        assembly << instructionSet->mov(cur, dest);
+    }
 }
 
 Register& StackMachine::materialize(Value& symbol) {
@@ -29,40 +35,25 @@ Register& StackMachine::materializeExcluding(Value& symbol, Register& exclude) {
     return symbol.getAssignedRegister();
 }
 
-void StackMachine::emitUnitStep(Value& operand, bool increment) {
-    Register& reg = get64BitRegister();
-    if (residesInMemory(operand)) {
-        emitLoad(operand, reg);
-    } else {
-        Register& cur = operand.getAssignedRegister();
-        if (&cur != &reg) {
-            assembly << instructionSet->mov(cur, reg);
-        }
-        cur.free();
+void StackMachine::canonicalize(Register& reg, Value& symbol) {
+    if (symbol.getClassification().gprExtend == type::sysv::GprExtend::None) {
+        return;
     }
-    if (increment) {
-        assembly << instructionSet->inc(reg, integerWidth(operand));
-    } else {
-        assembly << instructionSet->dec(reg, integerWidth(operand));
-    }
-    emitStore(reg, operand);
+    storeObject(reg, symbol);
+    loadPromoted(symbol, reg);
 }
 
 void StackMachine::emitGprBinary(Value& left, Value& right, Value& result, WideIntegerOp op) {
     Register& acc = get64BitRegister();
-    if (residesInMemory(left)) {
-        emitLoad(left, acc);
-    } else {
-        assembly << instructionSet->mov(left.getAssignedRegister(), acc);
-    }
-    const int width = integerWidth(result);
-    Register& rightReg = materializeExcluding(right, acc);
+    copyToRegister(left, acc);
+    const int width = promotedBytes(result);
+    Register& rhs = materializeExcluding(right, acc);
     switch (op) {
-    case WideIntegerOp::Add: assembly << instructionSet->add(rightReg, acc, width); break;
-    case WideIntegerOp::Sub: assembly << instructionSet->sub(rightReg, acc, width); break;
-    case WideIntegerOp::And: assembly << instructionSet->and_(rightReg, acc, width); break;
-    case WideIntegerOp::Or: assembly << instructionSet->or_(rightReg, acc, width); break;
-    case WideIntegerOp::Xor: assembly << instructionSet->xor_(rightReg, acc, width); break;
+    case WideIntegerOp::Add: assembly << instructionSet->add(rhs, acc, width); break;
+    case WideIntegerOp::Sub: assembly << instructionSet->sub(rhs, acc, width); break;
+    case WideIntegerOp::And: assembly << instructionSet->and_(rhs, acc, width); break;
+    case WideIntegerOp::Or: assembly << instructionSet->or_(rhs, acc, width); break;
+    case WideIntegerOp::Xor: assembly << instructionSet->xor_(rhs, acc, width); break;
     }
     bindResult(acc, result);
 }
@@ -81,35 +72,33 @@ void StackMachine::mul(std::string leftOperandName, std::string rightOperandName
         throw std::runtime_error{"multiplication of non integers is not implemented"};
     }
 
-    Register& multiplicationRegister = registers->getMultiplicationRegister();
-    assignRegisterToSymbol(multiplicationRegister, leftOperand);
-    // imul writes RDX:RAX; spill RDX if it holds a live value (e.g. pointer for *p *= ...)
-    storeRegisterValue(registers->getRemainderRegister());
-    const int width = integerWidth(result);
-    assembly << instructionSet->imul(materializeExcluding(rightOperand, multiplicationRegister), width);
-    bindResult(multiplicationRegister, result);
+    Register& rax = registers->getMultiplicationRegister();
+    Register& rdx = registers->getRemainderRegister();
+    storeRegisterValue(rax);
+    storeRegisterValue(rdx);
+    copyToRegister(leftOperand, rax);
+    Register& rhs = get64BitRegisterExcluding(std::vector<Register*> { &rax, &rdx });
+    copyToRegister(rightOperand, rhs);
+    assembly << instructionSet->imul(rhs, promotedBytes(result));
+    bindResult(rax, result);
 }
 
 void StackMachine::emitIntegerDivide(Value& left, Value& right, bool signedDiv) {
     Register& rax = registers->getMultiplicationRegister();
-    assignRegisterToSymbol(rax, left);
     Register& rdx = registers->getRemainderRegister();
+    storeRegisterValue(rax);
     storeRegisterValue(rdx);
-    const int width = integerWidth(left);
+    copyToRegister(left, rax);
+    Register& divisor = get64BitRegisterExcluding(std::vector<Register*> { &rax, &rdx });
+    copyToRegister(right, divisor);
+    const int width = promotedBytes(left);
     if (signedDiv) {
         assembly << (width == 4 ? instructionSet->cdq() : instructionSet->cqo());
     } else {
         assembly << instructionSet->xor_(rdx, rdx);
     }
-    if (residesInMemory(right)) {
-        Register& loaded = get64BitRegisterExcluding(std::vector<Register*> { &rax, &rdx });
-        emitLoad(right, loaded);
-        assembly << (signedDiv ? instructionSet->idiv(loaded, width)
-                               : instructionSet->div(loaded, width));
-    } else {
-        assembly << (signedDiv ? instructionSet->idiv(right.getAssignedRegister(), width)
-                               : instructionSet->div(right.getAssignedRegister(), width));
-    }
+    assembly << (signedDiv ? instructionSet->idiv(divisor, width)
+                           : instructionSet->div(divisor, width));
 }
 
 void StackMachine::div(std::string leftOperandName, std::string rightOperandName, std::string resultName,
@@ -133,14 +122,8 @@ void StackMachine::div(std::string leftOperandName, std::string rightOperandName
 
 void StackMachine::ctz(std::string operandName, std::string resultName, int widthBytes) {
     auto& operand = resolve(operandName);
-    Register& resultRegister = residesInMemory(operand)
-            ? get64BitRegister()
-            : get64BitRegisterExcluding(operand.getAssignedRegister());
-    if (residesInMemory(operand)) {
-        emitLoad(operand, resultRegister);
-    } else {
-        assembly << instructionSet->mov(operand.getAssignedRegister(), resultRegister);
-    }
+    Register& resultRegister = get64BitRegister();
+    copyToRegister(operand, resultRegister);
     assembly << instructionSet->ctz(resultRegister, widthBytes);
     bindResult(resultRegister, resolve(resultName));
 }

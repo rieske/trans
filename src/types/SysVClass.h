@@ -103,7 +103,11 @@ inline Classification scalar(Class k, int sizeBytes = 8) {
 }
 
 inline Classification integerScalar(int sizeBytes = 8) {
-    return scalar(Class::Integer, sizeBytes);
+    Classification c = scalar(Class::Integer, sizeBytes);
+    if (sizeBytes > 0 && sizeBytes < 8) {
+        c.gprExtend = GprExtend::Zero;
+    }
+    return c;
 }
 
 inline Classification sseScalar(int sizeBytes = 8) {

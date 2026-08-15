@@ -94,13 +94,11 @@ void StackMachine::vaStart(std::string apName, std::string lastStorageName) {
 
 void StackMachine::loadVaArgPiece(Register& addr, int byteOffset, Value& result, int eightbyte,
         Register& wordReg) {
-    const type::sysv::GprExtend ext = result.getClassification().gprExtend;
-    if (ext != type::sysv::GprExtend::None) {
-        emitGprExtend(ext, result.getSizeInBytes(), MemoryOperand::at(addr, byteOffset), wordReg);
+    loadPromotedFrom(MemoryOperand::at(addr, byteOffset), result, wordReg);
+    if (result.getClassification().gprExtend != type::sysv::GprExtend::None) {
         storeWord(wordReg, result, 0);
         return;
     }
-    assembly << instructionSet->mov(MemoryOperand::at(addr, byteOffset), wordReg);
     storeWord(wordReg, result, eightbyte);
 }
 

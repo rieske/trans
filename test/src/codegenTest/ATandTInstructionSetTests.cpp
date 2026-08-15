@@ -42,59 +42,9 @@ TEST(ATandTInstructionSet, emitsMovToMemoryWithoutOffset) {
 TEST(ATandTInstructionSet, emitsNarrowExtends) {
     Register addr { "rax" };
     Register dest { "rbx" };
-    EXPECT_THAT(instructions.loadByteZeroExtend(MemoryOperand::at(addr, 0), dest),
-            Eq("movzbq (%rax), %rbx"));
-    EXPECT_THAT(instructions.loadWordSignExtend(MemoryOperand::at(addr, 0), dest),
-            Eq("movswq (%rax), %rbx"));
-    EXPECT_THAT(instructions.loadWordZeroExtend(MemoryOperand::at(addr, 0), dest),
-            Eq("movzwq (%rax), %rbx"));
-}
-
-TEST(ATandTInstructionSet, emitsNarrowExtendsFromMemoryOperand) {
-    Register dest { "rbx" };
-    Register rbp { "rbp" };
-    EXPECT_THAT(instructions.loadByteSignExtend(MemoryOperand::at(rbp, -8), dest),
-            Eq("movsbq -8(%rbp), %rbx"));
-    EXPECT_THAT(instructions.loadByteZeroExtend(MemoryOperand::at(rbp, -8), dest),
-            Eq("movzbq -8(%rbp), %rbx"));
-    EXPECT_THAT(instructions.loadWordSignExtend(MemoryOperand::at(rbp, -16), dest),
-            Eq("movswq -16(%rbp), %rbx"));
-    EXPECT_THAT(instructions.loadDwordSignExtend(MemoryOperand::at(rbp, -32), dest),
-            Eq("movslq -32(%rbp), %rbx"));
-}
-
-TEST(ATandTInstructionSet, emitsNarrowStoresToMemoryOperand) {
-    Register src { "rax" };
-    Register rbp { "rbp" };
-    EXPECT_THAT(instructions.storeByte(src, MemoryOperand::at(rbp, -8)), Eq("movb %al, -8(%rbp)"));
-    EXPECT_THAT(instructions.storeWord(src, MemoryOperand::at(rbp, -16)), Eq("movw %ax, -16(%rbp)"));
-    EXPECT_THAT(instructions.storeByte(src, MemoryOperand::global("flag")), Eq("movb %al, flag(%rip)"));
-}
-
-TEST(ATandTInstructionSet, emitsIntegerOpsOnMemoryOperand) {
-    Register rax { "rax" };
-    Register rbp { "rbp" };
-    const MemoryOperand slot = MemoryOperand::at(rbp, -8);
-    EXPECT_THAT(instructions.cmp(rax, slot), Eq("cmpq -8(%rbp), %rax"));
-    EXPECT_THAT(instructions.cmp(slot, rax), Eq("cmpq %rax, -8(%rbp)"));
-    EXPECT_THAT(instructions.cmp(slot, 0), Eq("cmpq $0, -8(%rbp)"));
-    EXPECT_THAT(instructions.cmp(slot, 0, 4), Eq("cmpl $0, -8(%rbp)"));
-    EXPECT_THAT(instructions.add(slot, rax), Eq("addq -8(%rbp), %rax"));
-    EXPECT_THAT(instructions.add(slot, rax, 4), Eq("addl -8(%rbp), %eax"));
-    EXPECT_THAT(instructions.sub(slot, rax), Eq("subq -8(%rbp), %rax"));
-    EXPECT_THAT(instructions.and_(slot, rax), Eq("andq -8(%rbp), %rax"));
-    EXPECT_THAT(instructions.or_(slot, rax), Eq("orq -8(%rbp), %rax"));
-    EXPECT_THAT(instructions.xor_(slot, rax), Eq("xorq -8(%rbp), %rax"));
-    EXPECT_THAT(instructions.imul(slot), Eq("imulq -8(%rbp)"));
-    EXPECT_THAT(instructions.imul(slot, 4), Eq("imull -8(%rbp)"));
-    EXPECT_THAT(instructions.idiv(slot), Eq("idivq -8(%rbp)"));
-    EXPECT_THAT(instructions.idiv(slot, 4), Eq("idivl -8(%rbp)"));
-    EXPECT_THAT(instructions.div(slot), Eq("divq -8(%rbp)"));
-    EXPECT_THAT(instructions.div(slot, 4), Eq("divl -8(%rbp)"));
-    EXPECT_THAT(instructions.inc(slot), Eq("incq -8(%rbp)"));
-    EXPECT_THAT(instructions.inc(slot, 4), Eq("incl -8(%rbp)"));
-    EXPECT_THAT(instructions.dec(slot), Eq("decq -8(%rbp)"));
-    EXPECT_THAT(instructions.dec(slot, 4), Eq("decl -8(%rbp)"));
+    EXPECT_THAT(instructions.loadByteZeroExtend(addr, dest), Eq("movzbq (%rax), %rbx"));
+    EXPECT_THAT(instructions.loadWordSignExtend(addr, dest), Eq("movswq (%rax), %rbx"));
+    EXPECT_THAT(instructions.loadWordZeroExtend(addr, dest), Eq("movzwq (%rax), %rbx"));
 }
 
 TEST(ATandTInstructionSet, emitsQuadSubtract) {

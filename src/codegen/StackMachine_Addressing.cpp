@@ -68,16 +68,9 @@ void StackMachine::pointerDifference(std::string leftName, std::string rightName
     Register& rdx = registers->getRemainderRegister();
 
     Register& addr = get64BitRegisterExcluding(mulReg);
-    if (residesInMemory(left)) {
-        emitLoad(left, addr);
-    } else {
-        assembly << instructionSet->mov(left.getAssignedRegister(), addr);
-    }
-    if (residesInMemory(right)) {
-        assembly << instructionSet->sub(memoryOperand(right), addr);
-    } else {
-        assembly << instructionSet->sub(right.getAssignedRegister(), addr);
-    }
+    copyToRegister(left, addr);
+    Register& rhs = materializeExcluding(right, addr);
+    assembly << instructionSet->sub(rhs, addr);
 
     if (elementSizeBytes == 1) {
         bindResult(addr, resolve(resultName));

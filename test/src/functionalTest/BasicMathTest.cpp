@@ -55,6 +55,25 @@ int scanf(const char *, ...);
     program.runAndExpect("2 2", "4 4 1 0");
 }
 
+TEST(Compiler, multiplicationLeavesBothOperandsUsable) {
+    SourceProgram program{R"prg(int printf(const char *, ...);
+        int main() {
+            int a0, a1, a2, a3, a4, a5, a6, a7, a8, a9;
+            int x, y, z;
+            a0 = 1; a1 = 1; a2 = 1; a3 = 1; a4 = 1;
+            a5 = 1; a6 = 1; a7 = 1; a8 = 1; a9 = 1;
+            x = 3;
+            y = 5;
+            z = x * y;
+            printf("%d %d %d %d", x, y, z,
+                    a0 + a1 + a2 + a3 + a4 + a5 + a6 + a7 + a8 + a9);
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("3 5 15 10");
+}
+
 // FIXME: %ld - ints treated as longs for now
 TEST(Compiler, simpleDivision) {
     SourceProgram program{R"prg(int printf(const char *, ...);

@@ -54,23 +54,32 @@ void StackMachine::storeObject(Register& source, const MemoryOperand& dest, int 
     }
 }
 
-void StackMachine::loadWord(Value& symbol, int wordIndex, Register& dest, int spDelta,
-        std::vector<Register*> extraExclude) {
-    const type::sysv::GprExtend ext = symbol.getClassification().gprExtend;
-    if (wordIndex == 0 && ext != type::sysv::GprExtend::None) {
-        if (!symbol.isStored()) {
-            Register& held = symbol.getAssignedRegister();
-            storeObject(held, homeOperand(symbol, spDelta), symbol.getSizeInBytes());
-            held.free();
-        }
-        emitGprExtend(ext, symbol.getSizeInBytes(), homeOperand(symbol, spDelta), dest);
+void StackMachine::storeObject(Register& source, Value& symbol, int spDelta) {
+    storeObject(source, homeOperand(symbol, spDelta), symbol.getSizeInBytes());
+}
+
+void StackMachine::loadPromotedFrom(const MemoryOperand& source, const Value& typed, Register& dest) {
+    const type::sysv::GprExtend ext = typed.getClassification().gprExtend;
+    if (ext == type::sysv::GprExtend::None) {
+        assembly << instructionSet->mov(source, dest);
         return;
     }
-    if (wordIndex == 0 && !residesInMemory(symbol) && type::object_abi::valueWords(symbol.getSizeInBytes()) == 1) {
-        Register& cur = symbol.getAssignedRegister();
-        if (&cur != &dest) {
-            assembly << instructionSet->mov(cur, dest);
-        }
+    emitGprExtend(ext, typed.getSizeInBytes(), source, dest);
+}
+
+void StackMachine::loadPromoted(Value& symbol, Register& dest, int spDelta) {
+    loadPromotedFrom(homeOperand(symbol, spDelta), symbol, dest);
+}
+
+void StackMachine::loadWord(Value& symbol, int wordIndex, Register& dest, int spDelta,
+        std::vector<Register*> extraExclude) {
+    if (wordIndex == 0 && !residesInMemory(symbol)
+            && type::object_abi::valueWords(symbol.getSizeInBytes()) == 1) {
+        copyToRegister(symbol, dest);
+        return;
+    }
+    if (wordIndex == 0 && symbol.getClassification().gprExtend != type::sysv::GprExtend::None) {
+        loadPromoted(symbol, dest, spDelta);
         return;
     }
     Address home = addressOf(symbol);
@@ -136,13 +145,17 @@ void StackMachine::copyBytes(Register& srcBase, Register& destBase, int n,
             off += 4;
             continue;
         }
+        Register& addr = get64BitRegisterExcluding(exclude);
+        assembly << instructionSet->lea(MemoryOperand::at(srcBase, off), addr);
         if (remain >= 2) {
-            assembly << instructionSet->loadWordZeroExtend(MemoryOperand::at(srcBase, off), tmp);
-            assembly << instructionSet->storeWord(tmp, MemoryOperand::at(destBase, off));
+            assembly << instructionSet->loadWordZeroExtend(addr, tmp);
+            assembly << instructionSet->lea(MemoryOperand::at(destBase, off), addr);
+            assembly << instructionSet->storeWord(tmp, addr);
             off += 2;
         } else {
-            assembly << instructionSet->loadByteZeroExtend(MemoryOperand::at(srcBase, off), tmp);
-            assembly << instructionSet->storeByte(tmp, MemoryOperand::at(destBase, off));
+            assembly << instructionSet->loadByteZeroExtend(addr, tmp);
+            assembly << instructionSet->lea(MemoryOperand::at(destBase, off), addr);
+            assembly << instructionSet->storeByte(tmp, addr);
             off += 1;
         }
     }
