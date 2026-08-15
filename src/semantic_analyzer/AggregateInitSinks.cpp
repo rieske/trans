@@ -4,7 +4,6 @@
 #include "StaticInitFold.h"
 
 #include "types/ObjectAbi.h"
-#include "types/TypeQuery.h"
 
 #include <variant>
 

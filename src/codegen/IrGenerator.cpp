@@ -5,7 +5,6 @@
 #include "CodeGeneratingVisitor.h"
 #include "IrPasses.h"
 #include "ast/AbstractSyntaxTree.h"
-#include "ast/AbstractSyntaxTreeNode.h"
 #include "parser/ParseTree.h"
 
 namespace codegen {

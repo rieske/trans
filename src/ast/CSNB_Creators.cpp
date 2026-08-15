@@ -1,5 +1,6 @@
 #include "CSNB_Internal.h"
 
+#include "types/TypeQuery.h"
 #include "util/FloatingLiteral.h"
 #include "util/IntegerLiteral.h"
 

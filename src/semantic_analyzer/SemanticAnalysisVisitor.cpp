@@ -1,8 +1,6 @@
 #include "SemanticAnalysisVisitorInternal.h"
 
 #include "ast/GnuBuiltinFunctions.h"
-#include "ast/IdentifierExpression.h"
-#include "ast/InitializerListExpression.h"
 #include "translation_unit/Context.h"
 
 namespace semantic_analyzer {

@@ -8,7 +8,6 @@
 #include <variant>
 
 #include "symbols/ValueEntry.h"
-#include "symbols/LabelEntry.h"
 #include "types/ObjectAbiType.h"
 #include "types/SysVClassify.h"
 #include "types/TypeQuery.h"
