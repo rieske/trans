@@ -36,6 +36,7 @@ public:
     void visit(ast::PrefixExpression& expression) override;
     void visit(ast::UnaryExpression& expression) override;
     void visit(ast::TypeCast& expression) override;
+    void visit(ast::TypeNameExpression& expression) override;
     void visit(ast::CompoundLiteral& expression) override;
     void visit(ast::GenericSelection& expression) override;
     void visit(ast::StatementExpression& expression) override;
@@ -102,6 +103,7 @@ private:
     void emitComplexMulDiv(char op, const std::string& left, const std::string& right,
             const std::string& result, const type::Type& resultType);
     std::string addScratchValue(const type::Type& scratchType);
+    void emitSizeofProduct(const type::Type& measured, const std::string& result);
     void emitFloatingConstant(const std::string& dest, const util::FloatingBits& bits);
     void emitIncDec(const std::string& name, const type::Type& valueType, bool increment);
     void emitBitFieldExtract(const std::string& container, const std::string& dest,

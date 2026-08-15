@@ -102,6 +102,22 @@ Type incompleteArray(const Type& elementType) {
     return result;
 }
 
+Type variableArray(const Type& elementType, std::shared_ptr<ast::Expression> bound) {
+    if (isIncompleteMemberOrElementType(elementType)) {
+        throw std::invalid_argument { "array of incomplete type" };
+    }
+    Type result { std::vector<Qualifier> {} };
+    Type::ArrayPayload arr;
+    arr.element = std::make_shared<Type>(elementType);
+    arr.count = 0;
+    arr.sizeBytes = 0;
+    arr.complete = true;
+    arr.variable = true;
+    arr.bound = std::move(bound);
+    result._payload = std::move(arr);
+    return result;
+}
+
 Type signedCharacter(const std::vector<Qualifier>& qualifiers) {
     return primitive(Primitive::signedCharacter(), qualifiers);
 }
@@ -277,7 +293,11 @@ bool sameShape(const Type& a, const Type& b, bool matchQualifiers, ArrayBound bo
         }
         if (bounds == ArrayBound::Exact) {
             return left.isIncompleteArray() == right.isIncompleteArray()
-                    && left.getArraySize() == right.getArraySize();
+                    && left.isVariableArray() == right.isVariableArray()
+                    && (left.isVariableArray() || left.getArraySize() == right.getArraySize());
+        }
+        if (left.isVariableArray() || right.isVariableArray()) {
+            return true;
         }
         if (!left.isIncompleteArray() && !right.isIncompleteArray()) {
             return left.getArraySize() == right.getArraySize();
@@ -326,9 +346,24 @@ Type makeComposite(const Type& a, const Type& b) {
     switch (a.kind()) {
     case TypeKind::Array: {
         const Type element = makeComposite(a.getElementType(), b.getElementType());
-        Type result = !a.isIncompleteArray() ? array(element, a.getArraySize())
-                : !b.isIncompleteArray() ? array(element, b.getArraySize())
-                : incompleteArray(element);
+        Type result = incompleteArray(element);
+        if (a.isVariableArray() && b.isVariableArray()) {
+            auto bound = a.variableBound();
+            if (!bound) {
+                bound = b.variableBound();
+            }
+            result = variableArray(element, std::move(bound));
+        } else if (a.isVariableArray()) {
+            result = b.isIncompleteArray() ? variableArray(element)
+                    : array(element, b.getArraySize());
+        } else if (b.isVariableArray()) {
+            result = a.isIncompleteArray() ? variableArray(element)
+                    : array(element, a.getArraySize());
+        } else if (!a.isIncompleteArray()) {
+            result = array(element, a.getArraySize());
+        } else if (!b.isIncompleteArray()) {
+            result = array(element, b.getArraySize());
+        }
         return result.withQualifiers(topQualifiers(a));
     }
     case TypeKind::Pointer:
@@ -460,6 +495,19 @@ bool Type::isIncompleteArray() const {
     return a && !a->complete;
 }
 
+bool Type::isVariableArray() const {
+    const auto* a = arrayPayload();
+    return a && a->variable;
+}
+
+std::shared_ptr<ast::Expression> Type::variableBound() const {
+    const auto* a = arrayPayload();
+    if (a && a->variable) {
+        return a->bound;
+    }
+    return {};
+}
+
 Type Type::getElementType() const {
     if (const auto* a = arrayPayload()) {
         return *a->element;
@@ -520,6 +568,8 @@ std::string Type::to_string() const {
         while (t.isArray()) {
             if (t.isIncompleteArray()) {
                 dims += "[]";
+            } else if (t.isVariableArray()) {
+                dims += "[*]";
             } else {
                 dims += "[" + std::to_string(t.getArraySize()) + "]";
             }

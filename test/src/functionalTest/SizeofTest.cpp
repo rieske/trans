@@ -146,6 +146,230 @@ TEST(Compiler, nonConstantArraySizeIsSemanticError) {
     program.assertCompilationErrors("array size is not a non-negative constant expression");
 }
 
+// sizeof(int [n]) is a runtime value (C99 VLA type, not an ICE).
+TEST(Compiler, sizeofRuntimeArrayTypeIsElementCount) {
+    SourceProgram program{R"prg(int printf(const char *, ...);
+        int main() {
+            int n;
+            n = 3;
+            printf("%d", (int)sizeof(int [n]) / (int)sizeof(int));
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("3");
+}
+
+TEST(Compiler, sizeofRuntimeArrayTypeIsByteSize) {
+    SourceProgram program{R"prg(int printf(const char *, ...);
+        int main() {
+            int n;
+            n = 3;
+            printf("%d", (int)sizeof(int [n]));
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("12");
+}
+
+TEST(Compiler, sizeofPointerToRuntimeArrayIsPointerWidth) {
+    SourceProgram program{R"prg(int printf(const char *, ...);
+        int main() {
+            int n;
+            n = 3;
+            printf("%d", (int)sizeof(int (*)[n]));
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("8");
+}
+
+TEST(Compiler, sizeofRuntimeArrayTypeIsNotIntegerConstant) {
+    SourceProgram program{R"prg(
+        int main() {
+            int n;
+            n = 3;
+            int a[sizeof(int [n])];
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.assertCompilationErrors("array size is not a non-negative constant expression");
+}
+
+TEST(Compiler, sizeofRuntimeArrayTypeNestedInnerConstant) {
+    SourceProgram program{R"prg(int printf(const char *, ...);
+        int main() {
+            int n;
+            n = 3;
+            printf("%d", (int)sizeof(int [n][2]));
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("24");
+}
+
+// Unsigned compare of a cast must use the cast type, not a TypeCast special case
+// in the binary folder. ((unsigned long)-1) > 0 is an ICE 1.
+TEST(Compiler, unsignedCastCompareIsStaticInitializer) {
+    SourceProgram program{R"prg(int printf(const char *, ...);
+        static int n = ((unsigned long)-1) > 0;
+        int main() {
+            printf("%d", n);
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("1");
+}
+
+// git parse-options.h OPT_UNSIGNED: static initializer uses
+// .precision = sizeof(*v) and .value = v + BARF_UNLESS_UNSIGNED(*v),
+// where BARF is sizeof(char[1 - 2*!(((__typeof__(var))-1) > 0)]) - 1.
+// The bound is an ICE (unsigned cast compare), not a VLA.
+TEST(Compiler, sizeofBuildAssertUnsignedIsStaticInitializer) {
+    SourceProgram program{R"prg(int printf(const char *, ...);
+#define BUILD_ASSERT_OR_ZERO(cond) (sizeof(char [1 - 2*!(cond)]) - 1)
+#define BARF_UNLESS_UNSIGNED(var) BUILD_ASSERT_OR_ZERO(((__typeof__(var)) -1) > 0)
+        static unsigned long batch_size;
+        struct option {
+            void *value;
+            unsigned long precision;
+        };
+        static struct option opts[] = {
+            {
+                .value = &batch_size + BARF_UNLESS_UNSIGNED(*(&batch_size)),
+                .precision = sizeof(*(&batch_size)),
+            },
+        };
+        int main() {
+            printf("%d %d", opts[0].value == (void *)&batch_size, (int)opts[0].precision);
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("1 8");
+}
+
+// (int)-1 < 0 is true. Zero-extending the 32-bit pattern makes the bound 0.
+TEST(Compiler, sizeofCharArraySignedCastNegativeIsOne) {
+    SourceProgram program{R"prg(int printf(const char *, ...);
+        static int n = sizeof(char [((int)-1) < 0]);
+        int main() {
+            printf("%d", n);
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("1");
+}
+
+// git builtin/add.c OPT_BOOL / OPT_COUNTUP: file-scope struct option[]
+// with .precision = sizeof(*v) for a file-scope int.
+TEST(Compiler, sizeofFileScopeOptionPrecisionIsStaticInitializer) {
+    SourceProgram program{R"prg(int printf(const char *, ...);
+        struct option {
+            void *value;
+            unsigned long precision;
+        };
+        static int show_only;
+        static struct option opts[] = {
+            {
+                .value = &show_only,
+                .precision = sizeof(*(&show_only)),
+            },
+        };
+        int main() {
+            printf("%d %d", opts[0].value == (void *)&show_only, (int)opts[0].precision);
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("1 4");
+}
+
+// git builtin/add.c OPT_DIFF_UNIFIED / OPT_INTEGER: BARF_UNLESS_SIGNED of a
+// struct member, plus sizeof of that member, in a file-scope option array.
+TEST(Compiler, sizeofBuildAssertSignedMemberIsStaticInitializer) {
+    SourceProgram program{R"prg(int printf(const char *, ...);
+#define BUILD_ASSERT_OR_ZERO(cond) (sizeof(char [1 - 2*!(cond)]) - 1)
+#define BARF_UNLESS_SIGNED(var) BUILD_ASSERT_OR_ZERO(((__typeof__(var)) -1) < 0)
+        struct interactive_options {
+            int context;
+            int interhunkcontext;
+        };
+        static struct interactive_options interactive_opts = {
+            .context = -1,
+            .interhunkcontext = -1,
+        };
+        struct option {
+            void *value;
+            unsigned long precision;
+        };
+        static struct option opts[] = {
+            {
+                .value = &interactive_opts.context
+                    + BARF_UNLESS_SIGNED(*(&interactive_opts.context)),
+                .precision = sizeof(*(&interactive_opts.context)),
+            },
+        };
+        int main() {
+            printf("%d %d",
+                opts[0].value == (void *)&interactive_opts.context,
+                (int)opts[0].precision);
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("1 4");
+}
+
+// sizeof of a VM type, not only the sizeof(type-name) spelling.
+TEST(Compiler, sizeofDereferencedPointerToRuntimeArray) {
+    SourceProgram program{R"prg(int printf(const char *, ...);
+        int main() {
+            int n;
+            int a[3];
+            n = 3;
+            printf("%d", (int)sizeof(*(int (*)[n])&a));
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("12");
+}
+
+// typeof copies the VM type; the bound must live on Type, not on a nearby declarator.
+TEST(Compiler, sizeofTypeofDereferencedPointerToRuntimeArray) {
+    SourceProgram program{R"prg(int printf(const char *, ...);
+        int main() {
+            int n;
+            int a[3];
+            n = 3;
+            printf("%d", (int)sizeof(__typeof__(*(int (*)[n])&a)));
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("12");
+}
+
+TEST(Compiler, sizeofRuntimeArrayTypeNestedOuterConstant) {
+    SourceProgram program{R"prg(int printf(const char *, ...);
+        int main() {
+            int n;
+            n = 3;
+            printf("%d", (int)sizeof(int [2][n]));
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("24");
+}
+
 TEST(Compiler, sizeofArrayOfPointers) {
     // int *a[3] — array of pointers; also exercises pointer-qualified array elements.
     SourceProgram program{R"prg(int printf(const char *, ...);

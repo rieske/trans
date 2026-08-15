@@ -1,5 +1,7 @@
 #include "gtest/gtest.h"
 
+#include "ast/ArrayDeclarator.h"
+#include "ast/ConstantExpression.h"
 #include "ast/Declarator.h"
 #include "ast/Identifier.h"
 #include "ast/IdentifierExpression.h"
@@ -9,6 +11,7 @@
 #include "ast/TypeSpecifier.h"
 #include "scanner/LexicalSession.h"
 #include "types/Type.h"
+#include "types/TypeQuery.h"
 
 #include <memory>
 #include <stdexcept>
@@ -53,6 +56,45 @@ TEST(TypeSpecifier, dropSpellingKeepsTypeAndPendingDeclarator) {
     pending.dropSpelling();
     EXPECT_EQ(pending.getName(), "");
     EXPECT_FALSE(pending.hasType());
+}
+
+TEST(TypeSpecifier, unfixedArrayBoundLivesOnType) {
+    translation_unit::Context ctx { "t", 1 };
+    TypeSpecifier ts { type::signedInteger(), "int" };
+    auto array = std::make_unique<ArrayDeclarator>(
+            std::make_unique<Identifier>(TerminalSymbol { "id", "", ctx }),
+            std::make_unique<IdentifierExpression>("n", ctx));
+    Expression* bound = array->subscriptExpression.get();
+    ts.deferAbstractDeclarator(std::make_unique<Declarator>(std::move(array)));
+    EXPECT_TRUE(ts.getType().isVariableArray());
+    EXPECT_EQ(ts.getType().variableBound().get(), bound);
+    EXPECT_FALSE(type::hasUnspecifiedVlaSize(ts.getType()));
+    EXPECT_TRUE(type::hasComputableRuntimeSize(ts.getType()));
+}
+
+TEST(TypeSpecifier, refoldTurnsIceBoundIntoConstantArray) {
+    translation_unit::Context ctx { "t", 1 };
+    auto three = std::make_shared<ConstantExpression>(
+            Constant { "3", type::signedInteger(), ctx });
+    TypeSpecifier ts { type::variableArray(type::signedInteger(), three), "int" };
+    EXPECT_TRUE(ts.getType().isVariableArray());
+    ts.refoldConstantArrayBounds();
+    EXPECT_FALSE(ts.getType().isVariableArray());
+    EXPECT_EQ(ts.getType().getArraySize(), 3);
+}
+
+TEST(TypeSpecifier, applyDoesNotDoubleWrap) {
+    TypeSpecifier ts { type::signedInteger(), "int" };
+    ts.deferAbstractDeclarator(unnamedPointerDeclarator());
+    EXPECT_TRUE(ts.getType().isPointer());
+    EXPECT_FALSE(ts.getType().dereference().isPointer());
+    EXPECT_FALSE(ts.needsSemanticResolve());
+
+    scanner::LexicalSession session;
+    ParseEnvironment env { session };
+    ASSERT_TRUE(ts.resolveTypeofAtParseTime(env));
+    EXPECT_TRUE(ts.getType().isPointer());
+    EXPECT_FALSE(ts.getType().dereference().isPointer());
 }
 
 TEST(TypeSpecifier, resolveTypeofAtParseTimeUsesEnvironment) {

@@ -30,8 +30,35 @@ TEST(TypeQuery, incompleteObjectType) {
     EXPECT_TRUE(type::isIncompleteObjectType(type::incompleteStructure()));
     EXPECT_TRUE(type::isIncompleteObjectType(type::incompleteArray(type::signedInteger())));
     EXPECT_FALSE(type::isIncompleteObjectType(type::array(type::signedInteger(), 0)));
+    EXPECT_FALSE(type::isIncompleteObjectType(type::variableArray(type::signedInteger())));
     EXPECT_FALSE(type::isIncompleteObjectType(type::signedInteger()));
     EXPECT_FALSE(type::isIncompleteObjectType(type::pointer(type::voidType())));
+}
+
+TEST(TypeQuery, variableArrayHasRuntimeSizePointerDoesNot) {
+    type::Type va = type::variableArray(type::signedInteger());
+    type::Type nested = type::array(va, 2);
+    type::Type pva = type::pointer(va);
+    EXPECT_TRUE(type::hasRuntimeSize(va));
+    EXPECT_TRUE(type::hasRuntimeSize(nested));
+    EXPECT_FALSE(type::hasRuntimeSize(pva));
+    EXPECT_TRUE(type::isVariablyModified(pva));
+    EXPECT_FALSE(type::hasRuntimeSize(type::array(type::signedInteger(), 3)));
+    EXPECT_EQ(type::sizeofObject(va, false), std::nullopt);
+    EXPECT_EQ(type::sizeofObject(nested, false), std::nullopt);
+    EXPECT_EQ(type::sizeofObject(pva, false), 8);
+}
+
+TEST(TypeQuery, unspecifiedVlaHasNoComputableRuntimeSize) {
+    type::Type unspecified = type::variableArray(type::signedInteger());
+    type::Type nested = type::array(unspecified, 2);
+    type::Type pointerTo = type::pointer(unspecified);
+    EXPECT_TRUE(type::hasUnspecifiedVlaSize(unspecified));
+    EXPECT_TRUE(type::hasUnspecifiedVlaSize(nested));
+    EXPECT_FALSE(type::hasUnspecifiedVlaSize(pointerTo));
+    EXPECT_FALSE(type::hasComputableRuntimeSize(unspecified));
+    EXPECT_FALSE(type::hasComputableRuntimeSize(type::array(type::signedInteger(), 3)));
+    EXPECT_FALSE(type::hasUnspecifiedVlaSize(type::array(type::signedInteger(), 3)));
 }
 
 TEST(TypeQuery, sizeofObjectGnuFunctionIsOne) {
@@ -487,6 +514,8 @@ TEST(TypeQuery, convertScalarConstantTruncatesToDestWidth) {
                       static_cast<long>(0x8000000000000000ULL)),
             0L);
     EXPECT_EQ(type::convertScalarConstant(type::unsignedLong(), -1), -1L);
+    EXPECT_EQ(type::convertScalarConstant(type::signedInteger(), -1), -1L);
+    EXPECT_EQ(type::convertScalarConstant(type::signedCharacter(), -1), -1L);
 }
 
 TEST(TypeQuery, usualArithmeticResult) {
