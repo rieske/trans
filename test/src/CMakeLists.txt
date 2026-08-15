@@ -155,6 +155,7 @@ add_executable(functionalTest
         functionalTest/GotoTest.cpp
         functionalTest/SwitchTest.cpp
         functionalTest/SizeofTest.cpp
+        functionalTest/VlaTest.cpp
         functionalTest/ArraysTest.cpp
         functionalTest/ArrayDecayTest.cpp
         functionalTest/ArrayRedeclTest.cpp

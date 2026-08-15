@@ -21,12 +21,16 @@
 namespace {
 
 codegen::Value valueFromSymbol(const symbols::ValueEntry& symbol) {
+    const type::Type& objectType = symbol.getType();
+    const type::Type homeType = type::hasRuntimeSize(objectType)
+            ? type::pointer(objectType)
+            : objectType;
     return codegen::Value {
             symbol.getName(),
             symbol.getIndex(),
-            codegen::valueKindFromCType(symbol.getType()),
-            symbol.getType().getSize(),
-            type::sysv::classify(symbol.getType())
+            codegen::valueKindFromCType(homeType),
+            homeType.getSize(),
+            type::sysv::classify(homeType)
     };
 }
 
@@ -108,11 +112,20 @@ symbols::ValueEntry* CodeGeneratingVisitor::objectHome(ast::Expression& expressi
     return result;
 }
 
+void CodeGeneratingVisitor::emitArrayObjectAddress(const symbols::ValueEntry& object,
+        const std::string& dest) {
+    if (type::hasRuntimeSize(object.getType())) {
+        emit(ir::assign(object.getName(), dest));
+        return;
+    }
+    emit(ir::addressOf(object.getName(), dest));
+}
+
 std::string CodeGeneratingVisitor::convertedResultName(ast::Expression& expression) {
     auto* result = expression.getResultSymbol(store_);
     auto* object = objectHome(expression);
     if (object && result && object != result) {
-        emit(ir::addressOf(object->getName(), result->getName()));
+        emitArrayObjectAddress(*object, result->getName());
         return result->getName();
     }
     if (auto* convert = store_.conversion(&expression)) {
@@ -159,6 +172,11 @@ void CodeGeneratingVisitor::visit(ast::InitializedDeclarator& declarator) {
         return;
     }
     declarator.visitChildren(*this);
+    if (holder && !holder->isGlobal() && type::hasComputableRuntimeSize(holder->getType())) {
+        const std::string sizeName = addScratchValue(type::signedInteger());
+        emitSizeofProduct(holder->getType(), sizeName);
+        emit(ir::allocaBytes(sizeName, holder->getName()));
+    }
     if (!declarator.hasInitializer()) {
         return;
     }
@@ -528,8 +546,8 @@ void CodeGeneratingVisitor::visit(ast::UnaryExpression& expression) {
             emit(ir::assign(
                     lvalue->getName(), expression.getResultSymbol(store_)->getName()));
         } else {
-            emit(ir::addressOf(
-                    expression.operandSymbol(store_)->getName(), expression.getResultSymbol(store_)->getName()));
+            emitArrayObjectAddress(*expression.operandSymbol(store_),
+                    expression.getResultSymbol(store_)->getName());
         }
         break;
     case '*':
@@ -547,8 +565,8 @@ void CodeGeneratingVisitor::visit(ast::UnaryExpression& expression) {
                 // Address-only multi-dim *a: just materialize &array into the temp if needed.
                 // Result and lvalue share the address temp; operand is the array object.
                 if (expression.operandType().isArray()) {
-                    emit(ir::addressOf(
-                            expression.operandSymbol(store_)->getName(), expression.getLvalueSymbol(store_)->getName()));
+                    emitArrayObjectAddress(*expression.operandSymbol(store_),
+                            expression.getLvalueSymbol(store_)->getName());
                 } else {
                     emit(ir::assign(
                             expression.operandSymbol(store_)->getName(), expression.getResultSymbol(store_)->getName()));
@@ -558,9 +576,8 @@ void CodeGeneratingVisitor::visit(ast::UnaryExpression& expression) {
                         expression.getLvalueSymbol(store_)->getName(), expression.getResultSymbol(store_)->getName()));
             }
         } else if (expression.operandType().isArray()) {
-            // True array object: &a then optional load.
-            emit(ir::addressOf(
-                    expression.operandSymbol(store_)->getName(), expression.getLvalueSymbol(store_)->getName()));
+            emitArrayObjectAddress(*expression.operandSymbol(store_),
+                    expression.getLvalueSymbol(store_)->getName());
             if (expression.getResultSymbol(store_)->getName() != expression.getLvalueSymbol(store_)->getName()) {
                 emit(ir::dereference(
                         expression.getLvalueSymbol(store_)->getName(),

@@ -90,6 +90,8 @@ private:
             const type::Type& sourceType, const type::Type& destType);
     // Storage home: array object after call-arg decay (Lvalue), otherwise Result.
     symbols::ValueEntry* objectHome(ast::Expression& expression) const;
+    // Address of an array object: VLA home already holds it, else LEA the frame object.
+    void emitArrayObjectAddress(const symbols::ValueEntry& object, const std::string& dest);
     // Result name after optional array decay (addressOf) or numeric/bool Conversion.
     std::string convertedResultName(ast::Expression& expression);
     void emitStructFieldInits(const std::string& objectName,
