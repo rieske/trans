@@ -6,7 +6,6 @@
 
 #include "ast/AbstractSyntaxTree.h"
 #include "semantic_analyzer/SemanticAnalysisVisitor.h"
-#include "semantic_analyzer/ValueEntry.h"
 
 namespace semantic_analyzer {
 
@@ -17,7 +16,7 @@ public:
 
     void analyze(ast::AbstractSyntaxTree& tree);
     std::map<std::string, std::string> getConstants() const;
-    std::vector<ValueEntry> getDataHomes() const;
+    std::vector<symbols::ValueEntry> getDataHomes() const;
 
 private:
     SemanticAnalysisVisitor analyzerVisitor;

@@ -16,14 +16,11 @@ add_library(semantic_analyzer
         CharArrayStringInit.h
         AggregateInitSinks.h
         AggregateInitWalk.h
-        FunctionEntry.h
-        LabelEntry.h
         SemanticAnalysisVisitor.h
         SemanticAnalysisVisitorInternal.h
         SemanticAnalyzer.h
         StaticInitFold.h
         SymbolTable.h
-        ValueEntry.h
         ValueScope.h)
 
 trans_target_defaults(semantic_analyzer)

@@ -14,7 +14,7 @@ std::map<std::string, std::string> SemanticAnalyzer::getConstants() const {
     return analyzerVisitor.getConstants();
 }
 
-std::vector<ValueEntry> SemanticAnalyzer::getDataHomes() const {
+std::vector<symbols::ValueEntry> SemanticAnalyzer::getDataHomes() const {
     return analyzerVisitor.getDataHomes();
 }
 

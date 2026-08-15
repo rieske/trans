@@ -55,7 +55,7 @@ std::string SymbolTable::newConstant(const std::string& value) {
     return constantSymbol;
 }
 
-ValueEntry SymbolTable::createUnnamedStaticObject(type::Type type, translation_unit::Context context) {
+symbols::ValueEntry SymbolTable::createUnnamedStaticObject(type::Type type, translation_unit::Context context) {
     const std::string name = generateUnnamedStaticName();
     if (!globalScope.insertSymbol(name, type, context, symbols::Storage::Static, name)) {
         throw std::logic_error("duplicate unnamed static object name: " + name);
@@ -75,14 +75,14 @@ void SymbolTable::insertFunctionArgument(std::string name, type::Type type, tran
     functionScopes.back().insertFunctionArgument(scopedName, type, context);
 }
 
-FunctionEntry SymbolTable::insertFunction(std::string name, type::Function functionType, translation_unit::Context context,
+symbols::FunctionEntry SymbolTable::insertFunction(std::string name, type::Function functionType, translation_unit::Context context,
         bool internalLinkage) {
     // Dual table invariant: every function is both
-    //   1) functions[name] -> FunctionEntry (return type, formals, linkage, designator metadata)
-    //   2) global ValueEntry with bare function type (ordinary-identifier visibility / hiding)
-    // hasFunction and bare-function ValueEntry lookup must agree for names written here.
+    //   1) functions[name] -> symbols::FunctionEntry (return type, formals, linkage, designator metadata)
+    //   2) global symbols::ValueEntry with bare function type (ordinary-identifier visibility / hiding)
+    // hasFunction and bare-function symbols::ValueEntry lookup must agree for names written here.
     // Parameters never use this path; they are adjustedParameterType to pointer-to-function.
-    FunctionEntry function { name, functionType, context, internalLinkage };
+    symbols::FunctionEntry function { name, functionType, context, internalLinkage };
     functions.insert(std::make_pair(name, function));
     globalScope.insertSymbol(function.getName(),
             type::function(functionType.getReturnType(), functionType.getArguments()), function.getContext(),
@@ -90,14 +90,14 @@ FunctionEntry SymbolTable::insertFunction(std::string name, type::Function funct
     return functions.at(name);
 }
 
-FunctionEntry SymbolTable::updateFunction(std::string name, type::Function functionType, translation_unit::Context context) {
+symbols::FunctionEntry SymbolTable::updateFunction(std::string name, type::Function functionType, translation_unit::Context context) {
     const bool internalLinkage = functions.at(name).hasInternalLinkage();
-    FunctionEntry entry { name, std::move(functionType), context, internalLinkage };
+    symbols::FunctionEntry entry { name, std::move(functionType), context, internalLinkage };
     functions.insert_or_assign(name, entry);
     return functions.at(name);
 }
 
-FunctionEntry SymbolTable::findFunction(std::string name) const {
+symbols::FunctionEntry SymbolTable::findFunction(std::string name) const {
     return functions.at(name);
 }
 
@@ -145,7 +145,7 @@ ObjectBind SymbolTable::bindFileScopeObject(std::string name, const type::Type& 
         }
         return ObjectBind::Bound;
     }
-    const ValueEntry existing = globalScope.lookup(name);
+    const symbols::ValueEntry existing = globalScope.lookup(name);
     if (!existing.isStatic() && storage == symbols::Storage::Static) {
         return ObjectBind::StaticAfterNonStatic;
     }
@@ -180,7 +180,7 @@ bool SymbolTable::hasSymbol(std::string symbolName) const {
     }
 }
 
-ValueEntry SymbolTable::lookup(std::string name) const {
+symbols::ValueEntry SymbolTable::lookup(std::string name) const {
     if (!functionScopes.empty()) {
         for (auto it = scopeIdStack.rbegin(); it != scopeIdStack.rend(); ++it) {
             try {
@@ -192,16 +192,16 @@ ValueEntry SymbolTable::lookup(std::string name) const {
     return globalScope.lookup(name);
 }
 
-ValueEntry SymbolTable::createTemporarySymbol(type::Type type) {
+symbols::ValueEntry SymbolTable::createTemporarySymbol(type::Type type) {
     if (functionScopes.empty()) {
         return globalScope.createTemporarySymbol(type);
     }
     return functionScopes.back().createTemporarySymbol(type);
 }
 
-LabelEntry SymbolTable::newLabel() {
+symbols::LabelEntry SymbolTable::newLabel() {
     std::string labelName = generateLabelName();
-    LabelEntry label { labelName };
+    symbols::LabelEntry label { labelName };
     labels.insert(std::make_pair(labelName, label));
     return label;
 }
@@ -243,8 +243,8 @@ unsigned SymbolTable::currentScopeId() const {
     return scopeIdStack.back();
 }
 
-std::map<std::string, ValueEntry> SymbolTable::getCurrentScopeSymbols() const {
-    std::map<std::string, ValueEntry> symbols;
+std::map<std::string, symbols::ValueEntry> SymbolTable::getCurrentScopeSymbols() const {
+    std::map<std::string, symbols::ValueEntry> symbols;
     for (const auto& entry : functionScopes.back().getSymbols()) {
         // Automatic only for frame locals (non-automatic use data homes).
         if (!entry.second.isGlobal()) {
@@ -254,7 +254,7 @@ std::map<std::string, ValueEntry> SymbolTable::getCurrentScopeSymbols() const {
     return symbols;
 }
 
-std::vector<ValueEntry> SymbolTable::getCurrentScopeArguments() const {
+std::vector<symbols::ValueEntry> SymbolTable::getCurrentScopeArguments() const {
     return functionScopes.back().getArguments();
 }
 
@@ -262,8 +262,8 @@ std::map<std::string, std::string> SymbolTable::getConstants() const {
     return constants;
 }
 
-std::vector<ValueEntry> SymbolTable::getDataHomes() const {
-    std::vector<ValueEntry> objects;
+std::vector<symbols::ValueEntry> SymbolTable::getDataHomes() const {
+    std::vector<symbols::ValueEntry> objects;
     for (const auto& entry : globalScope.getSymbols()) {
         if (!entry.second.isGlobal() || entry.second.getType().isFunction()) {
             continue;

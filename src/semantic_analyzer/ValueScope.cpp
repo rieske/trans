@@ -53,7 +53,7 @@ bool ValueScope::insertSymbol(std::string name, const type::Type& type, translat
         index = nextLocalWordIndex;
         nextLocalWordIndex += wordSlotsFor(type);
     }
-    ValueEntry entry { std::move(objectName), type, context, index, storage };
+    symbols::ValueEntry entry { std::move(objectName), type, context, index, storage };
     localSymbols.insert(std::make_pair(name, entry));
     return true;
 }
@@ -61,12 +61,12 @@ bool ValueScope::insertSymbol(std::string name, const type::Type& type, translat
 void ValueScope::insertFunctionArgument(std::string name, const type::Type& type, translation_unit::Context context) {
     auto existingArgument = std::find_if(arguments.begin(), arguments.end(), EntryWithSameNameExists { name });
     if (existingArgument == arguments.end()) {
-        ValueEntry entry { name, type, context, static_cast<int>(arguments.size()) };
+        symbols::ValueEntry entry { name, type, context, static_cast<int>(arguments.size()) };
         arguments.push_back(entry);
     }
 }
 
-ValueEntry ValueScope::lookup(std::string name) const {
+symbols::ValueEntry ValueScope::lookup(std::string name) const {
     if (localSymbols.find(name) == localSymbols.end()) {
         auto existingArgument = std::find_if(arguments.begin(), arguments.end(), EntryWithSameNameExists { name });
         if (existingArgument == arguments.end()) {
@@ -97,20 +97,20 @@ void ValueScope::refineType(const std::string& name, const type::Type& type) {
     localSymbols.at(name).refineType(type);
 }
 
-ValueEntry ValueScope::createTemporarySymbol(type::Type type) {
+symbols::ValueEntry ValueScope::createTemporarySymbol(type::Type type) {
     std::string tempName = generateTempName();
     const int index = nextLocalWordIndex;
     nextLocalWordIndex += wordSlotsFor(type);
-    ValueEntry temp { tempName, type, translation_unit::Context { "", 0 }, index };
+    symbols::ValueEntry temp { tempName, type, translation_unit::Context { "", 0 }, index };
     localSymbols.insert(std::make_pair(tempName, temp));
     return temp;
 }
 
-std::map<std::string, ValueEntry> ValueScope::getSymbols() const {
+std::map<std::string, symbols::ValueEntry> ValueScope::getSymbols() const {
     return localSymbols;
 }
 
-std::vector<ValueEntry> ValueScope::getArguments() const {
+std::vector<symbols::ValueEntry> ValueScope::getArguments() const {
     return arguments;
 }
 

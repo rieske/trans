@@ -5,7 +5,7 @@
 #include <string>
 #include <vector>
 
-#include "ValueEntry.h"
+#include "symbols/ValueEntry.h"
 #include "types/Type.h"
 
 namespace semantic_analyzer {
@@ -15,16 +15,16 @@ public:
     bool insertSymbol(std::string name, const type::Type& type, translation_unit::Context context,
             symbols::Storage storage, std::string objectName);
     void insertFunctionArgument(std::string name, const type::Type& type, translation_unit::Context context);
-    ValueEntry createTemporarySymbol(type::Type type);
-    ValueEntry lookup(std::string name) const;
+    symbols::ValueEntry createTemporarySymbol(type::Type type);
+    symbols::ValueEntry lookup(std::string name) const;
     bool contains(const std::string& name) const;
     void setStaticInit(const std::string& name, std::vector<symbols::StaticInitValue> words);
     void promoteExternToDefinition(const std::string& name);
     void markDefiningInitializer(const std::string& name);
     void refineType(const std::string& name, const type::Type& type);
 
-    std::map<std::string, ValueEntry> getSymbols() const;
-    std::vector<ValueEntry> getArguments() const;
+    std::map<std::string, symbols::ValueEntry> getSymbols() const;
+    std::vector<symbols::ValueEntry> getArguments() const;
 
 private:
     // Next free stack-slot index in machine words
@@ -32,8 +32,8 @@ private:
     // future aggregates) reserve consecutive slots.
     int nextLocalWordIndex { 0 };
 
-    std::vector<ValueEntry> arguments;
-    std::map<std::string, ValueEntry> localSymbols;
+    std::vector<symbols::ValueEntry> arguments;
+    std::map<std::string, symbols::ValueEntry> localSymbols;
 
     static int wordSlotsFor(const type::Type& type);
 };

@@ -17,6 +17,7 @@
 #include "scanner/LexicalSession.h"
 #include "scanner/Scanner.h"
 #include "semantic_analyzer/SemanticAnalyzer.h"
+#include "symbols/ValueEntry.h"
 #include "types/SysVClassify.h"
 #include "types/Type.h"
 #include "codegen/ValueKind.h"
@@ -29,7 +30,7 @@ static Logger& out = LogManager::getOutputLogger();
 
 namespace {
 
-codegen::ObjectEmission emissionFor(const semantic_analyzer::ValueEntry& symbol) {
+codegen::ObjectEmission emissionFor(const symbols::ValueEntry& symbol) {
     if (symbol.isExtern()) {
         return codegen::ObjectEmission::Reference;
     }
@@ -39,7 +40,7 @@ codegen::ObjectEmission emissionFor(const semantic_analyzer::ValueEntry& symbol)
     return codegen::ObjectEmission::DefineExternal;
 }
 
-codegen::GlobalVariable toGlobalVariable(const semantic_analyzer::ValueEntry& symbol) {
+codegen::GlobalVariable toGlobalVariable(const symbols::ValueEntry& symbol) {
     codegen::GlobalVariable gv;
     gv.name = symbol.getName();
     gv.sizeInBytes = symbol.getType().getSize();
