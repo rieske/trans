@@ -37,8 +37,11 @@ ArrayBoundFold ArrayDeclarator::foldOwnBound() {
         return ArrayBoundFold::Complete;
     }
     long length = 0;
-    if (!subscriptExpression->evaluateConstant(length) || length < 0) {
+    if (!subscriptExpression->evaluateConstant(length)) {
         return ArrayBoundFold::Unfixed;
+    }
+    if (length < 0) {
+        return ArrayBoundFold::Negative;
     }
     if (length > static_cast<long>(std::numeric_limits<int>::max())) {
         setArraySize(0);

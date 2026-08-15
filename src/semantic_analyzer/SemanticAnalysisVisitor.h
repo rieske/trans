@@ -129,7 +129,7 @@ private:
             const ast::InitializerListExpression* list, const translation_unit::Context& context);
     void rejectFunctionValue(const type::Type& type, const translation_unit::Context& context);
 
-    void checkObjectArrayBounds(ast::InitializedDeclarator& declarator);
+    void checkObjectArrayBounds(ast::InitializedDeclarator& declarator, bool allowVla);
 
     // Innermost loop first: break → exit, continue → cont (entry for while, pre-increment for for).
     struct LoopContext {
