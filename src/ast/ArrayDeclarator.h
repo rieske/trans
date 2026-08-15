@@ -10,7 +10,7 @@
 
 namespace ast {
 
-enum class ArrayBoundFold { Complete, Unfixed, TooLarge };
+enum class ArrayBoundFold { Complete, Unfixed, Negative, TooLarge };
 
 class ArrayDeclarator: public DirectDeclarator {
 public:

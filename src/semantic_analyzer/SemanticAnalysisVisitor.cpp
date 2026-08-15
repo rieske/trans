@@ -24,7 +24,7 @@ void SemanticAnalysisVisitor::visit(ast::Declaration& declaration) {
         // (invalid `typedef int x = 1;` is not diagnosed on this path).
         for (const auto& declarator : declaration.getDeclarators()) {
             declarator->visitDeclarator(*this);
-            checkObjectArrayBounds(*declarator);
+            checkObjectArrayBounds(*declarator, !symbolTable.isAtFileScope());
         }
         return;
     }
@@ -59,7 +59,6 @@ bool SemanticAnalysisVisitor::completeArrayFromInitializer(ast::InitializedDecla
 void SemanticAnalysisVisitor::analyzeInitializedDeclarator(ast::InitializedDeclarator& declarator,
         const ast::DeclarationSpecifiers& specifiers) {
     declarator.visitDeclarator(*this);
-    checkObjectArrayBounds(declarator);
 
     const type::Type baseType = specifiers.getResolvedType();
     // C: static / extern apply at file or block scope; bare file-scope is a definition
@@ -72,6 +71,7 @@ void SemanticAnalysisVisitor::analyzeInitializedDeclarator(ast::InitializedDecla
     } else if (symbolTable.isAtFileScope()) {
         storage = symbols::Storage::Global;
     }
+    checkObjectArrayBounds(declarator, storage == symbols::Storage::Automatic);
 
     type::Type type { type::voidType() };
     bool typeOk = true;
@@ -192,8 +192,10 @@ void SemanticAnalysisVisitor::visit(ast::ArrayDeclarator& declaration) {
     }
 }
 
-void SemanticAnalysisVisitor::checkObjectArrayBounds(ast::InitializedDeclarator& declarator) {
+void SemanticAnalysisVisitor::checkObjectArrayBounds(ast::InitializedDeclarator& declarator,
+        bool allowVla) {
     bool tooLarge = false;
+    bool negative = false;
     bool unfixed = false;
     declarator.forEachArrayDeclarator([&](ast::ArrayDeclarator& array) {
         if (!array.subscriptExpression || array.hasArraySize()) {
@@ -203,6 +205,8 @@ void SemanticAnalysisVisitor::checkObjectArrayBounds(ast::InitializedDeclarator&
         const ast::ArrayBoundFold folded = array.foldOwnBound();
         if (folded == ast::ArrayBoundFold::TooLarge) {
             tooLarge = true;
+        } else if (folded == ast::ArrayBoundFold::Negative) {
+            negative = true;
         } else if (folded == ast::ArrayBoundFold::Unfixed) {
             unfixed = true;
         }
@@ -211,7 +215,7 @@ void SemanticAnalysisVisitor::checkObjectArrayBounds(ast::InitializedDeclarator&
         semanticError("array size is too large", declarator.getContext());
         return;
     }
-    if (unfixed) {
+    if (negative || (unfixed && !allowVla)) {
         semanticError("array size is not a non-negative constant expression",
                 declarator.getContext());
     }

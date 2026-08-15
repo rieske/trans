@@ -133,19 +133,6 @@ int scanf(const char *, ...);
     program.runAndExpect("1");
 }
 
-TEST(Compiler, nonConstantArraySizeIsSemanticError) {
-    SourceProgram program{R"prg(
-        int main() {
-            int n;
-            n = 3;
-            int a[n];
-            return 0;
-        }
-    )prg"};
-    program.compile();
-    program.assertCompilationErrors("array size is not a non-negative constant expression");
-}
-
 // sizeof(int [n]) is a runtime value (C99 VLA type, not an ICE).
 TEST(Compiler, sizeofRuntimeArrayTypeIsElementCount) {
     SourceProgram program{R"prg(int printf(const char *, ...);
@@ -191,7 +178,7 @@ TEST(Compiler, sizeofRuntimeArrayTypeIsNotIntegerConstant) {
         int main() {
             int n;
             n = 3;
-            int a[sizeof(int [n])];
+            static int a[sizeof(int [n])];
             return 0;
         }
     )prg"};
