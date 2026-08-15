@@ -441,34 +441,6 @@ std::string IntelInstructionSet::fstpSt0() const {
     return "fstp st0";
 }
 
-std::string IntelInstructionSet::loadByteSignExtend(const Register& address, const Register& dest) const {
-    return "movsx " + dest.getName() + ", byte [" + address.getName() + "]";
-}
-
-std::string IntelInstructionSet::loadByteZeroExtend(const Register& address, const Register& dest) const {
-    return "movzx " + dest.getName() + ", byte [" + address.getName() + "]";
-}
-
-std::string IntelInstructionSet::loadWordSignExtend(const Register& address, const Register& dest) const {
-    return "movsx " + dest.getName() + ", word [" + address.getName() + "]";
-}
-
-std::string IntelInstructionSet::loadWordZeroExtend(const Register& address, const Register& dest) const {
-    return "movzx " + dest.getName() + ", word [" + address.getName() + "]";
-}
-
-std::string IntelInstructionSet::loadDwordSignExtend(const Register& address, const Register& dest) const {
-    return "movsxd " + dest.getName() + ", dword [" + address.getName() + "]";
-}
-
-std::string IntelInstructionSet::storeByte(const Register& source, const Register& address) const {
-    return "mov byte [" + address.getName() + "], " + lowByteName(source);
-}
-
-std::string IntelInstructionSet::storeWord(const Register& source, const Register& address) const {
-    return "mov word [" + address.getName() + "], " + lowWordName(source);
-}
-
 std::string IntelInstructionSet::loadByteSignExtend(const MemoryOperand& source, const Register& dest) const {
     return "movsx " + dest.getName() + ", byte " + memoryReference(source, *this);
 }

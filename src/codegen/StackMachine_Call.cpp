@@ -129,7 +129,6 @@ void StackMachine::copyBytes(Register& srcBase, Register& destBase, int n,
     exclude.push_back(&srcBase);
     exclude.push_back(&destBase);
     Register& tmp = get64BitRegisterExcluding(exclude);
-    exclude.push_back(&tmp);
     int off = 0;
     while (off < n) {
         const int remain = n - off;
@@ -145,17 +144,13 @@ void StackMachine::copyBytes(Register& srcBase, Register& destBase, int n,
             off += 4;
             continue;
         }
-        Register& addr = get64BitRegisterExcluding(exclude);
-        assembly << instructionSet->lea(MemoryOperand::at(srcBase, off), addr);
         if (remain >= 2) {
-            assembly << instructionSet->loadWordZeroExtend(addr, tmp);
-            assembly << instructionSet->lea(MemoryOperand::at(destBase, off), addr);
-            assembly << instructionSet->storeWord(tmp, addr);
+            assembly << instructionSet->loadWordZeroExtend(MemoryOperand::at(srcBase, off), tmp);
+            assembly << instructionSet->storeWord(tmp, MemoryOperand::at(destBase, off));
             off += 2;
         } else {
-            assembly << instructionSet->loadByteZeroExtend(addr, tmp);
-            assembly << instructionSet->lea(MemoryOperand::at(destBase, off), addr);
-            assembly << instructionSet->storeByte(tmp, addr);
+            assembly << instructionSet->loadByteZeroExtend(MemoryOperand::at(srcBase, off), tmp);
+            assembly << instructionSet->storeByte(tmp, MemoryOperand::at(destBase, off));
             off += 1;
         }
     }
