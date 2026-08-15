@@ -249,6 +249,7 @@ void SemanticAnalysisVisitor::visit(ast::UnaryExpression& expression) {
                     symbolTable.createTemporarySymbol(type::pointer(expression.operandType())));
             break;
         }
+        markAddressOnly(*expression.getOperandExpression(), annotations());
         rejectFunctionValue(expression.operandType(), expression.getContext());
         expression.setResultSymbol(annotations(), symbolTable.createTemporarySymbol(type::pointer(expression.operandType())));
         break;
