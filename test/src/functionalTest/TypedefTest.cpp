@@ -162,6 +162,21 @@ int scanf(const char *, ...);
     program.runAndExpect("12");
 }
 
+TEST(Compiler, typedefVisibleAfterDeclaringBlock) {
+    SourceProgram program{R"prg(int printf(const char *, ...);
+        int main() {
+            {
+                typedef int T;
+            }
+            T x;
+            x = 3;
+            printf("%d", x);
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("3");
+}
 
 TEST(Compiler, typedefNameShadowedByParameter) {
     SourceProgram program{R"prg(int printf(const char *, ...);

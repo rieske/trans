@@ -189,6 +189,7 @@ TEST(LexicalSession, enterBlockSharesShadowAndObjectFrames) {
     EXPECT_TRUE(inner->equivalentTo(type::signedCharacter()));
     session.leaveBlock();
     EXPECT_FALSE(session.typedefs.isIdentifierShadow("T"));
+    EXPECT_TRUE(session.typedefs.has("T"));
     auto outer = session.objects.lookup("x");
     ASSERT_TRUE(outer.has_value());
     EXPECT_TRUE(outer->equivalentTo(type::signedInteger()));
