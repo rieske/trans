@@ -4,15 +4,31 @@
 #include <stdexcept>
 
 #include "AbstractSyntaxTreeVisitor.h"
+#include "VlaExpressionTable.h"
 #include "types/Type.h"
 
 namespace ast {
 
 ArrayDeclarator::ArrayDeclarator(std::unique_ptr<DirectDeclarator> declarator,
-        std::unique_ptr<Expression> subscriptExpression) :
+        std::unique_ptr<Expression> subscriptExpression, VlaExpressionTable* table) :
         DirectDeclarator(declarator->getName(), declarator->getContext()),
         subscriptExpression { std::move(subscriptExpression) },
         baseDeclarator { std::move(declarator) } {
+    if (!this->subscriptExpression) {
+        return;
+    }
+    long length = 0;
+    if (this->subscriptExpression->foldToHostLong(length)) {
+        if (length >= 0 && length <= static_cast<long>(std::numeric_limits<int>::max())) {
+            setArraySize(length);
+        }
+        return;
+    }
+    if (!table) {
+        throw std::logic_error { "VLA bound expression requires a VlaExpressionTable" };
+    }
+    vlaBound_ = std::make_shared<type::VlaBound>();
+    table->bind(vlaBound_.get(), this->subscriptExpression);
 }
 
 void ArrayDeclarator::accept(AbstractSyntaxTreeVisitor& visitor) {
@@ -69,25 +85,18 @@ type::Type ArrayDeclarator::getFundamentalType(std::vector<Pointer> indirection,
     for (Pointer pointer : indirection) {
         elementType = type::pointer(elementType, pointer.getQualifiers());
     }
-    // Prefer size folded in semantic analysis. Unsized `T a[]` is incomplete.
-    // Invalid bounds keep a zero-length complete shell after a semantic error.
-    if (!hasArraySize() && !subscriptExpression) {
+    if (hasArraySize()) {
+        return baseDeclarator->getFundamentalType({},
+                type::array(elementType, static_cast<int>(getArraySize())));
+    }
+    if (vlaBound_) {
+        return baseDeclarator->getFundamentalType({}, type::variableArray(elementType, vlaBound_));
+    }
+    if (!subscriptExpression) {
         return baseDeclarator->getFundamentalType({}, type::incompleteArray(elementType));
     }
-    long length = 0;
-    if (hasArraySize()) {
-        length = getArraySize();
-    } else if (subscriptExpression && subscriptExpression->foldToHostLong(length) && length >= 0) {
-        // Fallback when getFundamentalType is used without a prior semantic visit.
-    } else if (subscriptExpression) {
-        return baseDeclarator->getFundamentalType({}, type::variableArray(elementType, subscriptExpression));
-    }
-    if (length > static_cast<long>(std::numeric_limits<int>::max())) {
-        length = 0;
-    }
-    // type::array may throw std::invalid_argument (overflow / incomplete element);
-    // semantic analysis catches that when building declaration types.
-    return baseDeclarator->getFundamentalType({}, type::array(elementType, static_cast<int>(length)));
+    // Invalid ICE (negative / too large) keeps a zero-length complete shell.
+    return baseDeclarator->getFundamentalType({}, type::array(elementType, 0));
 }
 
 } // namespace ast

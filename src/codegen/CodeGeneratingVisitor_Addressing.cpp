@@ -1,10 +1,12 @@
 #include "CodeGeneratingVisitor.h"
 
+#include <stdexcept>
 #include <string>
 
 #include "types/TypeQuery.h"
 
 #include "ast/Expression.h"
+#include "ast/VlaExpressionTable.h"
 #include "symbols/ValueEntry.h"
 
 namespace codegen {
@@ -39,9 +41,15 @@ void CodeGeneratingVisitor::emitSizeofProduct(const type::Type& measured, int re
     type::Type t = measured;
     while (t.isArray()) {
         if (t.isVariableArray()) {
-            auto bound = t.variableBound();
-            bound->accept(*this);
-            mulFactor(convertedResult(*bound));
+            auto boundId = t.vlaBound();
+            if (boundId && !boundId->unspecified) {
+                if (!vlas_) {
+                    throw std::logic_error { "missing VLA expression table" };
+                }
+                auto bound = vlas_->require(boundId.get());
+                bound->accept(*this);
+                mulFactor(convertedResult(*bound));
+            }
         } else if (!t.isIncompleteArray()) {
             emitConst(t.getArraySize());
         }

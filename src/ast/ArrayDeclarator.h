@@ -10,11 +10,14 @@
 
 namespace ast {
 
+class VlaExpressionTable;
+
 enum class ArrayBoundFold { Complete, Unfixed, Negative, TooLarge };
 
 class ArrayDeclarator: public DirectDeclarator {
 public:
-    ArrayDeclarator(std::unique_ptr<DirectDeclarator> declarator, std::unique_ptr<Expression> subscriptExpression);
+    ArrayDeclarator(std::unique_ptr<DirectDeclarator> declarator,
+            std::unique_ptr<Expression> subscriptExpression, VlaExpressionTable* table = nullptr);
     virtual ~ArrayDeclarator() = default;
 
     void accept(AbstractSyntaxTreeVisitor& visitor) override;
@@ -33,6 +36,7 @@ public:
 
 private:
     std::unique_ptr<DirectDeclarator> baseDeclarator;
+    std::shared_ptr<type::VlaBound> vlaBound_;
     long arraySize { 0 };
     bool arraySizeSet { false };
 };

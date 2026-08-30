@@ -9,6 +9,7 @@
 #include "ast/TypeNameExpression.h"
 #include "ast/TypeSpecifier.h"
 #include "ast/UnaryExpression.h"
+#include "ast/VlaExpressionTable.h"
 
 #include <stdexcept>
 
@@ -45,16 +46,20 @@ void checkLogicalScalarOperands(SemanticAnalysisVisitor& visitor, const type::Ty
 
 } // namespace
 
-void visitVariableBounds(const type::Type& t, ast::AbstractSyntaxTreeVisitor& visitor) {
+void visitVariableBounds(const type::Type& t, ast::AbstractSyntaxTreeVisitor& visitor,
+        const ast::VlaExpressionTable& vlas) {
     if (t.isArray()) {
-        if (auto bound = t.variableBound()) {
-            bound->accept(visitor);
+        if (t.isVariableArray()) {
+            auto id = t.vlaBound();
+            if (id && !id->unspecified) {
+                vlas.require(id.get())->accept(visitor);
+            }
         }
-        visitVariableBounds(t.getElementType(), visitor);
+        visitVariableBounds(t.getElementType(), visitor, vlas);
         return;
     }
     if (t.isPointer()) {
-        visitVariableBounds(t.dereference(), visitor);
+        visitVariableBounds(t.dereference(), visitor, vlas);
     }
 }
 

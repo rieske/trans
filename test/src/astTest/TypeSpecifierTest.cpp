@@ -5,10 +5,13 @@
 #include "ast/Declarator.h"
 #include "ast/Identifier.h"
 #include "ast/IdentifierExpression.h"
+#include "ast/Operator.h"
 #include "ast/ParseEnvironment.h"
+#include "ast/UnaryExpression.h"
 #include "ast/Pointer.h"
 #include "ast/TerminalSymbol.h"
 #include "ast/TypeSpecifier.h"
+#include "ast/VlaExpressionTable.h"
 #include "scanner/LexicalSession.h"
 #include "types/Type.h"
 #include "types/TypeQuery.h"
@@ -61,24 +64,84 @@ TEST(TypeSpecifier, dropSpellingKeepsTypeAndPendingDeclarator) {
 TEST(TypeSpecifier, unfixedArrayBoundLivesOnType) {
     translation_unit::Context ctx { "t", 1 };
     TypeSpecifier ts { type::signedInteger(), "int" };
+    VlaExpressionTable table;
     auto array = std::make_unique<ArrayDeclarator>(
             std::make_unique<Identifier>(TerminalSymbol { "id", "", ctx }),
-            std::make_unique<IdentifierExpression>("n", ctx));
+            std::make_unique<IdentifierExpression>("n", ctx),
+            &table);
     Expression* bound = array->subscriptExpression.get();
     ts.deferAbstractDeclarator(std::make_unique<Declarator>(std::move(array)));
     EXPECT_TRUE(ts.getType().isVariableArray());
-    EXPECT_EQ(ts.getType().variableBound().get(), bound);
+    EXPECT_EQ(table.require(ts.getType().vlaBound().get()).get(), bound);
     EXPECT_FALSE(type::hasUnspecifiedVlaSize(ts.getType()));
     EXPECT_TRUE(type::hasComputableRuntimeSize(ts.getType()));
+}
+
+TEST(ArrayDeclarator, unfixedBoundRequiresTable) {
+    translation_unit::Context ctx { "t", 1 };
+    EXPECT_THROW((ArrayDeclarator {
+            std::make_unique<Identifier>(TerminalSymbol { "id", "", ctx }),
+            std::make_unique<IdentifierExpression>("n", ctx) }), std::logic_error);
+}
+
+TEST(ArrayDeclarator, getFundamentalTypeReusesBoundIdentity) {
+    translation_unit::Context ctx { "t", 1 };
+    VlaExpressionTable table;
+    Declarator declarator { std::make_unique<ArrayDeclarator>(
+            std::make_unique<Identifier>(TerminalSymbol { "id", "a", ctx }),
+            std::make_unique<IdentifierExpression>("n", ctx),
+            &table) };
+    auto first = declarator.getFundamentalType(type::signedInteger());
+    auto second = declarator.getFundamentalType(type::signedInteger());
+    EXPECT_EQ(first.vlaBound().get(), second.vlaBound().get());
+    EXPECT_EQ(table.require(first.vlaBound().get()).get(),
+            table.require(second.vlaBound().get()).get());
+}
+
+TEST(ArrayDeclarator, iceBoundDoesNotNeedTable) {
+    translation_unit::Context ctx { "t", 1 };
+    Declarator declarator { std::make_unique<ArrayDeclarator>(
+            std::make_unique<Identifier>(TerminalSymbol { "id", "a", ctx }),
+            std::make_unique<ConstantExpression>(
+                    Constant { "3", type::signedInteger(), ctx })) };
+    auto type = declarator.getFundamentalType(type::signedInteger());
+    EXPECT_FALSE(type.isVariableArray());
+    EXPECT_EQ(type.getArraySize(), 3);
+}
+
+TEST(ArrayDeclarator, missingSubscriptIsIncomplete) {
+    translation_unit::Context ctx { "t", 1 };
+    Declarator declarator { std::make_unique<ArrayDeclarator>(
+            std::make_unique<Identifier>(TerminalSymbol { "id", "a", ctx }),
+            nullptr) };
+    auto type = declarator.getFundamentalType(type::signedInteger());
+    EXPECT_TRUE(type.isIncompleteArray());
+}
+
+TEST(ArrayDeclarator, negativeIceIsZeroLengthShell) {
+    translation_unit::Context ctx { "t", 1 };
+    Declarator declarator { std::make_unique<ArrayDeclarator>(
+            std::make_unique<Identifier>(TerminalSymbol { "id", "a", ctx }),
+            std::make_unique<UnaryExpression>(
+                    std::make_unique<Operator>("-"),
+                    std::make_unique<ConstantExpression>(
+                            Constant { "1", type::signedInteger(), ctx }))) };
+    auto type = declarator.getFundamentalType(type::signedInteger());
+    EXPECT_FALSE(type.isVariableArray());
+    EXPECT_FALSE(type.isIncompleteArray());
+    EXPECT_EQ(type.getArraySize(), 0);
 }
 
 TEST(TypeSpecifier, refoldTurnsIceBoundIntoConstantArray) {
     translation_unit::Context ctx { "t", 1 };
     auto three = std::make_shared<ConstantExpression>(
             Constant { "3", type::signedInteger(), ctx });
-    TypeSpecifier ts { type::variableArray(type::signedInteger(), three), "int" };
+    VlaExpressionTable table;
+    auto id = std::make_shared<type::VlaBound>();
+    table.bind(id.get(), three);
+    TypeSpecifier ts { type::variableArray(type::signedInteger(), id), "int" };
     EXPECT_TRUE(ts.getType().isVariableArray());
-    ts.refoldConstantArrayBounds();
+    ts.refoldConstantArrayBounds(table);
     EXPECT_FALSE(ts.getType().isVariableArray());
     EXPECT_EQ(ts.getType().getArraySize(), 3);
 }

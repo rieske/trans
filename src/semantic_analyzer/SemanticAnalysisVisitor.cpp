@@ -2,24 +2,32 @@
 
 #include "ast/GnuBuiltinFunctions.h"
 #include "ast/TypeSpecifier.h"
+#include "ast/VlaExpressionTable.h"
 #include "translation_unit/Context.h"
 
 #include <stdexcept>
 
 namespace semantic_analyzer {
 
+const ast::VlaExpressionTable& SemanticAnalysisVisitor::vlaTable() const {
+    if (!vlas_) {
+        throw std::logic_error { "missing VLA expression table" };
+    }
+    return *vlas_;
+}
+
 namespace {
 
-translation_unit::Context arrayBoundContext(const type::Type& t) {
+translation_unit::Context arrayBoundContext(const type::Type& t, const ast::VlaExpressionTable& vlas) {
     type::Type walk = t;
     while (walk.isArray()) {
-        if (auto bound = walk.variableBound()) {
+        if (auto bound = vlas.lookup(walk.vlaBound().get())) {
             return bound->getContext();
         }
         walk = walk.getElementType();
     }
     if (walk.isPointer()) {
-        return arrayBoundContext(walk.dereference());
+        return arrayBoundContext(walk.dereference(), vlas);
     }
     return translation_unit::Context { "", 0 };
 }
@@ -32,14 +40,15 @@ void finalizeRecordDefinition(type::Type& record, SemanticAnalysisVisitor& visit
     }
     auto specs = type::memberSpecs(record);
     for (auto& spec : specs) {
-        visitVariableBounds(spec.type, visitor);
+        const auto& vlas = visitor.vlaTable();
+        visitVariableBounds(spec.type, visitor, vlas);
         if (spec.type.isRecord()) {
             finalizeRecordDefinition(spec.type, visitor);
         }
-        spec.type = ast::foldConstantArrayBounds(spec.type);
+        spec.type = ast::foldConstantArrayBounds(spec.type, vlas);
         if (type::hasRuntimeSize(spec.type)) {
             visitor.semanticError("array size is not a non-negative constant expression",
-                    arrayBoundContext(spec.type));
+                    arrayBoundContext(spec.type, vlas));
         }
     }
     type::relayoutFromMemberSpecs(record, specs);
@@ -50,8 +59,9 @@ void finalizeSpecifierType(ast::TypeSpecifier& spec, SemanticAnalysisVisitor& vi
     if (!spec.hasType()) {
         return;
     }
-    visitVariableBounds(spec.getType(), visitor);
-    spec.refoldConstantArrayBounds();
+    const auto& vlas = visitor.vlaTable();
+    visitVariableBounds(spec.getType(), visitor, vlas);
+    spec.refoldConstantArrayBounds(vlas);
     if (spec.definesRecord()) {
         type::Type record = spec.getType();
         finalizeRecordDefinition(record, visitor);

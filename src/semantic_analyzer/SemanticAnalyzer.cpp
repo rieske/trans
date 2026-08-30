@@ -24,6 +24,7 @@ void SemanticAnalyzer::analyze(ast::AbstractSyntaxTree& tree) {
 
     // Sole SA import channel for parse-time enumerators (AST snapshot handoff).
     // Whole-TU before the walk (not C declaration-order scope start).
+    analyzerVisitor.setVlaExpressions(tree.vlaExpressions());
     for (const auto& entry : tree.parseEnumConstants()) {
         analyzerVisitor.importParseEnumConstant(entry.first, entry.second);
     }

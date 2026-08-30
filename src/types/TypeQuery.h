@@ -130,7 +130,8 @@ inline bool isVariablyModified(const Type& t) {
 // VLA whose size cannot be formed: a [*] layer, or an array of such.
 inline bool hasUnspecifiedVlaSize(const Type& t) {
     if (t.isVariableArray()) {
-        return !t.variableBound() || hasUnspecifiedVlaSize(t.getElementType());
+        auto bound = t.vlaBound();
+        return !bound || bound->unspecified || hasUnspecifiedVlaSize(t.getElementType());
     }
     if (t.isArray()) {
         return hasUnspecifiedVlaSize(t.getElementType());

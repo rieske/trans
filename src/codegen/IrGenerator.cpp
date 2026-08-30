@@ -7,7 +7,7 @@
 namespace codegen {
 
 IntermediateRepresentation generateIr(ast::AbstractSyntaxTree& tree) {
-    CodeGeneratingVisitor visitor(tree.annotations());
+    CodeGeneratingVisitor visitor(tree.annotations(), tree.vlaExpressions());
     for (const auto& treeNode : tree) {
         treeNode->accept(visitor);
     }

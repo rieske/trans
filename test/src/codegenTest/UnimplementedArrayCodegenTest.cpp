@@ -3,9 +3,12 @@
 
 #include "ast/ArrayAccess.h"
 #include "ast/ArrayDeclarator.h"
+#include "ast/Constant.h"
+#include "ast/ConstantExpression.h"
 #include "ast/Identifier.h"
 #include "ast/IdentifierExpression.h"
 #include "ast/TerminalSymbol.h"
+#include "types/Type.h"
 #include "codegen/CodeGeneratingVisitor.h"
 #include "symbols/AnnotationStore.h"
 #include "translation_unit/Context.h"
@@ -40,7 +43,8 @@ TEST(CodeGeneratingVisitor, arrayDeclaratorIsNoOp) {
     // Sized arrays are typed in semantic analysis; declarator codegen emits no IR.
     ArrayDeclarator declarator {
             std::make_unique<Identifier>(TerminalSymbol { "id", "a", testContext() }),
-            std::make_unique<IdentifierExpression>("n", testContext())
+            std::make_unique<ConstantExpression>(
+                    Constant { "3", type::signedInteger(), testContext() })
     };
     symbols::AnnotationStore store;
     CodeGeneratingVisitor visitor(store);

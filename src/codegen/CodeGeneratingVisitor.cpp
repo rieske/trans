@@ -42,7 +42,8 @@ codegen::Value valueFromSymbol(codegen::IrStringTable& strings, const symbols::V
 
 namespace codegen {
 
-CodeGeneratingVisitor::CodeGeneratingVisitor(symbols::AnnotationStore& store) : store_ { store } {
+CodeGeneratingVisitor::CodeGeneratingVisitor(symbols::AnnotationStore& store,
+        const ast::VlaExpressionTable* vlas) : store_ { store }, vlas_ { vlas } {
 }
 
 CodeGeneratingVisitor::~CodeGeneratingVisitor() {

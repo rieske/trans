@@ -11,10 +11,6 @@
 #include <variant>
 #include <vector>
 
-namespace ast {
-class Expression;
-}
-
 namespace type {
 
 enum class Qualifier {
@@ -55,6 +51,10 @@ inline unsigned long long bitFieldMask(int width) {
 
 struct MemberSpec;
 
+struct VlaBound {
+    bool unspecified { false };
+};
+
 class Type {
 public:
     struct Member {
@@ -92,7 +92,7 @@ public:
     friend Type function(const Type& returnType, const std::vector<Type>& arguments, bool variadic);
     friend Type array(const Type& elementType, int elementCount);
     friend Type incompleteArray(const Type& elementType);
-    friend Type variableArray(const Type& elementType, std::shared_ptr<ast::Expression> bound);
+    friend Type variableArray(const Type& elementType, std::shared_ptr<VlaBound> bound);
     friend Type incompleteRecord();
     friend Type structure(const std::vector<std::pair<std::string, Type>>& members);
     friend void completeStructure(Type& structType, const std::vector<MemberSpec>& members,
@@ -132,7 +132,7 @@ public:
     bool isArray() const;
     bool isIncompleteArray() const;
     bool isVariableArray() const;
-    std::shared_ptr<ast::Expression> variableBound() const;
+    std::shared_ptr<VlaBound> vlaBound() const;
     Type getElementType() const;
     int getArraySize() const;
     // Parameter arrays decay to pointer-to-element.
@@ -195,7 +195,7 @@ private:
         int sizeBytes { 0 };
         bool complete { true };
         bool variable { false };
-        std::shared_ptr<ast::Expression> bound;
+        std::shared_ptr<VlaBound> bound;
     };
     struct RecordPayload {
         // Shared so tags and pointers to that record see the same layout when completed.
@@ -231,7 +231,7 @@ Type pointer(const Type& pointsTo, const std::vector<Qualifier>& qualifiers = {}
 Type function(const Type& returnType, const std::vector<Type>& arguments = {}, bool variadic = false);
 Type array(const Type& elementType, int elementCount);
 Type incompleteArray(const Type& elementType);
-Type variableArray(const Type& elementType, std::shared_ptr<ast::Expression> bound = {});
+Type variableArray(const Type& elementType, std::shared_ptr<VlaBound> bound = {});
 // Incomplete record tag (struct or union not yet known). Both live as RecordPayload;
 // kind() is Struct vs Union via shared StructBody::isUnion once completed.
 // Pointers and aliases that share structureBodyIdentity() see the same body when

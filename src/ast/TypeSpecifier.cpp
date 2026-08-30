@@ -4,6 +4,7 @@
 #include "Declarator.h"
 #include "Expression.h"
 #include "ParseEnvironment.h"
+#include "VlaExpressionTable.h"
 
 #include <limits>
 #include <stdexcept>
@@ -91,20 +92,20 @@ bool TypeSpecifier::resolveTypeofAtParseTime(const ParseEnvironment& environment
     return static_cast<bool>(type);
 }
 
-type::Type foldConstantArrayBounds(const type::Type& t) {
+type::Type foldConstantArrayBounds(const type::Type& t, const VlaExpressionTable& exprs) {
     if (!t.isArray()) {
         return t;
     }
-    const type::Type elem = foldConstantArrayBounds(t.getElementType());
+    const type::Type elem = foldConstantArrayBounds(t.getElementType(), exprs);
     const type::Type result = [&] {
         if (t.isVariableArray()) {
-            ast::Expression* bound = t.variableBound().get();
+            auto bound = exprs.lookup(t.vlaBound().get());
             long n = 0;
             if (bound && bound->foldToHostLong(n) && n >= 0
                     && n <= static_cast<long>(std::numeric_limits<int>::max())) {
                 return type::array(elem, static_cast<int>(n));
             }
-            return type::variableArray(elem, t.variableBound());
+            return type::variableArray(elem, t.vlaBound());
         }
         if (t.isIncompleteArray()) {
             return type::incompleteArray(elem);
@@ -129,9 +130,9 @@ bool TypeSpecifier::definesRecord() const {
     return definesRecord_;
 }
 
-void TypeSpecifier::refoldConstantArrayBounds() {
+void TypeSpecifier::refoldConstantArrayBounds(const VlaExpressionTable& exprs) {
     if (type) {
-        type = foldConstantArrayBounds(*type);
+        type = foldConstantArrayBounds(*type, exprs);
     }
 }
 

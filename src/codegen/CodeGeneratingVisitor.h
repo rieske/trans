@@ -11,6 +11,10 @@
 #include "symbols/LabelEntry.h"
 #include "types/Type.h"
 
+namespace ast {
+class VlaExpressionTable;
+}
+
 namespace type {
 struct IntegerConstant;
 }
@@ -23,7 +27,8 @@ namespace codegen {
 
 class CodeGeneratingVisitor: public ast::AbstractSyntaxTreeVisitor {
 public:
-    explicit CodeGeneratingVisitor(symbols::AnnotationStore& store);
+    explicit CodeGeneratingVisitor(symbols::AnnotationStore& store,
+            const ast::VlaExpressionTable* vlas = nullptr);
     virtual ~CodeGeneratingVisitor();
 
     void visit(ast::DeclarationSpecifiers& declarationSpecifiers) override;
@@ -128,6 +133,7 @@ private:
     void emitLvalueStore(ast::Expression& lhs, int value);
 
     symbols::AnnotationStore& store_;
+    const ast::VlaExpressionTable* vlas_ { nullptr };
     IntermediateRepresentation module_;
     Procedure* currentProcedure_ { nullptr };
     std::vector<Instruction>* currentBody_ { nullptr };

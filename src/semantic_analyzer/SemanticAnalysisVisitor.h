@@ -12,6 +12,10 @@
 #include "types/Type.h"
 #include "ast/AbstractSyntaxTreeVisitor.h"
 
+namespace ast {
+class VlaExpressionTable;
+}
+
 namespace semantic_analyzer {
 
 class SemanticAnalysisVisitor: public ast::AbstractSyntaxTreeVisitor {
@@ -85,6 +89,8 @@ public:
 
     void setAnnotationStore(symbols::AnnotationStore& store) { store_ = &store; }
     void setGnuExtensions(bool enabled) { gnuExtensions_ = enabled; }
+    void setVlaExpressions(ast::VlaExpressionTable* table) { vlas_ = table; }
+    const ast::VlaExpressionTable& vlaTable() const;
     symbols::AnnotationStore& annotations() {
         if (!store_) {
             throw std::runtime_error { "AnnotationStore not set on SemanticAnalysisVisitor" };
@@ -153,6 +159,7 @@ private:
 
     SymbolTable symbolTable;
     symbols::AnnotationStore* store_ { nullptr };
+    ast::VlaExpressionTable* vlas_ { nullptr };
     bool gnuExtensions_ { true };
 };
 
