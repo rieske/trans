@@ -190,6 +190,102 @@ TEST(ScannerTokens, stillScansExistingKeywords) {
 }
 
 
+TEST(ScannerTokens, tokensCarryLineMarkerSourceAndLine) {
+    auto path = writeTempSource("scan_line_marker",
+            "# 10 \"orig.c\"\n"
+            "int x;\n"
+            "y;\n");
+    auto toks = scanAll(path);
+    ASSERT_GE(toks.size(), 5u);
+    EXPECT_EQ(toks[0].id, "int");
+    EXPECT_EQ(toks[0].lexeme, "int");
+    EXPECT_EQ(toks[0].context.getSourceName(), "orig.c");
+    EXPECT_EQ(toks[0].context.getOffset(), 10u);
+    EXPECT_EQ(toks[1].id, "id");
+    EXPECT_EQ(toks[1].lexeme, "x");
+    EXPECT_EQ(toks[1].context.getSourceName(), "orig.c");
+    EXPECT_EQ(toks[1].context.getOffset(), 10u);
+    EXPECT_EQ(toks[2].id, ";");
+    EXPECT_EQ(toks[2].context.getSourceName(), "orig.c");
+    EXPECT_EQ(toks[2].context.getOffset(), 10u);
+    EXPECT_EQ(toks[3].id, "id");
+    EXPECT_EQ(toks[3].lexeme, "y");
+    EXPECT_EQ(toks[3].context.getSourceName(), "orig.c");
+    EXPECT_EQ(toks[3].context.getOffset(), 11u);
+}
+
+TEST(ScannerTokens, secondLineMarkerRetargetsFollowingTokens) {
+    auto path = writeTempSource("scan_two_markers",
+            "# 1 \"a.c\"\n"
+            "int a;\n"
+            "# 20 \"b.h\"\n"
+            "char b;\n");
+    auto toks = scanAll(path);
+    ASSERT_GE(toks.size(), 6u);
+    EXPECT_EQ(toks[0].lexeme, "int");
+    EXPECT_EQ(toks[0].context.getSourceName(), "a.c");
+    EXPECT_EQ(toks[0].context.getOffset(), 1u);
+    EXPECT_EQ(toks[1].lexeme, "a");
+    EXPECT_EQ(toks[1].context.getSourceName(), "a.c");
+    EXPECT_EQ(toks[3].lexeme, "char");
+    EXPECT_EQ(toks[3].context.getSourceName(), "b.h");
+    EXPECT_EQ(toks[3].context.getOffset(), 20u);
+    EXPECT_EQ(toks[4].lexeme, "b");
+    EXPECT_EQ(toks[4].context.getSourceName(), "b.h");
+    EXPECT_EQ(toks[4].context.getOffset(), 20u);
+}
+
+TEST(ScannerTokens, tokenAfterSpanningCommentUsesLineAfterComment) {
+    auto path = writeTempSource("scan_span_comment",
+            "int\n"
+            "/* comment\n"
+            "   still */\n"
+            "x;\n");
+    auto toks = scanAll(path);
+    ASSERT_GE(toks.size(), 3u);
+    EXPECT_EQ(toks[0].lexeme, "int");
+    EXPECT_EQ(toks[0].context.getOffset(), 1u);
+    EXPECT_EQ(toks[1].lexeme, "x");
+    EXPECT_EQ(toks[1].context.getOffset(), 4u);
+}
+
+TEST(ScannerTokens, longIdentifierKeepsStartLine) {
+    auto path = writeTempSource("scan_long_id", "int abcdefghijklmnopqrstuvwxyz;\n");
+    auto toks = scanAll(path);
+    ASSERT_GE(toks.size(), 3u);
+    EXPECT_EQ(toks[1].id, "id");
+    EXPECT_EQ(toks[1].lexeme, "abcdefghijklmnopqrstuvwxyz");
+    EXPECT_EQ(toks[1].context.getOffset(), 1u);
+}
+
+TEST(ScannerTokens, firstTokenUsesRealFilename) {
+    auto path = writeTempSource("scan_real_name", "void f(void);\n");
+    auto toks = scanAll(path);
+    ASSERT_FALSE(toks.empty());
+    EXPECT_EQ(toks[0].context.getSourceName(), path);
+    EXPECT_EQ(toks[0].context.getOffset(), 1u);
+}
+
+TEST(ScannerTokens, leadingWhitespaceDoesNotShiftLine) {
+    auto path = writeTempSource("scan_ws_prefix", "   int x;\n");
+    auto toks = scanAll(path);
+    ASSERT_GE(toks.size(), 1u);
+    EXPECT_EQ(toks[0].lexeme, "int");
+    EXPECT_EQ(toks[0].context.getOffset(), 1u);
+}
+
+TEST(ScannerTokens, compoundPunctuatorIsOneTokenAtStartLine) {
+    auto path = writeTempSource("scan_compound", "a <<= b;\n");
+    auto toks = scanAll(path);
+    std::vector<std::string> ids;
+    for (const auto& t : toks) {
+        ids.push_back(t.id);
+    }
+    EXPECT_THAT(ids, ElementsAre("id", "<<=", "id", ";"));
+    EXPECT_EQ(toks[1].lexeme, "<<=");
+    EXPECT_EQ(toks[1].context.getOffset(), 1u);
+}
+
 TEST(ScannerTokens, emitsTypedefNameWhenSessionRegisters) {
     auto path = writeTempSource("scan_typedef_name", "myint x;\n");
     LexFileScannerReader reader;

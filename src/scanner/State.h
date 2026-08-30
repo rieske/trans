@@ -1,7 +1,6 @@
 #ifndef _STATE_H_
 #define _STATE_H_
 
-#include <map>
 #include <string>
 
 namespace scanner {
@@ -13,9 +12,9 @@ public:
 
     void addTransition(std::string charactersForTransition, State* state);
     virtual const State* nextStateForCharacter(char c) const;
-    std::string getName() const;
+    const std::string& getName() const;
 
-    std::string getTokenId() const;
+    const std::string& getTokenId() const;
     virtual bool needsKeywordLookup() const;
     bool isFinal() const;
 
@@ -23,8 +22,8 @@ private:
     std::string stateName;
     std::string tokenId;
 
-    State* wildcardTransition;
-    std::map<char, State*> transitions;
+    State* transitions[256];
+    bool hasTransition;
 };
 
 class IdentifierState: public State {

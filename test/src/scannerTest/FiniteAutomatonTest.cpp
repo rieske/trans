@@ -8,7 +8,6 @@
 
 using namespace testing;
 using namespace scanner;
-using std::map;
 using std::string;
 
 TEST(FiniteAutomaton, returnsEmptyLexemeByDefault) {
@@ -89,9 +88,7 @@ TEST(FiniteAutomaton, looksUpKeywordIdentifier) {
 	startState.addTransition("v", &accumulatingState);
 	accumulatingState.addTransition("oid", &accumulatingState);
 	accumulatingState.addTransition("", &finalState);
-	map<string, int> keywordIds;
-	keywordIds["void"] = 999;
-	FiniteAutomaton finiteAutomaton { &startState, keywordIds, {} };
+	FiniteAutomaton finiteAutomaton { &startState, { "void" }, {} };
 
 	finiteAutomaton.updateState('v');
 	ASSERT_THAT(finiteAutomaton.isAtFinalState(), Eq(false));
@@ -166,7 +163,7 @@ TEST(FiniteAutomaton, keywordWinsOverTypedefRegistry) {
     accumulatingState.addTransition("", &finalState);
     LexicalSession session;
     session.typedefs.add("void", type::signedInteger());
-    FiniteAutomaton finiteAutomaton { &startState, { {"void", 1} }, {} };
+    FiniteAutomaton finiteAutomaton { &startState, { "void" }, {} };
     finiteAutomaton.setSession(&session);
 
     for (char c : std::string("void ")) {

@@ -11,10 +11,10 @@ public:
     Context(std::string sourceName, std::size_t offset);
 
     std::size_t getOffset() const;
-    std::string getSourceName() const;
+    const std::string& getSourceName() const;
 
 private:
-    std::string sourceName;
+    const std::string* sourceName;
     std::size_t offset;
 };
 
