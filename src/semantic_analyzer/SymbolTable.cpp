@@ -308,21 +308,5 @@ std::vector<symbols::ValueEntry> SymbolTable::getDataHomes() const {
     return objects;
 }
 
-bool SymbolTable::defineEnumConstant(const std::string& name, type::IntegerConstant value) {
-    if (enumConstants.find(name) != enumConstants.end()) {
-        return false;
-    }
-    enumConstants[name] = std::move(value);
-    return true;
-}
-
-bool SymbolTable::hasEnumConstant(const std::string& name) const {
-    return enumConstants.find(name) != enumConstants.end();
-}
-
-type::IntegerConstant SymbolTable::getEnumConstant(const std::string& name) const {
-    return enumConstants.at(name);
-}
-
 } // namespace semantic_analyzer
 

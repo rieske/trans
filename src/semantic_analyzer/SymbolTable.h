@@ -6,7 +6,6 @@
 #include <string>
 #include <vector>
 
-#include "types/IntegerConstant.h"
 #include "types/Type.h"
 #include "symbols/FunctionEntry.h"
 #include "symbols/LabelEntry.h"
@@ -42,11 +41,6 @@ public:
     void markFunctionDefined(const std::string& name);
     bool hasSymbol(std::string symbolName) const;
     symbols::ValueEntry lookup(std::string name) const;
-    // Enumerators: named integer constants (not storage-backed).
-    // Product limit: TU-flat ordinary-namespace map (not C block-scoped enums).
-    bool defineEnumConstant(const std::string& name, type::IntegerConstant value);
-    bool hasEnumConstant(const std::string& name) const;
-    type::IntegerConstant getEnumConstant(const std::string& name) const;
     symbols::ValueEntry createTemporarySymbol(type::Type type);
     symbols::LabelEntry newLabel();
     void startFunction(std::string name, std::vector<std::string> formalArguments);
@@ -74,7 +68,6 @@ private:
     std::set<std::string> functionDefined;
     std::map<std::string, symbols::LabelEntry> labels;
     std::map<std::string, std::string> constants;
-    std::map<std::string, type::IntegerConstant> enumConstants;
 
     std::vector<ValueScope> functionScopes;
     ValueScope globalScope;

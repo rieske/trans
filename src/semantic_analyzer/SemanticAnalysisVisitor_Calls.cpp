@@ -255,8 +255,8 @@ void SemanticAnalysisVisitor::visit(ast::IdentifierExpression& identifier) {
         return;
     }
 
-    if (symbolTable.hasEnumConstant(name)) {
-        type::IntegerConstant ice = symbolTable.getEnumConstant(name);
+    type::IntegerConstant ice;
+    if (session().lookupEnumerator(name, ice)) {
         identifier.setFoldedConstant(ice);
         identifier.setTypeAndResult(annotations(),
                 symbolTable.createTemporarySymbol(ice.type));

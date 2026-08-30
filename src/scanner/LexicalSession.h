@@ -85,6 +85,10 @@ struct LexicalSession {
     PendingTransparentUnion transparentUnion;
 
     bool isTypedef(const std::string& name) const { return typedefs.has(name); }
+    bool isEnumerator(const std::string& name) const { return enums.contains(name); }
+    bool lookupEnumerator(const std::string& name, type::IntegerConstant& value) const {
+        return enums.lookup(name, value);
+    }
 
     void enterBlock() {
         typedefs.pushIdentifierShadowScope();
