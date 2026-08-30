@@ -254,7 +254,7 @@ TEST_F(ConfigurationParserTest, helpHasNoConfiguration) {
     ASSERT_TRUE(isHelp(result));
     ASSERT_THAT(result.message, HasSubstr("Usage"));
     ASSERT_THAT(result.message, HasSubstr("-masm=intel|att"));
-    ASSERT_THAT(result.message, HasSubstr("--grammar"));
+    ASSERT_THAT(result.message, Not(HasSubstr("--grammar")));
     ASSERT_THAT(result.message, HasSubstr("--resources"));
     ASSERT_THAT(result.message, HasSubstr("-v"));
     ASSERT_THAT(result.message, HasSubstr("ignored"));
@@ -379,19 +379,16 @@ TEST_F(ConfigurationParserTest, setsCompileOnlyAndOutputPath) {
     ASSERT_THAT(*config(result).getSourceFiles().begin(), StrEq("test.c"));
 }
 
-TEST_F(ConfigurationParserTest, setsCustomGrammarFileName) {
+TEST_F(ConfigurationParserTest, rejectsGrammarFlag) {
     auto result = parse({ "trans", "--grammar=grammar.bnf", "test.c" });
-    ASSERT_TRUE(succeeded(result));
-    ASSERT_THAT(config(result).getGrammarPath(), StrEq("grammar.bnf"));
-    ASSERT_TRUE(config(result).usingCustomGrammar());
-    ASSERT_THAT(*config(result).getSourceFiles().begin(), StrEq("test.c"));
+    ASSERT_TRUE(failed(result));
+    ASSERT_THAT(result.message, HasSubstr("unknown option"));
 }
 
-TEST_F(ConfigurationParserTest, grammarWithoutSourcesIsAllowed) {
+TEST_F(ConfigurationParserTest, rejectsGrammarFlagWithoutEquals) {
     auto result = parse({ "trans", "--grammar", "grammar.bnf" });
-    ASSERT_TRUE(succeeded(result));
-    ASSERT_TRUE(config(result).usingCustomGrammar());
-    ASSERT_THAT(config(result).getSourceFiles(), IsEmpty());
+    ASSERT_TRUE(failed(result));
+    ASSERT_THAT(result.message, HasSubstr("unknown option"));
 }
 
 TEST_F(ConfigurationParserTest, setsResourcesPath) {

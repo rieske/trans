@@ -9,7 +9,6 @@
 #include "parser/GrammarBuilder.h"
 #include "parser/Action.h"
 #include "parser/Grammar.h"
-#include "parser/ParsingTable.h"
 #include "parser/SyntaxTree.h"
 #include "parser/SyntaxTreeBuilder.h"
 #include "parser/Production.h"
@@ -35,21 +34,10 @@ public:
     MOCK_METHOD1(makeNonterminalNode, void(const Production& production));
 };
 
-TEST(ShiftAction, isSerializedAsShiftWithState) {
+TEST(ShiftAction, toStringIsShiftWithState) {
     Action shiftAction = Action::shift(42);
 
-    ASSERT_THAT(shiftAction.serialize(), Eq("s 42"));
-}
-
-TEST(ShiftAction, isDeserializedFromString) {
-    GrammarBuilder grammarBuilder;
-    grammarBuilder.defineRule("<foo>", {"bar"});
-    Grammar grammar = grammarBuilder.build();
-    ParsingTable parsingTable {&grammar};
-
-    Action action = Action::deserialize(std::string { "s 42" }, parsingTable, grammar);
-
-    ASSERT_THAT(action.serialize(), Eq("s 42"));
+    ASSERT_THAT(shiftAction.toString(), Eq("s 42"));
 }
 
 TEST(ShiftAction, pushesItsStateOnStackAndAdvancesTokenStream) {

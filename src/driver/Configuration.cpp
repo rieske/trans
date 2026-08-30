@@ -14,11 +14,6 @@ bool Configuration::hasResourcesBasePath() const {
     return !resourcesBasePath.empty();
 }
 
-void Configuration::setGrammarPath(std::string grammarPath) {
-    this->grammarPath = grammarPath;
-    this->customGrammar = true;
-}
-
 void Configuration::setAssemblyDialect(AssemblyDialect dialect) {
     this->assemblyDialect = dialect;
 }
@@ -109,14 +104,7 @@ std::string Configuration::getLexPath() const {
 }
 
 std::string Configuration::getGrammarPath() const {
-    if (customGrammar) {
-        return grammarPath;
-    }
     return resourcesBasePath + grammarPath;
-}
-
-std::string Configuration::getParsingTablePath() const {
-    return resourcesBasePath + parsingTablePath;
 }
 
 AssemblyDialect Configuration::getAssemblyDialect() const {
@@ -135,10 +123,6 @@ std::string assemblyDialectTag(AssemblyDialect dialect) {
 
 std::string Configuration::assemblyDialectTag() const {
     return ::assemblyDialectTag(assemblyDialect);
-}
-
-bool Configuration::usingCustomGrammar() const {
-    return customGrammar;
 }
 
 bool Configuration::isScannerLoggingEnabled() const {

@@ -20,7 +20,6 @@ enum class OptionId {
     Language,
     Masm,
     Resources,
-    Grammar,
     Log,
     Verbose,
 };
@@ -74,7 +73,6 @@ constexpr OptionSpec kOptions[] = {
         assignOpt("-x", ValueForm::StuckOrSeparate, OptionId::Language),
         assignOpt("-masm", ValueForm::SeparateOrEquals, OptionId::Masm),
         assignOpt("--resources", ValueForm::SeparateOrEquals, OptionId::Resources),
-        assignOpt("--grammar", ValueForm::SeparateOrEquals, OptionId::Grammar),
         assignOpt("--log", ValueForm::SeparateOrEquals, OptionId::Log),
         preprocessorOpt("-I", ValueForm::StuckOrSeparate),
         preprocessorOpt("-D", ValueForm::StuckOrSeparate),
@@ -164,7 +162,6 @@ ParseResult helpResult(const std::string& executable) {
     out << " -std=<standard>         Language standard (default: gnu)\n";
     out << " -masm=intel|att         Assembly dialect (default: intel)\n";
     out << " --resources <dir>       Resources base directory\n";
-    out << " --grammar <file>        Generate parsing table from grammar\n";
     out << " --log=scanner,parser    Enable scanner/parser logging\n";
     ParseResult result;
     result.message = out.str();
@@ -455,9 +452,6 @@ bool applyAssignment(Configuration& configuration, const Assignment& assignment,
     case OptionId::Resources:
         configuration.setResourcesBasePath(assignment.value);
         return true;
-    case OptionId::Grammar:
-        configuration.setGrammarPath(assignment.value);
-        return true;
     case OptionId::Log:
         return applyLogSpec(configuration, assignment.value, error);
     case OptionId::Verbose:
@@ -482,7 +476,7 @@ ParseResult apply(CommandLine command) {
     configuration.setPreprocessorArgs(std::move(command.preprocessorArgs));
     configuration.setLinkerArgs(std::move(command.linkerArgs));
     configuration.setIgnoredFlags(std::move(command.ignoredFlags));
-    if (command.files.empty() && !configuration.usingCustomGrammar()) {
+    if (command.files.empty()) {
         return errorResult("no input files");
     }
     configuration.setSourceFiles(std::move(command.files));

@@ -1,26 +1,25 @@
-add_library(parser
+add_library(parser_core
         Action.cpp
         BNFFileReader.cpp
         CanonicalCollection.cpp
-        FilePersistedParsingTable.cpp
         FirstTable.cpp
-        GeneratedParsingTable.cpp
+        GenerateParsingTable.cpp
         Grammar.cpp
         GrammarBuilder.cpp
         LookaheadActionTable.cpp
         LR1Item.cpp
         LR1Parser.cpp
         ParsingTable.cpp
-        ParsingTableFile.cpp
+        CompileParsingTable.cpp
         Production.cpp
         TokenStream.cpp
         Action.h
         BNFFileReader.h
         CanonicalCollection.h
-        FilePersistedParsingTable.h
+        CompileParsingTable.h
         FirstTable.h
         GenerationBuffers.h
-        GeneratedParsingTable.h
+        GenerateParsingTable.h
         HashCombine.h
         Grammar.h
         GrammarBuilder.h
@@ -30,12 +29,31 @@ add_library(parser
         Parser.h
         ParseExtensions.h
         ParsingTable.h
-        ParsingTableFile.h
         Production.h
         SyntaxTree.h
         SyntaxTreeBuilder.h
         SyntaxTreeBuilder.cpp
         TokenStream.h)
 
+trans_target_defaults(parser_core)
+target_link_libraries(parser_core PUBLIC scanner util)
+
+add_executable(parsingTableGenerator ParsingTableGenerator.cpp)
+trans_target_defaults(parsingTableGenerator)
+target_link_libraries(parsingTableGenerator PRIVATE parser_core)
+
+set(generated_table_source ${CMAKE_CURRENT_BINARY_DIR}/productParsingTable.cpp)
+add_custom_command(
+  OUTPUT ${generated_table_source}
+  COMMAND parsingTableGenerator
+          ${CMAKE_SOURCE_DIR}/resources/configuration/grammar.bnf
+          ${generated_table_source}
+  DEPENDS parsingTableGenerator
+          ${CMAKE_SOURCE_DIR}/resources/configuration/grammar.bnf
+  COMMENT "Generate compiled parsing table"
+  VERBATIM
+)
+
+add_library(parser ${generated_table_source})
 trans_target_defaults(parser)
-target_link_libraries(parser PUBLIC scanner util)
+target_link_libraries(parser PUBLIC parser_core)

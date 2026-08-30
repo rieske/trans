@@ -8,7 +8,6 @@
 #include "util/LogManager.h"
 #include "util/Logger.h"
 
-#include <filesystem>
 #include <iostream>
 #include <sstream>
 
@@ -23,13 +22,6 @@ Configuration productConfig() {
 Configuration dottedProductConfig() {
     Configuration configuration;
     configuration.setResourcesBasePath(getResourcesBaseDir() + "./");
-    return configuration;
-}
-
-Configuration customGrammarConfig() {
-    Configuration configuration;
-    configuration.setResourcesBasePath(getResourcesBaseDir());
-    configuration.setGrammarPath(getResourcePath("configuration/grammar.bnf"));
     return configuration;
 }
 
@@ -60,16 +52,6 @@ TEST_F(LanguageFrontEndTest, loadDoesNotReuseDifferentResourcePath) {
 
     const auto third = LanguageFrontEnd::load(dottedProductConfig());
     EXPECT_EQ(second.get(), third.get());
-}
-
-TEST_F(LanguageFrontEndTest, loadWithCustomGrammarDoesNotUseProductCache) {
-    std::filesystem::create_directories("logs");
-    const auto cached = LanguageFrontEnd::load(productConfig());
-    const auto generated = LanguageFrontEnd::load(customGrammarConfig());
-    ASSERT_NE(cached, nullptr);
-    ASSERT_NE(generated, nullptr);
-    EXPECT_NE(cached.get(), generated.get());
-    EXPECT_EQ(LanguageFrontEnd::load(productConfig()).get(), cached.get());
 }
 
 TEST_F(LanguageFrontEndTest, clearProductCacheDropsTheSlot) {

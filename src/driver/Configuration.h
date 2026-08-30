@@ -29,7 +29,6 @@ class Configuration {
     void setSourceFiles(std::vector<std::string> sourceFiles);
     void setResourcesBasePath(std::string resourcesBasePath);
     bool hasResourcesBasePath() const;
-    void setGrammarPath(std::string grammarPath);
     void setAssemblyDialect(AssemblyDialect dialect);
     void enableScannerLogging();
     void enableParserLogging();
@@ -49,10 +48,8 @@ class Configuration {
     std::vector<std::string> getSourceFiles() const;
     std::string getLexPath() const;
     std::string getGrammarPath() const;
-    std::string getParsingTablePath() const;
     AssemblyDialect getAssemblyDialect() const;
     std::string assemblyDialectTag() const;
-    bool usingCustomGrammar() const;
     bool isScannerLoggingEnabled() const;
     bool isParserLoggingEnabled() const;
     StopAfter stopAfter() const;
@@ -74,9 +71,7 @@ class Configuration {
     std::string resourcesBasePath {};
     std::string lexPath {"resources/configuration/scanner.lex"};
     std::string grammarPath {"resources/configuration/grammar.bnf"};
-    std::string parsingTablePath {"resources/configuration/parsing_table"};
     AssemblyDialect assemblyDialect { AssemblyDialect::Intel };
-    bool customGrammar {false};
     bool scannerLogging {false};
     bool parserLogging {false};
     StopAfter stopAfter_ { StopAfter::Link };

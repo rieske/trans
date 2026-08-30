@@ -18,19 +18,21 @@ using testing::IsNull;
 
 TEST(LookaheadActionTable, reportsMissingExplicitAction) {
     LookaheadActionTable table;
-    EXPECT_THROW(table.action(0, 1), std::out_of_range);
+    EXPECT_THAT(table.findAction(0, 1), IsNull());
     table.addAction(0, 1, Action::shift(3));
-    EXPECT_THAT(table.action(0, 1).serialize(), Eq("s 3"));
+    ASSERT_NE(table.findAction(0, 1), nullptr);
+    EXPECT_THAT(table.findAction(0, 1)->toString(), Eq("s 3"));
     EXPECT_FALSE(table.hasCorrectiveAction(0, 1));
-    EXPECT_THROW(table.action(0, 2), std::out_of_range);
-    EXPECT_THROW(table.action(1, 1), std::out_of_range);
+    EXPECT_THAT(table.findAction(0, 2), IsNull());
+    EXPECT_THAT(table.findAction(1, 1), IsNull());
 }
 
 TEST(LookaheadActionTable, ignoresDuplicateCompatibleAction) {
     LookaheadActionTable table;
     table.addAction(0, 7, Action::shift(4));
     EXPECT_NO_THROW(table.addAction(0, 7, Action::shift(4)));
-    EXPECT_THAT(table.action(0, 7).serialize(), Eq("s 4"));
+    ASSERT_NE(table.findAction(0, 7), nullptr);
+    EXPECT_THAT(table.findAction(0, 7)->toString(), Eq("s 4"));
 }
 
 TEST(LookaheadActionTable, throwsOnConflictingAction) {
@@ -49,22 +51,15 @@ TEST(LookaheadActionTable, addActionRejectsErrorCells) {
     EXPECT_THROW(table.addAction(0, 1, Action::error(0, candidates, &grammar)), std::runtime_error);
 }
 
-TEST(LookaheadActionTable, findActionReturnsNullWhenMissing) {
-    LookaheadActionTable table;
-    EXPECT_THAT(table.findAction(0, 1), IsNull());
-    table.addAction(0, 1, Action::shift(3));
-    ASSERT_NE(table.findAction(0, 1), nullptr);
-    EXPECT_THAT(table.findAction(0, 1)->serialize(), Eq("s 3"));
-}
-
 TEST(LookaheadActionTable, storesErrorCandidatesWithoutSynthesizingActions) {
     LookaheadActionTable table;
     table.setErrorCandidates(0, { 4, 7 });
     EXPECT_THAT(table.size(), Eq(1u));
-    ASSERT_NE(table.errorCandidates(0), nullptr);
-    EXPECT_THAT(*table.errorCandidates(0), ElementsAre(4, 7));
+    const auto rows = table.errorRows();
+    ASSERT_EQ(rows.size(), 1u);
+    EXPECT_EQ(rows[0].state, 0u);
+    EXPECT_THAT(rows[0].candidates, ElementsAre(4, 7));
     EXPECT_THAT(table.findAction(0, 4), IsNull());
-    EXPECT_THROW(table.action(0, 4), std::out_of_range);
 }
 
 TEST(LookaheadActionTable, setErrorCandidatesGrowsStateCount) {
@@ -77,7 +72,6 @@ TEST(LookaheadActionTable, emptyErrorCandidatesEraseTheRow) {
     LookaheadActionTable table;
     table.setErrorCandidates(0, { 1 });
     table.setErrorCandidates(0, {});
-    EXPECT_THAT(table.errorCandidates(0), IsNull());
     EXPECT_TRUE(table.errorRows().empty());
 }
 

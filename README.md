@@ -19,10 +19,7 @@ adjacent strings.
 
 ### Parser/Parser Generator
 A LALR parser generator and a parser that recognizes C grammar.
-The parser reads the generated [parsing_table](resources/configuration/parsing_table) file, generated from
-[grammar.bnf](resources/configuration/grammar.bnf).
-A custom/changed grammar can be passed to the `trans` program using `./trans --grammar=<path_to_grammar_file>` and it will generate
-a new parsing table in `logs/parsing_table`.
+The product table is compiled from [grammar.bnf](resources/configuration/grammar.bnf) at build time.
 
 ### Abstract Syntax Tree
 Contains a hierarchy of language constructs accepting visitors for semantic analysis and code generation.
