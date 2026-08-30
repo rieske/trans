@@ -15,6 +15,12 @@ using namespace testing;
 using namespace semantic_analyzer;
 using symbols::ValueEntry;
 
+void startIntFunction(SymbolTable& table, const char* name = "f") {
+    translation_unit::Context ctx { "t.c", 1 };
+    table.insertFunction(name, type::function(type::signedInteger(), {}).getFunction(), ctx);
+    table.startFunction(name, {});
+}
+
 // Empty formal names (abstract parameters) must still produce one symbol-table
 // argument slot per declared parameter. Silent drop of the second empty name
 // collapses the callee ABI while the function type arity stays correct.
@@ -27,7 +33,10 @@ TEST(SymbolTable, abstractArgumentNamesPreserveArity) {
 
     table.startFunction("add", { "", "" });
 
-    EXPECT_THAT(table.getCurrentScopeArguments().size(), Eq(2u));
+    const auto arguments = table.getCurrentScopeArguments();
+    ASSERT_THAT(arguments.size(), Eq(2u));
+    EXPECT_THAT(arguments[0].getName(), Eq("$s1__arg0"));
+    EXPECT_THAT(arguments[1].getName(), Eq("$s1__arg1"));
 }
 
 TEST(SymbolTable, unnamedStaticObjectIsDataHome) {
@@ -223,6 +232,79 @@ TEST(SymbolTable, localExternConflictsWithFileScopeFunction) {
     table.endFunction();
 
     EXPECT_FALSE(table.hasGlobalVariable("g"));
+}
+
+TEST(SymbolTable, automaticLocalUsesDollarSKey) {
+    SymbolTable table;
+    translation_unit::Context ctx { "t.c", 1 };
+    startIntFunction(table);
+    ASSERT_TRUE(table.insertSymbol("x", type::signedInteger(), ctx));
+
+    EXPECT_THAT(table.lookup("x").getName(), Eq("$s1x"));
+    EXPECT_THAT(table.getCurrentScopeSymbols(), Contains(Key("$s1x")));
+}
+
+TEST(SymbolTable, siblingBlocksGetDistinctDollarSKeys) {
+    SymbolTable table;
+    translation_unit::Context ctx { "t.c", 1 };
+    startIntFunction(table);
+
+    table.enterBlockScope();
+    ASSERT_TRUE(table.insertSymbol("x", type::signedInteger(), ctx));
+    EXPECT_THAT(table.lookup("x").getName(), Eq("$s2x"));
+    table.exitBlockScope();
+
+    table.enterBlockScope();
+    ASSERT_TRUE(table.insertSymbol("x", type::signedInteger(), ctx));
+    EXPECT_THAT(table.lookup("x").getName(), Eq("$s3x"));
+    table.exitBlockScope();
+
+    const auto symbols = table.getCurrentScopeSymbols();
+    EXPECT_THAT(symbols, Contains(Key("$s2x")));
+    EXPECT_THAT(symbols, Contains(Key("$s3x")));
+}
+
+TEST(SymbolTable, parameterObjectNameIsDollarSPrefixed) {
+    SymbolTable table;
+    translation_unit::Context ctx { "t.c", 1 };
+    const auto functionType = type::function(
+            type::signedInteger(), { type::signedInteger(), type::signedInteger() });
+    table.insertFunction("add", functionType.getFunction(), ctx);
+    table.startFunction("add", { "lhs", "rhs" });
+
+    const auto arguments = table.getCurrentScopeArguments();
+    ASSERT_THAT(arguments.size(), Eq(2u));
+    EXPECT_THAT(arguments[0].getName(), Eq("$s1lhs"));
+    EXPECT_THAT(arguments[1].getName(), Eq("$s1rhs"));
+    EXPECT_THAT(table.lookup("lhs").getName(), Eq("$s1lhs"));
+    EXPECT_THAT(table.lookup("rhs").getName(), Eq("$s1rhs"));
+}
+
+TEST(SymbolTable, siblingBlocksDoNotReuseFrameSlots) {
+    SymbolTable table;
+    translation_unit::Context ctx { "t.c", 1 };
+    startIntFunction(table);
+
+    table.enterBlockScope();
+    ASSERT_TRUE(table.insertSymbol("a", type::signedInteger(), ctx));
+    const int firstIndex = table.lookup("a").getIndex();
+    table.exitBlockScope();
+
+    table.enterBlockScope();
+    ASSERT_TRUE(table.insertSymbol("b", type::signedInteger(), ctx));
+    const int secondIndex = table.lookup("b").getIndex();
+    table.exitBlockScope();
+
+    EXPECT_THAT(secondIndex, Gt(firstIndex));
+}
+
+TEST(SymbolTable, staticLocalObjectNameIsLDollarSt) {
+    SymbolTable table;
+    translation_unit::Context ctx { "t.c", 1 };
+    startIntFunction(table);
+    ASSERT_TRUE(table.insertSymbol("g", type::signedInteger(), ctx, symbols::Storage::Static));
+
+    EXPECT_THAT(table.lookup("g").getName(), Eq("L$st1_g"));
 }
 
 TEST(SymbolTable, unnamedStaticInitFromInsideFunctionUpdatesTuHome) {
