@@ -498,7 +498,7 @@ ContextualSyntaxNodeBuilder::ContextualSyntaxNodeBuilder(const parser::Grammar& 
     bind(s_enumerator_list, { s_enumerator_list, s_comma }, [](AbstractSyntaxTreeBuilderContext& context) { context.popTerminal(); });
 
     // Enum types are integer stand-ins; underlying width follows enumerator range (GCC/SysV).
-    // Enumerator values live on LexicalSession / AST snapshot; named tags keep the chosen type.
+    // Enumerator values live on LexicalSession; named tags keep the chosen type.
     bind(s_enum_spec, { s_enum_kw, s_id_for_enum, s_open_brace, s_enumerator_list, s_close_brace }, [](AbstractSyntaxTreeBuilderContext& context) {
                 context.popTerminal(); // }
                 context.popTerminal(); // {

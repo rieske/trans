@@ -44,8 +44,6 @@ public:
     symbols::ValueEntry lookup(std::string name) const;
     // Enumerators: named integer constants (not storage-backed).
     // Product limit: TU-flat ordinary-namespace map (not C block-scoped enums).
-    // Filled only via SemanticAnalyzer import of the AST parse snapshot
-    // (session -> AST bag -> here); not a second write path from CSNB.
     bool defineEnumConstant(const std::string& name, type::IntegerConstant value);
     bool hasEnumConstant(const std::string& name) const;
     type::IntegerConstant getEnumConstant(const std::string& name) const;
