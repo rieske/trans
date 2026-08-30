@@ -24,4 +24,4 @@ add_library(semantic_analyzer
         ValueScope.h)
 
 trans_target_defaults(semantic_analyzer)
-target_link_libraries(semantic_analyzer PUBLIC translation_unit types ast symbols)
+target_link_libraries(semantic_analyzer PUBLIC translation_unit types ast symbols util)

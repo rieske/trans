@@ -17,6 +17,10 @@ public:
 		return outputStream == &NullStream::getInstance();
 	}
 
+	std::ostream& stream() const {
+		return *outputStream;
+	}
+
 private:
 	std::ostream* outputStream;
 };

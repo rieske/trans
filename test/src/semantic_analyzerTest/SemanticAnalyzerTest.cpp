@@ -11,10 +11,12 @@
 #include "scanner/LexicalSession.h"
 #include "semantic_analyzer/SemanticAnalysisVisitor.h"
 #include "semantic_analyzer/SemanticAnalyzer.h"
+#include "util/Diagnostic.h"
 #include "types/IntegerConstant.h"
 #include "types/Type.h"
 
 #include <memory>
+#include <sstream>
 #include <stdexcept>
 #include <vector>
 
@@ -45,7 +47,10 @@ TEST(SemanticAnalyzer, sessionEnumeratorConflictsWithFileScopeObject) {
 
     auto tree = fileScopeInt("E");
     semantic_analyzer::SemanticAnalyzer analyzer { false };
-    EXPECT_THROW(analyzer.analyze(*tree, session), std::runtime_error);
+    std::ostringstream ignored;
+    diag::Sink sink(ignored);
+    EXPECT_FALSE(analyzer.analyze(*tree, session, sink));
+    EXPECT_TRUE(sink.hasErrors());
 }
 
 TEST(SemanticAnalyzer, fileScopeObjectWithoutSessionEnumeratorIsOk) {
@@ -53,7 +58,10 @@ TEST(SemanticAnalyzer, fileScopeObjectWithoutSessionEnumeratorIsOk) {
 
     auto tree = fileScopeInt("E");
     semantic_analyzer::SemanticAnalyzer analyzer { false };
-    analyzer.analyze(*tree, session);
+    std::ostringstream ignored;
+    diag::Sink sink(ignored);
+    EXPECT_TRUE(analyzer.analyze(*tree, session, sink));
+    EXPECT_FALSE(sink.hasErrors());
 }
 
 TEST(SemanticAnalyzer, missingSessionIsInternalError) {
