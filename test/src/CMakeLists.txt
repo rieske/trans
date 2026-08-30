@@ -12,12 +12,13 @@ add_executable(astTest
         astTest/DeclarationSpecifiersTest.cpp
         astTest/DeclarationTest.cpp
     astTest/CSNBCreatorsStubTest.cpp
+    astTest/GnuExtensionsTryGotoTest.cpp
     astTest/FunctionDefinitionTest.cpp
     astTest/ParseEnvironmentTest.cpp
     astTest/ExpressionDualTypeTest.cpp
         astTest/TypeSpecifierTest.cpp
         )
-target_link_libraries(astTest PRIVATE semantic_analyzer GTest::gmock_main ast translation_unit)
+target_link_libraries(astTest PRIVATE semantic_analyzer GTest::gmock_main ast translation_unit testUtil)
 add_test(NAME astTest COMMAND astTest)
 
 add_executable(parserGeneratorTest

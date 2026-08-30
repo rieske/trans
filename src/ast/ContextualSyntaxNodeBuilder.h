@@ -2,8 +2,6 @@
 #define _CONTEXTUAL_SYNTAX_NODE_BUILDER_
 
 #include <functional>
-#include <map>
-#include <unordered_map>
 #include <vector>
 
 #include "AbstractSyntaxTreeBuilderContext.h"
@@ -19,11 +17,14 @@ public:
     void updateContext(const parser::Production& production, AbstractSyntaxTreeBuilderContext& context) const;
 
 private:
+    using Creator = std::function<void(AbstractSyntaxTreeBuilderContext&)>;
+
+    void bind(int lhs, std::vector<int> rhs, Creator creator);
     void noCreatorDefined(const parser::Production& production) const;
 
     static void loopJumpStatement(AbstractSyntaxTreeBuilderContext& context);
 
-    std::unordered_map<int, std::map<std::vector<int>, std::function<void(AbstractSyntaxTreeBuilderContext&)>>>nodeCreatorRegistry;
+    std::vector<Creator> creators_;
 
     const parser::Grammar* grammar;
 };

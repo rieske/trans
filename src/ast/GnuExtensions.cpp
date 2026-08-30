@@ -7,6 +7,7 @@
 #include "FunctionCall.h"
 #include "IdentifierExpression.h"
 #include "StatementExpression.h"
+#include "parser/Grammar.h"
 #include "parser/LR1Parser.h"
 #include "parser/ParsingTable.h"
 #include "parser/TokenStream.h"
@@ -53,32 +54,31 @@ void GnuExtensions::installTypes(scanner::LexicalSession& session) const {
     session.typedefs.add("__builtin_va_list", type::builtinVaListType());
 }
 
+void GnuExtensions::cacheGrammarIds(const parser::Grammar& grammar) {
+    if (cachedIds_) {
+        return;
+    }
+    primaryExpId_ = grammar.symbolId("<primary_exp>");
+    typeSpecId_ = grammar.symbolId("<type_spec>");
+    unaryExpId_ = grammar.symbolId("<unary_exp>");
+    cachedIds_ = true;
+}
+
 std::optional<std::size_t> GnuExtensions::tryGoto(std::size_t state, parser::TokenStream& tokenStream,
         const parser::ParsingTable& parsingTable) {
-    const scanner::Token current = tokenStream.getCurrentToken();
+    cacheGrammarIds(*parsingTable.getGrammar());
+    const scanner::Token& current = tokenStream.getCurrentToken();
     if (current.id == "(" && tokenStream.peek().id == "{") {
-        const auto primary = parsingTable.getGrammar()->trySymbolId("<primary_exp>");
-        if (!primary) {
-            return std::nullopt;
-        }
-        return parsingTable.tryGoTo(state, *primary);
+        return parsingTable.tryGoTo(state, primaryExpId_);
     }
     if (current.id == "id" && isInt128Lexeme(current.lexeme)) {
-        const auto typeSpec = parsingTable.getGrammar()->trySymbolId("<type_spec>");
-        if (!typeSpec) {
-            return std::nullopt;
-        }
-        return parsingTable.tryGoTo(state, *typeSpec);
+        return parsingTable.tryGoTo(state, typeSpecId_);
     }
     if (current.id == "id"
             && (current.lexeme == "__builtin_va_arg"
                     || current.lexeme == "__builtin_types_compatible_p"
                     || current.lexeme == "__builtin_offsetof")) {
-        const auto unary = parsingTable.getGrammar()->trySymbolId("<unary_exp>");
-        if (!unary) {
-            return std::nullopt;
-        }
-        return parsingTable.tryGoTo(state, *unary);
+        return parsingTable.tryGoTo(state, unaryExpId_);
     }
     return std::nullopt;
 }
@@ -86,7 +86,7 @@ std::optional<std::size_t> GnuExtensions::tryGoto(std::size_t state, parser::Tok
 bool GnuExtensions::accept(parser::TokenStream& tokenStream, const parser::ParsingTable& parsingTable,
         parser::SyntaxTreeBuilder& syntaxTreeBuilder) {
     auto& builder = static_cast<AbstractSyntaxTreeBuilder&>(syntaxTreeBuilder);
-    const scanner::Token current = tokenStream.getCurrentToken();
+    const scanner::Token& current = tokenStream.getCurrentToken();
     if (current.id == "(") {
         return acceptStatementPrimary(tokenStream, parsingTable, builder);
     }
