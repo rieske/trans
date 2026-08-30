@@ -2,6 +2,7 @@
 #define COMPILER_H_
 
 #include <memory>
+#include <optional>
 #include <string>
 #include <vector>
 
@@ -12,7 +13,7 @@ class Compiler {
 public:
     Compiler(Configuration configuration);
 
-    std::string compile(std::string sourceFileName) const;
+    std::optional<std::string> compile(std::string sourceFileName) const;
     static std::string assembleFile(std::string assemblyFileName, const Configuration& configuration);
     static std::vector<std::string> linkCommand(const std::vector<std::string>& objectFiles,
             const std::string& executableFileName,

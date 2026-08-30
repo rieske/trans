@@ -4,6 +4,7 @@
 #include "ast/TypeSpecifier.h"
 #include "ast/VlaExpressionTable.h"
 #include "translation_unit/Context.h"
+#include "util/Diagnostic.h"
 
 #include <stdexcept>
 
@@ -21,6 +22,13 @@ const scanner::LexicalSession& SemanticAnalysisVisitor::session() const {
         throw std::logic_error { "missing lexical session" };
     }
     return *session_;
+}
+
+diag::Sink& SemanticAnalysisVisitor::sink() const {
+    if (!sink_) {
+        throw std::logic_error { "missing diagnostic sink" };
+    }
+    return *sink_;
 }
 
 namespace {
@@ -415,12 +423,11 @@ void SemanticAnalysisVisitor::rejectFunctionValue(const type::Type& type, const 
 }
 
 void SemanticAnalysisVisitor::semanticError(std::string message, const translation_unit::Context& context) {
-    containsSemanticErrors = true;
-    semanticErrorLogger() << context << ": error: " << message << "\n";
+    sink().error(context, std::move(message));
 }
 
 bool SemanticAnalysisVisitor::successfulSemanticAnalysis() const {
-    return !containsSemanticErrors;
+    return !sink().hasErrors();
 }
 
 std::map<std::string, std::string> SemanticAnalysisVisitor::getConstants() const {

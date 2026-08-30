@@ -17,6 +17,7 @@
 #include "scanner/LexicalSession.h"
 #include "scanner/Scanner.h"
 #include "semantic_analyzer/SemanticAnalyzer.h"
+#include "util/Diagnostic.h"
 #include "symbols/ValueEntry.h"
 #include "types/SysVClassify.h"
 #include "codegen/ValueKind.h"
@@ -26,6 +27,7 @@
 #include "util/SourcePath.h"
 
 static Logger& out = LogManager::getOutputLogger();
+static Logger& err = LogManager::getErrorLogger();
 
 namespace {
 
@@ -252,7 +254,7 @@ std::string Compiler::assembleFile(std::string assemblyFileName, const Configura
     return objectFileName;
 }
 
-std::string Compiler::compile(std::string sourceFileName) const {
+std::optional<std::string> Compiler::compile(std::string sourceFileName) const {
     if (configuration.isVerbose()) {
         out << "Compiling " << sourceFileName << " [" << configuration.assemblyDialectTag() << "]...\n";
     }
@@ -277,7 +279,11 @@ std::string Compiler::compile(std::string sourceFileName) const {
     }
 
     semantic_analyzer::SemanticAnalyzer semanticAnalyzer { configuration.gnuExtensions() };
-    semanticAnalyzer.analyze(*tree, session);
+    diag::Sink sink { err.stream() };
+    if (!semanticAnalyzer.analyze(*tree, session, sink)) {
+        err << "Error: Semantic errors were detected\n";
+        return std::nullopt;
+    }
 
     std::vector<codegen::GlobalVariable> globalVariables;
     for (const auto& symbol : semanticAnalyzer.getDataHomes()) {

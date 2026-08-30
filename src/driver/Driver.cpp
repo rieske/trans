@@ -145,7 +145,11 @@ int Driver::run(int argc, char **argv) const {
                 if (!compiler) {
                     compiler = std::make_unique<Compiler>(configuration);
                 }
-                outputs.push_back(compiler->compile(input.path));
+                if (auto object = compiler->compile(input.path)) {
+                    outputs.push_back(*object);
+                } else {
+                    exitCode = 1;
+                }
                 break;
             }
         } catch (std::exception& exception) {

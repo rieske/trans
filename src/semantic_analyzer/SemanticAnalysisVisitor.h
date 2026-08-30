@@ -19,6 +19,10 @@ namespace scanner {
 struct LexicalSession;
 }
 
+namespace diag {
+class Sink;
+}
+
 namespace semantic_analyzer {
 
 class SemanticAnalysisVisitor: public ast::AbstractSyntaxTreeVisitor {
@@ -92,8 +96,10 @@ public:
     void setGnuExtensions(bool enabled) { gnuExtensions_ = enabled; }
     void setVlaExpressions(ast::VlaExpressionTable* table) { vlas_ = table; }
     void setSession(const scanner::LexicalSession* session) { session_ = session; }
+    void setSink(diag::Sink* sink) { sink_ = sink; }
     const ast::VlaExpressionTable& vlaTable() const;
     const scanner::LexicalSession& session() const;
+    diag::Sink& sink() const;
     symbols::AnnotationStore& annotations() {
         if (!store_) {
             throw std::runtime_error { "AnnotationStore not set on SemanticAnalysisVisitor" };
@@ -152,8 +158,6 @@ private:
     std::map<std::string, symbols::LabelEntry> namedLabels;
     std::vector<ast::GotoStatement*> pendingGotos;
 
-    bool containsSemanticErrors { false };
-
     // Return type of the function currently under analysis (for return checkAssign).
     std::optional<type::Type> currentReturnType;
     std::string currentFunctionName;
@@ -162,6 +166,7 @@ private:
     symbols::AnnotationStore* store_ { nullptr };
     ast::VlaExpressionTable* vlas_ { nullptr };
     const scanner::LexicalSession* session_ { nullptr };
+    diag::Sink* sink_ { nullptr };
     bool gnuExtensions_ { true };
 };
 

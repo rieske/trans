@@ -11,8 +11,6 @@
 #include "types/IntegerConstant.h"
 #include "types/Type.h"
 #include "types/TypeQuery.h"
-#include "util/Logger.h"
-#include "util/LogManager.h"
 
 namespace ast {
 class TypeSpecifier;
@@ -81,10 +79,6 @@ inline std::string staticFollowsNonStaticMessage(const std::string& name) {
 
 inline std::string nonStaticFollowsStaticMessage(const std::string& name) {
     return "non-static declaration of `" + name + "` follows static declaration";
-}
-
-inline Logger& semanticErrorLogger() {
-    return LogManager::getErrorLogger();
 }
 
 // Skip the object load: Result is the lvalue address (same form as array a[i]).

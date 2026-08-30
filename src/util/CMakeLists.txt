@@ -12,6 +12,9 @@ add_library(util
         StringLiteralDecode.cpp
         StringLiteralDecode.h
         SourcePath.h
+        Diagnostic.h
+        Diagnostic.cpp
         )
 
 trans_target_defaults(util)
+target_link_libraries(util PUBLIC translation_unit)
