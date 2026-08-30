@@ -5,8 +5,9 @@
 namespace symbols {
 
 ValueEntry::ValueEntry(std::string name, const type::Type& type, translation_unit::Context context, int index,
-        Storage storage) :
-        name { name },
+        Storage storage, std::string sourceName) :
+        name { std::move(name) },
+        sourceName_ { std::move(sourceName) },
         type { type },
         context { context },
         index { index },
@@ -32,6 +33,10 @@ int ValueEntry::getIndex() const {
 
 const std::string& ValueEntry::getName() const {
     return name;
+}
+
+const std::string& ValueEntry::sourceName() const {
+    return sourceName_;
 }
 
 bool ValueEntry::isGlobal() const {

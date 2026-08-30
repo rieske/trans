@@ -64,7 +64,7 @@ std::optional<Callee> resolveCallee(ast::FunctionCall& functionCall, SymbolTable
     if (auto* id = dynamic_cast<ast::IdentifierExpression*>(operandExpr)) {
         errorDisplay = id->getIdentifier();
     } else {
-        errorDisplay = unscopedSymbolName(operandSym->getName());
+        errorDisplay = operandSym->sourceName().empty() ? operandSym->getName() : operandSym->sourceName();
     }
     return std::nullopt;
 }

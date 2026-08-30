@@ -84,10 +84,7 @@ private:
     unsigned nextScopeId { 0 };
     std::vector<unsigned> scopeIdStack;
 
-    std::string scopePrefix(unsigned scopeId) const;
     unsigned currentScopeId() const;
-
-    static const std::string SCOPE_PREFIX;
 };
 
 } // namespace semantic_analyzer

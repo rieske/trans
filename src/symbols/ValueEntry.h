@@ -20,9 +20,10 @@ enum class Storage {
 class ValueEntry {
 public:
     ValueEntry(std::string name, const type::Type& type, translation_unit::Context context, int index,
-            Storage storage = Storage::Automatic);
+            Storage storage = Storage::Automatic, std::string sourceName = {});
 
     const std::string& getName() const;
+    const std::string& sourceName() const;
     bool isGlobal() const;
     bool isStatic() const;
     bool isExtern() const;
@@ -46,6 +47,7 @@ public:
 
 private:
     std::string name;
+    std::string sourceName_;
     type::Type type;
     translation_unit::Context context;
     int index;

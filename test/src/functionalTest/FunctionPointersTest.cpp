@@ -178,7 +178,7 @@ TEST(Compiler, addressOfDesignatorToIntIsError) {
     program.assertCompilationErrors("function designator used as a value is not supported");
 }
 
-// Non-identifier callee → unscopedSymbolName + "not a function" (Coveralls path).
+// Non-identifier callee uses the operand object name in the diagnostic.
 TEST(Compiler, callThroughNonFunctionPointerIsError) {
     SourceProgram program{R"prg(
         int main() {
@@ -217,7 +217,7 @@ TEST(Compiler, callIntIdentifierIsError) {
     program.assertCompilationErrors("is not a function");
 }
 
-// Assignment expression result is a scoped local ($s…); strips via unscopedSymbolName.
+// Non-identifier callee still produces the "is not a function" diagnostic.
 TEST(Compiler, callAssignmentExpressionIsError) {
     SourceProgram program{R"prg(
         int main() {
