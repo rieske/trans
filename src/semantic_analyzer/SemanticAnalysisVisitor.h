@@ -8,12 +8,15 @@
 
 #include "SymbolTable.h"
 #include "symbols/AnnotationStore.h"
-#include "types/IntegerConstant.h"
 #include "types/Type.h"
 #include "ast/AbstractSyntaxTreeVisitor.h"
 
 namespace ast {
 class VlaExpressionTable;
+}
+
+namespace scanner {
+struct LexicalSession;
 }
 
 namespace semantic_analyzer {
@@ -88,7 +91,9 @@ public:
     void setAnnotationStore(symbols::AnnotationStore& store) { store_ = &store; }
     void setGnuExtensions(bool enabled) { gnuExtensions_ = enabled; }
     void setVlaExpressions(ast::VlaExpressionTable* table) { vlas_ = table; }
+    void setSession(const scanner::LexicalSession* session) { session_ = session; }
     const ast::VlaExpressionTable& vlaTable() const;
+    const scanner::LexicalSession& session() const;
     symbols::AnnotationStore& annotations() {
         if (!store_) {
             throw std::runtime_error { "AnnotationStore not set on SemanticAnalysisVisitor" };
@@ -96,8 +101,6 @@ public:
         return *store_;
     }
 
-    // Import one parse-time enumerator into the symbol table (once per analyze).
-    void importParseEnumConstant(const std::string& name, type::IntegerConstant value);
     void installGnuBuiltins();
 
     // Shared with initializer placement sinks (same package).
@@ -158,6 +161,7 @@ private:
     SymbolTable symbolTable;
     symbols::AnnotationStore* store_ { nullptr };
     ast::VlaExpressionTable* vlas_ { nullptr };
+    const scanner::LexicalSession* session_ { nullptr };
     bool gnuExtensions_ { true };
 };
 

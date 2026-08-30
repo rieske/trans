@@ -9,6 +9,7 @@
 #include "ast/TerminalSymbol.h"
 #include "ast/TypeSpecifier.h"
 #include "scanner/LexicalSession.h"
+#include "semantic_analyzer/SemanticAnalysisVisitor.h"
 #include "semantic_analyzer/SemanticAnalyzer.h"
 #include "types/IntegerConstant.h"
 #include "types/Type.h"
@@ -53,4 +54,13 @@ TEST(SemanticAnalyzer, fileScopeObjectWithoutSessionEnumeratorIsOk) {
     auto tree = fileScopeInt("E");
     semantic_analyzer::SemanticAnalyzer analyzer { false };
     analyzer.analyze(*tree, session);
+}
+
+TEST(SemanticAnalyzer, missingSessionIsInternalError) {
+    auto tree = fileScopeInt("E");
+    semantic_analyzer::SemanticAnalysisVisitor visitor;
+    visitor.setGnuExtensions(false);
+    visitor.setAnnotationStore(tree->annotations());
+    visitor.setVlaExpressions(tree->vlaExpressions());
+    EXPECT_THROW((*tree->begin())->accept(visitor), std::logic_error);
 }

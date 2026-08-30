@@ -23,9 +23,7 @@ void SemanticAnalyzer::analyze(ast::AbstractSyntaxTree& tree, const scanner::Lex
     analyzerVisitor.setAnnotationStore(tree.annotations());
 
     analyzerVisitor.setVlaExpressions(tree.vlaExpressions());
-    for (const auto& entry : session.enums.entries()) {
-        analyzerVisitor.importParseEnumConstant(entry.first, entry.second);
-    }
+    analyzerVisitor.setSession(&session);
     analyzerVisitor.installGnuBuiltins();
 
     for (const auto& treeNode : tree) {

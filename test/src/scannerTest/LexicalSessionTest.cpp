@@ -14,6 +14,18 @@ TEST(LexicalSession, isTypedefDelegatesToRegistry) {
     EXPECT_TRUE(session.typedefs.has("T"));
 }
 
+TEST(LexicalSession, isEnumeratorDelegatesToRegistry) {
+    LexicalSession session;
+    EXPECT_FALSE(session.isEnumerator("E"));
+    session.enums.add("E", type::fromHostLong(3));
+    EXPECT_TRUE(session.isEnumerator("E"));
+    EXPECT_TRUE(session.enums.contains("E"));
+    type::IntegerConstant v;
+    ASSERT_TRUE(session.lookupEnumerator("E", v));
+    EXPECT_EQ(type::toHostLong(v), 3);
+    EXPECT_FALSE(session.lookupEnumerator("missing", v));
+}
+
 TEST(LexicalSession, defaultSessionHasBuiltinFloatTypedefs) {
     LexicalSession session;
 
@@ -204,6 +216,7 @@ TEST(LexicalSession, enterBlockSharesShadowAndObjectFrames) {
     LexicalSession session;
     session.typedefs.add("T", type::signedInteger());
     session.objects.add("x", type::signedInteger());
+    session.enums.add("E", type::fromHostLong(1));
     session.enterBlock();
     session.typedefs.addIdentifierShadow("T");
     session.objects.add("x", type::signedCharacter());
@@ -215,6 +228,7 @@ TEST(LexicalSession, enterBlockSharesShadowAndObjectFrames) {
     EXPECT_FALSE(session.typedefs.isIdentifierShadow("T"));
     EXPECT_TRUE(session.typedefs.has("T"));
     EXPECT_TRUE(session.isTypedef("T"));
+    EXPECT_TRUE(session.isEnumerator("E"));
     auto outer = session.objects.lookup("x");
     ASSERT_TRUE(outer.has_value());
     EXPECT_TRUE(outer->equivalentTo(type::signedInteger()));

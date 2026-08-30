@@ -11,7 +11,7 @@ namespace scanner {
 // Enumerators visible while building one translation unit, so that later
 // enumerators (and const expressions) can fold references to earlier ones.
 // Instance-owned (LexicalSession); never process-static.
-// Product limit: TU-flat (not C block scope). SA import keeps the same map.
+// Product limit: TU-flat (not C block scope). SA reads this table.
 // add() is last-wins; redefinition diagnostics belong at the PE/SA layer.
 // Sessions are single-shot per compile; no reset API (fresh LexicalSession each TU).
 class EnumConstantRegistry {

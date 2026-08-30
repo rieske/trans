@@ -16,6 +16,13 @@ const ast::VlaExpressionTable& SemanticAnalysisVisitor::vlaTable() const {
     return *vlas_;
 }
 
+const scanner::LexicalSession& SemanticAnalysisVisitor::session() const {
+    if (!session_) {
+        throw std::logic_error { "missing lexical session" };
+    }
+    return *session_;
+}
+
 namespace {
 
 translation_unit::Context arrayBoundContext(const type::Type& t, const ast::VlaExpressionTable& vlas) {
@@ -164,7 +171,7 @@ void SemanticAnalysisVisitor::analyzeInitializedDeclarator(ast::InitializedDecla
                     declarator.getContext());
         } else if (type.isFunction()) {
             // Prototypes: register with resolved return type (FunctionDeclarator no longer inserts).
-            if (symbolTable.hasEnumConstant(declarator.getName()) && symbolTable.isAtFileScope()) {
+            if (session().isEnumerator(declarator.getName()) && symbolTable.isAtFileScope()) {
                 semanticError("redefinition of enumerator `" + declarator.getName() + "` as a function",
                         declarator.getContext());
             } else if (symbolTable.hasGlobalVariable(declarator.getName())) {
@@ -190,7 +197,7 @@ void SemanticAnalysisVisitor::analyzeInitializedDeclarator(ast::InitializedDecla
         } else if (symbolTable.isAtFileScope() && symbolTable.hasFunction(declarator.getName())) {
             semanticError("symbol `" + declarator.getName() + "` declaration conflicts with function of the same name",
                     declarator.getContext());
-        } else if (symbolTable.hasEnumConstant(declarator.getName()) && symbolTable.isAtFileScope()) {
+        } else if (session().isEnumerator(declarator.getName()) && symbolTable.isAtFileScope()) {
             // File-scope ordinary identifiers share a namespace with enumerators (C).
             semanticError("redefinition of enumerator `" + declarator.getName() + "`",
                     declarator.getContext());
@@ -422,11 +429,6 @@ std::map<std::string, std::string> SemanticAnalysisVisitor::getConstants() const
 
 std::vector<symbols::ValueEntry> SemanticAnalysisVisitor::getDataHomes() const {
     return symbolTable.getDataHomes();
-}
-
-void SemanticAnalysisVisitor::importParseEnumConstant(const std::string& name,
-        type::IntegerConstant value) {
-    symbolTable.defineEnumConstant(name, std::move(value));
 }
 
 void SemanticAnalysisVisitor::installGnuBuiltins() {

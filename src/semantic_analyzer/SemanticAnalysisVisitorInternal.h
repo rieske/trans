@@ -7,6 +7,7 @@
 #include <utility>
 
 #include "ast/Expression.h"
+#include "scanner/LexicalSession.h"
 #include "types/IntegerConstant.h"
 #include "types/Type.h"
 #include "types/TypeQuery.h"
