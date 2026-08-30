@@ -18,7 +18,6 @@ public:
 
     // C: assignment expression is never an lvalue. SA checks leftOperand->isLval().
     bool isLval() const override;
-    bool evaluateConstant(type::IntegerConstant&) const override { return false; }
 
     symbols::ValueEntry* leftOperandLvalueSymbol(symbols::AnnotationStore& store) const;
 };

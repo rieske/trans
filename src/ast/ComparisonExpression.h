@@ -17,6 +17,9 @@ public:
 
     void accept(AbstractSyntaxTreeVisitor& visitor) override;
     std::optional<type::Type> typeAtParseTime(const ParseEnvironment& environment) const override;
+    bool evaluateConstant(type::IntegerConstant& value) const override {
+        return foldOperands(value, lexeme());
+    }
 
     symbols::LabelEntry* getFalsyLabel(symbols::AnnotationStore& store) const;
     void setFalsyLabel(symbols::AnnotationStore& store, symbols::LabelEntry falsyLabel);
