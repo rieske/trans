@@ -10,6 +10,7 @@
 #include "TypeSpecifier.h"
 
 namespace parser {
+class Grammar;
 class ParsingTable;
 class TokenStream;
 class SyntaxTreeBuilder;
@@ -59,6 +60,13 @@ private:
             const parser::ParsingTable& table, const scanner::Token* prefix, std::size_t prefixCount,
             int stopSymbol, const std::string& stopLookahead, bool endAfterMatchedBrace,
             const std::string& presentStopAs = {});
+
+    void cacheGrammarIds(const parser::Grammar& grammar);
+
+    bool cachedIds_ { false };
+    int primaryExpId_ { 0 };
+    int typeSpecId_ { 0 };
+    int unaryExpId_ { 0 };
 };
 
 } // namespace ast
