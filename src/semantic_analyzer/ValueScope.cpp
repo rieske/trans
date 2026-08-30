@@ -16,20 +16,6 @@ std::string generateTempName() {
     return TEMP_PREFIX + std::to_string(++nextTemp);
 }
 
-class EntryWithSameNameExists {
-public:
-    EntryWithSameNameExists(std::string name) :
-            name { name }
-    {
-    }
-    bool operator()(const symbols::ValueEntry& entry) {
-        return entry.getName() == name;
-    }
-
-private:
-    std::string name;
-};
-
 } // namespace
 
 namespace semantic_analyzer {
@@ -43,62 +29,68 @@ int ValueScope::allocateAutomatic(const type::Type& type) {
             nextLocalWordIndex, type.getAlignment(), wordSlotsFor(type));
 }
 
-bool ValueScope::insertSymbol(std::string name, const type::Type& type, translation_unit::Context context,
-        symbols::Storage storage, std::string objectName) {
-    if (localSymbols.find(name) != localSymbols.end()) {
-        return false;
-    }
-    // Parameters live in `arguments` but share block scope with the function body (C).
-    auto existingArgument = std::find_if(arguments.begin(), arguments.end(), EntryWithSameNameExists { name });
-    if (existingArgument != arguments.end()) {
+bool ValueScope::insertSymbol(SymbolKey key, const type::Type& type, translation_unit::Context context,
+        symbols::Storage storage, std::string objectName, std::string sourceName) {
+    if (localSymbols.find(key) != localSymbols.end()) {
         return false;
     }
     int index = 0;
     if (storage == symbols::Storage::Automatic) {
         index = allocateAutomatic(type);
     }
-    symbols::ValueEntry entry { std::move(objectName), type, context, index, storage };
-    localSymbols.insert(std::make_pair(name, entry));
+    symbols::ValueEntry entry {
+            std::move(objectName), type, context, index, storage, std::move(sourceName) };
+    localSymbols.insert(std::make_pair(std::move(key), entry));
     return true;
 }
 
-void ValueScope::insertFunctionArgument(std::string name, const type::Type& type, translation_unit::Context context) {
-    auto existingArgument = std::find_if(arguments.begin(), arguments.end(), EntryWithSameNameExists { name });
+void ValueScope::insertFunctionArgument(std::string objectName, const type::Type& type,
+        translation_unit::Context context, std::string sourceName) {
+    auto existingArgument = std::find_if(arguments.begin(), arguments.end(),
+            [&sourceName](const symbols::ValueEntry& entry) {
+                return entry.sourceName() == sourceName;
+            });
     if (existingArgument == arguments.end()) {
-        symbols::ValueEntry entry { name, type, context, static_cast<int>(arguments.size()) };
-        arguments.push_back(entry);
+        symbols::ValueEntry entry {
+                std::move(objectName), type, context, static_cast<int>(arguments.size()),
+                symbols::Storage::Automatic, std::move(sourceName) };
+        arguments.push_back(std::move(entry));
     }
 }
 
-symbols::ValueEntry ValueScope::lookup(std::string name) const {
-    if (localSymbols.find(name) == localSymbols.end()) {
-        auto existingArgument = std::find_if(arguments.begin(), arguments.end(), EntryWithSameNameExists { name });
-        if (existingArgument == arguments.end()) {
-            throw std::out_of_range("symbol not found: " + name);
-        }
-        return *existingArgument;
+symbols::ValueEntry ValueScope::lookup(const SymbolKey& key) const {
+    return localSymbols.at(key);
+}
+
+bool ValueScope::contains(const SymbolKey& key) const {
+    return localSymbols.find(key) != localSymbols.end();
+}
+
+const symbols::ValueEntry* ValueScope::findArgumentBySource(const std::string& source) const {
+    auto it = std::find_if(arguments.begin(), arguments.end(),
+            [&source](const symbols::ValueEntry& entry) {
+                return entry.sourceName() == source;
+            });
+    if (it == arguments.end()) {
+        return nullptr;
     }
-    return localSymbols.at(name);
+    return &*it;
 }
 
-bool ValueScope::contains(const std::string& name) const {
-    return localSymbols.find(name) != localSymbols.end();
+void ValueScope::setStaticInit(const SymbolKey& key, std::vector<symbols::StaticInitValue> words) {
+    localSymbols.at(key).setStaticInit(std::move(words));
 }
 
-void ValueScope::setStaticInit(const std::string& name, std::vector<symbols::StaticInitValue> words) {
-    localSymbols.at(name).setStaticInit(std::move(words));
+void ValueScope::promoteExternToDefinition(const SymbolKey& key) {
+    localSymbols.at(key).promoteExternToDefinition();
 }
 
-void ValueScope::promoteExternToDefinition(const std::string& name) {
-    localSymbols.at(name).promoteExternToDefinition();
+void ValueScope::markDefiningInitializer(const SymbolKey& key) {
+    localSymbols.at(key).markDefiningInitializer();
 }
 
-void ValueScope::markDefiningInitializer(const std::string& name) {
-    localSymbols.at(name).markDefiningInitializer();
-}
-
-void ValueScope::refineType(const std::string& name, const type::Type& type) {
-    localSymbols.at(name).refineType(type);
+void ValueScope::refineType(const SymbolKey& key, const type::Type& type) {
+    localSymbols.at(key).refineType(type);
 }
 
 symbols::ValueEntry ValueScope::createTemporarySymbol(type::Type type) {
@@ -106,11 +98,11 @@ symbols::ValueEntry ValueScope::createTemporarySymbol(type::Type type) {
     const int index = allocateAutomatic(type);
     symbols::ValueEntry temp { tempName, type, translation_unit::Context { "", 0 }, index };
     temp.markExpressionTemp();
-    localSymbols.insert(std::make_pair(tempName, temp));
+    localSymbols.insert(std::make_pair(SymbolKey { 0, tempName }, temp));
     return temp;
 }
 
-std::map<std::string, symbols::ValueEntry> ValueScope::getSymbols() const {
+const std::map<SymbolKey, symbols::ValueEntry>& ValueScope::getSymbols() const {
     return localSymbols;
 }
 

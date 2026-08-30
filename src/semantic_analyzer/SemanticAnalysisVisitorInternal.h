@@ -3,7 +3,6 @@
 
 #include "SemanticAnalysisVisitor.h"
 
-#include <cctype>
 #include <string>
 #include <utility>
 
@@ -81,20 +80,6 @@ inline std::string staticFollowsNonStaticMessage(const std::string& name) {
 
 inline std::string nonStaticFollowsStaticMessage(const std::string& name) {
     return "non-static declaration of `" + name + "` follows static declaration";
-}
-
-// Locals are stored as `$s<scopeId><name>`; strip for diagnostics / function lookup.
-inline std::string unscopedSymbolName(const std::string& name) {
-    if (name.size() > 2 && name[0] == '$' && name[1] == 's') {
-        std::size_t i = 2;
-        while (i < name.size() && std::isdigit(static_cast<unsigned char>(name[i]))) {
-            ++i;
-        }
-        if (i > 2 && i < name.size()) {
-            return name.substr(i);
-        }
-    }
-    return name;
 }
 
 inline Logger& semanticErrorLogger() {

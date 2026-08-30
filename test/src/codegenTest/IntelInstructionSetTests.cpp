@@ -19,7 +19,6 @@ TEST(IntelInstructionSet, asmSymbolPrefixesSourceNames) {
 }
 
 TEST(IntelInstructionSet, asmSymbolLeavesAlreadyEscapedNames) {
-    EXPECT_THAT(instructions.asmSymbol("$s1x"), Eq("$s1x"));
     EXPECT_THAT(instructions.asmSymbol("$t0"), Eq("$t0"));
 }
 

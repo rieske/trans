@@ -110,7 +110,7 @@ TEST(ATandTInstructionSet, emitsCallPlt) {
 
 TEST(ATandTInstructionSet, asmSymbolIsIdentity) {
     EXPECT_THAT(instructions.asmSymbol("abs"), Eq("abs"));
-    EXPECT_THAT(instructions.asmSymbol("$s1x"), Eq("$s1x"));
+    EXPECT_THAT(instructions.asmSymbol("L$str1"), Eq("L$str1"));
 }
 
 TEST(ATandTInstructionSet, globlAndExternUseRawElfNames) {
