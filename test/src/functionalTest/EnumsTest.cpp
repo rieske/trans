@@ -275,6 +275,20 @@ TEST(Compiler, enumFileScopeObjectRedeclIsError) {
     program.assertCompilationErrors("redefinition of enumerator");
 }
 
+TEST(Compiler, enumeratorVisibleAfterDeclaringBlock) {
+    SourceProgram program{R"prg(int printf(const char *, ...);
+        int main() {
+            {
+                enum { A = 7 };
+            }
+            printf("%d", A);
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("7");
+}
+
 TEST(Compiler, enumObjectShadowHidesEnumerator) {
     SourceProgram program{R"prg(int printf(const char *, ...);
 int scanf(const char *, ...);

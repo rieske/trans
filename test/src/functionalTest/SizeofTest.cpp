@@ -173,6 +173,21 @@ TEST(Compiler, sizeofPointerToRuntimeArrayIsPointerWidth) {
     program.runAndExpect("8");
 }
 
+TEST(Compiler, sizeofRuntimeArrayTypeEvaluatesBoundAtUse) {
+    SourceProgram program{R"prg(int printf(const char *, ...);
+        int main() {
+            int n;
+            int s;
+            n = 2;
+            s = (int)sizeof(int [n++]);
+            printf("%d %d", s, n);
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("8 3");
+}
+
 TEST(Compiler, sizeofRuntimeArrayTypeIsNotIntegerConstant) {
     SourceProgram program{R"prg(
         int main() {
