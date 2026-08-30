@@ -4,8 +4,9 @@
 #include "scanner/FiniteAutomaton.h"
 #include "scanner/State.h"
 
-#include <memory>
 #include <map>
+#include <memory>
+#include <unordered_set>
 #include <vector>
 
 namespace scanner {
@@ -19,8 +20,7 @@ public:
     std::unique_ptr<FiniteAutomaton> build();
 
 private:
-    int nextKeywordId {1};
-    std::map<std::string, int> keywordIds;
+    std::unordered_set<std::string> keywords;
     std::map<std::string, std::vector<std::pair<std::string, std::string>>> namedStateTransitions;
 
     State* startState { nullptr };

@@ -7,37 +7,39 @@ namespace scanner {
 State::State(std::string stateName, std::string tokenId) :
         stateName { stateName },
         tokenId { tokenId },
-        wildcardTransition { nullptr } {
+        transitions {},
+        hasTransition { false } {
 }
 
 State::~State() = default;
 
-std::string State::getName() const {
+const std::string& State::getName() const {
     return stateName;
 }
 
 void State::addTransition(std::string charactersForTransition, State* state) {
     if (charactersForTransition.empty()) {
-        wildcardTransition = state;
+        for (State*& slot : transitions) {
+            if (slot == nullptr) {
+                slot = state;
+            }
+        }
     } else {
         for (char characterForTransition : charactersForTransition) {
-            transitions[characterForTransition] = state;
+            transitions[static_cast<unsigned char>(characterForTransition)] = state;
         }
     }
+    hasTransition = true;
 }
 
 const State* State::nextStateForCharacter(char c) const {
-    auto stateAtCharacter = transitions.find(c);
-    if (stateAtCharacter != transitions.end()) {
-        return stateAtCharacter->second;
-    }
-    if (wildcardTransition != nullptr) {
-        return wildcardTransition;
+    if (State* next = transitions[static_cast<unsigned char>(c)]) {
+        return next;
     }
     throw std::runtime_error { "Can't reach next state for given input: " + std::string { c } };
 }
 
-std::string State::getTokenId() const {
+const std::string& State::getTokenId() const {
     return tokenId;
 }
 
@@ -46,7 +48,7 @@ bool State::needsKeywordLookup() const {
 }
 
 bool State::isFinal() const {
-    return wildcardTransition == nullptr && transitions.empty();
+    return !hasTransition;
 }
 
 IdentifierState::IdentifierState(std::string stateName, std::string tokenId): State { stateName, tokenId } {}

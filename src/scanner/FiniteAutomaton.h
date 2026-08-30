@@ -3,8 +3,9 @@
 
 #include "scanner/State.h"
 #include <map>
-#include <string>
 #include <memory>
+#include <string>
+#include <unordered_set>
 
 namespace scanner {
 
@@ -14,15 +15,15 @@ class FiniteAutomaton {
 public:
     FiniteAutomaton(
             State* startState,
-            std::map<std::string, int> keywordIds,
+            std::unordered_set<std::string> keywords,
             std::map<std::string, std::unique_ptr<State>> namedStates);
 
     void updateState(char inputSymbol);
 
     bool isAtStartState() const;
     bool isAtFinalState() const;
-    std::string getAccumulatedLexeme() const;
-    std::string getAccumulatedToken() const;
+    const std::string& getAccumulatedLexeme() const;
+    const std::string& getAccumulatedToken() const;
 
     void setSession(LexicalSession* session) { session_ = session; }
 
@@ -31,7 +32,7 @@ private:
 
     const State* startState { nullptr };
     const State* currentState { nullptr };
-    std::map<std::string, int> keywordIds;
+    std::unordered_set<std::string> keywords;
     std::map<std::string, std::unique_ptr<State>> namedStates;
 
     std::string accumulator;

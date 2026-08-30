@@ -1,3 +1,4 @@
+#include "translation_unit/Context.h"
 #include "translation_unit/TranslationUnit.h"
 
 #include "gtest/gtest.h"
@@ -9,6 +10,31 @@
 #include <string>
 
 using namespace testing;
+
+TEST(Context, copyKeepsNameAndOffset) {
+    translation_unit::Context a { "a_reasonably_long_source_name.c", 42 };
+    translation_unit::Context b = a;
+    EXPECT_EQ(a.getSourceName(), "a_reasonably_long_source_name.c");
+    EXPECT_EQ(a.getOffset(), 42u);
+    EXPECT_EQ(b.getSourceName(), "a_reasonably_long_source_name.c");
+    EXPECT_EQ(b.getOffset(), 42u);
+}
+
+TEST(Context, survivesOriginalStringLifetime) {
+    translation_unit::Context ctx = [] {
+        return translation_unit::Context { std::string("not_sso_source_name_xxxxxxxx.c"), 7 };
+    }();
+    EXPECT_EQ(ctx.getSourceName(), "not_sso_source_name_xxxxxxxx.c");
+    EXPECT_EQ(ctx.getOffset(), 7u);
+}
+
+TEST(Context, sameNameSharesInternedStorage) {
+    translation_unit::Context a { "shared_source_name_zzzz.c", 1 };
+    translation_unit::Context b { "shared_source_name_zzzz.c", 2 };
+    EXPECT_EQ(&a.getSourceName(), &b.getSourceName());
+    EXPECT_EQ(a.getOffset(), 1u);
+    EXPECT_EQ(b.getOffset(), 2u);
+}
 
 TEST(TranslationUnit, opensTheSourceFileForReading) {
 	ASSERT_NO_THROW(TranslationUnit translationUnit(getTestResourcePath("src/translation_unitTest/sourceTranslationUnitInput.txt")));

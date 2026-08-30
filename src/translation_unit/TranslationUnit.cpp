@@ -1,10 +1,14 @@
 #include "TranslationUnit.h"
 
 #include <cctype>
+#include <fstream>
+#include <iterator>
+#include <stdexcept>
+#include <string_view>
 
 namespace {
 
-bool parseLineMarker(const std::string& line, std::size_t hashIndex,
+bool parseLineMarker(std::string_view line, std::size_t hashIndex,
         std::size_t& lineNumber, std::string& sourceName) {
     std::size_t i = hashIndex + 1;
     while (i < line.size() && (line[i] == ' ' || line[i] == '\t')) {
@@ -36,7 +40,7 @@ bool parseLineMarker(const std::string& line, std::size_t hashIndex,
         while (i < line.size() && line[i] != '"') {
             ++i;
         }
-        sourceName = line.substr(begin, i - begin);
+        sourceName.assign(line.data() + begin, i - begin);
     }
     return true;
 }
@@ -44,52 +48,61 @@ bool parseLineMarker(const std::string& line, std::size_t hashIndex,
 } // namespace
 
 TranslationUnit::TranslationUnit(const std::string sourceFileName) :
-        currentSourceName { sourceFileName }, sourceFile { sourceFileName } {
+        context_ { sourceFileName, 0 } {
+    std::ifstream sourceFile { sourceFileName };
     if (!sourceFile.is_open()) {
         throw std::runtime_error("Unable to open file " + sourceFileName);
     }
+    source.assign(std::istreambuf_iterator<char> { sourceFile }, std::istreambuf_iterator<char> {});
     advanceLine();
 }
 
-translation_unit::Context TranslationUnit::getContext() const {
-    return {currentSourceName, currentLineNumber};
-}
-
 char TranslationUnit::getNextCharacter() {
-    if (lineOffset >= currentLine.length()) {
+    if (lineOffset >= currentLine.size()) {
         if (!advanceLine()) {
             return '\0';
-        } else {
-            return '\n';
         }
+        return '\n';
     }
     return currentLine[lineOffset++];
 }
 
 bool TranslationUnit::advanceLine() {
-    // Leftover preprocessor lines after host gcc -E (-P still emits #pragma).
-    while (std::getline(sourceFile, currentLine)) {
-        ++currentLineNumber;
+    while (readPos < source.size()) {
+        const std::size_t lineStart = readPos;
+        const std::size_t nl = source.find('\n', readPos);
+        if (nl == std::string::npos) {
+            currentLine = std::string_view { source }.substr(lineStart);
+            readPos = source.size();
+        } else {
+            currentLine = std::string_view { source }.substr(lineStart, nl - lineStart);
+            readPos = nl + 1;
+        }
+        std::string name { context_.getSourceName() };
+        std::size_t lineNumber = context_.getOffset() + 1;
         lineOffset = 0;
         std::size_t i = 0;
         while (i < currentLine.size()
                 && (currentLine[i] == ' ' || currentLine[i] == '\t')) {
             ++i;
         }
-        if (i < currentLine.size() && currentLine[i] == '#') {
+        const bool hashLine = i < currentLine.size() && currentLine[i] == '#';
+        if (hashLine) {
             std::size_t markerLine = 0;
             std::string markerName;
             if (parseLineMarker(currentLine, i, markerLine, markerName)) {
-                currentLineNumber = markerLine == 0 ? 0 : markerLine - 1;
                 if (!markerName.empty()) {
-                    currentSourceName = markerName;
+                    name = std::move(markerName);
                 }
+                lineNumber = markerLine == 0 ? 0 : markerLine - 1;
             }
-            continue;
         }
-        return true;
+        context_ = translation_unit::Context { std::move(name), lineNumber };
+        if (!hashLine) {
+            return true;
+        }
     }
-    currentLine.clear();
+    currentLine = {};
     lineOffset = 0;
     return false;
 }

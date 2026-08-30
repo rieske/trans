@@ -5,25 +5,23 @@ namespace scanner {
 
 FiniteAutomaton::FiniteAutomaton(
         State* startState,
-        std::map<std::string, int> keywordIds,
+        std::unordered_set<std::string> keywords,
         std::map<std::string, std::unique_ptr<State>> namedStates
 ):
     startState { startState },
     currentState { startState },
-    keywordIds { keywordIds },
+    keywords { std::move(keywords) },
     namedStates { std::move(namedStates) }
 {
+    accumulator.reserve(64);
 }
 
 void FiniteAutomaton::updateState(char inputSymbol) {
-    accumulatedLexeme.clear();
-    accumulatedToken.clear();
-
     auto nextState = currentState->nextStateForCharacter(inputSymbol);
     if (nextState->isFinal()) {
         accumulatedToken = currentState->getTokenId();
         if (currentState->needsKeywordLookup()) {
-            if (keywordIds.find(accumulator) != keywordIds.end()) {
+            if (keywords.contains(accumulator)) {
                 accumulatedToken = accumulator;
             } else if (isTypedefName(accumulator)) {
                 accumulatedToken = "typedef_name";
@@ -31,10 +29,14 @@ void FiniteAutomaton::updateState(char inputSymbol) {
         }
         if (!accumulatedToken.empty()) {
             accumulatedLexeme = accumulator;
+        } else {
+            accumulatedLexeme.clear();
         }
         accumulator.clear();
         currentState = startState->nextStateForCharacter(inputSymbol);
     } else {
+        accumulatedToken.clear();
+        accumulatedLexeme.clear();
         currentState = nextState;
     }
 
@@ -51,11 +53,11 @@ bool FiniteAutomaton::isAtFinalState() const {
     return !accumulatedToken.empty();
 }
 
-std::string FiniteAutomaton::getAccumulatedLexeme() const {
+const std::string& FiniteAutomaton::getAccumulatedLexeme() const {
     return accumulatedLexeme;
 }
 
-std::string FiniteAutomaton::getAccumulatedToken() const {
+const std::string& FiniteAutomaton::getAccumulatedToken() const {
     return accumulatedToken;
 }
 
