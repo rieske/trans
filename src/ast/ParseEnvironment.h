@@ -61,7 +61,6 @@ public:
     // Finishes the open enum body; returns the underlying type. Non-empty tag is registered.
     type::Type endEnumDefinition(const std::string& tag = {});
     std::optional<type::Type> lookupEnumTag(const std::string& tag) const;
-    std::map<std::string, type::IntegerConstant> enumConstantsSnapshot() const;
 
     VlaExpressionTable& vlaExpressions() { return *vlas_; }
     const VlaExpressionTable& vlaExpressions() const { return *vlas_; }

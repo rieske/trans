@@ -18,14 +18,12 @@ std::vector<symbols::ValueEntry> SemanticAnalyzer::getDataHomes() const {
     return analyzerVisitor.getDataHomes();
 }
 
-void SemanticAnalyzer::analyze(ast::AbstractSyntaxTree& tree) {
+void SemanticAnalyzer::analyze(ast::AbstractSyntaxTree& tree, const scanner::LexicalSession& session) {
     tree.annotations().clear();
     analyzerVisitor.setAnnotationStore(tree.annotations());
 
-    // Sole SA import channel for parse-time enumerators (AST snapshot handoff).
-    // Whole-TU before the walk (not C declaration-order scope start).
     analyzerVisitor.setVlaExpressions(tree.vlaExpressions());
-    for (const auto& entry : tree.parseEnumConstants()) {
+    for (const auto& entry : session.enums.entries()) {
         analyzerVisitor.importParseEnumConstant(entry.first, entry.second);
     }
     analyzerVisitor.installGnuBuiltins();

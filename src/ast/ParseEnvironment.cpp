@@ -214,10 +214,6 @@ std::optional<type::Type> ParseEnvironment::lookupEnumTag(const std::string& tag
     return std::nullopt;
 }
 
-std::map<std::string, type::IntegerConstant> ParseEnvironment::enumConstantsSnapshot() const {
-    return session_.enums.entries();
-}
-
 void ParseEnvironment::maybeRegisterParameterShadow(const std::string& name) {
     if (name.empty() || !lookupTypedef(name)) {
         return;

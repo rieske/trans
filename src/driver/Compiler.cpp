@@ -283,7 +283,7 @@ std::string Compiler::compile(std::string sourceFileName) const {
     }
 
     semantic_analyzer::SemanticAnalyzer semanticAnalyzer { configuration.gnuExtensions() };
-    semanticAnalyzer.analyze(*tree);
+    semanticAnalyzer.analyze(*tree, session);
 
     std::vector<codegen::GlobalVariable> globalVariables;
     for (const auto& symbol : semanticAnalyzer.getDataHomes()) {
