@@ -21,7 +21,6 @@
 #include "ast/CaseLabel.h"
 #include "ast/DefaultLabel.h"
 #include "ast/LoopStatement.h"
-#include "ast/Operator.h"
 #include "ast/ReturnStatement.h"
 #include "ast/StringLiteralExpression.h"
 #include "ast/VoidReturnStatement.h"
@@ -85,8 +84,6 @@ public:
     virtual void visit(ConditionalExpression& expression) = 0;
     virtual void visit(AssignmentExpression& expression) = 0;
     virtual void visit(ExpressionList& expression) = 0;
-
-    virtual void visit(Operator& op) = 0;
 
     virtual void visit(JumpStatement& statement) = 0;
     virtual void visit(GotoStatement& statement) = 0;

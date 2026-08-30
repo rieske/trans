@@ -19,7 +19,7 @@ public:
     symbols::LabelEntry* getExitLabel(symbols::AnnotationStore& store) const;
 
 protected:
-    LogicalExpression(std::unique_ptr<Expression> leftHandSide, std::unique_ptr<Operator> logicalOperator, std::unique_ptr<Expression> rightHandSide);
+    LogicalExpression(std::unique_ptr<Expression> leftHandSide, std::unique_ptr<Expression> rightHandSide);
 
 };
 

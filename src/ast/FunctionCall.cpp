@@ -26,7 +26,7 @@ bool isConstantPOperand(const Expression& expr) {
 
 FunctionCall::FunctionCall(std::unique_ptr<Expression> postfixExpression,
         std::vector<std::unique_ptr<Expression>> argumentList) :
-        SingleOperandExpression { std::move(postfixExpression), std::unique_ptr<Operator> { new Operator("()") } },
+        SingleOperandExpression { std::move(postfixExpression) },
         argumentList { std::move(argumentList) }
 {
 }

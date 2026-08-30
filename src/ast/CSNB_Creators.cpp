@@ -435,21 +435,21 @@ void pointeeMemberAccess(AbstractSyntaxTreeBuilderContext& context) {
 }
 
 void postfixIncrementDecrement(AbstractSyntaxTreeBuilderContext& context) {
-    context.pushExpression(std::make_unique<PostfixExpression>(context.popExpression(), std::make_unique<Operator>(context.popTerminal().type)));
+    context.pushExpression(std::make_unique<PostfixExpression>(context.popExpression(), context.popTerminal().type));
 }
 
 void prefixIncrementDecrement(AbstractSyntaxTreeBuilderContext& context) {
-    context.pushExpression(std::make_unique<PrefixExpression>(std::make_unique<Operator>(context.popTerminal().value), context.popExpression()));
+    context.pushExpression(std::make_unique<PrefixExpression>(context.popTerminal().value, context.popExpression()));
 }
 
 void unaryExpression(AbstractSyntaxTreeBuilderContext& context) {
-    context.pushExpression(std::make_unique<UnaryExpression>(std::make_unique<Operator>(context.popTerminal().value), context.popExpression()));
+    context.pushExpression(std::make_unique<UnaryExpression>(context.popTerminal().value, context.popExpression()));
 }
 
 void sizeofExpression(AbstractSyntaxTreeBuilderContext& context) {
     context.popTerminal(); // sizeof
     context.pushExpression(std::make_unique<UnaryExpression>(
-            std::make_unique<Operator>("sizeof"), context.popExpression()));
+            "sizeof", context.popExpression()));
 }
 
 void typeofTypeName(AbstractSyntaxTreeBuilderContext& context) {
@@ -545,7 +545,7 @@ void sizeofTypeExpression(AbstractSyntaxTreeBuilderContext& context) {
         return;
     }
     context.pushExpression(std::make_unique<UnaryExpression>(
-            std::make_unique<Operator>("sizeof"),
+            "sizeof",
             std::make_unique<TypeNameExpression>(std::move(typeSpec), sizeofKw.context)));
 }
 
@@ -593,28 +593,28 @@ void compoundLiteralTrailingComma(AbstractSyntaxTreeBuilderContext& context) {
 void arithmeticExpression(AbstractSyntaxTreeBuilderContext& context) {
     auto rightHandSide = context.popExpression();
     auto leftHandSide = context.popExpression();
-    auto arithmeticOperator = std::make_unique<Operator>(context.popTerminal().value);
+    auto arithmeticOperator = context.popTerminal().value;
     context.pushExpression(std::make_unique<ArithmeticExpression>(std::move(leftHandSide), std::move(arithmeticOperator), std::move(rightHandSide)));
 }
 
 void shiftExpression(AbstractSyntaxTreeBuilderContext& context) {
     auto additionExpression = context.popExpression();
     auto shiftExpression = context.popExpression();
-    auto shiftOperator = std::make_unique<Operator>(context.popTerminal().value);
+    auto shiftOperator = context.popTerminal().value;
     context.pushExpression(std::make_unique<ShiftExpression>(std::move(shiftExpression), std::move(shiftOperator), std::move(additionExpression)));
 }
 
 void relationalExpression(AbstractSyntaxTreeBuilderContext& context) {
     auto rightHandSide = context.popExpression();
     auto leftHandSide = context.popExpression();
-    auto comparisonOperator = std::make_unique<Operator>(context.popTerminal().value);
+    auto comparisonOperator = context.popTerminal().value;
     context.pushExpression(std::make_unique<ComparisonExpression>(std::move(leftHandSide), std::move(comparisonOperator), std::move(rightHandSide)));
 }
 
 void bitwiseExpression(AbstractSyntaxTreeBuilderContext& context) {
     auto rightHandSide = context.popExpression();
     auto leftHandSide = context.popExpression();
-    auto bitwiseOperator = std::make_unique<Operator>(context.popTerminal().value);
+    auto bitwiseOperator = context.popTerminal().value;
     context.pushExpression(std::make_unique<BitwiseExpression>(std::move(leftHandSide), std::move(bitwiseOperator), std::move(rightHandSide)));
 }
 
@@ -647,7 +647,7 @@ void conditionalExpression(AbstractSyntaxTreeBuilderContext& context) {
 void assignmentExpression(AbstractSyntaxTreeBuilderContext& context) {
     auto rightHandSide = context.popExpression();
     auto leftHandSide = context.popExpression();
-    auto assignmentOperator = std::make_unique<Operator>(context.popTerminal().value);
+    auto assignmentOperator = context.popTerminal().value;
     context.pushExpression(
             std::make_unique<AssignmentExpression>(std::move(leftHandSide), std::move(assignmentOperator), std::move(rightHandSide)));
 }

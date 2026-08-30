@@ -7,11 +7,9 @@
 
 namespace ast {
 
-DoubleOperandExpression::DoubleOperandExpression(std::unique_ptr<Expression> leftOperand, std::unique_ptr<Expression> rightOperand,
-        std::unique_ptr<Operator> _operator) :
+DoubleOperandExpression::DoubleOperandExpression(std::unique_ptr<Expression> leftOperand, std::unique_ptr<Expression> rightOperand) :
         leftOperand { std::move(leftOperand) },
-        rightOperand { std::move(rightOperand) },
-        _operator { std::move(_operator) }
+        rightOperand { std::move(rightOperand) }
 {
 }
 
@@ -30,20 +28,13 @@ translation_unit::Context DoubleOperandExpression::getContext() const {
     return leftOperand->getContext();
 }
 
-Operator* DoubleOperandExpression::getOperator() const {
-    return _operator.get();
-}
-
-bool DoubleOperandExpression::evaluateConstant(type::IntegerConstant& value) const {
-    if (!_operator) {
-        return false;
-    }
+bool DoubleOperandExpression::foldOperands(type::IntegerConstant& value, const std::string& op) const {
     type::IntegerConstant left;
     type::IntegerConstant right;
     if (!leftOperand->evaluateConstant(left) || !rightOperand->evaluateConstant(right)) {
         return false;
     }
-    auto folded = type::foldBinary(_operator->getLexeme(), left, right);
+    auto folded = type::foldBinary(op, left, right);
     if (!folded) {
         return false;
     }

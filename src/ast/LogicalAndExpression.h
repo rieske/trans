@@ -12,6 +12,7 @@ public:
     LogicalAndExpression(std::unique_ptr<Expression> leftHandSide, std::unique_ptr<Expression> rightHandSide);
 
     void accept(AbstractSyntaxTreeVisitor& visitor) override;
+    bool evaluateConstant(type::IntegerConstant& value) const override;
 };
 
 } // namespace ast

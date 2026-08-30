@@ -7,8 +7,8 @@
 
 namespace ast {
 
-UnaryExpression::UnaryExpression(std::unique_ptr<Operator> unaryOperator, std::unique_ptr<Expression> castExpression) :
-        SingleOperandExpression(std::move(castExpression), std::move(unaryOperator))
+UnaryExpression::UnaryExpression(std::string lexeme, std::unique_ptr<Expression> castExpression) :
+        UnaryOpExpression(std::move(castExpression), std::move(lexeme))
 {
 }
 
@@ -21,7 +21,7 @@ std::optional<type::Type> UnaryExpression::typeAtParseTime(const ParseEnvironmen
     if (!inner) {
         return std::nullopt;
     }
-    const std::string op = getOperator()->getLexeme();
+    const std::string op = lexeme();
     if (op == "*") {
         return type::afterLvalueConversion(*inner).indexElement();
     }
@@ -55,7 +55,7 @@ std::optional<type::Type> UnaryExpression::typeAtParseTime(const ParseEnvironmen
 
 bool UnaryExpression::isLval() const {
     // Only dereference yields an lvalue; +a, -a, !a, &a are rvalues.
-    return getOperator()->getLexeme() == "*";
+    return lexeme() == "*";
 }
 
 void UnaryExpression::setSizeofValue(int bytes) {
@@ -67,7 +67,7 @@ int UnaryExpression::getSizeofValue() const {
 }
 
 bool UnaryExpression::evaluateConstant(type::IntegerConstant& value) const {
-    if (getOperator()->getLexeme() == "sizeof" && sizeofValue >= 0) {
+    if (lexeme() == "sizeof" && sizeofValue >= 0) {
         value = type::fromLiteralBits(static_cast<type::Bits>(sizeofValue), type::signedInteger());
         return true;
     }
@@ -75,7 +75,7 @@ bool UnaryExpression::evaluateConstant(type::IntegerConstant& value) const {
     if (!_operand->evaluateConstant(operand)) {
         return false;
     }
-    auto folded = type::foldUnary(getOperator()->getLexeme(), operand);
+    auto folded = type::foldUnary(lexeme(), operand);
     if (!folded) {
         return false;
     }
@@ -98,7 +98,6 @@ void UnaryExpression::setFalsyLabel(symbols::AnnotationStore& store, symbols::La
 symbols::LabelEntry* UnaryExpression::getFalsyLabel(symbols::AnnotationStore& store) const {
     return store.label(this, symbols::LabelSlot::Falsy);
 }
-
 
 } // namespace ast
 

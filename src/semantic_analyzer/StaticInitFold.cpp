@@ -112,7 +112,7 @@ std::optional<symbols::StaticAddress> foldIndexDesignator(
 
 std::optional<symbols::StaticAddress> foldPointerArithmetic(
         const ast::ArithmeticExpression& arith, const symbols::AnnotationStore& store) {
-    const std::string opLex = arith.getOperator()->getLexeme();
+    const std::string opLex = arith.lexeme();
     if (opLex != "+" && opLex != "-") {
         return std::nullopt;
     }
@@ -158,7 +158,7 @@ std::optional<symbols::StaticAddress> foldDesignatorAddress(
         return foldIndexDesignator(*access, store);
     }
     if (auto* unary = dynamic_cast<const ast::UnaryExpression*>(&expr)) {
-        if (unary->getOperator()->getLexeme() == "*" && unary->getOperandExpression()) {
+        if (unary->lexeme() == "*" && unary->getOperandExpression()) {
             return foldAddress(*unary->getOperandExpression(), store);
         }
     }
@@ -184,7 +184,7 @@ std::optional<symbols::StaticAddress> foldAddress(
             return fn;
         }
     } else if (auto* unary = dynamic_cast<const ast::UnaryExpression*>(&expr)) {
-        if (unary->getOperator()->getLexeme() == "&" && unary->getOperandExpression()) {
+        if (unary->lexeme() == "&" && unary->getOperandExpression()) {
             return foldDesignatorAddress(*unary->getOperandExpression(), store);
         }
     } else if (auto* cast = dynamic_cast<const ast::TypeCast*>(&expr)) {
@@ -214,7 +214,7 @@ std::optional<symbols::StaticInitValue> foldFloating(
     if (!unary) {
         return std::nullopt;
     }
-    const std::string op = unary->getOperator()->getLexeme();
+    const std::string op = unary->lexeme();
     if (op != "+" && op != "-") {
         return std::nullopt;
     }

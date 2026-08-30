@@ -8,7 +8,7 @@
 namespace ast {
 
 TypeCast::TypeCast(TypeSpecifier typeSpecifier, std::unique_ptr<Expression> castExpression) :
-        SingleOperandExpression { std::move(castExpression), std::unique_ptr<Operator> { new Operator(typeSpecifier.getName()) } }, typeSpecifier {
+        SingleOperandExpression { std::move(castExpression) }, typeSpecifier {
                 typeSpecifier } {
 }
 

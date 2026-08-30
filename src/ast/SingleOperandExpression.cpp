@@ -4,9 +4,8 @@
 
 namespace ast {
 
-SingleOperandExpression::SingleOperandExpression(std::unique_ptr<Expression> _operand, std::unique_ptr<Operator> _operator) :
-        _operand { std::move(_operand) },
-        _operator { std::move(_operator) }
+SingleOperandExpression::SingleOperandExpression(std::unique_ptr<Expression> _operand) :
+        _operand { std::move(_operand) }
 {
 }
 
@@ -47,10 +46,6 @@ translation_unit::Context SingleOperandExpression::getContext() const {
 
 bool SingleOperandExpression::isLval() const {
     return _operand->isLval();
-}
-
-Operator* SingleOperandExpression::getOperator() const {
-    return _operator.get();
 }
 
 } // namespace ast

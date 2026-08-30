@@ -53,8 +53,6 @@ public:
     void visit(ast::AssignmentExpression& expression) override;
     void visit(ast::ExpressionList& expression) override;
 
-    void visit(ast::Operator& op) override;
-
     void visit(ast::JumpStatement& statement) override;
     void visit(ast::GotoStatement& statement) override;
     void visit(ast::LabeledStatement& statement) override;

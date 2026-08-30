@@ -5,7 +5,6 @@
 #include "ast/Declarator.h"
 #include "ast/Identifier.h"
 #include "ast/IdentifierExpression.h"
-#include "ast/Operator.h"
 #include "ast/ParseEnvironment.h"
 #include "ast/UnaryExpression.h"
 #include "ast/Pointer.h"
@@ -123,7 +122,7 @@ TEST(ArrayDeclarator, negativeIceIsZeroLengthShell) {
     Declarator declarator { std::make_unique<ArrayDeclarator>(
             std::make_unique<Identifier>(TerminalSymbol { "id", "a", ctx }),
             std::make_unique<UnaryExpression>(
-                    std::make_unique<Operator>("-"),
+                    "-",
                     std::make_unique<ConstantExpression>(
                             Constant { "1", type::signedInteger(), ctx }))) };
     auto type = declarator.getFundamentalType(type::signedInteger());

@@ -46,7 +46,6 @@ add_library(ast
         MemberAccess.cpp
         InitializerListExpression.cpp
         LoopStatement.cpp
-        Operator.cpp
         ParenthesizedDeclarator.cpp
         Pointer.cpp
         PostfixExpression.cpp
@@ -80,6 +79,7 @@ add_library(ast
         ArrayAccess.h
         ArrayDeclarator.h
         AssignmentExpression.h
+        BinaryOpExpression.h
         BitwiseExpression.h
         Block.h
         ComparisonExpression.h
@@ -118,7 +118,6 @@ add_library(ast
         MemberAccess.h
         InitializerListExpression.h
         LoopStatement.h
-        Operator.h
         ParenthesizedDeclarator.h
         Pointer.h
         PostfixExpression.h
@@ -139,6 +138,7 @@ add_library(ast
         TypeNameExpression.h
         CompoundLiteral.h
         TypeSpecifier.h
+        UnaryOpExpression.h
         UnaryExpression.h
         WhileLoopHeader.h
     )
