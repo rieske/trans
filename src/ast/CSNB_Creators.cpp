@@ -200,7 +200,8 @@ void identifierDeclarator(AbstractSyntaxTreeBuilderContext& context) {
 void arrayDeclarator(AbstractSyntaxTreeBuilderContext& context) {
     context.popTerminal();
     context.popTerminal();
-    context.pushDirectDeclarator(std::make_unique<ArrayDeclarator>(context.popDirectDeclarator(), context.popExpression()));
+    context.pushDirectDeclarator(std::make_unique<ArrayDeclarator>(context.popDirectDeclarator(),
+            context.popExpression(), &context.environment().vlaExpressions()));
 }
 
 void arrayDeclaratorQualified(AbstractSyntaxTreeBuilderContext& context) {

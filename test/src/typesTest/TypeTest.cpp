@@ -3,6 +3,7 @@
 
 #include "types/Type.h"
 
+#include <memory>
 #include <stdexcept>
 
 namespace {
@@ -316,6 +317,22 @@ TEST(Type, variableArrayCompositePrefersKnownBound) {
     auto bothVa = va.composite(variableArray(signedInteger()));
     ASSERT_TRUE(bothVa.has_value());
     EXPECT_TRUE(bothVa->isVariableArray());
+}
+
+TEST(Type, variableArrayCompositePrefersSpecifiedBound) {
+    using namespace type;
+    auto specifiedId = std::make_shared<VlaBound>();
+    auto specified = variableArray(pointer(array(signedInteger(), 3)), specifiedId);
+    auto unspecified = variableArray(pointer(incompleteArray(signedInteger())));
+    auto fromUnspec = unspecified.composite(specified);
+    ASSERT_TRUE(fromUnspec.has_value());
+    EXPECT_EQ(fromUnspec->vlaBound().get(), specifiedId.get());
+    EXPECT_FALSE(fromUnspec->vlaBound()->unspecified);
+    EXPECT_EQ(fromUnspec->getElementType().dereference().getArraySize(), 3);
+    auto fromSpec = specified.composite(unspecified);
+    ASSERT_TRUE(fromSpec.has_value());
+    EXPECT_EQ(fromSpec->vlaBound().get(), specifiedId.get());
+    EXPECT_EQ(fromSpec->getElementType().dereference().getArraySize(), 3);
 }
 
 TEST(Type, variableArrayRejectsIncompleteElement) {

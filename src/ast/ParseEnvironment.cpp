@@ -9,13 +9,15 @@
 namespace ast {
 
 ParseEnvironment::ParseEnvironment(scanner::LexicalSession& session) :
-        session_ { session } {
+        session_ { session },
+        vlas_ { std::make_shared<VlaExpressionTable>() } {
 }
 
 ParseEnvironment::ParseEnvironment(scanner::LexicalSession& session, const ParseEnvironment& parent) :
         session_ { session },
         tagParent_ { &parent },
-        gnuExtensions_ { parent.gnuExtensions_ } {
+        gnuExtensions_ { parent.gnuExtensions_ },
+        vlas_ { parent.vlas_ } {
 }
 
 ParseEnvironment ParseEnvironment::nestedIn(const ParseEnvironment& enclosing) {

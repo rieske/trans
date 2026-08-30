@@ -78,6 +78,7 @@ std::unique_ptr<parser::SyntaxTree> AbstractSyntaxTreeBuilder::build() {
     assertBuildable();
     auto tree = std::make_unique<AbstractSyntaxTree>(treeBuilderContext.popTranslationUnit());
     tree->setParseEnumConstants(treeBuilderContext.environment().enumConstantsSnapshot());
+    tree->setVlaExpressions(treeBuilderContext.environment().vlaExpressionsShared());
     return tree;
 }
 

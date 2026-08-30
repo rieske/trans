@@ -101,9 +101,13 @@ Type incompleteArray(const Type& elementType) {
     return result;
 }
 
-Type variableArray(const Type& elementType, std::shared_ptr<ast::Expression> bound) {
+Type variableArray(const Type& elementType, std::shared_ptr<VlaBound> bound) {
     if (isIncompleteMemberOrElementType(elementType)) {
         throw std::invalid_argument { "array of incomplete type" };
+    }
+    if (!bound) {
+        bound = std::make_shared<VlaBound>();
+        bound->unspecified = true;
     }
     Type result { std::vector<Qualifier> {} };
     Type::ArrayPayload arr;
@@ -338,9 +342,10 @@ Type makeComposite(const Type& a, const Type& b) {
         const Type element = makeComposite(a.getElementType(), b.getElementType());
         Type result = incompleteArray(element);
         if (a.isVariableArray() && b.isVariableArray()) {
-            auto bound = a.variableBound();
-            if (!bound) {
-                bound = b.variableBound();
+            auto bound = a.vlaBound();
+            auto other = b.vlaBound();
+            if ((!bound || bound->unspecified) && other && !other->unspecified) {
+                bound = std::move(other);
             }
             result = variableArray(element, std::move(bound));
         } else if (a.isVariableArray()) {
@@ -490,7 +495,7 @@ bool Type::isVariableArray() const {
     return a && a->variable;
 }
 
-std::shared_ptr<ast::Expression> Type::variableBound() const {
+std::shared_ptr<VlaBound> Type::vlaBound() const {
     const auto* a = arrayPayload();
     if (a && a->variable) {
         return a->bound;

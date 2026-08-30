@@ -13,6 +13,7 @@ class AbstractSyntaxTreeVisitor;
 class Declarator;
 class Expression;
 class ParseEnvironment;
+class VlaExpressionTable;
 
 class TypeSpecifier {
 public:
@@ -33,7 +34,7 @@ public:
     void resolveTypeof(AbstractSyntaxTreeVisitor& visitor);
     bool resolveTypeofAtParseTime(const ParseEnvironment& environment);
     bool needsSemanticResolve() const;
-    void refoldConstantArrayBounds();
+    void refoldConstantArrayBounds(const VlaExpressionTable& exprs);
     void markDefinesRecord();
     bool definesRecord() const;
 
@@ -47,7 +48,7 @@ private:
     void applyDeclarator();
 };
 
-type::Type foldConstantArrayBounds(const type::Type& t);
+type::Type foldConstantArrayBounds(const type::Type& t, const VlaExpressionTable& exprs);
 
 } // namespace ast
 

@@ -7,6 +7,7 @@
 #include <vector>
 
 #include "ast/AbstractSyntaxTreeNode.h"
+#include "ast/VlaExpressionTable.h"
 #include "parser/SyntaxTree.h"
 #include "symbols/AnnotationStore.h"
 #include "types/IntegerConstant.h"
@@ -24,6 +25,7 @@ private:
     // nested enum-in-const_exp (unsupported; PE single open-enum counter).
     // SA imports the whole map before the walk (TU-flat; not C declaration-order).
     std::map<std::string, type::IntegerConstant> parseEnumConstants_;
+    std::shared_ptr<VlaExpressionTable> vlaExpressions_;
 
 public:
     AbstractSyntaxTree(std::vector<std::unique_ptr<AbstractSyntaxTreeNode>> translationUnit);
@@ -40,6 +42,12 @@ public:
     const std::map<std::string, type::IntegerConstant>& parseEnumConstants() const {
         return parseEnumConstants_;
     }
+
+    void setVlaExpressions(std::shared_ptr<VlaExpressionTable> exprs) {
+        vlaExpressions_ = std::move(exprs);
+    }
+    VlaExpressionTable* vlaExpressions() { return vlaExpressions_.get(); }
+    const VlaExpressionTable* vlaExpressions() const { return vlaExpressions_.get(); }
 
     void accept(ast::AbstractSyntaxTreeVisitor& visitor) const;
 };

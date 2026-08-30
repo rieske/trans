@@ -45,6 +45,13 @@ std::unique_ptr<InitializedDeclarator> plainDeclarator(const std::string& name) 
 
 } // namespace
 
+TEST(ParseEnvironment, nestedEnvironmentSharesVlaExpressionTable) {
+    LexicalSession session;
+    ParseEnvironment parent{session};
+    ParseEnvironment nested = ParseEnvironment::nestedIn(parent);
+    EXPECT_EQ(&parent.vlaExpressions(), &nested.vlaExpressions());
+}
+
 TEST(ParseEnvironment, gnuExtensionsDefaultTrueAndCopiedToNested) {
     LexicalSession session;
     ParseEnvironment parent{session};

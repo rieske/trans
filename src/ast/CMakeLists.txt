@@ -3,6 +3,7 @@ add_library(ast
         AbstractSyntaxTreeBuilder.cpp
         AbstractSyntaxTreeBuilderContext.cpp
         ParseEnvironment.cpp
+        VlaExpressionTable.cpp
         ArithmeticExpression.cpp
         ArrayAccess.cpp
         ArrayDeclarator.cpp
@@ -72,6 +73,7 @@ add_library(ast
         AbstractSyntaxTreeBuilder.h
         AbstractSyntaxTreeBuilderContext.h
         ParseEnvironment.h
+        VlaExpressionTable.h
         AbstractSyntaxTreeNode.h
         AbstractSyntaxTreeVisitor.h
         ArithmeticExpression.h

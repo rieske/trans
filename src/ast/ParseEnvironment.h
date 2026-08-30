@@ -11,6 +11,7 @@
 #include "Declarator.h"
 #include "FormalArgument.h"
 #include "InitializedDeclarator.h"
+#include "VlaExpressionTable.h"
 #include "scanner/LexicalSession.h"
 #include "types/IntegerConstant.h"
 #include "types/Type.h"
@@ -62,6 +63,10 @@ public:
     std::optional<type::Type> lookupEnumTag(const std::string& tag) const;
     std::map<std::string, type::IntegerConstant> enumConstantsSnapshot() const;
 
+    VlaExpressionTable& vlaExpressions() { return *vlas_; }
+    const VlaExpressionTable& vlaExpressions() const { return *vlas_; }
+    std::shared_ptr<VlaExpressionTable> vlaExpressionsShared() const { return vlas_; }
+
 private:
     struct EnumBody {
         type::IntegerConstant next;
@@ -72,6 +77,7 @@ private:
     scanner::LexicalSession& session_;
     const ParseEnvironment* tagParent_ { nullptr };
     bool gnuExtensions_ { true };
+    std::shared_ptr<VlaExpressionTable> vlas_;
     std::map<std::string, type::Type> transients_;
     std::map<std::string, type::Type> structTags_;
     std::map<std::string, type::Type> enumTags_;

@@ -45,7 +45,8 @@ struct IncompleteArrayBound {
 
 IncompleteArrayBound incompleteArrayBoundFromInitializer(ast::Expression* init);
 
-void visitVariableBounds(const type::Type& t, ast::AbstractSyntaxTreeVisitor& visitor);
+void visitVariableBounds(const type::Type& t, ast::AbstractSyntaxTreeVisitor& visitor,
+        const ast::VlaExpressionTable& vlas);
 void finalizeRecordDefinition(type::Type& record, SemanticAnalysisVisitor& visitor);
 void finalizeSpecifierType(ast::TypeSpecifier& spec, SemanticAnalysisVisitor& visitor);
 
