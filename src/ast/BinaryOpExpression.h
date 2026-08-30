@@ -21,10 +21,6 @@ public:
         return lexeme_;
     }
 
-    bool evaluateConstant(type::IntegerConstant& value) const override {
-        return foldOperands(value, lexeme_);
-    }
-
 private:
     std::string lexeme_;
 };
