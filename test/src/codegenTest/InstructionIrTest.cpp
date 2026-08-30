@@ -238,6 +238,28 @@ const char* kMemoryDump =
         "\td2 := (p2 - p) (ptrdiff)\n"
         "ENDPROC main\n";
 
+IntermediateRepresentation widenCopyBuiltinSequence() {
+    IntermediateRepresentation ir;
+    IrN n { ir.strings };
+    ir.procedures.push_back(makeProc(ir.strings, "main", {
+            ir::widen(n("x"), n("w"), true),
+            ir::copyPart(n("src"), n("dst"), 8),
+            ir::bswap(n("a"), n("b"), 4),
+            ir::ctz(n("c"), n("d"), 8),
+            ir::allocaBytes(n("n"), n("p")),
+    }));
+    return ir;
+}
+
+const char* kWidenCopyBuiltinDump =
+        "PROC main\n"
+        "\tw := widen x\n"
+        "\tdst := src[+8]\n"
+        "\tBSWAP4 a -> b\n"
+        "\tCTZ8 c -> d\n"
+        "\tALLOCA n -> p\n"
+        "ENDPROC main\n";
+
 TEST(InstructionIr, freezesArithmeticDump) {
     EXPECT_THAT(toString(arithmeticSequence()), StrEq(kArithmeticDump));
 }
@@ -256,6 +278,10 @@ TEST(InstructionIr, freezesVaDump) {
 
 TEST(InstructionIr, freezesMemoryDump) {
     EXPECT_THAT(toString(memorySequence()), StrEq(kMemoryDump));
+}
+
+TEST(InstructionIr, freezesWidenCopyBuiltinDump) {
+    EXPECT_THAT(toString(widenCopyBuiltinSequence()), StrEq(kWidenCopyBuiltinDump));
 }
 
 TEST(InstructionIr, procedureInternsNameAndTemps) {
