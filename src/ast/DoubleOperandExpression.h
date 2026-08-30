@@ -2,15 +2,15 @@
 #define DOUBLEOPERANDEXPRESSION_H_
 
 #include <memory>
+#include <string>
 
 #include "ast/Expression.h"
-#include "ast/Operator.h"
 
 namespace ast {
 
 class DoubleOperandExpression: public Expression {
 public:
-    DoubleOperandExpression(std::unique_ptr<Expression> leftOperand, std::unique_ptr<Expression> rightOperand, std::unique_ptr<Operator> _operator);
+    DoubleOperandExpression(std::unique_ptr<Expression> leftOperand, std::unique_ptr<Expression> rightOperand);
     virtual ~DoubleOperandExpression();
 
     std::optional<type::Type> intIfOperandsType(const ParseEnvironment& environment) const;
@@ -30,15 +30,11 @@ public:
 
     translation_unit::Context getContext() const override;
 
-    Operator* getOperator() const;
-
-    bool evaluateConstant(type::IntegerConstant& value) const override;
-
 protected:
+    bool foldOperands(type::IntegerConstant& value, const std::string& op) const;
+
     const std::unique_ptr<Expression> leftOperand;
     const std::unique_ptr<Expression> rightOperand;
-
-    const std::unique_ptr<Operator> _operator;
 };
 
 } // namespace ast

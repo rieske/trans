@@ -461,7 +461,7 @@ void CodeGeneratingVisitor::visit(ast::PostfixExpression& expression) {
     emit(ir::assign(resultSymbolName, preOperationSymbol));
 
     emitIncDec(resultSymbolName, expression.getResultSymbol(store_)->getType(),
-            expression.getOperator()->getLexeme() == "++");
+            expression.lexeme() == "++");
 
     // Dereference (and similar) lvalues: value lives in a temp; store new value through the pointer.
     if (expression.operandLvalueSymbol(store_)) {
@@ -476,7 +476,7 @@ void CodeGeneratingVisitor::visit(ast::PrefixExpression& expression) {
 
     const int resultSymbolName = id(*expression.getResultSymbol(store_));
     emitIncDec(resultSymbolName, expression.getResultSymbol(store_)->getType(),
-            expression.getOperator()->getLexeme() == "++");
+            expression.lexeme() == "++");
 
     if (expression.operandLvalueSymbol(store_)) {
         emitLvalueStore(*expression.getOperandExpression(), resultSymbolName);
@@ -484,7 +484,7 @@ void CodeGeneratingVisitor::visit(ast::PrefixExpression& expression) {
 }
 
 void CodeGeneratingVisitor::visit(ast::UnaryExpression& expression) {
-    if (expression.getOperator()->getLexeme() == "sizeof") {
+    if (expression.lexeme() == "sizeof") {
         if (expression.getSizeofValue() >= 0) {
             emit(ir::assignConstant(
                     id(std::to_string(expression.getSizeofValue())),
@@ -498,7 +498,7 @@ void CodeGeneratingVisitor::visit(ast::UnaryExpression& expression) {
 
     expression.visitOperand(*this);
 
-    switch (expression.getOperator()->getLexeme().front()) {
+    switch (expression.lexeme().front()) {
     case '&':
         // &function designator: SA reuses the designator temp (already emitted FunctionAddress).
         if (expression.getOperandExpression()->holdsFunctionDesignator()) {
@@ -571,7 +571,7 @@ void CodeGeneratingVisitor::visit(ast::UnaryExpression& expression) {
         emit(ir::label(id(*expression.getFalsyLabel(store_))));
         break;
     default:
-        throw std::runtime_error { "Unidentified unary operator: " + expression.getOperator()->getLexeme() };
+        throw std::runtime_error { "Unidentified unary operator: " + expression.lexeme() };
     }
 }
 
@@ -630,7 +630,7 @@ void CodeGeneratingVisitor::visit(ast::ArithmeticExpression& expression) {
     }
     const type::Type leftType = leftSym->getType();
     const type::Type rightType = rightSym->getType();
-    const char op = expression.getOperator()->getLexeme().front();
+    const char op = expression.lexeme().front();
     const int leftName = convertedResult(*expression.getLeftOperand());
     const int rightName = convertedResult(*expression.getRightOperand());
     const int resultName = id(*resultSym);
@@ -643,7 +643,7 @@ void CodeGeneratingVisitor::visit(ast::ArithmeticExpression& expression) {
         emitMulDiv(op, leftName, rightName, resultName, resultSym->getType());
         return;
     }
-    throw std::runtime_error { "unidentified arithmetic operator: " + expression.getOperator()->getLexeme() };
+    throw std::runtime_error { "unidentified arithmetic operator: " + expression.lexeme() };
 }
 
 void CodeGeneratingVisitor::emitAdditive(char op, const type::Type& leftType, const type::Type& rightType,
@@ -698,7 +698,7 @@ void CodeGeneratingVisitor::visit(ast::ShiftExpression& expression) {
     const int leftName = convertedResult(*expression.getLeftOperand());
     const int rightName = convertedResult(*expression.getRightOperand());
     const int resultName = id(*expression.getResultSymbol(store_));
-    switch (expression.getOperator()->getLexeme().front()) {
+    switch (expression.lexeme().front()) {
     case '<':   // <<
         emit(ir::shl(leftName, rightName, resultName));
         break;
@@ -725,17 +725,17 @@ void CodeGeneratingVisitor::visit(ast::ComparisonExpression& expression) {
             signedRel));
 
     const int truthyLabel = id(*expression.getTruthyLabel(store_));
-    if (expression.getOperator()->getLexeme() == ">") {
+    if (expression.lexeme() == ">") {
         emit(ir::jump(truthyLabel, JumpCondition::IF_ABOVE, signedRel));
-    } else if (expression.getOperator()->getLexeme() == "<") {
+    } else if (expression.lexeme() == "<") {
         emit(ir::jump(truthyLabel, JumpCondition::IF_BELOW, signedRel));
-    } else if (expression.getOperator()->getLexeme() == "<=") {
+    } else if (expression.lexeme() == "<=") {
         emit(ir::jump(truthyLabel, JumpCondition::IF_BELOW_OR_EQUAL, signedRel));
-    } else if (expression.getOperator()->getLexeme() == ">=") {
+    } else if (expression.lexeme() == ">=") {
         emit(ir::jump(truthyLabel, JumpCondition::IF_ABOVE_OR_EQUAL, signedRel));
-    } else if (expression.getOperator()->getLexeme() == "==") {
+    } else if (expression.lexeme() == "==") {
         emit(ir::jump(truthyLabel, JumpCondition::IF_EQUAL));
-    } else if (expression.getOperator()->getLexeme() == "!=") {
+    } else if (expression.lexeme() == "!=") {
         emit(ir::jump(truthyLabel, JumpCondition::IF_NOT_EQUAL));
     } else {
         throw std::runtime_error { "unidentified ml_op operator!\n" };
@@ -755,7 +755,7 @@ void CodeGeneratingVisitor::visit(ast::BitwiseExpression& expression) {
     const int leftName = convertedResult(*expression.getLeftOperand());
     const int rightName = convertedResult(*expression.getRightOperand());
     const int resultName = id(*expression.getResultSymbol(store_));
-    switch (expression.getOperator()->getLexeme().front()) {
+    switch (expression.lexeme().front()) {
     case '&':
         emit(ir::andOp(leftName, rightName, resultName));
         break;
@@ -766,7 +766,7 @@ void CodeGeneratingVisitor::visit(ast::BitwiseExpression& expression) {
         emit(ir::xorOp(leftName, rightName, resultName));
         break;
     default:
-        throw std::runtime_error { "no semantic actions defined for bitwise operator: " + expression.getOperator()->getLexeme() };
+        throw std::runtime_error { "no semantic actions defined for bitwise operator: " + expression.lexeme() };
     }
 }
 
@@ -826,33 +826,33 @@ void CodeGeneratingVisitor::visit(ast::AssignmentExpression& expression) {
     expression.visitLeftOperand(*this);
     expression.visitRightOperand(*this);
 
-    auto assignmentOperator = expression.getOperator();
+    const auto& op = expression.lexeme();
     const int resultName = id(*expression.getResultSymbol(store_));
     const int rightName = convertedResult(*expression.getRightOperand());
-    if (assignmentOperator->getLexeme() == "+=" || assignmentOperator->getLexeme() == "-=") {
+    if (op == "+=" || op == "-=") {
         const type::Type leftType = expression.getResultSymbol(store_)->getType();
         const type::Type rightType = expression.rightOperandSymbol(store_)->getType();
-        emitAdditive(assignmentOperator->getLexeme().front(), leftType, rightType,
+        emitAdditive(op.front(), leftType, rightType,
                 resultName, rightName, resultName);
     }
-    else if (assignmentOperator->getLexeme() == "*="
-            || assignmentOperator->getLexeme() == "/="
-            || assignmentOperator->getLexeme() == "%=") {
-        emitMulDiv(assignmentOperator->getLexeme().front(), resultName, rightName, resultName,
+    else if (op == "*="
+            || op == "/="
+            || op == "%=") {
+        emitMulDiv(op.front(), resultName, rightName, resultName,
                 expression.getResultSymbol(store_)->getType());
     }
-    else if (assignmentOperator->getLexeme() == "&=")
+    else if (op == "&=")
         emit(ir::andOp(resultName, rightName, resultName));
-    else if (assignmentOperator->getLexeme() == "^=")
+    else if (op == "^=")
         emit(ir::xorOp(resultName, rightName, resultName));
-    else if (assignmentOperator->getLexeme() == "|=")
+    else if (op == "|=")
         emit(ir::orOp(resultName, rightName, resultName));
-    else if (assignmentOperator->getLexeme() == "<<=") {
+    else if (op == "<<=") {
         emit(ir::shl(resultName, rightName, resultName));
-    } else if (assignmentOperator->getLexeme() == ">>=") {
+    } else if (op == ">>=") {
         emit(ir::shr(resultName, rightName, resultName,
                 type::valueIsSigned(expression.getResultSymbol(store_)->getType())));
-    } else if (assignmentOperator->getLexeme() == "=") {
+    } else if (op == "=") {
         if (expression.leftOperandLvalueSymbol(store_)) {
             emit(ir::assign(rightName, resultName));
             emitLvalueStore(*expression.getLeftOperand(), resultName);
@@ -861,7 +861,7 @@ void CodeGeneratingVisitor::visit(ast::AssignmentExpression& expression) {
         }
         return;
     } else {
-        throw std::runtime_error { "unidentified assignment operator: " + assignmentOperator->getLexeme() };
+        throw std::runtime_error { "unidentified assignment operator: " + op };
     }
 
     if (expression.leftOperandLvalueSymbol(store_)) {
@@ -872,9 +872,6 @@ void CodeGeneratingVisitor::visit(ast::AssignmentExpression& expression) {
 void CodeGeneratingVisitor::visit(ast::ExpressionList& expression) {
     expression.visitLeftOperand(*this);
     expression.visitRightOperand(*this);
-}
-
-void CodeGeneratingVisitor::visit(ast::Operator&) {
 }
 
 void CodeGeneratingVisitor::visit(ast::Pointer&) {

@@ -206,7 +206,7 @@ void SemanticAnalysisVisitor::visit(ast::PrefixExpression& expression) {
 }
 
 void SemanticAnalysisVisitor::visit(ast::UnaryExpression& expression) {
-    const auto& lexeme = expression.getOperator()->getLexeme();
+    const auto& lexeme = expression.lexeme();
     if (lexeme == "sizeof") {
         expression.visitOperand(*this);
         if (!expression.getOperandExpression()->hasExpressionType()) {
@@ -321,7 +321,7 @@ void SemanticAnalysisVisitor::visit(ast::UnaryExpression& expression) {
         expression.setFalsyLabel(annotations(), symbolTable.newLabel());
         break;
     default:
-        throw std::runtime_error { "Unidentified unary operator: " + expression.getOperator()->getLexeme() };
+        throw std::runtime_error { "Unidentified unary operator: " + expression.lexeme() };
     }
 }
 
@@ -465,7 +465,7 @@ void SemanticAnalysisVisitor::visit(ast::ArithmeticExpression& expression) {
     const type::Type leftValue = expression.leftOperandSymbol(annotations())->getType();
     const type::Type rightValue = expression.rightOperandSymbol(annotations())->getType();
 
-    const char op = expression.getOperator()->getLexeme().front();
+    const char op = expression.lexeme().front();
     const type::PointerArithmeticInfo ptrArith =
             type::classifyPointerArithmetic(leftValue, rightValue, op);
     if (ptrArith.form == type::PointerArithmeticForm::Invalid) {
@@ -539,7 +539,7 @@ void SemanticAnalysisVisitor::visit(ast::ComparisonExpression& expression) {
         const type::Type uac = applyUsualArithmeticConversions(
                 *expression.getLeftOperand(), *expression.getRightOperand(),
                 symbolTable, annotations());
-        const std::string& op = expression.getOperator()->getLexeme();
+        const std::string& op = expression.lexeme();
         if (type::isComplex(uac) && op != "==" && op != "!=") {
             semanticError("invalid operands to relational operator (complex type)", expression.getContext());
             return;
@@ -649,7 +649,7 @@ void SemanticAnalysisVisitor::visit(ast::AssignmentExpression& expression) {
         checkAssign(left, srcType, expression.getContext(), right);
         decayArrayValue(*right, symbolTable, annotations());
         maybeSetConversion(right,
-                type::assignmentConvertTarget(expression.getOperator()->getLexeme(), left, srcType),
+                type::assignmentConvertTarget(expression.lexeme(), left, srcType),
                 symbolTable, annotations());
 
         expression.setTypeAndResult(annotations(), *expression.leftOperandSymbol(annotations()));
@@ -668,9 +668,5 @@ void SemanticAnalysisVisitor::visit(ast::ExpressionList& expression) {
     expression.setType(expression.rightOperandType());
     expression.setResultSymbol(annotations(), *expression.rightOperandSymbol(annotations()));
 }
-
-void SemanticAnalysisVisitor::visit(ast::Operator&) {
-}
-
 
 } // namespace semantic_analyzer

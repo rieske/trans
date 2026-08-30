@@ -1,15 +1,14 @@
 #include "BitwiseExpression.h"
 
 #include "AbstractSyntaxTreeVisitor.h"
-#include "Operator.h"
 #include "ParseEnvironment.h"
 #include "types/TypeQuery.h"
 
 namespace ast {
 
-BitwiseExpression::BitwiseExpression(std::unique_ptr<Expression> leftHandSide, std::unique_ptr<Operator> bitwiseOperator,
+BitwiseExpression::BitwiseExpression(std::unique_ptr<Expression> leftHandSide, std::string lexeme,
         std::unique_ptr<Expression> rightHandSide) :
-        DoubleOperandExpression(std::move(leftHandSide), std::move(rightHandSide), std::move(bitwiseOperator)) {
+        BinaryOpExpression(std::move(leftHandSide), std::move(lexeme), std::move(rightHandSide)) {
 }
 
 void BitwiseExpression::accept(AbstractSyntaxTreeVisitor& visitor) {

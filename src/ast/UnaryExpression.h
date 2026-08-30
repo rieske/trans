@@ -2,16 +2,17 @@
 #define _U_EXPR_NODE_H_
 
 #include <memory>
+#include <string>
 
 #include "symbols/AnnotationStore.h"
 #include "symbols/LabelEntry.h"
-#include "ast/SingleOperandExpression.h"
+#include "ast/UnaryOpExpression.h"
 
 namespace ast {
 
-class UnaryExpression: public SingleOperandExpression {
+class UnaryExpression: public UnaryOpExpression {
 public:
-    UnaryExpression(std::unique_ptr<Operator> unaryOperator, std::unique_ptr<Expression> castExpression);
+    UnaryExpression(std::string lexeme, std::unique_ptr<Expression> castExpression);
 
     void accept(AbstractSyntaxTreeVisitor& visitor) override;
     std::optional<type::Type> typeAtParseTime(const ParseEnvironment& environment) const override;

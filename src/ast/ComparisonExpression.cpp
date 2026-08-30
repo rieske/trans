@@ -1,15 +1,14 @@
 #include "ComparisonExpression.h"
 
 #include "AbstractSyntaxTreeVisitor.h"
-#include "Operator.h"
 #include "ParseEnvironment.h"
 #include "types/Type.h"
 
 namespace ast {
 
-ComparisonExpression::ComparisonExpression(std::unique_ptr<Expression> leftHandSide, std::unique_ptr<Operator> comparisonOperator,
+ComparisonExpression::ComparisonExpression(std::unique_ptr<Expression> leftHandSide, std::string lexeme,
         std::unique_ptr<Expression> rightHandSide) :
-        DoubleOperandExpression(std::move(leftHandSide), std::move(rightHandSide), std::move(comparisonOperator))
+        BinaryOpExpression(std::move(leftHandSide), std::move(lexeme), std::move(rightHandSide))
 {
     setType(type::signedInteger());
 }

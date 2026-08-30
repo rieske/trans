@@ -2,21 +2,21 @@
 #define _POSTFIX_EXPR_NODE_H_
 
 #include <memory>
+#include <string>
 
-#include "SingleOperandExpression.h"
+#include "UnaryOpExpression.h"
 #include "symbols/AnnotationStore.h"
 
 namespace ast {
 
-class PostfixExpression: public SingleOperandExpression {
+class PostfixExpression: public UnaryOpExpression {
 public:
-    PostfixExpression(std::unique_ptr<Expression> postfixExpression, std::unique_ptr<Operator> postfixOperator);
+    PostfixExpression(std::unique_ptr<Expression> postfixExpression, std::string lexeme);
 
     void accept(AbstractSyntaxTreeVisitor& visitor) override;
 
     void setPreOperationSymbol(symbols::AnnotationStore& store, symbols::ValueEntry resultSymbol);
     symbols::ValueEntry* getPreOperationSymbol(symbols::AnnotationStore& store) const;
-
 };
 
 } // namespace ast

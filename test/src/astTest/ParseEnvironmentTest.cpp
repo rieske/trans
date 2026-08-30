@@ -16,7 +16,6 @@
 #include "ast/IdentifierExpression.h"
 #include "ast/InitializedDeclarator.h"
 #include "ast/MemberAccess.h"
-#include "ast/Operator.h"
 #include "ast/ParseEnvironment.h"
 #include "ast/PostfixExpression.h"
 #include "ast/PrefixExpression.h"
@@ -281,14 +280,14 @@ TEST(ParseEnvironment, typeOfIdentifierEnumUnaryAndTyped) {
     EXPECT_TRUE(literalType->getElementType().equivalentTo(type::signedCharacter()));
 
     UnaryExpression deref {
-            std::make_unique<Operator>("*"),
+            "*",
             std::make_unique<IdentifierExpression>("p", ctx) };
     auto derefType = env.typeOf(deref);
     ASSERT_TRUE(derefType.has_value());
     EXPECT_TRUE(derefType->equivalentTo(type::signedInteger()));
 
     UnaryExpression addr {
-            std::make_unique<Operator>("&"),
+            "&",
             std::make_unique<IdentifierExpression>("x", ctx) };
     auto addrType = env.typeOf(addr);
     ASSERT_TRUE(addrType.has_value());
@@ -296,21 +295,21 @@ TEST(ParseEnvironment, typeOfIdentifierEnumUnaryAndTyped) {
     EXPECT_TRUE(addrType->dereference().equivalentTo(type::signedInteger()));
 
     UnaryExpression arrayDeref {
-            std::make_unique<Operator>("*"),
+            "*",
             std::make_unique<IdentifierExpression>("a", ctx) };
     auto elementType = env.typeOf(arrayDeref);
     ASSERT_TRUE(elementType.has_value());
     EXPECT_TRUE(elementType->equivalentTo(type::signedCharacter()));
 
     UnaryExpression plus {
-            std::make_unique<Operator>("+"),
+            "+",
             std::make_unique<IdentifierExpression>("x", ctx) };
     auto plusType = env.typeOf(plus);
     ASSERT_TRUE(plusType.has_value());
     EXPECT_TRUE(plusType->equivalentTo(type::signedInteger()));
 
     PrefixExpression prefix {
-            std::make_unique<Operator>("++"),
+            "++",
             std::make_unique<IdentifierExpression>("x", ctx) };
     auto prefixType = env.typeOf(prefix);
     ASSERT_TRUE(prefixType.has_value());
@@ -318,7 +317,7 @@ TEST(ParseEnvironment, typeOfIdentifierEnumUnaryAndTyped) {
 
     PostfixExpression postfix {
             std::make_unique<IdentifierExpression>("x", ctx),
-            std::make_unique<Operator>("++") };
+            "++" };
     auto postfixType = env.typeOf(postfix);
     ASSERT_TRUE(postfixType.has_value());
     EXPECT_TRUE(postfixType->equivalentTo(type::signedInteger()));
@@ -331,7 +330,7 @@ TEST(ParseEnvironment, typeOfIdentifierEnumUnaryAndTyped) {
     EXPECT_TRUE(indexType->equivalentTo(type::signedCharacter()));
 
     UnaryExpression addrOfElement {
-            std::make_unique<Operator>("&"),
+            "&",
             std::make_unique<ArrayAccess>(
                     std::make_unique<IdentifierExpression>("a", ctx),
                     std::make_unique<ConstantExpression>(Constant { "0", type::signedInteger(), ctx })) };
@@ -392,7 +391,7 @@ TEST(ParseEnvironment, typeOfMemberAccess) {
     EXPECT_TRUE(arrayArrowType->equivalentTo(type::signedInteger()));
 
     UnaryExpression derefItems {
-            std::make_unique<Operator>("*"),
+            "*",
             std::make_unique<MemberAccess>(
                     std::make_unique<IdentifierExpression>("ps", ctx),
                     "items",
@@ -437,7 +436,7 @@ TEST(ParseEnvironment, typeOfPointerArithmetic) {
 
     ArithmeticExpression ptrPlus {
             std::make_unique<IdentifierExpression>("p", ctx),
-            std::make_unique<Operator>("+"),
+            "+",
             std::make_unique<IdentifierExpression>("i", ctx) };
     auto ptrPlusType = env.typeOf(ptrPlus);
     ASSERT_TRUE(ptrPlusType.has_value());
@@ -445,7 +444,7 @@ TEST(ParseEnvironment, typeOfPointerArithmetic) {
 
     ArithmeticExpression intPlusPtr {
             std::make_unique<IdentifierExpression>("i", ctx),
-            std::make_unique<Operator>("+"),
+            "+",
             std::make_unique<IdentifierExpression>("p", ctx) };
     auto intPlusPtrType = env.typeOf(intPlusPtr);
     ASSERT_TRUE(intPlusPtrType.has_value());
@@ -453,7 +452,7 @@ TEST(ParseEnvironment, typeOfPointerArithmetic) {
 
     ArithmeticExpression ptrMinusInt {
             std::make_unique<IdentifierExpression>("p", ctx),
-            std::make_unique<Operator>("-"),
+            "-",
             std::make_unique<IdentifierExpression>("i", ctx) };
     auto ptrMinusIntType = env.typeOf(ptrMinusInt);
     ASSERT_TRUE(ptrMinusIntType.has_value());
@@ -461,7 +460,7 @@ TEST(ParseEnvironment, typeOfPointerArithmetic) {
 
     ArithmeticExpression ptrMinusPtr {
             std::make_unique<IdentifierExpression>("p", ctx),
-            std::make_unique<Operator>("-"),
+            "-",
             std::make_unique<IdentifierExpression>("q", ctx) };
     auto ptrMinusPtrType = env.typeOf(ptrMinusPtr);
     ASSERT_TRUE(ptrMinusPtrType.has_value());
@@ -469,7 +468,7 @@ TEST(ParseEnvironment, typeOfPointerArithmetic) {
 
     ArithmeticExpression arrPlus {
             std::make_unique<IdentifierExpression>("a", ctx),
-            std::make_unique<Operator>("+"),
+            "+",
             std::make_unique<IdentifierExpression>("i", ctx) };
     auto arrPlusType = env.typeOf(arrPlus);
     ASSERT_TRUE(arrPlusType.has_value());
@@ -477,17 +476,17 @@ TEST(ParseEnvironment, typeOfPointerArithmetic) {
 
     ArithmeticExpression ptrPlusConst {
             std::make_unique<IdentifierExpression>("p", ctx),
-            std::make_unique<Operator>("+"),
+            "+",
             std::make_unique<ConstantExpression>(Constant { "1", type::signedInteger(), ctx }) };
     auto ptrPlusConstType = env.typeOf(ptrPlusConst);
     ASSERT_TRUE(ptrPlusConstType.has_value());
     EXPECT_TRUE(ptrPlusConstType->equivalentTo(type::pointer(type::signedInteger())));
 
     UnaryExpression derefPtrPlus {
-            std::make_unique<Operator>("*"),
+            "*",
             std::make_unique<ArithmeticExpression>(
                     std::make_unique<IdentifierExpression>("p", ctx),
-                    std::make_unique<Operator>("+"),
+                    "+",
                     std::make_unique<IdentifierExpression>("i", ctx)) };
     auto derefPtrPlusType = env.typeOf(derefPtrPlus);
     ASSERT_TRUE(derefPtrPlusType.has_value());
@@ -495,7 +494,7 @@ TEST(ParseEnvironment, typeOfPointerArithmetic) {
 
     ArithmeticExpression intPlus {
             std::make_unique<IdentifierExpression>("i", ctx),
-            std::make_unique<Operator>("+"),
+            "+",
             std::make_unique<IdentifierExpression>("b", ctx) };
     auto intPlusType = env.typeOf(intPlus);
     ASSERT_TRUE(intPlusType.has_value());
@@ -503,7 +502,7 @@ TEST(ParseEnvironment, typeOfPointerArithmetic) {
 
     ArithmeticExpression charPlus {
             std::make_unique<IdentifierExpression>("c", ctx),
-            std::make_unique<Operator>("+"),
+            "+",
             std::make_unique<IdentifierExpression>("c", ctx) };
     auto charPlusType = env.typeOf(charPlus);
     ASSERT_TRUE(charPlusType.has_value());
@@ -511,7 +510,7 @@ TEST(ParseEnvironment, typeOfPointerArithmetic) {
 
     ArithmeticExpression intMul {
             std::make_unique<IdentifierExpression>("i", ctx),
-            std::make_unique<Operator>("*"),
+            "*",
             std::make_unique<IdentifierExpression>("b", ctx) };
     auto intMulType = env.typeOf(intMul);
     ASSERT_TRUE(intMulType.has_value());
@@ -530,14 +529,14 @@ TEST(ParseEnvironment, typeOfGitShapedDerefMemberPlus) {
     env.defineObject("i", type::signedInteger());
 
     UnaryExpression gitShape {
-            std::make_unique<Operator>("*"),
+            "*",
             std::make_unique<ArithmeticExpression>(
                     std::make_unique<MemberAccess>(
                             std::make_unique<IdentifierExpression>("ps", ctx),
                             "items",
                             true,
                             ctx),
-                    std::make_unique<Operator>("+"),
+                    "+",
                     std::make_unique<IdentifierExpression>("i", ctx)) };
     auto gitShapeType = env.typeOf(gitShape);
     ASSERT_TRUE(gitShapeType.has_value());

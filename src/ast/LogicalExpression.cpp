@@ -4,9 +4,9 @@
 
 namespace ast {
 
-LogicalExpression::LogicalExpression(std::unique_ptr<Expression> leftHandSide, std::unique_ptr<Operator> logicalOperator,
+LogicalExpression::LogicalExpression(std::unique_ptr<Expression> leftHandSide,
         std::unique_ptr<Expression> rightHandSide) :
-        DoubleOperandExpression { std::move(leftHandSide), std::move(rightHandSide), std::move(logicalOperator) }
+        DoubleOperandExpression { std::move(leftHandSide), std::move(rightHandSide) }
 {
     setType(type::signedInteger());
 }

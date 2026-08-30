@@ -4,13 +4,12 @@
 #include <memory>
 
 #include "ast/Expression.h"
-#include "ast/Operator.h"
 
 namespace ast {
 
 class SingleOperandExpression: public Expression {
 public:
-    SingleOperandExpression(std::unique_ptr<Expression> _operand, std::unique_ptr<Operator> _operator);
+    explicit SingleOperandExpression(std::unique_ptr<Expression> _operand);
     virtual ~SingleOperandExpression();
 
     std::optional<type::Type> typeAtParseTime(const ParseEnvironment& environment) const override;
@@ -26,11 +25,8 @@ public:
 
     translation_unit::Context getContext() const override;
 
-    Operator* getOperator() const;
-
 protected:
     const std::unique_ptr<Expression> _operand;
-    const std::unique_ptr<Operator> _operator;
 };
 
 } // namespace ast

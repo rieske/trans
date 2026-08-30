@@ -4,8 +4,8 @@
 
 namespace ast {
 
-PrefixExpression::PrefixExpression(std::unique_ptr<Operator> incrementOperator, std::unique_ptr<Expression> unaryExpression) :
-        SingleOperandExpression(std::move(unaryExpression), std::move(incrementOperator)) {
+PrefixExpression::PrefixExpression(std::string lexeme, std::unique_ptr<Expression> unaryExpression) :
+        UnaryOpExpression(std::move(unaryExpression), std::move(lexeme)) {
 }
 
 PrefixExpression::~PrefixExpression() {
