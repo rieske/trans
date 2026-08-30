@@ -76,13 +76,15 @@ private:
     bool pending_ { false };
 };
 
-// Not copyable: FA holds a raw pointer into typedefs.
+// Not copyable: FA holds a raw pointer to the session.
 struct LexicalSession {
     TypedefRegistry typedefs;
     ObjectTypeRegistry objects;
     EnumConstantRegistry enums;
     RecordPacked recordPacked;
     PendingTransparentUnion transparentUnion;
+
+    bool isTypedef(const std::string& name) const { return typedefs.has(name); }
 
     void enterBlock() {
         typedefs.pushIdentifierShadowScope();
@@ -99,7 +101,13 @@ struct LexicalSession {
         objects.clearPending();
     }
 
-    LexicalSession() = default;
+    LexicalSession() {
+        typedefs.add("_Float32", type::floating());
+        typedefs.add("_Float64", type::doubleFloating());
+        typedefs.add("_Float128", type::doubleFloating());
+        typedefs.add("_Float32x", type::floating());
+        typedefs.add("_Float64x", type::doubleFloating());
+    }
     LexicalSession(const LexicalSession&) = delete;
     LexicalSession& operator=(const LexicalSession&) = delete;
     LexicalSession(LexicalSession&&) = delete;

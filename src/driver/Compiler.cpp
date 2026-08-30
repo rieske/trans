@@ -19,7 +19,6 @@
 #include "semantic_analyzer/SemanticAnalyzer.h"
 #include "symbols/ValueEntry.h"
 #include "types/SysVClassify.h"
-#include "types/Type.h"
 #include "codegen/ValueKind.h"
 #include "util/Logger.h"
 #include "util/LogManager.h"
@@ -267,11 +266,6 @@ std::string Compiler::compile(std::string sourceFileName) const {
     }
 
     scanner::LexicalSession session;
-    session.typedefs.add("_Float32", type::floating());
-    session.typedefs.add("_Float64", type::doubleFloating());
-    session.typedefs.add("_Float128", type::doubleFloating());
-    session.typedefs.add("_Float32x", type::floating());
-    session.typedefs.add("_Float64x", type::doubleFloating());
     std::unique_ptr<scanner::Scanner> scanner =
             compilerComponentsFactory.makeScannerForSourceFile(iPath, session);
     std::unique_ptr<parser::SyntaxTreeBuilder> syntaxTreeBuilder =

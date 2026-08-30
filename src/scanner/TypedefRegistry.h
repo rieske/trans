@@ -11,7 +11,7 @@
 
 namespace scanner {
 
-// Typedef names for one TU. FA uses has(); TokenStream uses identifier shadows.
+// Typedef names for one TU.
 class TypedefRegistry {
 public:
     void add(const std::string& name, const type::Type& type);

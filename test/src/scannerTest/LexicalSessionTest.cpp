@@ -6,6 +6,30 @@
 
 using namespace scanner;
 
+TEST(LexicalSession, isTypedefDelegatesToRegistry) {
+    LexicalSession session;
+    EXPECT_FALSE(session.isTypedef("T"));
+    session.typedefs.add("T", type::signedInteger());
+    EXPECT_TRUE(session.isTypedef("T"));
+    EXPECT_TRUE(session.typedefs.has("T"));
+}
+
+TEST(LexicalSession, defaultSessionHasBuiltinFloatTypedefs) {
+    LexicalSession session;
+
+    EXPECT_TRUE(session.isTypedef("_Float32"));
+    EXPECT_TRUE(session.isTypedef("_Float64"));
+    EXPECT_TRUE(session.isTypedef("_Float128"));
+    EXPECT_TRUE(session.isTypedef("_Float32x"));
+    EXPECT_TRUE(session.isTypedef("_Float64x"));
+
+    EXPECT_TRUE(session.typedefs.tryLookup("_Float32")->equivalentTo(type::floating()));
+    EXPECT_TRUE(session.typedefs.tryLookup("_Float64")->equivalentTo(type::doubleFloating()));
+    EXPECT_TRUE(session.typedefs.tryLookup("_Float128")->equivalentTo(type::doubleFloating()));
+    EXPECT_TRUE(session.typedefs.tryLookup("_Float32x")->equivalentTo(type::floating()));
+    EXPECT_TRUE(session.typedefs.tryLookup("_Float64x")->equivalentTo(type::doubleFloating()));
+}
+
 TEST(LexicalSession, typedefAndEnumAreInstanceOwned) {
     LexicalSession a;
     LexicalSession b;
@@ -190,6 +214,7 @@ TEST(LexicalSession, enterBlockSharesShadowAndObjectFrames) {
     session.leaveBlock();
     EXPECT_FALSE(session.typedefs.isIdentifierShadow("T"));
     EXPECT_TRUE(session.typedefs.has("T"));
+    EXPECT_TRUE(session.isTypedef("T"));
     auto outer = session.objects.lookup("x");
     ASSERT_TRUE(outer.has_value());
     EXPECT_TRUE(outer->equivalentTo(type::signedInteger()));
