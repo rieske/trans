@@ -2,8 +2,8 @@
 #include "gmock/gmock.h"
 
 #include "scanner/FiniteAutomaton.h"
+#include "scanner/LexicalSession.h"
 #include "scanner/State.h"
-#include "scanner/TypedefRegistry.h"
 #include "types/Type.h"
 
 using namespace testing;
@@ -143,10 +143,10 @@ TEST(FiniteAutomaton, emitsTypedefNameWhenRegistered) {
     startState.addTransition("m", &accumulatingState);
     accumulatingState.addTransition("yint", &accumulatingState);
     accumulatingState.addTransition("", &finalState);
-    TypedefRegistry reg;
-    reg.add("myint", type::signedInteger());
+    LexicalSession session;
+    session.typedefs.add("myint", type::signedInteger());
     FiniteAutomaton finiteAutomaton { &startState, {}, {} };
-    finiteAutomaton.setTypedefRegistry(&reg);
+    finiteAutomaton.setSession(&session);
 
     for (char c : std::string("myint ")) {
         finiteAutomaton.updateState(c);
@@ -164,10 +164,10 @@ TEST(FiniteAutomaton, keywordWinsOverTypedefRegistry) {
     startState.addTransition("v", &accumulatingState);
     accumulatingState.addTransition("oid", &accumulatingState);
     accumulatingState.addTransition("", &finalState);
-    TypedefRegistry reg;
-    reg.add("void", type::signedInteger());
+    LexicalSession session;
+    session.typedefs.add("void", type::signedInteger());
     FiniteAutomaton finiteAutomaton { &startState, { {"void", 1} }, {} };
-    finiteAutomaton.setTypedefRegistry(&reg);
+    finiteAutomaton.setSession(&session);
 
     for (char c : std::string("void ")) {
         finiteAutomaton.updateState(c);
@@ -184,11 +184,11 @@ TEST(FiniteAutomaton, stillEmitsTypedefNameWhenIdentifierShadowed) {
     startState.addTransition("", &startState);
     startState.addTransition("T", &accumulatingState);
     accumulatingState.addTransition("", &finalState);
-    TypedefRegistry reg;
-    reg.add("T", type::signedInteger());
-    reg.addIdentifierShadow("T");
+    LexicalSession session;
+    session.typedefs.add("T", type::signedInteger());
+    session.typedefs.addIdentifierShadow("T");
     FiniteAutomaton finiteAutomaton { &startState, {}, {} };
-    finiteAutomaton.setTypedefRegistry(&reg);
+    finiteAutomaton.setSession(&session);
 
     for (char c : std::string("T ")) {
         finiteAutomaton.updateState(c);

@@ -6,7 +6,7 @@ Scanner::Scanner(std::string fileName, std::unique_ptr<FiniteAutomaton> stateMac
         translationUnit { fileName },
         automaton { std::move(stateMachine) },
         session_ { session } {
-    automaton->setTypedefRegistry(&session_.typedefs);
+    automaton->setSession(&session_);
 }
 
 Token Scanner::nextToken() {

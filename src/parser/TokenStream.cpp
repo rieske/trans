@@ -115,7 +115,7 @@ scanner::Token TokenStream::classifyAndStamp(const scanner::Token& token) const 
     if (id == "id" || id == "typedef_name") {
         if (session_.typedefs.isIdentifierShadow(token.lexeme)) {
             id = "id";
-        } else if (!session_.typedefs.has(token.lexeme)) {
+        } else if (!session_.isTypedef(token.lexeme)) {
             id = "id";
         } else if (idContext_ == LexIdContext::AsIdentifier) {
             id = "id";
