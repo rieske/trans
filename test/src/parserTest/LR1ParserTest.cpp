@@ -4,9 +4,9 @@
 #include "gmock/gmock.h"
 
 #include "parser/LR1Parser.h"
-#include "parser/FilePersistedParsingTable.h"
 #include "parser/BNFFileReader.h"
 #include "parser/Grammar.h"
+#include "parser/ParsingTable.h"
 #include "util/LogManager.h"
 #include "driver/Configuration.h"
 #include "driver/CompilerComponentsFactory.h"
@@ -24,14 +24,13 @@ namespace {
 TEST(LR1Parser, parsesTestProgram) {
     Configuration configuration;
     configuration.setResourcesBasePath(getResourcesBaseDir());
-    configuration.setGrammarPath(getResourcePath("configuration/grammar.bnf"));
 
     CompilerComponentsFactory compilerComponentsFactory { configuration };
     //LogManager::registerComponentLogger(Component::PARSER, { &std::cerr });
 
     BNFFileReader reader;
     Grammar grammar = reader.readGrammar(getResourcePath("configuration/grammar.bnf"));
-    FilePersistedParsingTable parsingTable { getResourcePath("configuration/parsing_table"), &grammar };
+    ParsingTable parsingTable { &grammar };
 
     LR1Parser parser { parsingTable };
     scanner::LexicalSession session;

@@ -24,14 +24,12 @@ public:
 
 	void addAction(parse_state state, int lookahead, Action actionToAdd);
 	const Action* findAction(parse_state state, int lookahead) const;
-	Action action(parse_state state, int lookahead) const;
 	bool hasCorrectiveAction(parse_state state, int lookahead) const;
 	size_t size() const;
 	void reserve(size_t stateCount);
 	void setStateCount(size_t stateCount);
 
 	void setErrorCandidates(parse_state state, std::vector<int> candidates);
-	std::shared_ptr<const std::vector<int>> errorCandidates(parse_state state) const;
 
 	std::vector<ExplicitAction> explicitActions() const;
 	std::vector<ErrorRow> errorRows() const;

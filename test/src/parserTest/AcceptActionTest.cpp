@@ -8,7 +8,6 @@
 #include "parser/Action.h"
 #include "parser/Grammar.h"
 #include "parser/GrammarBuilder.h"
-#include "parser/ParsingTable.h"
 #include "parser/SyntaxTree.h"
 #include "parser/SyntaxTreeBuilder.h"
 
@@ -27,20 +26,10 @@ public:
     void makeNonterminalNode(const Production&) override {}
 };
 
-TEST(AcceptAction, isSerializedAsAcceptWithNoState) {
+TEST(AcceptAction, toStringIsAcceptWithNoState) {
     Action acceptAction = Action::accept();
 
-    EXPECT_THAT(acceptAction.serialize(), Eq("a"));
-}
-
-TEST(AcceptAction, isDeserializedFromString) {
-    GrammarBuilder grammarBuilder;
-    grammarBuilder.defineRule("<foo>", {"bar"});
-    Grammar grammar = grammarBuilder.build();
-    ParsingTable parsingTable {&grammar};
-    Action action = Action::deserialize(std::string { "a" }, parsingTable, grammar);
-
-    EXPECT_THAT(action.serialize(), Eq("a"));
+    EXPECT_THAT(acceptAction.toString(), Eq("a"));
 }
 
 TEST(AcceptAction, acceptsTheParse) {

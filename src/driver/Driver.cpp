@@ -128,16 +128,6 @@ int Driver::run(int argc, char **argv) const {
         return 0;
     }
 
-    if (configuration.usingCustomGrammar() && inputs.empty()) {
-        try {
-            Compiler { configuration };
-            return 0;
-        } catch (const std::exception& exception) {
-            err << "Error: " << exception.what() << "\n";
-            return 1;
-        }
-    }
-
     int exitCode = 0;
     std::vector<std::string> outputs;
     std::unique_ptr<Compiler> compiler;

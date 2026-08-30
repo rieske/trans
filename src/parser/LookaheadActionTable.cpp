@@ -20,7 +20,7 @@ void LookaheadActionTable::addAction(parse_state state, int lookahead, Action ac
         lookaheadActions.emplace(key, std::move(actionToAdd));
     } else if (!existingIt->second.equals(actionToAdd)) {
         throw std::runtime_error { "Lookahead action conflict at state: " + std::to_string(state) + " existing action: "
-                + existingIt->second.serialize() + " attempted add of action: " + actionToAdd.serialize() };
+                + existingIt->second.toString() + " attempted add of action: " + actionToAdd.toString() };
     }
 }
 
@@ -30,15 +30,6 @@ const Action* LookaheadActionTable::findAction(parse_state state, int lookahead)
         return nullptr;
     }
     return &actionIt->second;
-}
-
-Action LookaheadActionTable::action(parse_state state, int lookahead) const {
-    if (const auto* cell = findAction(state, lookahead)) {
-        return *cell;
-    }
-    throw std::out_of_range {
-        "No action for state " + std::to_string(state) + " lookahead " + std::to_string(lookahead)
-    };
 }
 
 bool LookaheadActionTable::hasCorrectiveAction(parse_state state, int lookahead) const {
@@ -68,14 +59,6 @@ void LookaheadActionTable::setErrorCandidates(parse_state state, std::vector<int
         stateCount_ = state + 1;
     }
     errorCandidatesByState[state] = std::make_shared<const std::vector<int>>(std::move(candidates));
-}
-
-std::shared_ptr<const std::vector<int>> LookaheadActionTable::errorCandidates(parse_state state) const {
-    const auto found = errorCandidatesByState.find(state);
-    if (found == errorCandidatesByState.end()) {
-        return nullptr;
-    }
-    return found->second;
 }
 
 std::vector<LookaheadActionTable::ExplicitAction> LookaheadActionTable::explicitActions() const {

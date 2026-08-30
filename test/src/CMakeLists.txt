@@ -32,13 +32,14 @@ add_executable(parserTest
         parserTest/BNFGrammarReaderTest.cpp
         parserTest/CanonicalCollectionTest.cpp
         parserTest/ClosureTest.cpp
-        parserTest/FilePersistedParsingTableTest.cpp
+        parserTest/CompileParsingTableTest.cpp
         parserTest/FirstTableTest.cpp
         parserTest/GrammarBuilderTest.cpp
         parserTest/GrammarTerminalMapTest.cpp
         parserTest/LookaheadActionTableTest.cpp
         parserTest/LR1ItemTest.cpp
-        parserTest/ParsingTableFileTest.cpp
+        parserTest/ParsingTableProductTest.cpp
+        parserTest/ParsingTableSourceTest.cpp
         parserTest/ParsingTableTest.cpp
         parserTest/LR1ParserTest.cpp
         parserTest/ProductionTest.cpp

@@ -40,17 +40,16 @@ public:
 
     Kind kind() const noexcept { return kind_; }
     std::optional<int> reduceDefiningSymbol() const;
+    parse_state shiftState() const;
+    int productionId() const;
 
     // Returns true when the parse is finished (accept or error).
     bool parse(std::stack<parse_state>& parsingStack, TokenStream& tokenStream,
             SyntaxTreeBuilder& syntaxTreeBuilder) const;
 
-    std::string serialize() const;
+    std::string toString() const;
     bool equals(const Action& other) const;
     bool isCorrective() const noexcept { return kind_ == Kind::Reduce; }
-
-    static Action deserialize(const std::string& serializedAction,
-            const ParsingTable& parsingTable, const Grammar& grammar);
 
 private:
     Kind kind_ { Kind::Accept };

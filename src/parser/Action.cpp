@@ -27,6 +27,20 @@ std::optional<int> Action::reduceDefiningSymbol() const {
     return production_->getDefiningSymbol();
 }
 
+parse_state Action::shiftState() const {
+    if (kind_ != Kind::Shift) {
+        throw std::logic_error { "Action::shiftState: not a shift" };
+    }
+    return state_;
+}
+
+int Action::productionId() const {
+    if (kind_ != Kind::Reduce || production_ == nullptr) {
+        throw std::logic_error { "Action::productionId: not a reduce" };
+    }
+    return production_->getId();
+}
+
 Action Action::shift(parse_state state) {
     Action action;
     action.kind_ = Kind::Shift;
@@ -59,7 +73,7 @@ Action Action::error(parse_state state,
     return action;
 }
 
-std::string Action::serialize() const {
+std::string Action::toString() const {
     switch (kind_) {
     case Kind::Accept:
         return std::string{ACCEPT_ACTION};
@@ -78,7 +92,7 @@ std::string Action::serialize() const {
         return s.str();
     }
     }
-    throw std::logic_error { "Action::serialize: unhandled Kind" };
+    throw std::logic_error { "Action::toString: unhandled Kind" };
 }
 
 bool Action::equals(const Action& other) const {
@@ -98,43 +112,6 @@ bool Action::equals(const Action& other) const {
                 && *candidateSymbols_ == *other.candidateSymbols_;
     }
     throw std::logic_error { "Action::equals: unhandled Kind" };
-}
-
-Action Action::deserialize(const std::string& serializedAction,
-        const ParsingTable& parsingTable, const Grammar& grammar) {
-    std::istringstream actionStream { serializedAction };
-    char type;
-    actionStream >> type;
-    switch (type) {
-    case SHIFT_ACTION: {
-        parse_state state;
-        actionStream >> state;
-        return Action::shift(state);
-    }
-    case REDUCE_ACTION: {
-        size_t productionId;
-        actionStream >> productionId;
-        return Action::reduce(grammar.getRuleById(static_cast<int>(productionId)), &parsingTable);
-    }
-    case ERROR_ACTION: {
-        parse_state state;
-        actionStream >> state;
-        std::vector<int> candidates;
-        int candidate;
-        while (actionStream >> candidate) {
-            candidates.push_back(candidate);
-        }
-        return Action::error(state,
-                std::make_shared<const std::vector<int>>(std::move(candidates)),
-                &grammar);
-    }
-    case ACCEPT_ACTION:
-        return Action::accept();
-    default:
-        throw std::runtime_error(
-                "Error reading serialized parsing table: invalid action type: "
-                        + std::to_string(type));
-    }
 }
 
 bool Action::parse(std::stack<parse_state>& parsingStack, TokenStream& tokenStream,

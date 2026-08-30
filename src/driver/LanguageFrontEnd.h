@@ -24,14 +24,8 @@ public:
 private:
     explicit LanguageFrontEnd(parser::Grammar grammar);
 
-    static std::shared_ptr<const LanguageFrontEnd> product(const Configuration& configuration);
-    static std::shared_ptr<const LanguageFrontEnd> generate(const Configuration& configuration);
-    static std::shared_ptr<LanguageFrontEnd> withFileTable(
-            parser::Grammar grammar, const std::string& tablePath);
-    static std::shared_ptr<LanguageFrontEnd> withGeneratedTable(parser::Grammar grammar);
-
     parser::Grammar grammar_;
-    std::unique_ptr<parser::ParsingTable> table_;
+    parser::ParsingTable table_;
 };
 
 #endif

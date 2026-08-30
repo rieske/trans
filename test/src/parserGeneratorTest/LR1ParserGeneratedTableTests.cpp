@@ -5,8 +5,8 @@
 
 #include "parser/BNFFileReader.h"
 #include "parser/LR1Parser.h"
-#include "parser/GeneratedParsingTable.h"
-#include "parser/FilePersistedParsingTable.h"
+#include "parser/GenerateParsingTable.h"
+#include "parser/ParsingTable.h"
 #include "parser/CanonicalCollection.h"
 #include "parser/FirstTable.h"
 #include "driver/Configuration.h"
@@ -14,11 +14,8 @@
 #include "parser/SyntaxTreeBuilder.h"
 
 #include "ResourceHelpers.h"
-#include "TableAssertions.h"
 
-#include <fstream>
 #include <memory>
-#include <sstream>
 
 using namespace testing;
 using namespace parser;
@@ -31,13 +28,12 @@ constexpr const char* kProductGrammar = "configuration/grammar.bnf";
 void generateAndParseExample(AutomatonKind kind) {
     Configuration configuration;
     configuration.setResourcesBasePath(getResourcesBaseDir());
-    configuration.setGrammarPath(std::string{"resources/"} + kProductGrammar);
 
     CompilerComponentsFactory factory { configuration };
     BNFFileReader reader;
     Grammar grammar = reader.readGrammar(getResourcePath(kProductGrammar));
-    GeneratedParsingTable parsingTable { &grammar, kind };
-    LR1Parser parser { parsingTable };
+    ParsingTable table = generateParsingTable(&grammar, kind);
+    LR1Parser parser { table };
     scanner::LexicalSession session;
     auto syntaxTreeBuilder = factory.makeSyntaxTreeBuilder(&grammar, session);
     ASSERT_NO_THROW(
@@ -67,32 +63,6 @@ TEST(LR1Parser, lr1HasAtLeastAsManyStatesAsLalrOnProductGrammar) {
     // Known sizes for the product grammar (guards accidental collapse/explosion).
     EXPECT_EQ(lalr.stateCount(), 479u);
     EXPECT_EQ(lr1.stateCount(), 2540u);
-}
-
-// Checked-in product table is LALR; regenerate must match.
-TEST(LR1Parser, parsingTableIsUnchanged) {
-    BNFFileReader reader;
-    Grammar grammar = reader.readGrammar(getResourcePath(kProductGrammar));
-    GeneratedParsingTable parsingTable{&grammar, AutomatonKind::LALR1};
-
-    ScopedTempFile testParsingTableFile { "test_parsing_table" };
-    parsingTable.persistToFile(testParsingTableFile.path());
-
-    std::ifstream testParsingTable { testParsingTableFile.path() };
-    std::ifstream realParsingTable { getResourcePath("configuration/parsing_table") };
-
-    if (!std::equal(std::istreambuf_iterator<char>(realParsingTable),
-                std::istreambuf_iterator<char>(),
-                std::istreambuf_iterator<char>(testParsingTable))) {
-        std::stringstream s;
-        s << "Parsing table changed!\n";
-        s << "If this is expected, regenerate parsing table using ./regenerate-parsing-table.sh ";
-        s << "and cp logs/parsing_table resources/configuration/parsing_table";
-        throw std::runtime_error {s.str()};
-    }
-
-    FilePersistedParsingTable loaded { testParsingTableFile.path(), &grammar };
-    expectTablesMatch(parsingTable, loaded);
 }
 
 } // namespace
