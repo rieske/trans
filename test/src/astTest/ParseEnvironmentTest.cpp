@@ -228,8 +228,7 @@ TEST(ParseEnvironment, maybeRegisterParameterShadowPending) {
     env.defineTypedef("T", type::signedInteger());
     env.maybeRegisterParameterShadow("T");
     EXPECT_FALSE(session.typedefs.isIdentifierShadow("T"));
-    session.typedefs.pushIdentifierShadowScope();
-    session.typedefs.flushPendingParameterShadows();
+    session.enterBlock();
     EXPECT_TRUE(session.typedefs.isIdentifierShadow("T"));
 }
 
@@ -239,8 +238,7 @@ TEST(ParseEnvironment, maybeRegisterParameterShadowNoopsForEmptyOrUnknown) {
     env.defineTypedef("T", type::signedInteger());
     env.maybeRegisterParameterShadow("");
     env.maybeRegisterParameterShadow("not_a_typedef");
-    session.typedefs.pushIdentifierShadowScope();
-    session.typedefs.flushPendingParameterShadows();
+    session.enterBlock();
     EXPECT_FALSE(session.typedefs.isIdentifierShadow("T"));
     EXPECT_FALSE(session.typedefs.isIdentifierShadow("not_a_typedef"));
 }

@@ -58,36 +58,35 @@ TEST(LexicalSession, typedefAndEnumAreInstanceOwned) {
 TEST(TypedefRegistry, shadowScopesPushPop) {
     TypedefRegistry reg;
     reg.add("T", type::signedInteger());
-    reg.pushIdentifierShadowScope();
+    reg.enterScope();
     reg.addIdentifierShadow("T");
     EXPECT_TRUE(reg.isIdentifierShadow("T"));
-    reg.popIdentifierShadowScope();
+    reg.leaveScope();
     EXPECT_FALSE(reg.isIdentifierShadow("T"));
 }
 
 TEST(TypedefRegistry, fileScopeAutoRootShadow) {
-    // No prior push: add opens a root frame so file-scope object shadows work.
     TypedefRegistry reg;
     reg.add("T", type::signedInteger());
     reg.addIdentifierShadow("T");
     EXPECT_TRUE(reg.isIdentifierShadow("T"));
 }
 
-TEST(TypedefRegistry, emptyPopIsNoOp) {
+TEST(TypedefRegistry, extraLeaveScopeKeepsFileScopeShadow) {
     TypedefRegistry reg;
     reg.add("T", type::signedInteger());
     reg.addIdentifierShadow("T");
-    reg.popIdentifierShadowScope(); // root
-    EXPECT_FALSE(reg.isIdentifierShadow("T"));
-    reg.popIdentifierShadowScope(); // extra empty pop: no throw, no erase
-    reg.pushIdentifierShadowScope();
-    reg.addIdentifierShadow("T");
+    reg.leaveScope();
     EXPECT_TRUE(reg.isIdentifierShadow("T"));
+    EXPECT_TRUE(reg.has("T"));
+    reg.leaveScope();
+    EXPECT_TRUE(reg.isIdentifierShadow("T"));
+    EXPECT_TRUE(reg.has("T"));
 }
 
 TEST(TypedefRegistry, addClearsShadowOfSameName) {
     TypedefRegistry reg;
-    reg.pushIdentifierShadowScope();
+    reg.enterScope();
     reg.addIdentifierShadow("T");
     reg.add("T", type::signedInteger());
     EXPECT_FALSE(reg.isIdentifierShadow("T"));
@@ -130,10 +129,9 @@ TEST(TypedefRegistry, pendingParameterShadowFlushesOnScope) {
     reg.add("T", type::signedInteger());
     reg.addPendingParameterShadow("T");
     EXPECT_FALSE(reg.isIdentifierShadow("T"));
-    reg.pushIdentifierShadowScope();
-    reg.flushPendingParameterShadows();
+    reg.enterScope();
     EXPECT_TRUE(reg.isIdentifierShadow("T"));
-    reg.popIdentifierShadowScope();
+    reg.leaveScope();
     EXPECT_FALSE(reg.isIdentifierShadow("T"));
 }
 
@@ -142,8 +140,7 @@ TEST(TypedefRegistry, pendingParameterShadowClearedWithoutFlush) {
     reg.add("T", type::signedInteger());
     reg.addPendingParameterShadow("T");
     reg.clearPendingParameterShadows();
-    reg.pushIdentifierShadowScope();
-    reg.flushPendingParameterShadows();
+    reg.enterScope();
     EXPECT_FALSE(reg.isIdentifierShadow("T"));
 }
 
@@ -173,30 +170,29 @@ TEST(ObjectTypeRegistry, pendingVisibleThenCleared) {
 TEST(ObjectTypeRegistry, pendingFlushesIntoScope) {
     ObjectTypeRegistry objects;
     objects.addPending("n", type::signedInteger());
-    objects.pushScope();
-    objects.flushPending();
+    objects.enterScope();
     auto t = objects.lookup("n");
     ASSERT_TRUE(t.has_value());
     EXPECT_TRUE(t->equivalentTo(type::signedInteger()));
-    objects.popScope();
+    objects.leaveScope();
     EXPECT_FALSE(objects.lookup("n").has_value());
 }
 
-TEST(ObjectTypeRegistry, braceScopesAndEmptyPop) {
+TEST(ObjectTypeRegistry, braceScopesAndExtraLeaveKeepsRoot) {
     ObjectTypeRegistry objects;
     objects.add("x", type::signedInteger());
-    objects.pushScope();
+    objects.enterScope();
     objects.add("x", type::signedCharacter());
     auto inner = objects.lookup("x");
     ASSERT_TRUE(inner.has_value());
     EXPECT_TRUE(inner->equivalentTo(type::signedCharacter()));
-    objects.popScope();
+    objects.leaveScope();
     auto outer = objects.lookup("x");
     ASSERT_TRUE(outer.has_value());
     EXPECT_TRUE(outer->equivalentTo(type::signedInteger()));
-    objects.popScope();
-    EXPECT_FALSE(objects.lookup("x").has_value());
-    objects.popScope();
+    objects.leaveScope();
+    EXPECT_TRUE(objects.lookup("x").has_value());
+    objects.leaveScope();
     objects.add("y", type::signedInteger());
     auto y = objects.lookup("y");
     ASSERT_TRUE(y.has_value());
@@ -232,4 +228,82 @@ TEST(LexicalSession, enterBlockSharesShadowAndObjectFrames) {
     auto outer = session.objects.lookup("x");
     ASSERT_TRUE(outer.has_value());
     EXPECT_TRUE(outer->equivalentTo(type::signedInteger()));
+}
+
+TEST(LexicalSession, blockTypedefIsGoneAfterLeaveBlock) {
+    LexicalSession session;
+    session.enterBlock();
+    session.typedefs.add("T", type::signedInteger());
+    EXPECT_TRUE(session.isTypedef("T"));
+    session.leaveBlock();
+    EXPECT_FALSE(session.isTypedef("T"));
+    EXPECT_TRUE(session.isTypedef("_Float32"));
+}
+
+TEST(LexicalSession, leaveBlockRestoresOuterTypedef) {
+    LexicalSession session;
+    session.typedefs.add("T", type::signedInteger());
+    session.enterBlock();
+    session.typedefs.add("T", type::signedCharacter());
+    auto inner = session.typedefs.tryLookup("T");
+    ASSERT_TRUE(inner.has_value());
+    EXPECT_TRUE(inner->equivalentTo(type::signedCharacter()));
+    session.leaveBlock();
+    auto outer = session.typedefs.tryLookup("T");
+    ASSERT_TRUE(outer.has_value());
+    EXPECT_TRUE(outer->equivalentTo(type::signedInteger()));
+}
+
+TEST(TypedefRegistry, leaveScopeRemovesInnerTypedefOnly) {
+    TypedefRegistry reg;
+    reg.add("T", type::signedInteger());
+    reg.enterScope();
+    reg.add("U", type::unsignedInteger());
+    EXPECT_TRUE(reg.has("T"));
+    EXPECT_TRUE(reg.has("U"));
+    reg.leaveScope();
+    EXPECT_TRUE(reg.has("T"));
+    EXPECT_FALSE(reg.has("U"));
+}
+
+TEST(TypedefRegistry, extraLeaveScopeKeepsRootBinding) {
+    TypedefRegistry reg;
+    reg.add("T", type::signedInteger());
+    reg.leaveScope();
+    EXPECT_TRUE(reg.has("T"));
+    reg.leaveScope();
+    EXPECT_TRUE(reg.has("T"));
+}
+
+TEST(TypedefRegistry, innerTypedefDoesNotClearOuterObjectShadow) {
+    TypedefRegistry reg;
+    reg.add("T", type::signedInteger());
+    reg.enterScope();
+    reg.addIdentifierShadow("T");
+    EXPECT_TRUE(reg.isIdentifierShadow("T"));
+    reg.enterScope();
+    reg.add("T", type::signedCharacter());
+    EXPECT_FALSE(reg.isIdentifierShadow("T"));
+    auto inner = reg.tryLookup("T");
+    ASSERT_TRUE(inner.has_value());
+    EXPECT_TRUE(inner->equivalentTo(type::signedCharacter()));
+    reg.leaveScope();
+    EXPECT_TRUE(reg.isIdentifierShadow("T"));
+    auto outer = reg.tryLookup("T");
+    ASSERT_TRUE(outer.has_value());
+    EXPECT_TRUE(outer->equivalentTo(type::signedInteger()));
+}
+
+TEST(LexicalSession, extraLeaveBlockKeepsFileScopeBindings) {
+    LexicalSession session;
+    session.typedefs.add("T", type::signedInteger());
+    session.typedefs.addIdentifierShadow("T");
+    session.objects.add("x", type::signedInteger());
+    session.leaveBlock();
+    EXPECT_TRUE(session.isTypedef("T"));
+    EXPECT_TRUE(session.typedefs.isIdentifierShadow("T"));
+    EXPECT_TRUE(session.isTypedef("_Float32"));
+    auto x = session.objects.lookup("x");
+    ASSERT_TRUE(x.has_value());
+    EXPECT_TRUE(x->equivalentTo(type::signedInteger()));
 }

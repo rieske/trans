@@ -91,14 +91,12 @@ struct LexicalSession {
     }
 
     void enterBlock() {
-        typedefs.pushIdentifierShadowScope();
-        objects.pushScope();
-        typedefs.flushPendingParameterShadows();
-        objects.flushPending();
+        typedefs.enterScope();
+        objects.enterScope();
     }
     void leaveBlock() {
-        typedefs.popIdentifierShadowScope();
-        objects.popScope();
+        typedefs.leaveScope();
+        objects.leaveScope();
     }
     void endDeclarators() {
         typedefs.clearPendingParameterShadows();

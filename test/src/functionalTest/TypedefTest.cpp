@@ -162,20 +162,57 @@ int scanf(const char *, ...);
     program.runAndExpect("12");
 }
 
-TEST(Compiler, typedefVisibleAfterDeclaringBlock) {
-    SourceProgram program{R"prg(int printf(const char *, ...);
+TEST(Compiler, typedefInBlockDoesNotLeakAfterBrace) {
+    SourceProgram program{R"prg(
         int main() {
             {
                 typedef int T;
             }
             T x;
             x = 3;
-            printf("%d", x);
             return 0;
         }
     )prg"};
     program.compile();
-    program.runAndExpect("3");
+    program.assertCompilationErrors("unexpected token: x");
+}
+
+TEST(Compiler, typedefOuterRestoredAfterInnerTypedef) {
+    SourceProgram program{R"prg(int printf(const char *, ...);
+        typedef int T;
+        int main() {
+            {
+                typedef char T;
+                T c;
+                c = 1;
+            }
+            T x;
+            printf("%d", (int)sizeof(x));
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("4");
+}
+
+TEST(Compiler, typedefInnerDoesNotUnshadowOuterObject) {
+    SourceProgram program{R"prg(int printf(const char *, ...);
+        typedef int T;
+        int main() {
+            int T;
+            T = 0;
+            {
+                typedef char T;
+                T c;
+                c = 1;
+            }
+            T = 2;
+            printf("%d", T);
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("2");
 }
 
 TEST(Compiler, typedefNameShadowedByParameter) {

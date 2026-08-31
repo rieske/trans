@@ -2,20 +2,18 @@
 
 namespace scanner {
 
-void ObjectTypeRegistry::pushScope() {
+void ObjectTypeRegistry::enterScope() {
     scopes_.push_back({});
+    flushPending();
 }
 
-void ObjectTypeRegistry::popScope() {
-    if (!scopes_.empty()) {
+void ObjectTypeRegistry::leaveScope() {
+    if (scopes_.size() > 1) {
         scopes_.pop_back();
     }
 }
 
 void ObjectTypeRegistry::add(const std::string& name, const type::Type& type) {
-    if (scopes_.empty()) {
-        scopes_.push_back({});
-    }
     scopes_.back().insert_or_assign(name, type);
 }
 

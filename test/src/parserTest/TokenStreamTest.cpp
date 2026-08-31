@@ -76,7 +76,7 @@ TEST(TokenStream, peekDoesNotConsume) {
 TEST(TokenStream, takeRawDoesNotEnterOrLeaveBlock) {
     scanner::LexicalSession session;
     session.typedefs.add("T", type::signedInteger());
-    session.typedefs.pushIdentifierShadowScope();
+    session.enterBlock();
     session.typedefs.addIdentifierShadow("T");
     std::vector<scanner::Token> tokens {
         {"{", "{", {"f", 1}},
@@ -148,7 +148,7 @@ TEST(TokenStream, keepsTypedefNameInTypePosition) {
 TEST(TokenStream, forcesIdWhenIdentifierShadow) {
     scanner::LexicalSession session;
     session.typedefs.add("T", type::signedInteger());
-    session.typedefs.pushIdentifierShadowScope();
+    session.enterBlock();
     session.typedefs.addIdentifierShadow("T");
     std::vector<scanner::Token> tokens {
         {"typedef_name", "T", {"f", 1}},
