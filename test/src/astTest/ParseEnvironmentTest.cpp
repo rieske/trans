@@ -113,8 +113,9 @@ TEST(ParseEnvironment, typedefAndEnumThroughSession) {
     EXPECT_EQ(type::toHostLong(v), 11);
     auto underlying = env.endEnumDefinition("Color");
     EXPECT_TRUE(underlying.equivalentTo(type::signedInteger()));
-    EXPECT_EQ(type::toHostLong(session.enums.entries().at("GREEN")), 10);
-    EXPECT_EQ(session.enums.entries().size(), 3u);
+    type::IntegerConstant stored;
+    ASSERT_TRUE(session.enums.lookup("GREEN", stored));
+    EXPECT_EQ(type::toHostLong(stored), 10);
     auto tag = env.lookupEnumTag("Color");
     ASSERT_TRUE(tag.has_value());
     EXPECT_TRUE(tag->equivalentTo(type::signedInteger()));
@@ -161,6 +162,20 @@ TEST(ParseEnvironment, enumeratorRedefinitionThrows) {
     env.addEnumerator("A", type::fromHostLong(1));
     EXPECT_THROW(env.addEnumerator("A", type::fromHostLong(1)), std::runtime_error);
     EXPECT_THROW(env.addEnumerator("A", type::fromHostLong(2)), std::runtime_error);
+}
+
+TEST(ParseEnvironment, innerBlockMayReuseOuterEnumeratorName) {
+    LexicalSession session;
+    ParseEnvironment env{session};
+    env.addEnumerator("A", type::fromHostLong(1));
+    session.enterBlock();
+    env.addEnumerator("A", type::fromHostLong(2));
+    type::IntegerConstant v;
+    ASSERT_TRUE(env.lookupEnumConstant("A", v));
+    EXPECT_EQ(type::toHostLong(v), 2);
+    session.leaveBlock();
+    ASSERT_TRUE(env.lookupEnumConstant("A", v));
+    EXPECT_EQ(type::toHostLong(v), 1);
 }
 
 TEST(ParseEnvironment, registerInitializedDeclarationDefinesTypedef) {

@@ -275,18 +275,45 @@ TEST(Compiler, enumFileScopeObjectRedeclIsError) {
     program.assertCompilationErrors("redefinition of enumerator");
 }
 
-TEST(Compiler, enumeratorVisibleAfterDeclaringBlock) {
-    SourceProgram program{R"prg(int printf(const char *, ...);
+TEST(Compiler, enumeratorInBlockDoesNotLeakAfterBrace) {
+    SourceProgram program{R"prg(
         int main() {
             {
                 enum { A = 7 };
+            }
+            return A;
+        }
+    )prg"};
+    program.compile();
+    program.assertCompilationErrors("symbol `A` is not defined");
+}
+
+TEST(Compiler, enumeratorOuterRestoredAfterInnerEnum) {
+    SourceProgram program{R"prg(int printf(const char *, ...);
+        enum { A = 1 };
+        int main() {
+            {
+                enum { A = 2 };
             }
             printf("%d", A);
             return 0;
         }
     )prg"};
     program.compile();
-    program.runAndExpect("7");
+    program.runAndExpect("1");
+}
+
+TEST(Compiler, enumeratorInnerHidesOuter) {
+    SourceProgram program{R"prg(int printf(const char *, ...);
+        enum { A = 1 };
+        int main() {
+            enum { A = 2 };
+            printf("%d", A);
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("2");
 }
 
 TEST(Compiler, enumObjectShadowHidesEnumerator) {

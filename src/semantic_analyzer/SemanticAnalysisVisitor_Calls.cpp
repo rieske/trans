@@ -235,8 +235,8 @@ void SemanticAnalysisVisitor::visit(ast::IdentifierExpression& identifier) {
     const std::string& name = identifier.getIdentifier();
 
     // Ordinary objects/functions hide enumerators in the same scope (C).
-    // Prefer a visible symbol before folding a TU-level enumerator.
-    // Clear parse-time enum fold (CSNB) so the name is an lvalue again.
+    // Prefer a visible symbol before a parse-time enumerator fold.
+    // Clear that fold so the name is an lvalue again.
     if (symbolTable.hasSymbol(name)) {
         identifier.clearFoldedConstant();
         auto entry = symbolTable.lookup(name);
@@ -256,7 +256,7 @@ void SemanticAnalysisVisitor::visit(ast::IdentifierExpression& identifier) {
     }
 
     type::IntegerConstant ice;
-    if (session().lookupEnumerator(name, ice)) {
+    if (identifier.evaluateConstant(ice) || session().lookupEnumerator(name, ice)) {
         identifier.setFoldedConstant(ice);
         identifier.setTypeAndResult(annotations(),
                 symbolTable.createTemporarySymbol(ice.type));

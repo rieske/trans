@@ -6,6 +6,7 @@
 #include "TypedefRegistry.h"
 
 #include <stack>
+#include <vector>
 
 namespace scanner {
 
@@ -76,6 +77,10 @@ private:
     bool pending_ { false };
 };
 
+// Compound `{` hops all three tables. Record `{` hops typedefs and objects.
+// Enum `{` is not a C block; enumerators stay on the enclosing frame.
+enum class BraceFrame { Block, Record, EnumBody };
+
 // Not copyable: FA holds a raw pointer to the session.
 struct LexicalSession {
     TypedefRegistry typedefs;
@@ -93,10 +98,41 @@ struct LexicalSession {
     void enterBlock() {
         typedefs.enterScope();
         objects.enterScope();
+        enums.enterScope();
     }
     void leaveBlock() {
         typedefs.leaveScope();
         objects.leaveScope();
+        enums.leaveScope();
+    }
+    void enterRecord() {
+        typedefs.enterScope();
+        objects.enterScope();
+    }
+    void leaveRecord() {
+        typedefs.leaveScope();
+        objects.leaveScope();
+    }
+    void openBrace(BraceFrame kind) {
+        braces_.push_back(kind);
+        if (kind == BraceFrame::Block) {
+            enterBlock();
+        } else if (kind == BraceFrame::Record) {
+            enterRecord();
+        }
+    }
+    void closeBrace() {
+        if (braces_.empty()) {
+            leaveBlock();
+            return;
+        }
+        const BraceFrame kind = braces_.back();
+        braces_.pop_back();
+        if (kind == BraceFrame::Block) {
+            leaveBlock();
+        } else if (kind == BraceFrame::Record) {
+            leaveRecord();
+        }
     }
     void endDeclarators() {
         typedefs.clearPendingParameterShadows();
@@ -114,6 +150,9 @@ struct LexicalSession {
     LexicalSession& operator=(const LexicalSession&) = delete;
     LexicalSession(LexicalSession&&) = delete;
     LexicalSession& operator=(LexicalSession&&) = delete;
+
+private:
+    std::vector<BraceFrame> braces_;
 };
 
 } // namespace scanner

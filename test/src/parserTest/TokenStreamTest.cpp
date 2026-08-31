@@ -21,7 +21,7 @@ Grammar streamGrammar() {
     GrammarBuilder builder;
     builder.defineRule("<S>", {
             "id", "typedef_name", "+", "(", "{", "}", ";",
-            "return", "struct", ".", "*", "const", "int", ":", ",", ")",
+            "return", "struct", "enum", ".", "*", "const", "int", ":", ",", ")",
     });
     return builder.build();
 }
@@ -404,6 +404,48 @@ TEST(TokenStream, braceScopePopsObjectType) {
     auto outer = session.objects.lookup("x");
     ASSERT_TRUE(outer.has_value());
     EXPECT_TRUE(outer->equivalentTo(type::signedInteger()));
+}
+
+TEST(TokenStream, enumBracesDoNotEnterOrLeaveBlock) {
+    scanner::LexicalSession session;
+    session.enums.add("A", type::fromHostLong(1));
+    std::vector<scanner::Token> tokens {
+        {"enum", "enum", {"f", 1}},
+        {"{", "{", {"f", 1}},
+        {"}", "}", {"f", 1}},
+        {";", ";", {"f", 1}},
+    };
+    int i = 0;
+    const Grammar grammar = streamGrammar();
+    TokenStream ts { [&]() { return tokens[i++]; }, session, grammar };
+    ASSERT_EQ(ts.getCurrentToken().id, "enum");
+    ts.nextToken();
+    ts.nextToken();
+    session.enums.add("B", type::fromHostLong(2));
+    ts.nextToken();
+    EXPECT_TRUE(session.isEnumerator("A"));
+    EXPECT_TRUE(session.isEnumerator("B"));
+}
+
+TEST(TokenStream, taggedEnumBracesDoNotEnterOrLeaveBlock) {
+    scanner::LexicalSession session;
+    std::vector<scanner::Token> tokens {
+        {"enum", "enum", {"f", 1}},
+        {"id", "E", {"f", 1}},
+        {"{", "{", {"f", 1}},
+        {"}", "}", {"f", 1}},
+        {";", ";", {"f", 1}},
+    };
+    int i = 0;
+    const Grammar grammar = streamGrammar();
+    TokenStream ts { [&]() { return tokens[i++]; }, session, grammar };
+    ASSERT_EQ(ts.getCurrentToken().id, "enum");
+    ts.nextToken();
+    ts.nextToken();
+    ts.nextToken();
+    session.enums.add("A", type::fromHostLong(1));
+    ts.nextToken();
+    EXPECT_TRUE(session.isEnumerator("A"));
 }
 
 TEST(TokenStream, stampsCurrentTokenFromGrammar) {

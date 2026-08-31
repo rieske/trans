@@ -5,6 +5,7 @@
 
 #include <functional>
 #include <optional>
+#include <string_view>
 
 namespace scanner {
 class LexicalSession;
@@ -46,6 +47,15 @@ private:
     mutable scanner::Token current_;
     std::optional<scanner::Token> lookahead_;
     mutable unsigned classifiedRevision_ { 0 };
+
+    struct SpecifierLookahead {
+        enum class Op { None, OpenBlock, OpenRecord, OpenEnumBody, Close, EndDeclarators };
+        Op consume(std::string_view id);
+    private:
+        enum class State { None, AfterEnum, AfterEnumTag, AfterRecord, AfterRecordTag };
+        State state_ { State::None };
+    };
+    SpecifierLookahead specifier_;
 };
 
 } // namespace parser

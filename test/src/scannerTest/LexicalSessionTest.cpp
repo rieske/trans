@@ -124,6 +124,41 @@ TEST(EnumConstantRegistry, addLastWins) {
     EXPECT_EQ(type::toHostLong(v), 9);
 }
 
+TEST(EnumConstantRegistry, leaveScopeRemovesInnerOnly) {
+    EnumConstantRegistry enums;
+    enums.add("A", type::fromHostLong(1));
+    enums.enterScope();
+    enums.add("B", type::fromHostLong(2));
+    EXPECT_TRUE(enums.contains("A"));
+    EXPECT_TRUE(enums.contains("B"));
+    enums.leaveScope();
+    EXPECT_TRUE(enums.contains("A"));
+    EXPECT_FALSE(enums.contains("B"));
+}
+
+TEST(EnumConstantRegistry, extraLeaveScopeKeepsRoot) {
+    EnumConstantRegistry enums;
+    enums.add("A", type::fromHostLong(1));
+    enums.leaveScope();
+    EXPECT_TRUE(enums.contains("A"));
+    enums.leaveScope();
+    EXPECT_TRUE(enums.contains("A"));
+}
+
+TEST(EnumConstantRegistry, innerHidesOuterAndRestores) {
+    EnumConstantRegistry enums;
+    enums.add("A", type::fromHostLong(1));
+    enums.enterScope();
+    enums.add("A", type::fromHostLong(2));
+    type::IntegerConstant v;
+    ASSERT_TRUE(enums.lookup("A", v));
+    EXPECT_EQ(type::toHostLong(v), 2);
+    EXPECT_TRUE(enums.containsInCurrentScope("A"));
+    enums.leaveScope();
+    ASSERT_TRUE(enums.lookup("A", v));
+    EXPECT_EQ(type::toHostLong(v), 1);
+}
+
 TEST(TypedefRegistry, pendingParameterShadowFlushesOnScope) {
     TypedefRegistry reg;
     reg.add("T", type::signedInteger());
@@ -294,6 +329,28 @@ TEST(TypedefRegistry, innerTypedefDoesNotClearOuterObjectShadow) {
     EXPECT_TRUE(outer->equivalentTo(type::signedInteger()));
 }
 
+TEST(LexicalSession, blockEnumeratorIsGoneAfterLeaveBlock) {
+    LexicalSession session;
+    session.enterBlock();
+    session.enums.add("A", type::fromHostLong(7));
+    EXPECT_TRUE(session.isEnumerator("A"));
+    session.leaveBlock();
+    EXPECT_FALSE(session.isEnumerator("A"));
+}
+
+TEST(LexicalSession, leaveBlockRestoresOuterEnumerator) {
+    LexicalSession session;
+    session.enums.add("A", type::fromHostLong(1));
+    session.enterBlock();
+    session.enums.add("A", type::fromHostLong(2));
+    type::IntegerConstant v;
+    ASSERT_TRUE(session.lookupEnumerator("A", v));
+    EXPECT_EQ(type::toHostLong(v), 2);
+    session.leaveBlock();
+    ASSERT_TRUE(session.lookupEnumerator("A", v));
+    EXPECT_EQ(type::toHostLong(v), 1);
+}
+
 TEST(LexicalSession, extraLeaveBlockKeepsFileScopeBindings) {
     LexicalSession session;
     session.typedefs.add("T", type::signedInteger());
@@ -306,4 +363,47 @@ TEST(LexicalSession, extraLeaveBlockKeepsFileScopeBindings) {
     auto x = session.objects.lookup("x");
     ASSERT_TRUE(x.has_value());
     EXPECT_TRUE(x->equivalentTo(type::signedInteger()));
+}
+
+TEST(LexicalSession, extraLeaveBlockKeepsFileScopeEnumerator) {
+    LexicalSession session;
+    session.enums.add("A", type::fromHostLong(1));
+    session.leaveBlock();
+    EXPECT_TRUE(session.isEnumerator("A"));
+}
+
+TEST(LexicalSession, enumBodyBraceDoesNotHopEnumeratorScope) {
+    LexicalSession session;
+    session.openBrace(BraceFrame::Block);
+    session.openBrace(BraceFrame::EnumBody);
+    session.enums.add("A", type::fromHostLong(7));
+    session.closeBrace();
+    EXPECT_TRUE(session.isEnumerator("A"));
+    session.closeBrace();
+    EXPECT_FALSE(session.isEnumerator("A"));
+}
+
+TEST(LexicalSession, recordBraceIsolatesObjectsNotEnumerators) {
+    LexicalSession session;
+    session.objects.add("x", type::signedInteger());
+    session.enums.add("A", type::fromHostLong(1));
+    session.openBrace(BraceFrame::Record);
+    session.objects.add("x", type::signedCharacter());
+    session.enums.add("B", type::fromHostLong(2));
+    auto inner = session.objects.lookup("x");
+    ASSERT_TRUE(inner.has_value());
+    EXPECT_TRUE(inner->equivalentTo(type::signedCharacter()));
+    session.closeBrace();
+    auto outer = session.objects.lookup("x");
+    ASSERT_TRUE(outer.has_value());
+    EXPECT_TRUE(outer->equivalentTo(type::signedInteger()));
+    EXPECT_TRUE(session.isEnumerator("A"));
+    EXPECT_TRUE(session.isEnumerator("B"));
+}
+
+TEST(LexicalSession, extraCloseBraceKeepsRoot) {
+    LexicalSession session;
+    session.enums.add("A", type::fromHostLong(1));
+    session.closeBrace();
+    EXPECT_TRUE(session.isEnumerator("A"));
 }
