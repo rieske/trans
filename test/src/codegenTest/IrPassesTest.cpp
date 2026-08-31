@@ -9,6 +9,8 @@
 
 #include "codegen/IrStringTable.h"
 
+#include <iterator>
+
 namespace {
 
 using namespace testing;
@@ -120,6 +122,12 @@ TEST(IrPasses, eliminateJumpToNext_keepsConditionalAndNonAdjacent) {
             "\tINC x\n"
             "M:\n"
             "ENDPROC f\n"));
+}
+
+TEST(IrPasses, midEndPassListIsSealThenJumpToNext) {
+    ASSERT_EQ(std::size(kMidEndPasses), 2u);
+    EXPECT_EQ(kMidEndPasses[0], static_cast<IrPass>(sealProcedures));
+    EXPECT_EQ(kMidEndPasses[1], static_cast<IrPass>(eliminateJumpToNext));
 }
 
 TEST(IrPasses, runIrPasses_composesSealAndPeephole) {
