@@ -3,54 +3,53 @@
 namespace scanner {
 
 void TypedefRegistry::add(const std::string& name, const type::Type& type) {
-    // Last-wins on redefinition; no product diagnostic for incompatible re-typedef yet.
-    table_.insert_or_assign(name, type);
+    scopes_.back().bindings.insert_or_assign(name, type);
+    scopes_.back().shadows.erase(name);
     ++revision_;
-    // A new typedef binding wins over any prior object shadow of the same name.
-    for (auto& scope : identifierShadowScopes_) {
-        scope.erase(name);
-    }
 }
 
 bool TypedefRegistry::has(const std::string& name) const {
-    return table_.count(name) > 0;
+    return tryLookup(name).has_value();
 }
 
 std::optional<type::Type> TypedefRegistry::tryLookup(const std::string& name) const {
-    auto it = table_.find(name);
-    if (it == table_.end()) {
-        return std::nullopt;
+    for (auto it = scopes_.rbegin(); it != scopes_.rend(); ++it) {
+        auto found = it->bindings.find(name);
+        if (found != it->bindings.end()) {
+            return found->second;
+        }
     }
-    return it->second;
+    return std::nullopt;
+}
+
+void TypedefRegistry::enterScope() {
+    scopes_.push_back({});
+    ++revision_;
+    flushPendingParameterShadows();
+}
+
+void TypedefRegistry::leaveScope() {
+    if (scopes_.size() > 1) {
+        scopes_.pop_back();
+        ++revision_;
+    }
 }
 
 void TypedefRegistry::addIdentifierShadow(const std::string& name) {
-    if (identifierShadowScopes_.empty()) {
-        identifierShadowScopes_.push_back({});
-    }
-    identifierShadowScopes_.back().insert(name);
+    scopes_.back().shadows.insert(name);
     ++revision_;
 }
 
 bool TypedefRegistry::isIdentifierShadow(const std::string& name) const {
-    for (const auto& scope : identifierShadowScopes_) {
-        if (scope.count(name) > 0) {
+    for (auto it = scopes_.rbegin(); it != scopes_.rend(); ++it) {
+        if (it->shadows.count(name) > 0) {
             return true;
+        }
+        if (it->bindings.count(name) > 0) {
+            return false;
         }
     }
     return false;
-}
-
-void TypedefRegistry::pushIdentifierShadowScope() {
-    identifierShadowScopes_.push_back({});
-    ++revision_;
-}
-
-void TypedefRegistry::popIdentifierShadowScope() {
-    if (!identifierShadowScopes_.empty()) {
-        identifierShadowScopes_.pop_back();
-        ++revision_;
-    }
 }
 
 void TypedefRegistry::addPendingParameterShadow(const std::string& name) {
