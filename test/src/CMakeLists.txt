@@ -115,8 +115,11 @@ add_executable(codegenTest
         codegenTest/IrStringTableTest.cpp
         codegenTest/SymbolRefsTest.cpp
         codegenTest/UnimplementedArrayCodegenTest.cpp
+        codegenTest/CompileToIr.cpp
+        codegenTest/CompileToIr.h
+        codegenTest/IrDumpFromCTest.cpp
         )
-target_link_libraries(codegenTest PRIVATE GTest::gmock_main backend ast)
+target_link_libraries(codegenTest PRIVATE GTest::gmock_main driver testUtil)
 add_test(NAME codegenTest COMMAND codegenTest)
 
 
