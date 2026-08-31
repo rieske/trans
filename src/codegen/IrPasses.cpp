@@ -45,10 +45,4 @@ IntermediateRepresentation eliminateJumpToNext(IntermediateRepresentation ir) {
     return ir;
 }
 
-IntermediateRepresentation runIrPasses(IntermediateRepresentation ir) {
-    ir = sealProcedures(std::move(ir));
-    ir = eliminateJumpToNext(std::move(ir));
-    return ir;
-}
-
 } // namespace codegen

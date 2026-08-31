@@ -24,55 +24,137 @@ void internProcedureTemps(IrStringTable& strings, Procedure& procedure) {
     }
 }
 
-bool instructionTransfersControl(const Instruction& instruction) {
-    switch (instruction.op) {
-    case Op::Jump:
-    case Op::Return:
-    case Op::VoidReturn:
-        return true;
+namespace {
+
+enum Live : unsigned {
+    FArg0 = 1u << 0,
+    FArg1 = 1u << 1,
+    FResult = 1u << 2,
+    FImm = 1u << 3,
+    FCond = 1u << 4,
+    FBaseMode = 1u << 5,
+    FCallIndirect = 1u << 6,
+    FPointerSubtract = 1u << 7,
+    FMemoryReturnDest = 1u << 8,
+    FMemoryReturn = 1u << 9,
+};
+
+struct OpContract {
+    InstructionClass kind;
+    unsigned live;
+};
+
+OpContract opContract(Op op) {
+    switch (op) {
     case Op::Add:
     case Op::Sub:
     case Op::Mul:
-    case Op::Div:
-    case Op::Mod:
     case Op::And:
     case Op::Or:
     case Op::Xor:
     case Op::Shl:
+    case Op::AssignConstant:
+    case Op::Dereference:
+        return { InstructionClass::Ordinary, FArg0 | FArg1 | FResult };
+    case Op::Div:
+    case Op::Mod:
     case Op::Shr:
+    case Op::PointerDiff:
+        return { InstructionClass::Ordinary, FArg0 | FArg1 | FResult | FImm };
     case Op::UnaryMinus:
     case Op::UnaryNot:
-    case Op::Inc:
-    case Op::Dec:
     case Op::Assign:
-    case Op::Widen:
-    case Op::AssignConstant:
-    case Op::AssignLabelAddress:
     case Op::LvalueAssign:
     case Op::AddressOf:
-    case Op::Dereference:
-    case Op::IndexAddress:
-    case Op::FieldAddress:
-    case Op::CopyPart:
-    case Op::PointerOffset:
-    case Op::PointerDiff:
+    case Op::AssignLabelAddress:
     case Op::FunctionAddress:
-    case Op::ValueCompare:
-    case Op::ZeroCompare:
-    case Op::Label:
-    case Op::Argument:
-    case Op::Call:
-    case Op::Retrieve:
-    case Op::VaStart:
+    case Op::Alloca:
     case Op::VaArg:
-    case Op::VaEnd:
-    case Op::VaCopy:
+        return { InstructionClass::Ordinary, FArg0 | FResult };
+    case Op::Inc:
+    case Op::Dec:
+        return { InstructionClass::Ordinary, FArg0 | FImm };
+    case Op::Widen:
     case Op::Bswap:
     case Op::Ctz:
-    case Op::Alloca:
-        return false;
+        return { InstructionClass::Ordinary, FArg0 | FResult | FImm };
+    case Op::IndexAddress:
+        return { InstructionClass::Ordinary, FArg0 | FArg1 | FResult | FImm | FBaseMode };
+    case Op::FieldAddress:
+        return { InstructionClass::Ordinary, FArg0 | FResult | FImm | FBaseMode };
+    case Op::CopyPart:
+        return { InstructionClass::Ordinary, FArg0 | FResult | FImm };
+    case Op::ValueCompare:
+        return { InstructionClass::Ordinary, FArg0 | FArg1 | FImm };
+    case Op::PointerOffset:
+        return { InstructionClass::Ordinary, FArg0 | FArg1 | FResult | FImm | FPointerSubtract };
+    case Op::ZeroCompare:
+    case Op::Argument:
+        return { InstructionClass::Ordinary, FArg0 };
+    case Op::Label:
+        return { InstructionClass::Label, FArg0 };
+    case Op::Jump:
+        return { InstructionClass::Terminator, FArg0 | FCond | FImm };
+    case Op::Return:
+        return { InstructionClass::Terminator, FArg0 };
+    case Op::Call:
+        return { InstructionClass::Ordinary, FArg0 | FCallIndirect | FMemoryReturnDest };
+    case Op::Retrieve:
+        return { InstructionClass::Ordinary, FResult | FMemoryReturn };
+    case Op::VoidReturn:
+        return { InstructionClass::Terminator, 0 };
+    case Op::VaEnd:
+        return { InstructionClass::Ordinary, 0 };
+    case Op::VaStart:
+    case Op::VaCopy:
+        return { InstructionClass::Ordinary, FArg0 | FArg1 };
     }
-    throw std::logic_error { "instructionTransfersControl: unhandled Op" };
+    throw std::logic_error { "opContract: unhandled Op" };
+}
+
+template<typename T>
+void rejectIfUnused(unsigned live, unsigned bit, const T& value, const T& def) {
+    if (!(live & bit) && value != def) {
+        throw std::logic_error { "unused Instruction field set" };
+    }
+}
+
+} // namespace
+
+InstructionClass instructionClass(Op op) {
+    return opContract(op).kind;
+}
+
+bool instructionTransfersControl(const Instruction& instruction) {
+    return instructionClass(instruction.op) == InstructionClass::Terminator;
+}
+
+void validateInstruction(const Instruction& instruction) {
+    const unsigned live = opContract(instruction.op).live;
+    const Instruction defaults {};
+    rejectIfUnused(live, FArg0, instruction.arg0, defaults.arg0);
+    rejectIfUnused(live, FArg1, instruction.arg1, defaults.arg1);
+    rejectIfUnused(live, FResult, instruction.result, defaults.result);
+    rejectIfUnused(live, FImm, instruction.imm, defaults.imm);
+    rejectIfUnused(live, FCond, instruction.cond, defaults.cond);
+    rejectIfUnused(live, FBaseMode, instruction.baseMode, defaults.baseMode);
+    rejectIfUnused(live, FCallIndirect, instruction.callIndirect, defaults.callIndirect);
+    rejectIfUnused(live, FPointerSubtract, instruction.pointerSubtract, defaults.pointerSubtract);
+    rejectIfUnused(live, FMemoryReturnDest, instruction.memoryReturnDest, defaults.memoryReturnDest);
+    rejectIfUnused(live, FMemoryReturn, instruction.memoryReturn, defaults.memoryReturn);
+}
+
+void validateProcedureBody(const std::vector<Instruction>& body) {
+    bool afterUnconditionalTerminator = false;
+    for (const auto& instruction : body) {
+        const InstructionClass kind = opContract(instruction.op).kind;
+        if (afterUnconditionalTerminator && kind != InstructionClass::Label) {
+            throw std::logic_error { "procedure body is not implicit blocks" };
+        }
+        afterUnconditionalTerminator = kind == InstructionClass::Terminator
+                && (instruction.op != Op::Jump
+                        || instruction.cond == JumpCondition::UNCONDITIONAL);
+    }
 }
 
 } // namespace codegen

@@ -2,6 +2,7 @@
 #include "gmock/gmock.h"
 
 #include <sstream>
+#include <stdexcept>
 #include <string>
 #include <string_view>
 #include <vector>
@@ -282,6 +283,81 @@ TEST(InstructionIr, freezesMemoryDump) {
 
 TEST(InstructionIr, freezesWidenCopyBuiltinDump) {
     EXPECT_THAT(toString(widenCopyBuiltinSequence()), StrEq(kWidenCopyBuiltinDump));
+}
+
+TEST(Instruction, classifiesLabelTerminatorOrdinary) {
+    EXPECT_EQ(instructionClass(Op::Label), InstructionClass::Label);
+    EXPECT_EQ(instructionClass(Op::Jump), InstructionClass::Terminator);
+    EXPECT_EQ(instructionClass(Op::Return), InstructionClass::Terminator);
+    EXPECT_EQ(instructionClass(Op::VoidReturn), InstructionClass::Terminator);
+    EXPECT_EQ(instructionClass(Op::Call), InstructionClass::Ordinary);
+    EXPECT_EQ(instructionClass(Op::Add), InstructionClass::Ordinary);
+    EXPECT_TRUE(instructionTransfersControl(ir::voidReturn()));
+    EXPECT_TRUE(instructionTransfersControl(ir::jump(0)));
+    EXPECT_FALSE(instructionTransfersControl(ir::call(0)));
+    EXPECT_FALSE(instructionTransfersControl(ir::label(0)));
+}
+
+TEST(Instruction, buildersHaveNoUnusedFields) {
+    validateInstruction(ir::add(0, 1, 2));
+    validateInstruction(ir::div(0, 1, 2, false));
+    validateInstruction(ir::shr(0, 1, 2, false));
+    validateInstruction(ir::inc(0, 4));
+    validateInstruction(ir::widen(0, 1, true));
+    validateInstruction(ir::assignConstant(0, 1));
+    validateInstruction(ir::assignConstant(0, 1, 2));
+    validateInstruction(ir::dereference(0, 1, 2));
+    validateInstruction(ir::indexAddress(0, 1, 4, 2, symbols::AddressBaseMode::PointerValue));
+    validateInstruction(ir::fieldAddress(0, 8, 1));
+    validateInstruction(ir::pointerOffset(0, 1, 4, 2, true));
+    validateInstruction(ir::valueCompare(0, 1, false));
+    validateInstruction(ir::zeroCompare(0));
+    validateInstruction(ir::jump(0, JumpCondition::IF_EQUAL, false));
+    validateInstruction(ir::label(0));
+    validateInstruction(ir::call(0, true, 1));
+    validateInstruction(ir::retrieve(0, true));
+    validateInstruction(ir::ret(0));
+    validateInstruction(ir::voidReturn());
+    validateInstruction(ir::vaStart(0, 1));
+    validateInstruction(ir::vaEnd());
+    validateInstruction(ir::bswap(0, 1, 4));
+    validateInstruction(ir::allocaBytes(0, 1));
+}
+
+TEST(Instruction, unusedFieldOnVoidReturnIsInvalid) {
+    Instruction i = ir::voidReturn();
+    i.arg0 = 0;
+    EXPECT_THROW(validateInstruction(i), std::logic_error);
+    i = ir::voidReturn();
+    i.cond = JumpCondition::IF_EQUAL;
+    EXPECT_THROW(validateInstruction(i), std::logic_error);
+}
+
+TEST(Instruction, implicitBlockShapeAcceptsFallthroughToLabel) {
+    validateProcedureBody({
+            ir::zeroCompare(0),
+            ir::jump(1, JumpCondition::IF_EQUAL),
+            ir::inc(2),
+            ir::label(1),
+            ir::voidReturn(),
+    });
+}
+
+TEST(Instruction, implicitBlockShapeRejectsCodeAfterTerminator) {
+    EXPECT_THROW(validateProcedureBody({ ir::voidReturn(), ir::inc(0) }), std::logic_error);
+}
+
+TEST(Instruction, catalogBodiesHaveValidFields) {
+    for (auto ir : { arithmeticSequence(), controlFlowSequence(), callReturnSequence(),
+                 vaSequence(), memorySequence(), widenCopyBuiltinSequence() }) {
+        for (const auto& instruction : ir.procedures[0].body) {
+            validateInstruction(instruction);
+        }
+    }
+}
+
+TEST(Instruction, callReturnDumpPinsTerminatorThenTerminator) {
+    EXPECT_THROW(validateProcedureBody(callReturnSequence().procedures[0].body), std::logic_error);
 }
 
 TEST(InstructionIr, procedureInternsNameAndTemps) {
