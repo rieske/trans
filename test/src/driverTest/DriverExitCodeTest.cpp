@@ -74,41 +74,41 @@ private:
     std::string previousPath_;
 };
 
-// Failing `nasm` on PATH (unique temp dir) for the lifetime of this object.
-class FakeFailingNasm {
+// Failing `as` on PATH (unique temp dir) for the lifetime of this object.
+class FakeFailingAs {
 public:
-    FakeFailingNasm() :
-            binDir_ { makeBinDirWithFailingNasm() },
+    FakeFailingAs() :
+            binDir_ { makeBinDirWithFailingAs() },
             pathGuard_ { binDir_.string() } {
     }
 
-    ~FakeFailingNasm() {
+    ~FakeFailingAs() {
         std::error_code ec;
         std::filesystem::remove_all(binDir_, ec);
     }
 
-    FakeFailingNasm(const FakeFailingNasm&) = delete;
-    FakeFailingNasm& operator=(const FakeFailingNasm&) = delete;
+    FakeFailingAs(const FakeFailingAs&) = delete;
+    FakeFailingAs& operator=(const FakeFailingAs&) = delete;
 
 private:
-    static std::filesystem::path makeBinDirWithFailingNasm() {
+    static std::filesystem::path makeBinDirWithFailingAs() {
         std::string templatePath =
-                (std::filesystem::temp_directory_path() / "trans_fake_nasm_XXXXXX").string();
+                (std::filesystem::temp_directory_path() / "trans_fake_as_XXXXXX").string();
         std::vector<char> mutableTemplate(templatePath.begin(), templatePath.end());
         mutableTemplate.push_back('\0');
         char* created = ::mkdtemp(mutableTemplate.data());
         if (created == nullptr) {
-            throw std::runtime_error("mkdtemp failed for FakeFailingNasm");
+            throw std::runtime_error("mkdtemp failed for FakeFailingAs");
         }
         std::filesystem::path binDir { created };
-        const auto nasmPath = binDir / "nasm";
+        const auto asPath = binDir / "as";
         {
-            std::ofstream out { nasmPath };
+            std::ofstream out { asPath };
             out << "#!/bin/sh\n"
-                   "echo fake-nasm-failed >&2\n"
+                   "echo fake-as-failed >&2\n"
                    "exit 1\n";
         }
-        std::filesystem::permissions(nasmPath,
+        std::filesystem::permissions(asPath,
                 std::filesystem::perms::owner_all
                         | std::filesystem::perms::group_exec
                         | std::filesystem::perms::others_exec);
@@ -832,15 +832,15 @@ TEST(Compiler, throwsWhenSourceCannotBeOpened) {
 // Tool-path unit: assemble failure throws from Compiler (Driver exit code is covered by missing-source cases).
 TEST(Compiler, assembleFailureThrowsFromCompile) {
     auto sourcePath = writeTempSource("assemble_fail_compile.c", kTrivialMain);
-    FakeFailingNasm fakeNasm;
+    FakeFailingAs fakeAs;
     Compiler compiler { testConfiguration() };
 
     try {
         compiler.compile(sourcePath.string());
-        FAIL() << "expected compile to throw when nasm fails";
+        FAIL() << "expected compile to throw when as fails";
     } catch (const std::runtime_error& error) {
         EXPECT_THAT(std::string(error.what()), HasSubstr("command failed"));
-        EXPECT_THAT(std::string(error.what()), AnyOf(HasSubstr("nasm"), HasSubstr("fake-nasm-failed")));
+        EXPECT_THAT(std::string(error.what()), HasSubstr("fake-as-failed"));
     }
 
     removeCompileArtifacts(sourcePath);

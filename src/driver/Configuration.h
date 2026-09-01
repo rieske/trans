@@ -71,7 +71,7 @@ class Configuration {
     std::string resourcesBasePath {};
     std::string lexPath {"resources/configuration/scanner.lex"};
     std::string grammarPath {"resources/configuration/grammar.bnf"};
-    AssemblyDialect assemblyDialect { AssemblyDialect::Intel };
+    AssemblyDialect assemblyDialect { AssemblyDialect::AtAndT };
     bool scannerLogging {false};
     bool parserLogging {false};
     StopAfter stopAfter_ { StopAfter::Link };
