@@ -111,6 +111,7 @@ add_executable(codegenTest
         codegenTest/SysVCallConvTest.cpp
         codegenTest/FrameLayoutTests.cpp
         codegenTest/InstructionIrTest.cpp
+        codegenTest/CfgTest.cpp
         codegenTest/IrPassesTest.cpp
         codegenTest/IrStringTableTest.cpp
         codegenTest/SymbolRefsTest.cpp

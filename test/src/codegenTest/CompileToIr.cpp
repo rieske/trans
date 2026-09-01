@@ -2,6 +2,7 @@
 
 #include "ResourceHelpers.h"
 #include "ast/AbstractSyntaxTree.h"
+#include "codegen/Cfg.h"
 #include "codegen/Instruction.h"
 #include "codegen/IrGenerator.h"
 #include "driver/CompilerComponentsFactory.h"
