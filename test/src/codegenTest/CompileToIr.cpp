@@ -80,6 +80,9 @@ std::string compileToIr(const std::string& source) {
             path, scannerReader.fromConfiguration(configuration.getLexPath()), session);
     auto builder = ast::AbstractSyntaxTreeBuilder::create(
             &frontEnd->grammar(), session, configuration.gnuExtensions());
+    std::ostringstream ignored;
+    diag::Sink sink { ignored };
+    builder->setSink(&sink);
     auto syntaxTree = parser.parse(*scanner, *builder);
     auto* tree = dynamic_cast<ast::AbstractSyntaxTree*>(syntaxTree.get());
     if (!tree) {
@@ -87,8 +90,6 @@ std::string compileToIr(const std::string& source) {
     }
 
     semantic_analyzer::SemanticAnalyzer analyzer { configuration.gnuExtensions() };
-    std::ostringstream ignored;
-    diag::Sink sink { ignored };
     if (!analyzer.analyze(*tree, session, sink)) {
         throw std::runtime_error { "compileToIr: semantic errors\n" + ignored.str() };
     }

@@ -20,7 +20,8 @@ private:
     using Creator = std::function<void(AbstractSyntaxTreeBuilderContext&)>;
 
     void bind(int lhs, std::vector<int> rhs, Creator creator);
-    void noCreatorDefined(const parser::Production& production) const;
+    void noCreatorDefined(const parser::Production& production,
+            AbstractSyntaxTreeBuilderContext& context) const;
 
     static void loopJumpStatement(AbstractSyntaxTreeBuilderContext& context);
 

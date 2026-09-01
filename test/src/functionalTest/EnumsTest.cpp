@@ -231,7 +231,9 @@ TEST(Compiler, enumeratorRedefinitionIsError) {
         int main() { return 0; }
     )prg"};
     program.compile();
-    program.assertCompilationErrors("redefinition of enumerator");
+    program.assertCompilationErrors("error: redefinition of enumerator");
+    EXPECT_THAT(program.getCompilationErrors(), Not(HasSubstr("parsing failed")));
+    EXPECT_THAT(program.getCompilationErrors(), Not(HasSubstr("Error: redefinition")));
 }
 
 TEST(Compiler, enumSameValueRedefinitionIsError) {

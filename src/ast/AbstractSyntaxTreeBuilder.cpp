@@ -29,6 +29,15 @@ AbstractSyntaxTreeBuilder::AbstractSyntaxTreeBuilder(const parser::Grammar* gram
     treeBuilderContext.environment().setGnuExtensions(gnuExtensions);
 }
 
+AbstractSyntaxTreeBuilder::AbstractSyntaxTreeBuilder(const parser::Grammar* grammar,
+        AbstractSyntaxTreeBuilder& parent) :
+    AbstractSyntaxTreeBuilder(grammar, parent.session(), parent.environment())
+{
+    if (parent.hasSink()) {
+        setSink(&parent.sink());
+    }
+}
+
 AbstractSyntaxTreeBuilder::AbstractSyntaxTreeBuilder(const parser::Grammar* grammar, scanner::LexicalSession& session,
         ParseEnvironment& parentEnvironment):
     syntaxNodeBuilder{*grammar},
@@ -48,6 +57,11 @@ void AbstractSyntaxTreeBuilder::makeTerminalNode(std::string type, std::string v
 
 parser::ParseExtensions* AbstractSyntaxTreeBuilder::parseExtensions() {
     return extensions_.get();
+}
+
+void AbstractSyntaxTreeBuilder::setSink(diag::Sink* sink) {
+    SyntaxTreeBuilder::setSink(sink);
+    treeBuilderContext.setSink(sink);
 }
 
 scanner::LexicalSession& AbstractSyntaxTreeBuilder::session() {

@@ -6,8 +6,7 @@
 #include "Grammar.h"
 #include "ParsingTable.h"
 #include "Production.h"
-#include "util/Logger.h"
-#include "util/LogManager.h"
+#include "util/Diagnostic.h"
 
 namespace parser {
 
@@ -16,8 +15,6 @@ const char SHIFT_ACTION = 's';
 const char REDUCE_ACTION = 'r';
 const char ERROR_ACTION = 'e';
 const char ACCEPT_ACTION = 'a';
-
-Logger& err = LogManager::getErrorLogger();
 } // namespace
 
 std::optional<int> Action::reduceDefiningSymbol() const {
@@ -137,14 +134,14 @@ bool Action::parse(std::stack<parse_state>& parsingStack, TokenStream& tokenStre
     case Kind::Error: {
         syntaxTreeBuilder.err();
         const scanner::Token& currentToken = tokenStream.getCurrentToken();
-        err << "Error: " << currentToken.context << ": unexpected token: " << currentToken.lexeme
-                << " expected:";
+        std::ostringstream message;
+        message << "unexpected token: " << currentToken.lexeme << " expected:";
         if (candidateSymbols_ && grammar_) {
             for (const auto candidate : *candidateSymbols_) {
-                err << " " << grammar_->getSymbolById(candidate);
+                message << " " << grammar_->getSymbolById(candidate);
             }
         }
-        err << "\n";
+        syntaxTreeBuilder.sink().error(currentToken.context, message.str());
         return true;
     }
     }

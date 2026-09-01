@@ -24,6 +24,10 @@
 #include "GenericSelection.h"
 #include "scanner/LexicalSession.h"
 
+namespace diag {
+class Sink;
+}
+
 namespace ast {
 
 class AbstractSyntaxTreeBuilderContext {
@@ -34,6 +38,10 @@ public:
 
     ParseEnvironment& environment() { return environment_; }
     const ParseEnvironment& environment() const { return environment_; }
+
+    void setSink(diag::Sink* sink);
+    diag::Sink& sink() const;
+    [[noreturn]] void error(const translation_unit::Context& where, std::string message);
 
     void pushTerminal(TerminalSymbol terminal);
     TerminalSymbol popTerminal();
@@ -173,6 +181,7 @@ private:
     std::stack<std::vector<DesignatorStep>> pendingDesignators;
 
     ParseEnvironment environment_;
+    diag::Sink* sink_ { nullptr };
 };
 
 }

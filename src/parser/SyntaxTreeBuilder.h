@@ -8,6 +8,10 @@
 #include "SyntaxTree.h"
 #include "translation_unit/Context.h"
 
+namespace diag {
+class Sink;
+}
+
 namespace parser {
 
 class ParseExtensions;
@@ -23,6 +27,10 @@ public:
 
     virtual ParseExtensions* parseExtensions() { return nullptr; }
 
+    virtual void setSink(diag::Sink* sink) { sink_ = sink; }
+    bool hasSink() const { return sink_ != nullptr; }
+    diag::Sink& sink() const;
+
     void err();
     bool hasError() const { return erred; }
 
@@ -30,6 +38,7 @@ protected:
     void assertBuildable() const;
 
 private:
+    diag::Sink* sink_ { nullptr };
     bool erred {false};
 };
 

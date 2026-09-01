@@ -15,6 +15,7 @@
 #include <filesystem>
 #include <fstream>
 #include <iterator>
+#include <optional>
 #include <sstream>
 #include <stdexcept>
 #include <string>
@@ -134,7 +135,7 @@ TEST(Driver, returnsNonZeroWhenSourceIsMissing) {
     ArgvBuffer args { { "definitely_missing_source_file.c" } };
     std::string errors;
     EXPECT_NE(runDriver(args, &errors), 0);
-    EXPECT_THAT(errors, HasSubstr("Error:"));
+    EXPECT_THAT(errors, HasSubstr("definitely_missing_source_file.c:0: error:"));
 }
 
 TEST(Driver, returnsZeroForSuccessfulCompile) {
@@ -175,7 +176,7 @@ TEST(Driver, returnsNonZeroWhenAnySourceFailsInMultiFileRun) {
     ArgvBuffer args { { goodPath.string(), "definitely_missing_other.c" }, { "-o" + outPath.string() } };
     std::string errors;
     EXPECT_NE(runDriver(args, &errors), 0);
-    EXPECT_THAT(errors, HasSubstr("Error:"));
+    EXPECT_THAT(errors, HasSubstr("definitely_missing_other.c:0: error:"));
     std::filesystem::remove(outPath);
     removeCompileArtifacts(goodPath);
 }
@@ -824,24 +825,33 @@ TEST(Driver, returnsNonZeroWhenCompileOnlyDashOWithTwoSources) {
     removeCompileArtifacts(second);
 }
 
-TEST(Compiler, throwsWhenSourceCannotBeOpened) {
+TEST(Compiler, reportsWhenSourceCannotBeOpened) {
     Compiler compiler { testConfiguration() };
-    EXPECT_THROW(compiler.compile("no_such_compile_input.c"), std::runtime_error);
+    std::stringstream outputStream;
+    std::stringstream errorStream;
+    std::optional<std::string> result;
+    LogManager::withOutputStreams(outputStream, errorStream, [&]() {
+        result = compiler.compile("no_such_compile_input.c");
+    });
+    EXPECT_FALSE(result.has_value());
+    EXPECT_THAT(errorStream.str(), HasSubstr("no_such_compile_input.c:0: error:"));
 }
 
-// Tool-path unit: assemble failure throws from Compiler (Driver exit code is covered by missing-source cases).
-TEST(Compiler, assembleFailureThrowsFromCompile) {
+// Tool-path unit: assemble failure is a compile I/O diagnostic (Driver exit code is covered by missing-source cases).
+TEST(Compiler, assembleFailureReportsFromCompile) {
     auto sourcePath = writeTempSource("assemble_fail_compile.c", kTrivialMain);
     FakeFailingAs fakeAs;
     Compiler compiler { testConfiguration() };
 
-    try {
-        compiler.compile(sourcePath.string());
-        FAIL() << "expected compile to throw when as fails";
-    } catch (const std::runtime_error& error) {
-        EXPECT_THAT(std::string(error.what()), HasSubstr("command failed"));
-        EXPECT_THAT(std::string(error.what()), HasSubstr("fake-as-failed"));
-    }
+    std::stringstream outputStream;
+    std::stringstream errorStream;
+    std::optional<std::string> result;
+    LogManager::withOutputStreams(outputStream, errorStream, [&]() {
+        result = compiler.compile(sourcePath.string());
+    });
+    EXPECT_FALSE(result.has_value());
+    EXPECT_THAT(errorStream.str(), HasSubstr("error:"));
+    EXPECT_THAT(errorStream.str(), HasSubstr("fake-as-failed"));
 
     removeCompileArtifacts(sourcePath);
 }
