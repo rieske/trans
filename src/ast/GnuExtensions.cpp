@@ -53,7 +53,7 @@ bool isInt128Lexeme(const std::string& lexeme) {
 } // namespace
 
 void GnuExtensions::installTypes(scanner::LexicalSession& session) const {
-    session.names.add("__builtin_va_list", type::builtinVaListType());
+    session.names.addTypedef("__builtin_va_list", type::builtinVaListType());
 }
 
 void GnuExtensions::cacheGrammarIds(const parser::Grammar& grammar) {

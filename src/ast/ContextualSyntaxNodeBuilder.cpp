@@ -197,7 +197,7 @@ ContextualSyntaxNodeBuilder::ContextualSyntaxNodeBuilder(const parser::Grammar& 
     bind(s_cast_exp, { s_unary_exp }, doNothing);
     bind(s_cast_exp, { s_open_paren, grammar.symbolId("<type_name>"), s_close_paren, s_cast_exp }, typeCast);
 
-    // type_name / spec_qualifier_list for sizeof(type) and casts (casts still stubbed at cast_exp).
+    // type_name / spec_qualifier_list for sizeof(type) and casts.
     int s_spec_qualifier_list = grammar.symbolId("<spec_qualifier_list>");
     int s_type_name = grammar.symbolId("<type_name>");
     int s_abstract_declarator_sym = grammar.symbolId("<abstract_declarator>");

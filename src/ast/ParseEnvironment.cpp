@@ -40,11 +40,11 @@ void ParseEnvironment::defineTypedef(const std::string& name, type::Type type) {
     if (session_.transparentUnion.consume() && type.isUnion()) {
         type.markTransparentUnion();
     }
-    session_.names.add(name, type);
+    session_.names.addTypedef(name, type);
 }
 
 std::optional<type::Type> ParseEnvironment::lookupTypedef(const std::string& name) const {
-    return session_.names.tryLookup(name);
+    return session_.names.lookupTypedef(name);
 }
 
 void ParseEnvironment::defineObject(const std::string& name, type::Type type) {
@@ -214,6 +214,7 @@ std::optional<type::Type> ParseEnvironment::lookupEnumTag(const std::string& tag
     return std::nullopt;
 }
 
+// Token-class hide for a parameter that reuses a typedef spelling. Not an object.
 void ParseEnvironment::maybeRegisterParameterShadow(const std::string& name) {
     if (name.empty() || !lookupTypedef(name)) {
         return;

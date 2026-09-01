@@ -11,7 +11,7 @@
 
 #include "types/Type.h"
 
-// SA→CG address plans (finish-for-git seam). symbols does not depend on ast.
+// SA→CG address plans. symbols does not depend on ast.
 
 namespace symbols {
 

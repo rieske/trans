@@ -2,20 +2,20 @@
 
 namespace scanner {
 
-void IdentifierTable::add(const std::string& name, const type::Type& type) {
-    scopes_.back().bindings.insert_or_assign(name, type);
+void IdentifierTable::addTypedef(const std::string& name, const type::Type& type) {
+    scopes_.back().typedefs.insert_or_assign(name, type);
     scopes_.back().shadows.erase(name);
     ++revision_;
 }
 
-bool IdentifierTable::has(const std::string& name) const {
-    return tryLookup(name).has_value();
+bool IdentifierTable::hasTypedef(const std::string& name) const {
+    return lookupTypedef(name).has_value();
 }
 
-std::optional<type::Type> IdentifierTable::tryLookup(const std::string& name) const {
+std::optional<type::Type> IdentifierTable::lookupTypedef(const std::string& name) const {
     for (auto it = scopes_.rbegin(); it != scopes_.rend(); ++it) {
-        auto found = it->bindings.find(name);
-        if (found != it->bindings.end()) {
+        auto found = it->typedefs.find(name);
+        if (found != it->typedefs.end()) {
             return found->second;
         }
     }
@@ -79,7 +79,7 @@ bool IdentifierTable::isIdentifierShadow(const std::string& name) const {
         if (it->shadows.count(name) > 0) {
             return true;
         }
-        if (it->bindings.count(name) > 0) {
+        if (it->typedefs.count(name) > 0) {
             return false;
         }
     }

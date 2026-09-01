@@ -99,7 +99,7 @@ TEST(ParseEnvironment, typedefAndEnumThroughSession) {
     env.defineTypedef("myint", type::signedInteger());
     auto t = env.lookupTypedef("myint");
     ASSERT_TRUE(t.has_value());
-    EXPECT_TRUE(session.names.has("myint"));
+    EXPECT_TRUE(session.names.hasTypedef("myint"));
 
     env.addEnumerator("RED");
     env.addEnumerator("GREEN", type::fromHostLong(10));
@@ -190,7 +190,7 @@ TEST(ParseEnvironment, registerInitializedDeclarationDefinesTypedef) {
     env.registerInitializedDeclaration(specs, decls);
     auto t = env.lookupTypedef("myint");
     ASSERT_TRUE(t.has_value());
-    EXPECT_TRUE(session.names.has("myint"));
+    EXPECT_TRUE(session.names.hasTypedef("myint"));
 }
 
 TEST(ParseEnvironment, registerInitializedDeclarationEmptyTypedefSpecsNoAlias) {
@@ -203,7 +203,7 @@ TEST(ParseEnvironment, registerInitializedDeclarationEmptyTypedefSpecsNoAlias) {
     decls.push_back(plainDeclarator("myint"));
     env.registerInitializedDeclaration(specs, decls);
     EXPECT_FALSE(env.lookupTypedef("myint").has_value());
-    EXPECT_FALSE(session.names.has("myint"));
+    EXPECT_FALSE(session.names.hasTypedef("myint"));
 }
 
 TEST(ParseEnvironment, registerInitializedDeclarationShadowsObjectReuse) {

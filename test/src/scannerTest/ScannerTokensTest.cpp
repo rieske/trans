@@ -290,7 +290,7 @@ TEST(ScannerTokens, emitsTypedefNameWhenSessionRegisters) {
     auto path = writeTempSource("scan_typedef_name", "myint x;\n");
     LexFileScannerReader reader;
     LexicalSession session;
-    session.names.add("myint", type::signedInteger());
+    session.names.addTypedef("myint", type::signedInteger());
     Scanner scanner{path, reader.fromConfiguration(getResourcePath("configuration/scanner.lex")), session};
     Token t = scanner.nextToken();
     EXPECT_EQ(t.id, "typedef_name");

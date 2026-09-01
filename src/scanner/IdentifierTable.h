@@ -11,14 +11,14 @@
 
 namespace scanner {
 
-// Ordinary-identifier table: typedef bindings, object types, and object shadows.
+// Ordinary-identifier table: typedefs, object types, and identifier shadows.
 // One block-scope stack. File-scope (root) stays until the session dies.
-// An object named T hides typedef T without erasing it.
+// Shadows are a token-class hide (typedef_name vs id). addObject does not install one.
 class IdentifierTable {
 public:
-    void add(const std::string& name, const type::Type& type);
-    bool has(const std::string& name) const;
-    std::optional<type::Type> tryLookup(const std::string& name) const;
+    void addTypedef(const std::string& name, const type::Type& type);
+    bool hasTypedef(const std::string& name) const;
+    std::optional<type::Type> lookupTypedef(const std::string& name) const;
 
     void addObject(const std::string& name, const type::Type& type);
     std::optional<type::Type> lookupObject(const std::string& name) const;
@@ -37,7 +37,7 @@ public:
 
 private:
     struct Scope {
-        std::map<std::string, type::Type> bindings;
+        std::map<std::string, type::Type> typedefs;
         std::map<std::string, type::Type> objects;
         std::set<std::string> shadows;
     };
