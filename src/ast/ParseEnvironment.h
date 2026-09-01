@@ -55,8 +55,8 @@ public:
     void tryDefineObject(const DeclarationSpecifiers& specs, Declarator& declarator);
     void maybeRegisterParameterShadow(const std::string& name);
 
-    void addEnumerator(std::string name);
-    void addEnumerator(std::string name, type::IntegerConstant value);
+    bool addEnumerator(std::string name);
+    bool addEnumerator(std::string name, type::IntegerConstant value);
     bool lookupEnumConstant(const std::string& name, type::IntegerConstant& value) const;
     // Finishes the open enum body; returns the underlying type. Non-empty tag is registered.
     type::Type endEnumDefinition(const std::string& tag = {});

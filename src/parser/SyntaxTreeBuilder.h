@@ -33,6 +33,8 @@ public:
 
     void err();
     bool hasError() const { return erred; }
+    // Syntax err() or a CSNB diagnostic. CSNB does not set erred (no syntax footer).
+    virtual bool aborted() const { return hasError(); }
 
 protected:
     void assertBuildable() const;

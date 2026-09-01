@@ -56,7 +56,8 @@ private:
             const parser::ParsingTable& table, AbstractSyntaxTreeBuilder& parent,
             const std::string& stopLookahead = ")");
 
-    bool consumeToStop(AbstractSyntaxTreeBuilder& nested, parser::TokenStream& outer,
+    bool consumeToStop(AbstractSyntaxTreeBuilder& parent, AbstractSyntaxTreeBuilder& nested,
+            parser::TokenStream& outer,
             const parser::ParsingTable& table, const scanner::Token* prefix, std::size_t prefixCount,
             int stopSymbol, const std::string& stopLookahead, bool endAfterMatchedBrace,
             const std::string& presentStopAs = {});

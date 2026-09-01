@@ -156,12 +156,15 @@ TEST(ParseEnvironment, nestedLookupEnumTagFindsParent) {
     EXPECT_TRUE(tag->equivalentTo(type::unsignedInteger()));
 }
 
-TEST(ParseEnvironment, enumeratorRedefinitionThrows) {
+TEST(ParseEnvironment, enumeratorRedefinitionDoesNotInsertTwice) {
     LexicalSession session;
     ParseEnvironment env{session};
-    env.addEnumerator("A", type::fromHostLong(1));
-    EXPECT_THROW(env.addEnumerator("A", type::fromHostLong(1)), std::runtime_error);
-    EXPECT_THROW(env.addEnumerator("A", type::fromHostLong(2)), std::runtime_error);
+    ASSERT_TRUE(env.addEnumerator("A", type::fromHostLong(1)));
+    EXPECT_FALSE(env.addEnumerator("A", type::fromHostLong(1)));
+    EXPECT_FALSE(env.addEnumerator("A", type::fromHostLong(2)));
+    type::IntegerConstant v;
+    ASSERT_TRUE(env.lookupEnumConstant("A", v));
+    EXPECT_EQ(type::toHostLong(v), 1);
 }
 
 TEST(ParseEnvironment, innerBlockMayReuseOuterEnumeratorName) {

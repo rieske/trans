@@ -41,7 +41,9 @@ public:
 
     void setSink(diag::Sink* sink);
     diag::Sink& sink() const;
-    [[noreturn]] void error(const translation_unit::Context& where, std::string message);
+    void error(const translation_unit::Context& where, std::string message);
+    void fail() { failed_ = true; }
+    bool failed() const { return failed_; }
 
     void pushTerminal(TerminalSymbol terminal);
     TerminalSymbol popTerminal();
@@ -182,6 +184,7 @@ private:
 
     ParseEnvironment environment_;
     diag::Sink* sink_ { nullptr };
+    bool failed_ { false };
 };
 
 }

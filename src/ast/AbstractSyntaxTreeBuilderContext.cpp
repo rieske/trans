@@ -2,7 +2,6 @@
 
 #include "util/Diagnostic.h"
 
-#include <stdexcept>
 #include <utility>
 
 namespace ast {
@@ -19,8 +18,8 @@ diag::Sink& AbstractSyntaxTreeBuilderContext::sink() const {
 }
 
 void AbstractSyntaxTreeBuilderContext::error(const translation_unit::Context& where, std::string message) {
-    sink().error(where, message);
-    throw std::runtime_error { std::move(message) };
+    sink().error(where, std::move(message));
+    failed_ = true;
 }
 
 AbstractSyntaxTreeBuilderContext::AbstractSyntaxTreeBuilderContext(scanner::LexicalSession& session) :

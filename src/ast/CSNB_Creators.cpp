@@ -72,6 +72,7 @@ void typedefName(AbstractSyntaxTreeBuilderContext& context) {
     auto type = context.environment().lookupTypedef(name.value);
     if (!type) {
         context.error(name.context, "unknown typedef name: " + name.value);
+        return;
     }
     context.pushTypeSpecifier(TypeSpecifier { *type, name.value });
 }
@@ -161,15 +162,21 @@ DeclarationSpecifiers popResolvedSpecQualifiers(AbstractSyntaxTreeBuilderContext
     auto specs = context.popDeclarationSpecifiers();
     if (!specs.resolveTypeofAtParseTime(context.environment())) {
         context.error({ "", 0 }, "cannot determine type of typeof operand");
+        return specs;
     }
     if (specs.getTypeSpecifiers().empty()) {
         context.error({ "", 0 }, "cannot determine type of spec-qualifier-list");
+        return specs;
     }
     return specs;
 }
 
 void specQualifierListTypeName(AbstractSyntaxTreeBuilderContext& context) {
-    context.pushTypeSpecifier(popResolvedSpecQualifiers(context).toTypeSpecifier());
+    auto specs = popResolvedSpecQualifiers(context);
+    if (context.failed()) {
+        return;
+    }
+    context.pushTypeSpecifier(specs.toTypeSpecifier());
 }
 
 void declarationStorageClassSpecifier(AbstractSyntaxTreeBuilderContext& context) {
@@ -537,6 +544,7 @@ void sizeofTypeExpression(AbstractSyntaxTreeBuilderContext& context) {
     auto sizeofKw = context.popTerminal(); // sizeof
     if (!typeSpec.resolveTypeofAtParseTime(context.environment())) {
         context.error(sizeofKw.context, "cannot determine type of typeof operand");
+        return;
     }
     if (auto bytes = type::sizeofObject(typeSpec.getType(), context.environment().gnuExtensions())) {
         context.pushExpression(std::make_unique<ConstantExpression>(
@@ -550,7 +558,11 @@ void sizeofTypeExpression(AbstractSyntaxTreeBuilderContext& context) {
 
 void typeNameWithAbstractDeclarator(AbstractSyntaxTreeBuilderContext& context) {
     auto declarator = context.popDeclarator();
-    auto typeSpec = popResolvedSpecQualifiers(context).toTypeSpecifier();
+    auto specs = popResolvedSpecQualifiers(context);
+    if (context.failed()) {
+        return;
+    }
+    auto typeSpec = specs.toTypeSpecifier();
     typeSpec.deferAbstractDeclarator(std::move(declarator));
     context.pushTypeSpecifier(std::move(typeSpec));
 }
@@ -759,6 +771,7 @@ void initializedDeclaration(AbstractSyntaxTreeBuilderContext& context) {
     if (!declarationSpecifiers.resolveTypeofAtParseTime(context.environment())
             && declarationSpecifiers.isTypedef()) {
         context.error({ "", 0 }, "cannot determine type of typeof operand");
+        return;
     }
     context.environment().registerInitializedDeclaration(declarationSpecifiers, initializedDeclarators);
     context.pushDeclaration(std::make_unique<Declaration>(declarationSpecifiers, std::move(initializedDeclarators)));

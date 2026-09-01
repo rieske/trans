@@ -12,7 +12,6 @@
 #include "ResourceHelpers.h"
 
 #include <sstream>
-#include <stdexcept>
 #include <vector>
 
 namespace {
@@ -57,20 +56,21 @@ TEST(CSNBCreators, productGrammarRegistersKnownProductions) {
     builder.updateContext(*intType, context);
     EXPECT_TRUE(context.hasTypeSpecifier());
 
-    EXPECT_THROW(builder.updateContext(grammar.getTopRule(), context), std::runtime_error);
+    EXPECT_NO_THROW(builder.updateContext(grammar.getTopRule(), context));
+    EXPECT_TRUE(context.failed());
     EXPECT_TRUE(sink.hasErrors());
     EXPECT_THAT(logged.str(), testing::HasSubstr("error: language construct not implemented yet"));
 }
 
-// Remaining type stubs still throw after reporting on the sink; integer type-specs are implemented (Phase 1).
-TEST(CSNBCreators, notImplementedYetFactoryThrows) {
+TEST(CSNBCreators, notImplementedYetReportsOnSink) {
     scanner::LexicalSession session;
     ast::AbstractSyntaxTreeBuilderContext context{session};
     std::ostringstream logged;
     diag::Sink sink { logged };
     context.setSink(&sink);
     auto stub = ast::notImplementedYet("feature X");
-    EXPECT_THROW(stub(context), std::runtime_error);
+    EXPECT_NO_THROW(stub(context));
+    EXPECT_TRUE(context.failed());
     EXPECT_TRUE(sink.hasErrors());
     EXPECT_THAT(logged.str(), testing::HasSubstr("error: feature X is not implemented yet"));
 }
