@@ -1,0 +1,104 @@
+#include "IdentifierTable.h"
+
+namespace scanner {
+
+void IdentifierTable::add(const std::string& name, const type::Type& type) {
+    scopes_.back().bindings.insert_or_assign(name, type);
+    scopes_.back().shadows.erase(name);
+    ++revision_;
+}
+
+bool IdentifierTable::has(const std::string& name) const {
+    return tryLookup(name).has_value();
+}
+
+std::optional<type::Type> IdentifierTable::tryLookup(const std::string& name) const {
+    for (auto it = scopes_.rbegin(); it != scopes_.rend(); ++it) {
+        auto found = it->bindings.find(name);
+        if (found != it->bindings.end()) {
+            return found->second;
+        }
+    }
+    return std::nullopt;
+}
+
+void IdentifierTable::addObject(const std::string& name, const type::Type& type) {
+    scopes_.back().objects.insert_or_assign(name, type);
+}
+
+std::optional<type::Type> IdentifierTable::lookupObject(const std::string& name) const {
+    auto pending = pendingObjects_.find(name);
+    if (pending != pendingObjects_.end()) {
+        return pending->second;
+    }
+    for (auto it = scopes_.rbegin(); it != scopes_.rend(); ++it) {
+        auto found = it->objects.find(name);
+        if (found != it->objects.end()) {
+            return found->second;
+        }
+    }
+    return std::nullopt;
+}
+
+void IdentifierTable::addPendingObject(const std::string& name, const type::Type& type) {
+    pendingObjects_.insert_or_assign(name, type);
+}
+
+void IdentifierTable::flushPendingObjects() {
+    for (const auto& entry : pendingObjects_) {
+        addObject(entry.first, entry.second);
+    }
+    pendingObjects_.clear();
+}
+
+void IdentifierTable::clearPendingObjects() {
+    pendingObjects_.clear();
+}
+
+void IdentifierTable::enterScope() {
+    scopes_.push_back({});
+    ++revision_;
+    flushPendingParameterShadows();
+    flushPendingObjects();
+}
+
+void IdentifierTable::leaveScope() {
+    if (scopes_.size() > 1) {
+        scopes_.pop_back();
+        ++revision_;
+    }
+}
+
+void IdentifierTable::addIdentifierShadow(const std::string& name) {
+    scopes_.back().shadows.insert(name);
+    ++revision_;
+}
+
+bool IdentifierTable::isIdentifierShadow(const std::string& name) const {
+    for (auto it = scopes_.rbegin(); it != scopes_.rend(); ++it) {
+        if (it->shadows.count(name) > 0) {
+            return true;
+        }
+        if (it->bindings.count(name) > 0) {
+            return false;
+        }
+    }
+    return false;
+}
+
+void IdentifierTable::addPendingParameterShadow(const std::string& name) {
+    pendingParameterShadows_.insert(name);
+}
+
+void IdentifierTable::flushPendingParameterShadows() {
+    for (const auto& name : pendingParameterShadows_) {
+        addIdentifierShadow(name);
+    }
+    pendingParameterShadows_.clear();
+}
+
+void IdentifierTable::clearPendingParameterShadows() {
+    pendingParameterShadows_.clear();
+}
+
+} // namespace scanner

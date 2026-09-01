@@ -2,8 +2,7 @@
 #define LEXICALSESSION_H_
 
 #include "EnumConstantRegistry.h"
-#include "ObjectTypeRegistry.h"
-#include "TypedefRegistry.h"
+#include "IdentifierTable.h"
 
 #include <stack>
 #include <vector>
@@ -77,41 +76,36 @@ private:
     bool pending_ { false };
 };
 
-// Compound `{` hops all three tables. Record `{` hops typedefs and objects.
+// Compound `{` hops names and enumerators. Record `{` hops names only.
 // Enum `{` is not a C block; enumerators stay on the enclosing frame.
 enum class BraceFrame { Block, Record, EnumBody };
 
 // Not copyable: FA holds a raw pointer to the session.
 struct LexicalSession {
-    TypedefRegistry typedefs;
-    ObjectTypeRegistry objects;
+    IdentifierTable names;
     EnumConstantRegistry enums;
     RecordPacked recordPacked;
     PendingTransparentUnion transparentUnion;
 
-    bool isTypedef(const std::string& name) const { return typedefs.has(name); }
+    bool isTypedef(const std::string& name) const { return names.has(name); }
     bool isEnumerator(const std::string& name) const { return enums.contains(name); }
     bool lookupEnumerator(const std::string& name, type::IntegerConstant& value) const {
         return enums.lookup(name, value);
     }
 
     void enterBlock() {
-        typedefs.enterScope();
-        objects.enterScope();
+        names.enterScope();
         enums.enterScope();
     }
     void leaveBlock() {
-        typedefs.leaveScope();
-        objects.leaveScope();
+        names.leaveScope();
         enums.leaveScope();
     }
     void enterRecord() {
-        typedefs.enterScope();
-        objects.enterScope();
+        names.enterScope();
     }
     void leaveRecord() {
-        typedefs.leaveScope();
-        objects.leaveScope();
+        names.leaveScope();
     }
     void openBrace(BraceFrame kind) {
         braces_.push_back(kind);
@@ -135,16 +129,16 @@ struct LexicalSession {
         }
     }
     void endDeclarators() {
-        typedefs.clearPendingParameterShadows();
-        objects.clearPending();
+        names.clearPendingParameterShadows();
+        names.clearPendingObjects();
     }
 
     LexicalSession() {
-        typedefs.add("_Float32", type::floating());
-        typedefs.add("_Float64", type::doubleFloating());
-        typedefs.add("_Float128", type::doubleFloating());
-        typedefs.add("_Float32x", type::floating());
-        typedefs.add("_Float64x", type::doubleFloating());
+        names.add("_Float32", type::floating());
+        names.add("_Float64", type::doubleFloating());
+        names.add("_Float128", type::doubleFloating());
+        names.add("_Float32x", type::floating());
+        names.add("_Float64x", type::doubleFloating());
     }
     LexicalSession(const LexicalSession&) = delete;
     LexicalSession& operator=(const LexicalSession&) = delete;

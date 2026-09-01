@@ -1,5 +1,5 @@
-#ifndef TYPEDEFREGISTRY_H_
-#define TYPEDEFREGISTRY_H_
+#ifndef IDENTIFIERTABLE_H_
+#define IDENTIFIERTABLE_H_
 
 #include <map>
 #include <optional>
@@ -11,14 +11,19 @@
 
 namespace scanner {
 
-// One block-scope stack. Each frame holds typedef bindings and object shadows.
-// File-scope (root) stays until the session dies.
+// Ordinary-identifier table: typedef bindings, object types, and object shadows.
+// One block-scope stack. File-scope (root) stays until the session dies.
 // An object named T hides typedef T without erasing it.
-class TypedefRegistry {
+class IdentifierTable {
 public:
     void add(const std::string& name, const type::Type& type);
     bool has(const std::string& name) const;
     std::optional<type::Type> tryLookup(const std::string& name) const;
+
+    void addObject(const std::string& name, const type::Type& type);
+    std::optional<type::Type> lookupObject(const std::string& name) const;
+    void addPendingObject(const std::string& name, const type::Type& type);
+    void clearPendingObjects();
 
     void enterScope();
     void leaveScope();
@@ -33,16 +38,19 @@ public:
 private:
     struct Scope {
         std::map<std::string, type::Type> bindings;
+        std::map<std::string, type::Type> objects;
         std::set<std::string> shadows;
     };
 
     void flushPendingParameterShadows();
+    void flushPendingObjects();
 
     unsigned revision_ { 0 };
     std::vector<Scope> scopes_ { Scope {} };
     std::set<std::string> pendingParameterShadows_;
+    std::map<std::string, type::Type> pendingObjects_;
 };
 
 } // namespace scanner
 
-#endif // TYPEDEFREGISTRY_H_
+#endif // IDENTIFIERTABLE_H_
