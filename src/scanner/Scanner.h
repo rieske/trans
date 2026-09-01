@@ -7,8 +7,21 @@
 #include "translation_unit/TranslationUnit.h"
 
 #include <memory>
+#include <stdexcept>
+#include <string>
+#include <utility>
 
 namespace scanner {
+
+class LexError : public std::runtime_error {
+public:
+    LexError(translation_unit::Context where, std::string message) :
+            std::runtime_error { std::move(message) },
+            where { std::move(where) } {
+    }
+
+    translation_unit::Context where;
+};
 
 class Scanner {
 public:
