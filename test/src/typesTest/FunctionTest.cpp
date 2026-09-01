@@ -32,5 +32,19 @@ TEST(Function, typeCopyStaysEquivalentAndIndependent) {
     EXPECT_TRUE(copy.equivalentTo(type::function(type::signedInteger())));
 }
 
+TEST(Function, accessorsShareUntilAssigned) {
+    auto fn = type::function(type::voidType(), { type::signedInteger() }).getFunction();
+    auto copy = fn;
+    EXPECT_EQ(&fn.getReturnType(), &copy.getReturnType());
+    EXPECT_EQ(&fn.getArguments(), &copy.getArguments());
+    EXPECT_EQ(fn.getArguments().size(), 1u);
+    EXPECT_TRUE(fn.getArguments().front().equivalentTo(type::signedInteger()));
+
+    copy = type::function(type::signedInteger()).getFunction();
+    EXPECT_TRUE(fn.getReturnType().isVoid());
+    EXPECT_TRUE(copy.getReturnType().isPrimitive());
+    EXPECT_TRUE(copy.getArguments().empty());
+}
+
 } // namespace
 

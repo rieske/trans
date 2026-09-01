@@ -5,31 +5,42 @@
 
 namespace type {
 
+namespace {
+
+std::vector<Type> takeTypes(std::vector<std::unique_ptr<Type>> args) {
+    std::vector<Type> out;
+    out.reserve(args.size());
+    for (auto& arg : args) {
+        out.push_back(std::move(*arg));
+    }
+    return out;
+}
+
+} // namespace
+
 struct Function::Impl {
-    std::unique_ptr<Type> returnType;
-    std::vector<std::unique_ptr<Type>> arguments;
+    Impl(Type returnType, std::vector<Type> arguments, bool variadic) :
+            returnType { std::move(returnType) },
+            arguments { std::move(arguments) },
+            variadic { variadic } {
+    }
+
+    Type returnType;
+    std::vector<Type> arguments;
     bool variadic { false };
 };
 
 Function::Function(std::unique_ptr<Type> returnType, std::vector<std::unique_ptr<Type>> arguments,
         bool variadic) :
-    impl_ { std::make_shared<Impl>() }
-{
-    impl_->returnType = std::move(returnType);
-    impl_->arguments = std::move(arguments);
-    impl_->variadic = variadic;
+    impl_ { std::make_shared<Impl>(std::move(*returnType), takeTypes(std::move(arguments)), variadic) } {
 }
 
-Type Function::getReturnType() const {
-    return *impl_->returnType;
+const Type& Function::getReturnType() const {
+    return impl_->returnType;
 }
 
-std::vector<Type> Function::getArguments() const {
-    std::vector<Type> args;
-    for (const auto& arg : impl_->arguments) {
-        args.push_back(*arg);
-    }
-    return args;
+const std::vector<Type>& Function::getArguments() const {
+    return impl_->arguments;
 }
 
 std::size_t Function::argumentCount() const {
@@ -42,10 +53,10 @@ bool Function::isVariadic() const {
 
 std::string Function::to_string() const {
     std::stringstream str;
-    str << impl_->returnType->to_string();
+    str << impl_->returnType.to_string();
     str << "(";
     for (auto it = impl_->arguments.begin(); it != impl_->arguments.end(); ++it) {
-        str << (*it)->to_string();
+        str << it->to_string();
         if (it < impl_->arguments.end() - 1) {
             str << ", ";
         }

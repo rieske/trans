@@ -18,8 +18,8 @@ public:
     Function& operator=(const Function&) = default;
     Function& operator=(Function&&) noexcept = default;
 
-    Type getReturnType() const;
-    std::vector<Type> getArguments() const;
+    const Type& getReturnType() const;
+    const std::vector<Type>& getArguments() const;
     std::size_t argumentCount() const;
     bool isVariadic() const;
 
