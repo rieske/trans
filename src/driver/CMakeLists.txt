@@ -1,12 +1,10 @@
 add_library(driver
         Compiler.cpp
-        CompilerComponentsFactory.cpp
         ConfigurationParser.cpp
         Driver.cpp
         LanguageFrontEnd.cpp
         ResourcesLocation.cpp
         Compiler.h
-        CompilerComponentsFactory.h
         Configuration.h
         Configuration.cpp
         ConfigurationParser.h

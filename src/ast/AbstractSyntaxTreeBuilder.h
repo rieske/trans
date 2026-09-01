@@ -28,6 +28,9 @@ public:
             std::unique_ptr<parser::ParseExtensions> extensions, bool gnuExtensions);
     AbstractSyntaxTreeBuilder(const parser::Grammar* grammar, scanner::LexicalSession& session,
             ParseEnvironment& parentEnvironment);
+
+    static std::unique_ptr<AbstractSyntaxTreeBuilder> create(const parser::Grammar* grammar,
+            scanner::LexicalSession& session, bool gnuExtensions);
     virtual ~AbstractSyntaxTreeBuilder();
 
     void makeTerminalNode(std::string type, std::string value, const translation_unit::Context& context) override;

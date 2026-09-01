@@ -2,14 +2,16 @@
 
 #include "ResourceHelpers.h"
 #include "ast/AbstractSyntaxTree.h"
+#include "ast/AbstractSyntaxTreeBuilder.h"
 #include "codegen/Cfg.h"
 #include "codegen/Instruction.h"
 #include "codegen/IrGenerator.h"
-#include "driver/CompilerComponentsFactory.h"
 #include "driver/Configuration.h"
 #include "driver/LanguageFrontEnd.h"
 #include "parser/LR1Parser.h"
+#include "scanner/LexFileScannerReader.h"
 #include "scanner/LexicalSession.h"
+#include "scanner/Scanner.h"
 #include "semantic_analyzer/SemanticAnalyzer.h"
 #include "util/Diagnostic.h"
 
@@ -69,13 +71,15 @@ std::string compileToIr(const std::string& source) {
 
     Configuration configuration;
     configuration.setResourcesBasePath(getResourcesBaseDir());
-    CompilerComponentsFactory factory { configuration };
-    const auto frontEnd = factory.makeFrontEnd();
+    const auto frontEnd = LanguageFrontEnd::load(configuration);
     parser::LR1Parser parser { frontEnd->table() };
 
     scanner::LexicalSession session;
-    auto scanner = factory.makeScannerForSourceFile(path, session);
-    auto builder = factory.makeSyntaxTreeBuilder(&frontEnd->grammar(), session);
+    scanner::LexFileScannerReader scannerReader;
+    auto scanner = std::make_unique<scanner::Scanner>(
+            path, scannerReader.fromConfiguration(configuration.getLexPath()), session);
+    auto builder = ast::AbstractSyntaxTreeBuilder::create(
+            &frontEnd->grammar(), session, configuration.gnuExtensions());
     auto syntaxTree = parser.parse(*scanner, *builder);
     auto* tree = dynamic_cast<ast::AbstractSyntaxTree*>(syntaxTree.get());
     if (!tree) {

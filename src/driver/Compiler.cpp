@@ -10,10 +10,15 @@
 
 #include "parser/LR1Parser.h"
 #include "ast/AbstractSyntaxTree.h"
+#include "ast/AbstractSyntaxTreeBuilder.h"
+#include "codegen/Amd64Registers.h"
 #include "codegen/AssemblyGenerator.h"
+#include "codegen/ATandTInstructionSet.h"
 #include "codegen/GlobalVariable.h"
+#include "codegen/IntelInstructionSet.h"
 #include "codegen/IrGenerator.h"
 #include "parser/SyntaxTreeBuilder.h"
+#include "scanner/LexFileScannerReader.h"
 #include "scanner/LexicalSession.h"
 #include "scanner/Scanner.h"
 #include "semantic_analyzer/SemanticAnalyzer.h"
@@ -177,6 +182,31 @@ void assemble(const std::string& assemblyFileName, const std::string& objectFile
     throw std::logic_error { "unknown AssemblyDialect" };
 }
 
+std::unique_ptr<codegen::AssemblyGenerator> makeAssemblyGenerator(
+        const Configuration& configuration, std::ostream* assemblyFile) {
+    std::unique_ptr<codegen::InstructionSet> instructionSet;
+    switch (configuration.getAssemblyDialect()) {
+    case AssemblyDialect::Intel:
+        instructionSet = std::make_unique<codegen::IntelInstructionSet>();
+        break;
+    case AssemblyDialect::AtAndT:
+        instructionSet = std::make_unique<codegen::ATandTInstructionSet>();
+        break;
+    default:
+        throw std::logic_error { "unknown AssemblyDialect" };
+    }
+    return std::make_unique<codegen::AssemblyGenerator>(
+            assemblyFile,
+            std::move(instructionSet),
+            std::make_unique<codegen::Amd64Registers>());
+}
+
+std::shared_ptr<const LanguageFrontEnd> loadFrontEnd(const Configuration& configuration) {
+    Logger logger { configuration.isParserLoggingEnabled() ? &std::cout : &NullStream::getInstance() };
+    LogManager::registerComponentLogger(Component::PARSER, logger);
+    return LanguageFrontEnd::load(configuration);
+}
+
 } // namespace
 
 std::vector<std::string> Compiler::linkCommand(const std::vector<std::string>& objectFiles,
@@ -238,8 +268,7 @@ bool Compiler::sourceFileNeedsGccPreprocessor(const std::string& sourceFileName,
 
 Compiler::Compiler(Configuration configuration) :
         configuration { configuration },
-        compilerComponentsFactory { configuration },
-        frontEnd { compilerComponentsFactory.makeFrontEnd() },
+        frontEnd { loadFrontEnd(configuration) },
         parser { std::make_unique<parser::LR1Parser>(frontEnd->table()) }
 {
 }
@@ -268,10 +297,15 @@ std::optional<std::string> Compiler::compile(std::string sourceFileName) const {
     }
 
     scanner::LexicalSession session;
-    std::unique_ptr<scanner::Scanner> scanner =
-            compilerComponentsFactory.makeScannerForSourceFile(iPath, session);
+    Logger scannerLogger {
+            configuration.isScannerLoggingEnabled() ? &std::cout : &NullStream::getInstance() };
+    LogManager::registerComponentLogger(Component::SCANNER, scannerLogger);
+    scanner::LexFileScannerReader scannerReader;
+    std::unique_ptr<scanner::Scanner> scanner = std::make_unique<scanner::Scanner>(
+            iPath, scannerReader.fromConfiguration(configuration.getLexPath()), session);
     std::unique_ptr<parser::SyntaxTreeBuilder> syntaxTreeBuilder =
-            compilerComponentsFactory.makeSyntaxTreeBuilder(&frontEnd->grammar(), session);
+            ast::AbstractSyntaxTreeBuilder::create(
+                    &frontEnd->grammar(), session, configuration.gnuExtensions());
     std::unique_ptr<parser::SyntaxTree> syntaxTree = parser->parse(*scanner, *syntaxTreeBuilder);
     auto* tree = dynamic_cast<ast::AbstractSyntaxTree*>(syntaxTree.get());
     if (!tree) {
@@ -301,7 +335,7 @@ std::optional<std::string> Compiler::compile(std::string sourceFileName) const {
             throw std::runtime_error { "Unable to open assembly output file " + sPath };
         }
         std::unique_ptr<codegen::AssemblyGenerator> assemblyGenerator =
-                compilerComponentsFactory.makeAssemblyGenerator(&assemblyFile);
+                makeAssemblyGenerator(configuration, &assemblyFile);
         assemblyGenerator->generateAssemblyCode(ir, semanticAnalyzer.getConstants(), globalVariables);
     }
 
