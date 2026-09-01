@@ -3,26 +3,26 @@
 
 #include <map>
 #include <string>
+#include <vector>
 
 #include "types/IntegerConstant.h"
 
 namespace scanner {
 
-// Enumerators visible while building one translation unit, so that later
-// enumerators (and const expressions) can fold references to earlier ones.
-// Instance-owned (LexicalSession); never process-static.
-// Product limit: TU-flat (not C block scope). SA reads this table.
-// add() is last-wins; redefinition diagnostics belong at the PE/SA layer.
-// Sessions are single-shot per compile; no reset API (fresh LexicalSession each TU).
+// Enumerators are block-scoped. File-scope (root) stays until the session dies.
+// add() is last-wins in the current frame; redefinition diagnostics belong at PE/SA.
 class EnumConstantRegistry {
 public:
     void add(const std::string& name, type::IntegerConstant value);
     bool lookup(const std::string& name, type::IntegerConstant& value) const;
     bool contains(const std::string& name) const;
-    const std::map<std::string, type::IntegerConstant>& entries() const { return table_; }
+    bool containsInCurrentScope(const std::string& name) const;
+
+    void enterScope();
+    void leaveScope();
 
 private:
-    std::map<std::string, type::IntegerConstant> table_;
+    std::vector<std::map<std::string, type::IntegerConstant>> scopes_ { {} };
 };
 
 } // namespace scanner

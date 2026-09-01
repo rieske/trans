@@ -87,6 +87,44 @@ std::optional<LexIdContext> roleAfter(std::string_view id) {
 
 } // namespace
 
+TokenStream::SpecifierLookahead::Op TokenStream::SpecifierLookahead::consume(std::string_view id) {
+    if (id == "enum") {
+        state_ = State::AfterEnum;
+        return Op::None;
+    }
+    if (id == "struct" || id == "union") {
+        state_ = State::AfterRecord;
+        return Op::None;
+    }
+    if (id == "{") {
+        Op op = Op::OpenBlock;
+        if (state_ == State::AfterEnum || state_ == State::AfterEnumTag) {
+            op = Op::OpenEnumBody;
+        } else if (state_ == State::AfterRecord || state_ == State::AfterRecordTag) {
+            op = Op::OpenRecord;
+        }
+        state_ = State::None;
+        return op;
+    }
+    if (id == "}") {
+        return Op::Close;
+    }
+    if (id == ";") {
+        state_ = State::None;
+        return Op::EndDeclarators;
+    }
+    if (state_ == State::AfterEnum && id == "id") {
+        state_ = State::AfterEnumTag;
+        return Op::None;
+    }
+    if (state_ == State::AfterRecord && id == "id") {
+        state_ = State::AfterRecordTag;
+        return Op::None;
+    }
+    state_ = State::None;
+    return Op::None;
+}
+
 TokenStream::TokenStream(std::function<scanner::Token()> scan, scanner::LexicalSession& session,
         const Grammar& grammar) :
     scan { std::move(scan) },
@@ -168,12 +206,24 @@ scanner::Token TokenStream::takeRaw() {
 const scanner::Token& TokenStream::nextToken() {
     const scanner::Token consumed = getCurrentToken();
     advanceIdContext(consumed);
-    if (consumed.id == "{") {
-        session_.enterBlock();
-    } else if (consumed.id == "}") {
-        session_.leaveBlock();
-    } else if (consumed.id == ";") {
+    switch (specifier_.consume(consumed.id)) {
+    case SpecifierLookahead::Op::OpenBlock:
+        session_.openBrace(scanner::BraceFrame::Block);
+        break;
+    case SpecifierLookahead::Op::OpenRecord:
+        session_.openBrace(scanner::BraceFrame::Record);
+        break;
+    case SpecifierLookahead::Op::OpenEnumBody:
+        session_.openBrace(scanner::BraceFrame::EnumBody);
+        break;
+    case SpecifierLookahead::Op::Close:
+        session_.closeBrace();
+        break;
+    case SpecifierLookahead::Op::EndDeclarators:
         session_.endDeclarators();
+        break;
+    case SpecifierLookahead::Op::None:
+        break;
     }
     installNext();
     return getCurrentToken();

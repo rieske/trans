@@ -168,7 +168,7 @@ void ParseEnvironment::addEnumerator(std::string name) {
 }
 
 void ParseEnvironment::addEnumerator(std::string name, type::IntegerConstant value) {
-    if (session_.enums.contains(name)) {
+    if (session_.enums.containsInCurrentScope(name)) {
         throw std::runtime_error { "redefinition of enumerator `" + name + "`" };
     }
     session_.enums.add(name, value);
