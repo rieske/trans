@@ -12,9 +12,9 @@ namespace ast {
 
 class ParseEnvironment;
 
-// Dual ownership of C type vs value (finish-for-git protocol):
-//   expressionType() — C type for sizeof / isArray (on the node)
-//   Result — ValueEntry only in AnnotationStore (ValueSlot::Result)
+// Dual ownership of C type vs value:
+//   expressionType() - C type for sizeof / isArray (on the node)
+//   Result - ValueEntry only in AnnotationStore (ValueSlot::Result)
 // ValueForm encodes dual-type cases without separate AST fields.
 enum class ValueForm {
     Scalar,              // expressionType matches result type

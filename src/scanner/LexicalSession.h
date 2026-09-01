@@ -87,7 +87,7 @@ struct LexicalSession {
     RecordPacked recordPacked;
     PendingTransparentUnion transparentUnion;
 
-    bool isTypedef(const std::string& name) const { return names.has(name); }
+    bool isTypedef(const std::string& name) const { return names.hasTypedef(name); }
     bool isEnumerator(const std::string& name) const { return enums.contains(name); }
     bool lookupEnumerator(const std::string& name, type::IntegerConstant& value) const {
         return enums.lookup(name, value);
@@ -134,11 +134,11 @@ struct LexicalSession {
     }
 
     LexicalSession() {
-        names.add("_Float32", type::floating());
-        names.add("_Float64", type::doubleFloating());
-        names.add("_Float128", type::doubleFloating());
-        names.add("_Float32x", type::floating());
-        names.add("_Float64x", type::doubleFloating());
+        names.addTypedef("_Float32", type::floating());
+        names.addTypedef("_Float64", type::doubleFloating());
+        names.addTypedef("_Float128", type::doubleFloating());
+        names.addTypedef("_Float32x", type::floating());
+        names.addTypedef("_Float64x", type::doubleFloating());
     }
     LexicalSession(const LexicalSession&) = delete;
     LexicalSession& operator=(const LexicalSession&) = delete;

@@ -141,7 +141,7 @@ TEST(FiniteAutomaton, emitsTypedefNameWhenRegistered) {
     accumulatingState.addTransition("yint", &accumulatingState);
     accumulatingState.addTransition("", &finalState);
     LexicalSession session;
-    session.names.add("myint", type::signedInteger());
+    session.names.addTypedef("myint", type::signedInteger());
     FiniteAutomaton finiteAutomaton { &startState, {}, {} };
     finiteAutomaton.setSession(&session);
 
@@ -162,7 +162,7 @@ TEST(FiniteAutomaton, keywordWinsOverTypedefRegistry) {
     accumulatingState.addTransition("oid", &accumulatingState);
     accumulatingState.addTransition("", &finalState);
     LexicalSession session;
-    session.names.add("void", type::signedInteger());
+    session.names.addTypedef("void", type::signedInteger());
     FiniteAutomaton finiteAutomaton { &startState, { "void" }, {} };
     finiteAutomaton.setSession(&session);
 
@@ -182,7 +182,7 @@ TEST(FiniteAutomaton, stillEmitsTypedefNameWhenIdentifierShadowed) {
     startState.addTransition("T", &accumulatingState);
     accumulatingState.addTransition("", &finalState);
     LexicalSession session;
-    session.names.add("T", type::signedInteger());
+    session.names.addTypedef("T", type::signedInteger());
     session.names.addIdentifierShadow("T");
     FiniteAutomaton finiteAutomaton { &startState, {}, {} };
     finiteAutomaton.setSession(&session);

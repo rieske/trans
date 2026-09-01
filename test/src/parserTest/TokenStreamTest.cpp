@@ -75,7 +75,7 @@ TEST(TokenStream, peekDoesNotConsume) {
 
 TEST(TokenStream, takeRawDoesNotEnterOrLeaveBlock) {
     scanner::LexicalSession session;
-    session.names.add("T", type::signedInteger());
+    session.names.addTypedef("T", type::signedInteger());
     session.enterBlock();
     session.names.addIdentifierShadow("T");
     std::vector<scanner::Token> tokens {
@@ -116,7 +116,7 @@ TEST(TokenStream, takeRawConsumesPeekedLookahead) {
 TEST(TokenStream, reclassifiesTypedefNameInExpressionContext) {
     // After return, a typedef spelling is an identifier (expression).
     scanner::LexicalSession session;
-    session.names.add("size_t", type::unsignedLong());
+    session.names.addTypedef("size_t", type::unsignedLong());
     std::vector<scanner::Token> tokens {
         {"return", "return", {"f", 1}},
         {"typedef_name", "size_t", {"f", 1}},
@@ -132,7 +132,7 @@ TEST(TokenStream, reclassifiesTypedefNameInExpressionContext) {
 
 TEST(TokenStream, keepsTypedefNameInTypePosition) {
     scanner::LexicalSession session;
-    session.names.add("size_t", type::unsignedLong());
+    session.names.addTypedef("size_t", type::unsignedLong());
     std::vector<scanner::Token> tokens {
         {"typedef_name", "size_t", {"f", 1}},
         {"id", "x", {"f", 1}},
@@ -147,7 +147,7 @@ TEST(TokenStream, keepsTypedefNameInTypePosition) {
 
 TEST(TokenStream, forcesIdWhenIdentifierShadow) {
     scanner::LexicalSession session;
-    session.names.add("T", type::signedInteger());
+    session.names.addTypedef("T", type::signedInteger());
     session.enterBlock();
     session.names.addIdentifierShadow("T");
     std::vector<scanner::Token> tokens {
@@ -162,7 +162,7 @@ TEST(TokenStream, forcesIdWhenIdentifierShadow) {
 
 TEST(TokenStream, tagAfterStructIsIdentifier) {
     scanner::LexicalSession session;
-    session.names.add("S", type::signedInteger());
+    session.names.addTypedef("S", type::signedInteger());
     std::vector<scanner::Token> tokens {
         {"struct", "struct", {"f", 1}},
         {"typedef_name", "S", {"f", 1}},
@@ -177,7 +177,7 @@ TEST(TokenStream, tagAfterStructIsIdentifier) {
 
 TEST(TokenStream, memberAfterDotIsIdentifier) {
     scanner::LexicalSession session;
-    session.names.add("T", type::signedInteger());
+    session.names.addTypedef("T", type::signedInteger());
     std::vector<scanner::Token> tokens {
         {".", ".", {"f", 1}},
         {"typedef_name", "T", {"f", 1}},
@@ -192,7 +192,7 @@ TEST(TokenStream, memberAfterDotIsIdentifier) {
 
 TEST(TokenStream, declaratorAfterStarIsIdentifier) {
     scanner::LexicalSession session;
-    session.names.add("T", type::signedInteger());
+    session.names.addTypedef("T", type::signedInteger());
     std::vector<scanner::Token> tokens {
         {"typedef_name", "T", {"f", 1}},
         {"*", "*", {"f", 1}},
@@ -209,7 +209,7 @@ TEST(TokenStream, declaratorAfterStarIsIdentifier) {
 
 TEST(TokenStream, braceScopePopsIdentifierShadow) {
     scanner::LexicalSession session;
-    session.names.add("T", type::signedInteger());
+    session.names.addTypedef("T", type::signedInteger());
     std::vector<scanner::Token> tokens {
         {"{", "{", {"f", 1}},
         {"typedef_name", "T", {"f", 1}},
@@ -231,7 +231,7 @@ TEST(TokenStream, braceScopePopsIdentifierShadow) {
 
 TEST(TokenStream, promotesIdToTypedefNameInTypePosition) {
     scanner::LexicalSession session;
-    session.names.add("T", type::signedInteger());
+    session.names.addTypedef("T", type::signedInteger());
     std::vector<scanner::Token> tokens {
         {"id", "T", {"f", 1}},
         {"id", "x", {"f", 1}},
@@ -246,7 +246,7 @@ TEST(TokenStream, promotesIdToTypedefNameInTypePosition) {
 TEST(TokenStream, constKeepsTypedefName) {
     // Qualifiers keep type context: const foo_t x keeps foo_t as typedef_name.
     scanner::LexicalSession session;
-    session.names.add("foo_t", type::signedInteger());
+    session.names.addTypedef("foo_t", type::signedInteger());
     std::vector<scanner::Token> tokens {
         {"const", "const", {"f", 1}},
         {"typedef_name", "foo_t", {"f", 1}},
@@ -264,7 +264,7 @@ TEST(TokenStream, constKeepsTypedefName) {
 TEST(TokenStream, afterPrimitiveTypeSpecDeclaratorIsIdentifier) {
     // After int/char/..., the next spelling is a declarator name (`int T`), not a type.
     scanner::LexicalSession session;
-    session.names.add("T", type::signedInteger());
+    session.names.addTypedef("T", type::signedInteger());
     std::vector<scanner::Token> tokens {
         {"int", "int", {"f", 1}},
         {"typedef_name", "T", {"f", 1}},
@@ -281,7 +281,7 @@ TEST(TokenStream, afterPrimitiveTypeSpecDeclaratorIsIdentifier) {
 TEST(TokenStream, afterConstThenPrimitiveDeclaratorIsIdentifier) {
     // const int T: qualifier keeps type, then int forces declarator context.
     scanner::LexicalSession session;
-    session.names.add("T", type::signedInteger());
+    session.names.addTypedef("T", type::signedInteger());
     std::vector<scanner::Token> tokens {
         {"const", "const", {"f", 1}},
         {"int", "int", {"f", 1}},
@@ -301,7 +301,7 @@ TEST(TokenStream, colonDoesNotForceTypeRestart) {
     // ':' is intentionally omitted from AsType restart (label/case vs ternary).
     // After a primary (AsIdentifier), keep context: typedef spelling stays id.
     scanner::LexicalSession session;
-    session.names.add("size_t", type::unsignedLong());
+    session.names.addTypedef("size_t", type::unsignedLong());
     std::vector<scanner::Token> tokens {
         {"return", "return", {"f", 1}},
         {"typedef_name", "size_t", {"f", 1}},
@@ -323,7 +323,7 @@ TEST(TokenStream, commaRestartsTypePositionForTypedefName) {
     // Product: ',' is AsType restart so multi-param type lists work
     // (`void f(int a, size_t b)` keeps size_t as typedef_name after comma).
     scanner::LexicalSession session;
-    session.names.add("size_t", type::unsignedLong());
+    session.names.addTypedef("size_t", type::unsignedLong());
     std::vector<scanner::Token> tokens {
         {"int", "int", {"f", 1}},
         {"id", "a", {"f", 1}},
@@ -345,7 +345,7 @@ TEST(TokenStream, commaRestartsTypePositionForTypedefName) {
 
 TEST(TokenStream, pendingParameterShadowFlushesOnBrace) {
     scanner::LexicalSession session;
-    session.names.add("T", type::signedInteger());
+    session.names.addTypedef("T", type::signedInteger());
     session.names.addPendingParameterShadow("T");
     std::vector<scanner::Token> tokens {
         {"{", "{", {"f", 1}},
@@ -366,7 +366,7 @@ TEST(TokenStream, pendingParameterShadowFlushesOnBrace) {
 
 TEST(TokenStream, pendingParameterShadowClearedOnSemicolon) {
     scanner::LexicalSession session;
-    session.names.add("T", type::signedInteger());
+    session.names.addTypedef("T", type::signedInteger());
     session.names.addPendingParameterShadow("T");
     std::vector<scanner::Token> tokens {
         {";", ";", {"f", 1}},
@@ -462,7 +462,7 @@ TEST(TokenStream, stampsCurrentTokenFromGrammar) {
 TEST(TokenStream, peekDoesNotClassifyLookahead) {
     const Grammar grammar = streamGrammar();
     scanner::LexicalSession session;
-    session.names.add("num", type::signedInteger());
+    session.names.addTypedef("num", type::signedInteger());
     std::vector<scanner::Token> tokens {
         { "id", "add", { "f", 1 } },
         { "(", "(", { "f", 1 } },
@@ -512,7 +512,7 @@ TEST(TokenStream, rejectsUnknownTerminal) {
 TEST(TokenStream, revisionBumpReclassifiesCurrentWithoutAdvance) {
     const Grammar grammar = streamGrammar();
     scanner::LexicalSession session;
-    session.names.add("T", type::signedInteger());
+    session.names.addTypedef("T", type::signedInteger());
     std::vector<scanner::Token> tokens { { "typedef_name", "T", { "f", 1 } } };
     int i = 0;
     TokenStream ts { [&]() { return tokens[i++]; }, session, grammar };

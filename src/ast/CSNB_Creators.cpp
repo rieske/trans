@@ -55,7 +55,6 @@ void floatType(AbstractSyntaxTreeBuilderContext& context) {
 }
 
 void doubleType(AbstractSyntaxTreeBuilderContext& context) {
-    // Phase 3: full float/double codegen; front-end accepts the type specifier.
     context.pushTypeSpecifier( { type::doubleFloating(), context.popTerminal().value });
 }
 

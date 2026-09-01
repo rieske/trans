@@ -9,9 +9,9 @@ using namespace scanner;
 TEST(LexicalSession, isTypedefDelegatesToRegistry) {
     LexicalSession session;
     EXPECT_FALSE(session.isTypedef("T"));
-    session.names.add("T", type::signedInteger());
+    session.names.addTypedef("T", type::signedInteger());
     EXPECT_TRUE(session.isTypedef("T"));
-    EXPECT_TRUE(session.names.has("T"));
+    EXPECT_TRUE(session.names.hasTypedef("T"));
 }
 
 TEST(LexicalSession, isEnumeratorDelegatesToRegistry) {
@@ -35,20 +35,20 @@ TEST(LexicalSession, defaultSessionHasBuiltinFloatTypedefs) {
     EXPECT_TRUE(session.isTypedef("_Float32x"));
     EXPECT_TRUE(session.isTypedef("_Float64x"));
 
-    EXPECT_TRUE(session.names.tryLookup("_Float32")->equivalentTo(type::floating()));
-    EXPECT_TRUE(session.names.tryLookup("_Float64")->equivalentTo(type::doubleFloating()));
-    EXPECT_TRUE(session.names.tryLookup("_Float128")->equivalentTo(type::doubleFloating()));
-    EXPECT_TRUE(session.names.tryLookup("_Float32x")->equivalentTo(type::floating()));
-    EXPECT_TRUE(session.names.tryLookup("_Float64x")->equivalentTo(type::doubleFloating()));
+    EXPECT_TRUE(session.names.lookupTypedef("_Float32")->equivalentTo(type::floating()));
+    EXPECT_TRUE(session.names.lookupTypedef("_Float64")->equivalentTo(type::doubleFloating()));
+    EXPECT_TRUE(session.names.lookupTypedef("_Float128")->equivalentTo(type::doubleFloating()));
+    EXPECT_TRUE(session.names.lookupTypedef("_Float32x")->equivalentTo(type::floating()));
+    EXPECT_TRUE(session.names.lookupTypedef("_Float64x")->equivalentTo(type::doubleFloating()));
 }
 
 TEST(LexicalSession, typedefAndEnumAreInstanceOwned) {
     LexicalSession a;
     LexicalSession b;
-    a.names.add("T", type::signedInteger());
+    a.names.addTypedef("T", type::signedInteger());
     a.enums.add("E", type::fromHostLong(3));
-    EXPECT_TRUE(a.names.has("T"));
-    EXPECT_FALSE(b.names.has("T"));
+    EXPECT_TRUE(a.names.hasTypedef("T"));
+    EXPECT_FALSE(b.names.hasTypedef("T"));
     type::IntegerConstant v;
     EXPECT_TRUE(a.enums.lookup("E", v));
     EXPECT_EQ(type::toHostLong(v), 3);
@@ -57,7 +57,7 @@ TEST(LexicalSession, typedefAndEnumAreInstanceOwned) {
 
 TEST(IdentifierTable, shadowScopesPushPop) {
     IdentifierTable reg;
-    reg.add("T", type::signedInteger());
+    reg.addTypedef("T", type::signedInteger());
     reg.enterScope();
     reg.addIdentifierShadow("T");
     EXPECT_TRUE(reg.isIdentifierShadow("T"));
@@ -67,37 +67,37 @@ TEST(IdentifierTable, shadowScopesPushPop) {
 
 TEST(IdentifierTable, fileScopeAutoRootShadow) {
     IdentifierTable reg;
-    reg.add("T", type::signedInteger());
+    reg.addTypedef("T", type::signedInteger());
     reg.addIdentifierShadow("T");
     EXPECT_TRUE(reg.isIdentifierShadow("T"));
 }
 
 TEST(IdentifierTable, extraLeaveScopeKeepsFileScopeShadow) {
     IdentifierTable reg;
-    reg.add("T", type::signedInteger());
+    reg.addTypedef("T", type::signedInteger());
     reg.addIdentifierShadow("T");
     reg.leaveScope();
     EXPECT_TRUE(reg.isIdentifierShadow("T"));
-    EXPECT_TRUE(reg.has("T"));
+    EXPECT_TRUE(reg.hasTypedef("T"));
     reg.leaveScope();
     EXPECT_TRUE(reg.isIdentifierShadow("T"));
-    EXPECT_TRUE(reg.has("T"));
+    EXPECT_TRUE(reg.hasTypedef("T"));
 }
 
-TEST(IdentifierTable, addClearsShadowOfSameName) {
+TEST(IdentifierTable, addTypedefClearsShadowOfSameName) {
     IdentifierTable reg;
     reg.enterScope();
     reg.addIdentifierShadow("T");
-    reg.add("T", type::signedInteger());
+    reg.addTypedef("T", type::signedInteger());
     EXPECT_FALSE(reg.isIdentifierShadow("T"));
-    EXPECT_TRUE(reg.has("T"));
+    EXPECT_TRUE(reg.hasTypedef("T"));
 }
 
-TEST(IdentifierTable, addLastWins) {
+TEST(IdentifierTable, addTypedefLastWins) {
     IdentifierTable reg;
-    reg.add("T", type::signedInteger());
-    reg.add("T", type::unsignedInteger());
-    auto t = reg.tryLookup("T");
+    reg.addTypedef("T", type::signedInteger());
+    reg.addTypedef("T", type::unsignedInteger());
+    auto t = reg.lookupTypedef("T");
     ASSERT_TRUE(t.has_value());
     EXPECT_TRUE(t->equivalentTo(type::unsignedInteger()));
     EXPECT_FALSE(t->equivalentTo(type::signedInteger()));
@@ -161,7 +161,7 @@ TEST(EnumConstantRegistry, innerHidesOuterAndRestores) {
 
 TEST(IdentifierTable, pendingParameterShadowFlushesOnScope) {
     IdentifierTable reg;
-    reg.add("T", type::signedInteger());
+    reg.addTypedef("T", type::signedInteger());
     reg.addPendingParameterShadow("T");
     EXPECT_FALSE(reg.isIdentifierShadow("T"));
     reg.enterScope();
@@ -172,7 +172,7 @@ TEST(IdentifierTable, pendingParameterShadowFlushesOnScope) {
 
 TEST(IdentifierTable, pendingParameterShadowClearedWithoutFlush) {
     IdentifierTable reg;
-    reg.add("T", type::signedInteger());
+    reg.addTypedef("T", type::signedInteger());
     reg.addPendingParameterShadow("T");
     reg.clearPendingParameterShadows();
     reg.enterScope();
@@ -236,19 +236,19 @@ TEST(IdentifierTable, objectBraceScopesAndExtraLeaveKeepsRoot) {
 
 TEST(IdentifierTable, oneEnterScopeHopsTypedefsAndObjects) {
     IdentifierTable names;
-    names.add("T", type::signedInteger());
+    names.addTypedef("T", type::signedInteger());
     names.addObject("x", type::signedInteger());
     names.enterScope();
-    names.add("T", type::signedCharacter());
+    names.addTypedef("T", type::signedCharacter());
     names.addObject("x", type::signedCharacter());
-    auto innerTypedef = names.tryLookup("T");
+    auto innerTypedef = names.lookupTypedef("T");
     auto innerObject = names.lookupObject("x");
     ASSERT_TRUE(innerTypedef.has_value());
     ASSERT_TRUE(innerObject.has_value());
     EXPECT_TRUE(innerTypedef->equivalentTo(type::signedCharacter()));
     EXPECT_TRUE(innerObject->equivalentTo(type::signedCharacter()));
     names.leaveScope();
-    auto outerTypedef = names.tryLookup("T");
+    auto outerTypedef = names.lookupTypedef("T");
     auto outerObject = names.lookupObject("x");
     ASSERT_TRUE(outerTypedef.has_value());
     ASSERT_TRUE(outerObject.has_value());
@@ -258,7 +258,7 @@ TEST(IdentifierTable, oneEnterScopeHopsTypedefsAndObjects) {
 
 TEST(LexicalSession, endDeclaratorsClearsPendingParameterShadows) {
     LexicalSession session;
-    session.names.add("T", type::signedInteger());
+    session.names.addTypedef("T", type::signedInteger());
     session.names.addPendingParameterShadow("T");
     session.endDeclarators();
     session.enterBlock();
@@ -267,7 +267,7 @@ TEST(LexicalSession, endDeclaratorsClearsPendingParameterShadows) {
 
 TEST(LexicalSession, enterBlockSharesShadowAndObjectFrames) {
     LexicalSession session;
-    session.names.add("T", type::signedInteger());
+    session.names.addTypedef("T", type::signedInteger());
     session.names.addObject("x", type::signedInteger());
     session.enums.add("E", type::fromHostLong(1));
     session.enterBlock();
@@ -279,7 +279,7 @@ TEST(LexicalSession, enterBlockSharesShadowAndObjectFrames) {
     EXPECT_TRUE(inner->equivalentTo(type::signedCharacter()));
     session.leaveBlock();
     EXPECT_FALSE(session.names.isIdentifierShadow("T"));
-    EXPECT_TRUE(session.names.has("T"));
+    EXPECT_TRUE(session.names.hasTypedef("T"));
     EXPECT_TRUE(session.isTypedef("T"));
     EXPECT_TRUE(session.isEnumerator("E"));
     auto outer = session.names.lookupObject("x");
@@ -290,7 +290,7 @@ TEST(LexicalSession, enterBlockSharesShadowAndObjectFrames) {
 TEST(LexicalSession, blockTypedefIsGoneAfterLeaveBlock) {
     LexicalSession session;
     session.enterBlock();
-    session.names.add("T", type::signedInteger());
+    session.names.addTypedef("T", type::signedInteger());
     EXPECT_TRUE(session.isTypedef("T"));
     session.leaveBlock();
     EXPECT_FALSE(session.isTypedef("T"));
@@ -299,54 +299,54 @@ TEST(LexicalSession, blockTypedefIsGoneAfterLeaveBlock) {
 
 TEST(LexicalSession, leaveBlockRestoresOuterTypedef) {
     LexicalSession session;
-    session.names.add("T", type::signedInteger());
+    session.names.addTypedef("T", type::signedInteger());
     session.enterBlock();
-    session.names.add("T", type::signedCharacter());
-    auto inner = session.names.tryLookup("T");
+    session.names.addTypedef("T", type::signedCharacter());
+    auto inner = session.names.lookupTypedef("T");
     ASSERT_TRUE(inner.has_value());
     EXPECT_TRUE(inner->equivalentTo(type::signedCharacter()));
     session.leaveBlock();
-    auto outer = session.names.tryLookup("T");
+    auto outer = session.names.lookupTypedef("T");
     ASSERT_TRUE(outer.has_value());
     EXPECT_TRUE(outer->equivalentTo(type::signedInteger()));
 }
 
 TEST(IdentifierTable, leaveScopeRemovesInnerTypedefOnly) {
     IdentifierTable reg;
-    reg.add("T", type::signedInteger());
+    reg.addTypedef("T", type::signedInteger());
     reg.enterScope();
-    reg.add("U", type::unsignedInteger());
-    EXPECT_TRUE(reg.has("T"));
-    EXPECT_TRUE(reg.has("U"));
+    reg.addTypedef("U", type::unsignedInteger());
+    EXPECT_TRUE(reg.hasTypedef("T"));
+    EXPECT_TRUE(reg.hasTypedef("U"));
     reg.leaveScope();
-    EXPECT_TRUE(reg.has("T"));
-    EXPECT_FALSE(reg.has("U"));
+    EXPECT_TRUE(reg.hasTypedef("T"));
+    EXPECT_FALSE(reg.hasTypedef("U"));
 }
 
-TEST(IdentifierTable, extraLeaveScopeKeepsRootBinding) {
+TEST(IdentifierTable, extraLeaveScopeKeepsRootTypedef) {
     IdentifierTable reg;
-    reg.add("T", type::signedInteger());
+    reg.addTypedef("T", type::signedInteger());
     reg.leaveScope();
-    EXPECT_TRUE(reg.has("T"));
+    EXPECT_TRUE(reg.hasTypedef("T"));
     reg.leaveScope();
-    EXPECT_TRUE(reg.has("T"));
+    EXPECT_TRUE(reg.hasTypedef("T"));
 }
 
 TEST(IdentifierTable, innerTypedefDoesNotClearOuterObjectShadow) {
     IdentifierTable reg;
-    reg.add("T", type::signedInteger());
+    reg.addTypedef("T", type::signedInteger());
     reg.enterScope();
     reg.addIdentifierShadow("T");
     EXPECT_TRUE(reg.isIdentifierShadow("T"));
     reg.enterScope();
-    reg.add("T", type::signedCharacter());
+    reg.addTypedef("T", type::signedCharacter());
     EXPECT_FALSE(reg.isIdentifierShadow("T"));
-    auto inner = reg.tryLookup("T");
+    auto inner = reg.lookupTypedef("T");
     ASSERT_TRUE(inner.has_value());
     EXPECT_TRUE(inner->equivalentTo(type::signedCharacter()));
     reg.leaveScope();
     EXPECT_TRUE(reg.isIdentifierShadow("T"));
-    auto outer = reg.tryLookup("T");
+    auto outer = reg.lookupTypedef("T");
     ASSERT_TRUE(outer.has_value());
     EXPECT_TRUE(outer->equivalentTo(type::signedInteger()));
 }
@@ -375,7 +375,7 @@ TEST(LexicalSession, leaveBlockRestoresOuterEnumerator) {
 
 TEST(LexicalSession, extraLeaveBlockKeepsFileScopeBindings) {
     LexicalSession session;
-    session.names.add("T", type::signedInteger());
+    session.names.addTypedef("T", type::signedInteger());
     session.names.addIdentifierShadow("T");
     session.names.addObject("x", type::signedInteger());
     session.leaveBlock();
