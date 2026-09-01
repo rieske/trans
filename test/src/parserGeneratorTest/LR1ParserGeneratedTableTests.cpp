@@ -9,9 +9,10 @@
 #include "parser/ParsingTable.h"
 #include "parser/CanonicalCollection.h"
 #include "parser/FirstTable.h"
+#include "ast/AbstractSyntaxTreeBuilder.h"
 #include "driver/Configuration.h"
-#include "driver/CompilerComponentsFactory.h"
-#include "parser/SyntaxTreeBuilder.h"
+#include "scanner/LexFileScannerReader.h"
+#include "scanner/Scanner.h"
 
 #include "ResourceHelpers.h"
 
@@ -29,17 +30,18 @@ void generateAndParseExample(AutomatonKind kind) {
     Configuration configuration;
     configuration.setResourcesBasePath(getResourcesBaseDir());
 
-    CompilerComponentsFactory factory { configuration };
     BNFFileReader reader;
     Grammar grammar = reader.readGrammar(getResourcePath(kProductGrammar));
     ParsingTable table = generateParsingTable(&grammar, kind);
     LR1Parser parser { table };
     scanner::LexicalSession session;
-    auto syntaxTreeBuilder = factory.makeSyntaxTreeBuilder(&grammar, session);
-    ASSERT_NO_THROW(
-            parser.parse(*factory.makeScannerForSourceFile(
-                    getTestResourcePath("programs/example_prog.c"), session),
-                    *syntaxTreeBuilder));
+    scanner::LexFileScannerReader scannerReader;
+    auto scanner = std::make_unique<scanner::Scanner>(
+            getTestResourcePath("programs/example_prog.c"),
+            scannerReader.fromConfiguration(configuration.getLexPath()), session);
+    auto syntaxTreeBuilder = ast::AbstractSyntaxTreeBuilder::create(
+            &grammar, session, configuration.gnuExtensions());
+    ASSERT_NO_THROW(parser.parse(*scanner, *syntaxTreeBuilder));
 }
 
 // Full generate + parse path for both automaton kinds on the product grammar.

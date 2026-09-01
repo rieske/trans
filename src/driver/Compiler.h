@@ -6,7 +6,8 @@
 #include <string>
 #include <vector>
 
-#include "driver/CompilerComponentsFactory.h"
+#include "Configuration.h"
+#include "driver/LanguageFrontEnd.h"
 #include "parser/Parser.h"
 
 class Compiler {
@@ -30,7 +31,6 @@ public:
 
 private:
     Configuration configuration;
-    CompilerComponentsFactory compilerComponentsFactory;
     std::shared_ptr<const LanguageFrontEnd> frontEnd;
     std::unique_ptr<parser::Parser> parser;
 };

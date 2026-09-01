@@ -3,9 +3,22 @@
 #include "AbstractSyntaxTree.h"
 #include "Block.h"
 #include "Expression.h"
+#include "GnuExtensions.h"
 #include "parser/ParseExtensions.h"
 
 namespace ast {
+
+std::unique_ptr<AbstractSyntaxTreeBuilder> AbstractSyntaxTreeBuilder::create(
+        const parser::Grammar* grammar, scanner::LexicalSession& session, bool gnuExtensions) {
+    std::unique_ptr<parser::ParseExtensions> extensions;
+    if (gnuExtensions) {
+        auto gnu = std::make_unique<GnuExtensions>();
+        gnu->installTypes(session);
+        extensions = std::move(gnu);
+    }
+    return std::make_unique<AbstractSyntaxTreeBuilder>(
+            grammar, session, std::move(extensions), gnuExtensions);
+}
 
 AbstractSyntaxTreeBuilder::AbstractSyntaxTreeBuilder(const parser::Grammar* grammar, scanner::LexicalSession& session,
         std::unique_ptr<parser::ParseExtensions> extensions, bool gnuExtensions):

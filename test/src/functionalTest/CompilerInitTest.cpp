@@ -1,6 +1,5 @@
 #include "TestFixtures.h"
 
-#include "driver/CompilerComponentsFactory.h"
 #include "driver/ConfigurationParser.h"
 
 namespace {

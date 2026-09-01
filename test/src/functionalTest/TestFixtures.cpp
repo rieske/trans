@@ -1,7 +1,6 @@
 #include "TestFixtures.h"
 
 #include "driver/Compiler.h"
-#include "driver/CompilerComponentsFactory.h"
 #include "driver/Driver.h"
 #include "scanner/Scanner.h"
 #include "scanner/Token.h"
