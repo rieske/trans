@@ -13,10 +13,8 @@ add_library(scanner
         Token.cpp
         TokenFilter.h
         TokenFilter.cpp
-        TypedefRegistry.h
-        TypedefRegistry.cpp
-        ObjectTypeRegistry.h
-        ObjectTypeRegistry.cpp
+        IdentifierTable.h
+        IdentifierTable.cpp
         EnumConstantRegistry.h
         EnumConstantRegistry.cpp
         LexicalSession.h

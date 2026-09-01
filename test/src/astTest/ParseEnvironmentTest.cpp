@@ -99,7 +99,7 @@ TEST(ParseEnvironment, typedefAndEnumThroughSession) {
     env.defineTypedef("myint", type::signedInteger());
     auto t = env.lookupTypedef("myint");
     ASSERT_TRUE(t.has_value());
-    EXPECT_TRUE(session.typedefs.has("myint"));
+    EXPECT_TRUE(session.names.has("myint"));
 
     env.addEnumerator("RED");
     env.addEnumerator("GREEN", type::fromHostLong(10));
@@ -190,7 +190,7 @@ TEST(ParseEnvironment, registerInitializedDeclarationDefinesTypedef) {
     env.registerInitializedDeclaration(specs, decls);
     auto t = env.lookupTypedef("myint");
     ASSERT_TRUE(t.has_value());
-    EXPECT_TRUE(session.typedefs.has("myint"));
+    EXPECT_TRUE(session.names.has("myint"));
 }
 
 TEST(ParseEnvironment, registerInitializedDeclarationEmptyTypedefSpecsNoAlias) {
@@ -203,7 +203,7 @@ TEST(ParseEnvironment, registerInitializedDeclarationEmptyTypedefSpecsNoAlias) {
     decls.push_back(plainDeclarator("myint"));
     env.registerInitializedDeclaration(specs, decls);
     EXPECT_FALSE(env.lookupTypedef("myint").has_value());
-    EXPECT_FALSE(session.typedefs.has("myint"));
+    EXPECT_FALSE(session.names.has("myint"));
 }
 
 TEST(ParseEnvironment, registerInitializedDeclarationShadowsObjectReuse) {
@@ -214,7 +214,7 @@ TEST(ParseEnvironment, registerInitializedDeclarationShadowsObjectReuse) {
     std::vector<std::unique_ptr<InitializedDeclarator>> decls;
     decls.push_back(plainDeclarator("T"));
     env.registerInitializedDeclaration(specs, decls);
-    EXPECT_TRUE(session.typedefs.isIdentifierShadow("T"));
+    EXPECT_TRUE(session.names.isIdentifierShadow("T"));
 }
 
 TEST(ParseEnvironment, defineObjectIsBraceScoped) {
@@ -242,9 +242,9 @@ TEST(ParseEnvironment, maybeRegisterParameterShadowPending) {
     ParseEnvironment env{session};
     env.defineTypedef("T", type::signedInteger());
     env.maybeRegisterParameterShadow("T");
-    EXPECT_FALSE(session.typedefs.isIdentifierShadow("T"));
+    EXPECT_FALSE(session.names.isIdentifierShadow("T"));
     session.enterBlock();
-    EXPECT_TRUE(session.typedefs.isIdentifierShadow("T"));
+    EXPECT_TRUE(session.names.isIdentifierShadow("T"));
 }
 
 TEST(ParseEnvironment, maybeRegisterParameterShadowNoopsForEmptyOrUnknown) {
@@ -254,8 +254,8 @@ TEST(ParseEnvironment, maybeRegisterParameterShadowNoopsForEmptyOrUnknown) {
     env.maybeRegisterParameterShadow("");
     env.maybeRegisterParameterShadow("not_a_typedef");
     session.enterBlock();
-    EXPECT_FALSE(session.typedefs.isIdentifierShadow("T"));
-    EXPECT_FALSE(session.typedefs.isIdentifierShadow("not_a_typedef"));
+    EXPECT_FALSE(session.names.isIdentifierShadow("T"));
+    EXPECT_FALSE(session.names.isIdentifierShadow("not_a_typedef"));
 }
 
 TEST(ParseEnvironment, typeOfIdentifierEnumUnaryAndTyped) {

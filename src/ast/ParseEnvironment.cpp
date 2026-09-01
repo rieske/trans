@@ -40,15 +40,15 @@ void ParseEnvironment::defineTypedef(const std::string& name, type::Type type) {
     if (session_.transparentUnion.consume() && type.isUnion()) {
         type.markTransparentUnion();
     }
-    session_.typedefs.add(name, type);
+    session_.names.add(name, type);
 }
 
 std::optional<type::Type> ParseEnvironment::lookupTypedef(const std::string& name) const {
-    return session_.typedefs.tryLookup(name);
+    return session_.names.tryLookup(name);
 }
 
 void ParseEnvironment::defineObject(const std::string& name, type::Type type) {
-    session_.objects.add(name, type);
+    session_.names.addObject(name, type);
 }
 
 void ParseEnvironment::maybeDefineParameter(const FormalArgument& argument) {
@@ -56,13 +56,13 @@ void ParseEnvironment::maybeDefineParameter(const FormalArgument& argument) {
         return;
     }
     try {
-        session_.objects.addPending(argument.getName(), argument.getType());
+        session_.names.addPendingObject(argument.getName(), argument.getType());
     } catch (const std::invalid_argument&) {
     }
 }
 
 std::optional<type::Type> ParseEnvironment::lookupObject(const std::string& name) const {
-    return session_.objects.lookup(name);
+    return session_.names.lookupObject(name);
 }
 
 std::optional<type::Type> ParseEnvironment::lookupValueType(const std::string& name) const {
@@ -143,7 +143,7 @@ void ParseEnvironment::registerInitializedDeclaration(
     for (const auto& declarator : declarators) {
         const std::string& name = declarator->getName();
         if (lookupTypedef(name)) {
-            session_.typedefs.addIdentifierShadow(name);
+            session_.names.addIdentifierShadow(name);
         }
         tryDefineObject(specs, declarator->getDeclarator());
     }
@@ -218,7 +218,7 @@ void ParseEnvironment::maybeRegisterParameterShadow(const std::string& name) {
     if (name.empty() || !lookupTypedef(name)) {
         return;
     }
-    session_.typedefs.addPendingParameterShadow(name);
+    session_.names.addPendingParameterShadow(name);
 }
 
 } // namespace ast

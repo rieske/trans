@@ -131,7 +131,7 @@ TokenStream::TokenStream(std::function<scanner::Token()> scan, scanner::LexicalS
     session_ { session },
     grammar_ { grammar },
     current_ { classifyAndStamp(this->scan()) },
-    classifiedRevision_ { session.typedefs.revision() }
+    classifiedRevision_ { session.names.revision() }
 {
 }
 
@@ -151,7 +151,7 @@ void TokenStream::setIdContext(LexIdContext context) {
 scanner::Token TokenStream::classifyAndStamp(const scanner::Token& token) const {
     std::string id = token.id;
     if (id == "id" || id == "typedef_name") {
-        if (session_.typedefs.isIdentifierShadow(token.lexeme)) {
+        if (session_.names.isIdentifierShadow(token.lexeme)) {
             id = "id";
         } else if (!session_.isTypedef(token.lexeme)) {
             id = "id";
@@ -170,7 +170,7 @@ scanner::Token TokenStream::classifyAndStamp(const scanner::Token& token) const 
 
 void TokenStream::refreshCurrent() const {
     current_ = classifyAndStamp(current_);
-    classifiedRevision_ = session_.typedefs.revision();
+    classifiedRevision_ = session_.names.revision();
 }
 
 void TokenStream::installNext() {
@@ -180,11 +180,11 @@ void TokenStream::installNext() {
     } else {
         current_ = classifyAndStamp(scan());
     }
-    classifiedRevision_ = session_.typedefs.revision();
+    classifiedRevision_ = session_.names.revision();
 }
 
 const scanner::Token& TokenStream::getCurrentToken() const {
-    if (classifiedRevision_ != session_.typedefs.revision()) {
+    if (classifiedRevision_ != session_.names.revision()) {
         refreshCurrent();
     }
     return current_;
