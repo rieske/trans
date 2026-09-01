@@ -12,10 +12,10 @@
 
 namespace codegen {
 
-// Mid-end opcode stream. A later CFG / typed IR replaces or wraps
-// Procedure::body. It does not grow StackMachine. New mid-level
-// semantics go through ir:: builders + runIrPasses. New x86-only
-// tricks go in StackMachine.
+// Mid-end opcode stream. Procedure::body stays the persistent linear
+// form. A CFG exists only inside the mid-end. It does not grow
+// StackMachine. New mid-level semantics go through ir:: builders +
+// runIrPasses. New x86-only tricks go in StackMachine.
 //
 // Live fields only; unused fields stay at Instruction defaults.
 enum class Op {
@@ -89,9 +89,10 @@ struct Instruction {
 struct Procedure {
     int name { kNoSymbol };
     ProcedureFrame frame;
-    // Linearization of a future vector<BasicBlock>. Implicit blocks:
-    // (label or start) ordinary* terminator?. Fall-through into a
-    // following Label, or after a conditional Jump, is an implicit CFG edge.
+    // Linearization of a CFG that exists only inside the mid-end.
+    // Implicit blocks: (label or start) ordinary* terminator?.
+    // Fall-through into a following Label, or after a conditional Jump,
+    // is an implicit CFG edge.
     std::vector<Instruction> body;
     bool memoryReturn { false };
     bool variadic { false };
@@ -113,7 +114,6 @@ enum class InstructionClass { Label, Terminator, Ordinary };
 InstructionClass instructionClass(Op op);
 bool instructionTransfersControl(const Instruction& instruction);
 void validateInstruction(const Instruction& instruction);
-void validateProcedureBody(const std::vector<Instruction>& body);
 
 void print(std::ostream& stream, const Instruction& instruction, const IrStringTable& strings);
 void print(std::ostream& stream, const Procedure& procedure, const IrStringTable& strings);

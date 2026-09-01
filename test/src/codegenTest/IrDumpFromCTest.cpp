@@ -60,6 +60,15 @@ TEST(IrDumpFromC, vlaSizeofIsUseTimeProduct) {
             "ENDPROC vlasz\n"));
 }
 
+TEST(IrDumpFromC, gotoSkipsUnreachableLabel) {
+    EXPECT_THAT(compileToIr("int f(void) { goto end; dead: return 1; end: return 0; }\n"), StrEq(
+            "PROC f\n"
+            "__L0:\n"
+            "\t$t0 := 0\n"
+            "\tRETURN $t0\n"
+            "ENDPROC f\n"));
+}
+
 TEST(IrDumpFromC, dumpsAreStableAcrossCalls) {
     const char* src = "int add(int a, int b) { return a + b; }\n";
     EXPECT_EQ(compileToIr(src), compileToIr(src));

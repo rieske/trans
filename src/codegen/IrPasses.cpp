@@ -1,5 +1,7 @@
 #include "IrPasses.h"
 
+#include "Cfg.h"
+
 #include <utility>
 
 namespace codegen {
@@ -17,30 +19,10 @@ IntermediateRepresentation sealProcedures(IntermediateRepresentation ir) {
     return ir;
 }
 
-void eliminateJumpToNext(std::vector<Instruction>& code) {
-    bool changed = true;
-    while (changed) {
-        changed = false;
-        std::vector<Instruction> out;
-        out.reserve(code.size());
-        for (std::size_t i = 0; i < code.size(); ++i) {
-            if (i + 1 < code.size()
-                    && code[i].op == Op::Jump
-                    && code[i].cond == JumpCondition::UNCONDITIONAL
-                    && code[i + 1].op == Op::Label
-                    && code[i].arg0 == code[i + 1].arg0) {
-                changed = true;
-                continue;
-            }
-            out.push_back(std::move(code[i]));
-        }
-        code = std::move(out);
-    }
-}
-
-IntermediateRepresentation eliminateJumpToNext(IntermediateRepresentation ir) {
+IntermediateRepresentation applyCfgPasses(IntermediateRepresentation ir) {
     for (auto& procedure : ir.procedures) {
-        eliminateJumpToNext(procedure.body);
+        procedure.body = flattenCfg(
+                eliminateJumpToNext(eliminateUnreachable(buildCfg(procedure.body))));
     }
     return ir;
 }

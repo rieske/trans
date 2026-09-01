@@ -4,6 +4,7 @@ add_library(backend
         Amd64Registers.cpp
         AssemblyGenerator.cpp
         ATandTInstructionSet.cpp
+        Cfg.cpp
         CodeGeneratingVisitor.cpp
         CodeGeneratingVisitor_Addressing.cpp
         CodeGeneratingVisitor_Complex.cpp
@@ -36,6 +37,7 @@ add_library(backend
         Amd64Registers.h
         AssemblyGenerator.h
         ATandTInstructionSet.h
+        Cfg.h
         CodeGeneratingVisitor.h
         FrameLayout.h
         Instruction.h

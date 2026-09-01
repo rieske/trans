@@ -11,6 +11,7 @@
 #include "codegen/AssemblyGenerator.h"
 #include "codegen/GlobalVariable.h"
 #include "codegen/ATandTInstructionSet.h"
+#include "codegen/Cfg.h"
 #include "codegen/Instruction.h"
 #include "codegen/IrPasses.h"
 #include "codegen/StackMachine.h"

@@ -83,7 +83,7 @@ TEST(IrPasses, sealProcedures_padsAfterFallthroughToExitLabel) {
             "ENDPROC f\n"));
 }
 
-TEST(IrPasses, eliminateJumpToNext_removesRedundantGoto) {
+TEST(IrPasses, applyCfgPasses_removesRedundantGoto) {
     IntermediateRepresentation ir;
     IrN n { ir.strings };
     ir.procedures.push_back(makeProc(ir.strings, "f", {
@@ -92,7 +92,7 @@ TEST(IrPasses, eliminateJumpToNext_removesRedundantGoto) {
             ir::inc(n("x")),
     }));
 
-    ir = eliminateJumpToNext(std::move(ir));
+    ir = applyCfgPasses(std::move(ir));
 
     EXPECT_THAT(toString(ir), StrEq(
             "PROC f\n"
@@ -101,33 +101,33 @@ TEST(IrPasses, eliminateJumpToNext_removesRedundantGoto) {
             "ENDPROC f\n"));
 }
 
-TEST(IrPasses, eliminateJumpToNext_keepsConditionalAndNonAdjacent) {
+TEST(IrPasses, applyCfgPasses_keepsConditionalAndNonAdjacent) {
     IntermediateRepresentation ir;
     IrN n { ir.strings };
     ir.procedures.push_back(makeProc(ir.strings, "f", {
             ir::jump(n("L"), JumpCondition::IF_EQUAL),
-            ir::label(n("L")),
             ir::jump(n("M")),
+            ir::label(n("L")),
             ir::inc(n("x")),
             ir::label(n("M")),
     }));
 
-    ir = eliminateJumpToNext(std::move(ir));
+    ir = applyCfgPasses(std::move(ir));
 
     EXPECT_THAT(toString(ir), StrEq(
             "PROC f\n"
             "\tJE L\n"
-            "L:\n"
             "\tGOTO M\n"
+            "L:\n"
             "\tINC x\n"
             "M:\n"
             "ENDPROC f\n"));
 }
 
-TEST(IrPasses, midEndPassListIsSealThenJumpToNext) {
+TEST(IrPasses, midEndPassListIsSealThenCfg) {
     ASSERT_EQ(std::size(kMidEndPasses), 2u);
     EXPECT_EQ(kMidEndPasses[0], static_cast<IrPass>(sealProcedures));
-    EXPECT_EQ(kMidEndPasses[1], static_cast<IrPass>(eliminateJumpToNext));
+    EXPECT_EQ(kMidEndPasses[1], static_cast<IrPass>(applyCfgPasses));
 }
 
 TEST(IrPasses, runIrPasses_composesSealAndPeephole) {

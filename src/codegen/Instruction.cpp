@@ -144,17 +144,4 @@ void validateInstruction(const Instruction& instruction) {
     rejectIfUnused(live, FMemoryReturn, instruction.memoryReturn, defaults.memoryReturn);
 }
 
-void validateProcedureBody(const std::vector<Instruction>& body) {
-    bool afterUnconditionalTerminator = false;
-    for (const auto& instruction : body) {
-        const InstructionClass kind = opContract(instruction.op).kind;
-        if (afterUnconditionalTerminator && kind != InstructionClass::Label) {
-            throw std::logic_error { "procedure body is not implicit blocks" };
-        }
-        afterUnconditionalTerminator = kind == InstructionClass::Terminator
-                && (instruction.op != Op::Jump
-                        || instruction.cond == JumpCondition::UNCONDITIONAL);
-    }
-}
-
 } // namespace codegen
