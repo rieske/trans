@@ -1,10 +1,14 @@
 #include "TestFixtures.h"
 
 #include "driver/ConfigurationParser.h"
+#include "util/LogManager.h"
+
+#include <optional>
+#include <sstream>
 
 namespace {
 
-TEST(Compiler, throwsForNonExistentFile) {
+TEST(Compiler, reportsMissingSourceFile) {
     std::string sourceFile = "nonexistentSourceFileName";
     std::vector<std::string> arguments {"trans", "--resources=../../../", sourceFile};
     std::vector<char*> argv;
@@ -17,7 +21,14 @@ TEST(Compiler, throwsForNonExistentFile) {
     ASSERT_TRUE(parsed.configuration.has_value()) << parsed.message;
     Compiler compiler { *parsed.configuration };
 
-    ASSERT_THROW(compiler.compile(sourceFile), std::runtime_error);
+    std::stringstream outputStream;
+    std::stringstream errorStream;
+    std::optional<std::string> result;
+    LogManager::withOutputStreams(outputStream, errorStream, [&]() {
+        result = compiler.compile(sourceFile);
+    });
+    EXPECT_FALSE(result.has_value());
+    EXPECT_THAT(errorStream.str(), HasSubstr("nonexistentSourceFileName:0: error:"));
 }
 
 TEST(Compiler, reportsBasicParsingError) {
@@ -29,7 +40,7 @@ TEST(Compiler, reportsBasicParsingError) {
 
     program.compile();
 
-    program.assertCompilationErrors(":4: unexpected token: } expected: , ) : ; ]");
+    program.assertCompilationErrors(":4: error: unexpected token: } expected: , ) : ; ]");
     program.assertCompilationErrors("Error: parsing failed with syntax errors");
 }
 

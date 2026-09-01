@@ -22,6 +22,7 @@
 #include "scanner/LexicalSession.h"
 #include "scanner/Scanner.h"
 #include "semantic_analyzer/SemanticAnalyzer.h"
+#include "translation_unit/Context.h"
 #include "util/Diagnostic.h"
 #include "symbols/ValueEntry.h"
 #include "types/SysVClassify.h"
@@ -288,32 +289,50 @@ std::optional<std::string> Compiler::compile(std::string sourceFileName) const {
         out << "Compiling " << sourceFileName << " [" << configuration.assemblyDialectTag() << "]...\n";
     }
 
+    diag::Sink sink { err.stream() };
+    const translation_unit::Context ioWhere { sourceFileName, 0 };
+    const auto failIo = [&](const std::runtime_error& error) -> std::optional<std::string> {
+        sink.error(ioWhere, error.what());
+        return std::nullopt;
+    };
     const CompilePlan plan = planCompile(sourceFileName, configuration);
 
     std::optional<ScopedTempFile> preprocessedTemp;
-    const std::string iPath = materialize(plan.preprocessed, ".i", preprocessedTemp);
-    if (!plan.skipPreprocess) {
-        util::runProcessOrThrow(preprocessCommand(sourceFileName, iPath, configuration));
+    std::string iPath;
+    std::unique_ptr<scanner::Scanner> scanner;
+    scanner::LexicalSession session;
+    try {
+        iPath = materialize(plan.preprocessed, ".i", preprocessedTemp);
+        if (!plan.skipPreprocess) {
+            util::runProcessOrThrow(preprocessCommand(sourceFileName, iPath, configuration));
+        }
+        Logger scannerLogger {
+                configuration.isScannerLoggingEnabled() ? &std::cout : &NullStream::getInstance() };
+        LogManager::registerComponentLogger(Component::SCANNER, scannerLogger);
+        scanner::LexFileScannerReader scannerReader;
+        scanner = std::make_unique<scanner::Scanner>(
+                iPath, scannerReader.fromConfiguration(configuration.getLexPath()), session);
+    } catch (const std::runtime_error& error) {
+        return failIo(error);
     }
 
-    scanner::LexicalSession session;
-    Logger scannerLogger {
-            configuration.isScannerLoggingEnabled() ? &std::cout : &NullStream::getInstance() };
-    LogManager::registerComponentLogger(Component::SCANNER, scannerLogger);
-    scanner::LexFileScannerReader scannerReader;
-    std::unique_ptr<scanner::Scanner> scanner = std::make_unique<scanner::Scanner>(
-            iPath, scannerReader.fromConfiguration(configuration.getLexPath()), session);
-    std::unique_ptr<parser::SyntaxTreeBuilder> syntaxTreeBuilder =
-            ast::AbstractSyntaxTreeBuilder::create(
-                    &frontEnd->grammar(), session, configuration.gnuExtensions());
+    auto syntaxTreeBuilder = ast::AbstractSyntaxTreeBuilder::create(
+            &frontEnd->grammar(), session, configuration.gnuExtensions());
+    syntaxTreeBuilder->setSink(&sink);
     std::unique_ptr<parser::SyntaxTree> syntaxTree = parser->parse(*scanner, *syntaxTreeBuilder);
+    if (syntaxTreeBuilder->hasError()) {
+        err << "Error: parsing failed with syntax errors\n";
+        return std::nullopt;
+    }
+    if (!syntaxTree) {
+        return std::nullopt;
+    }
     auto* tree = dynamic_cast<ast::AbstractSyntaxTree*>(syntaxTree.get());
     if (!tree) {
         throw std::runtime_error { "expected AbstractSyntaxTree" };
     }
 
     semantic_analyzer::SemanticAnalyzer semanticAnalyzer { configuration.gnuExtensions() };
-    diag::Sink sink { err.stream() };
     if (!semanticAnalyzer.analyze(*tree, session, sink)) {
         err << "Error: Semantic errors were detected\n";
         return std::nullopt;
@@ -328,11 +347,17 @@ std::optional<std::string> Compiler::compile(std::string sourceFileName) const {
 
     // Materialize assembly only after frontend succeeds so failed compiles never create .s temps.
     std::optional<ScopedTempFile> assemblyTemp;
-    const std::string sPath = materialize(plan.assembly, ".s", assemblyTemp);
+    std::string sPath;
+    try {
+        sPath = materialize(plan.assembly, ".s", assemblyTemp);
+    } catch (const std::runtime_error& error) {
+        return failIo(error);
+    }
     {
         std::ofstream assemblyFile { sPath };
         if (!assemblyFile) {
-            throw std::runtime_error { "Unable to open assembly output file " + sPath };
+            sink.error(ioWhere, "Unable to open assembly output file " + sPath);
+            return std::nullopt;
         }
         std::unique_ptr<codegen::AssemblyGenerator> assemblyGenerator =
                 makeAssemblyGenerator(configuration, &assemblyFile);
@@ -346,7 +371,11 @@ std::optional<std::string> Compiler::compile(std::string sourceFileName) const {
         return sPath;
     }
 
-    assemble(sPath, plan.objectPath, configuration.getAssemblyDialect());
+    try {
+        assemble(sPath, plan.objectPath, configuration.getAssemblyDialect());
+    } catch (const std::runtime_error& error) {
+        return failIo(error);
+    }
     if (configuration.isVerbose()) {
         out << "Successfully compiled\n";
     }

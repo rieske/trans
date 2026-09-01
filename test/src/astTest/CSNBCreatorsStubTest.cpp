@@ -1,4 +1,5 @@
 #include "gtest/gtest.h"
+#include "gmock/gmock.h"
 
 #include "ast/AbstractSyntaxTreeBuilderContext.h"
 #include "ast/ContextualSyntaxNodeBuilder.h"
@@ -6,9 +7,11 @@
 #include "ast/TerminalSymbol.h"
 #include "parser/BNFFileReader.h"
 #include "scanner/LexicalSession.h"
+#include "util/Diagnostic.h"
 
 #include "ResourceHelpers.h"
 
+#include <sstream>
 #include <stdexcept>
 #include <vector>
 
@@ -39,6 +42,9 @@ TEST(CSNBCreators, productGrammarRegistersKnownProductions) {
     const ast::ContextualSyntaxNodeBuilder builder { grammar };
     scanner::LexicalSession session;
     ast::AbstractSyntaxTreeBuilderContext context { session };
+    std::ostringstream logged;
+    diag::Sink sink { logged };
+    context.setSink(&sink);
 
     const auto* intType = production(grammar, "<type_spec>", { "int" });
     const auto* unitPostfix = production(grammar, "<postfix_exp>", { "<primary_exp>" });
@@ -52,14 +58,21 @@ TEST(CSNBCreators, productGrammarRegistersKnownProductions) {
     EXPECT_TRUE(context.hasTypeSpecifier());
 
     EXPECT_THROW(builder.updateContext(grammar.getTopRule(), context), std::runtime_error);
+    EXPECT_TRUE(sink.hasErrors());
+    EXPECT_THAT(logged.str(), testing::HasSubstr("error: language construct not implemented yet"));
 }
 
-// Remaining type stubs still throw; integer type-specs are implemented (Phase 1).
+// Remaining type stubs still throw after reporting on the sink; integer type-specs are implemented (Phase 1).
 TEST(CSNBCreators, notImplementedYetFactoryThrows) {
     scanner::LexicalSession session;
     ast::AbstractSyntaxTreeBuilderContext context{session};
+    std::ostringstream logged;
+    diag::Sink sink { logged };
+    context.setSink(&sink);
     auto stub = ast::notImplementedYet("feature X");
     EXPECT_THROW(stub(context), std::runtime_error);
+    EXPECT_TRUE(sink.hasErrors());
+    EXPECT_THAT(logged.str(), testing::HasSubstr("error: feature X is not implemented yet"));
 }
 
 TEST(CSNBCreators, doNothingIsNoOp) {

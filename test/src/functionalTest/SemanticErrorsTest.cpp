@@ -737,7 +737,7 @@ INSTANTIATE_TEST_SUITE_P(Compiler, SemanticErrorCatalog, testing::Values(
                 return (int)__builtin_offsetof(struct S, x);
             }
         )prg",
-        "cannot compute offset of bit-field",
+        "error: cannot compute offset of bit-field",
     },
     SemanticErrorCase{
         "offsetofMissingMember",
@@ -747,7 +747,7 @@ INSTANTIATE_TEST_SUITE_P(Compiler, SemanticErrorCatalog, testing::Values(
                 return (int)__builtin_offsetof(struct S, x);
             }
         )prg",
-        "no member named",
+        "error: no member named",
     },
     SemanticErrorCase{
         "sizeofIncompleteArrayBeforeCompletion",

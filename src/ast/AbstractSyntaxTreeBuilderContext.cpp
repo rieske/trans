@@ -1,6 +1,27 @@
 #include "AbstractSyntaxTreeBuilderContext.h"
 
+#include "util/Diagnostic.h"
+
+#include <stdexcept>
+#include <utility>
+
 namespace ast {
+
+void AbstractSyntaxTreeBuilderContext::setSink(diag::Sink* sink) {
+    sink_ = sink;
+}
+
+diag::Sink& AbstractSyntaxTreeBuilderContext::sink() const {
+    if (!sink_) {
+        throw std::logic_error { "missing diagnostic sink" };
+    }
+    return *sink_;
+}
+
+void AbstractSyntaxTreeBuilderContext::error(const translation_unit::Context& where, std::string message) {
+    sink().error(where, message);
+    throw std::runtime_error { std::move(message) };
+}
 
 AbstractSyntaxTreeBuilderContext::AbstractSyntaxTreeBuilderContext(scanner::LexicalSession& session) :
         environment_ { session } {

@@ -7,8 +7,10 @@
 #include "parser/SyntaxTreeBuilder.h"
 #include "parser/TokenStream.h"
 #include "scanner/LexicalSession.h"
+#include "util/Diagnostic.h"
 
 #include <memory>
+#include <sstream>
 #include <stack>
 #include <vector>
 
@@ -16,6 +18,7 @@ namespace {
 
 using namespace parser;
 using testing::Eq;
+using testing::HasSubstr;
 
 class NullSyntaxTreeBuilder: public SyntaxTreeBuilder {
 public:
@@ -78,9 +81,15 @@ TEST(Action, errorParseReportsAndStops) {
 
     std::stack<parse_state> stack;
     scanner::LexicalSession session;
-    TokenStream tokens { []() { return scanner::Token{ "a", "a", { "", 1 } }; }, session, grammar };
+    TokenStream tokens { []() { return scanner::Token{ "a", "a", { "t.c", 1 } }; }, session, grammar };
     NullSyntaxTreeBuilder treeBuilder;
+    std::ostringstream logged;
+    diag::Sink sink { logged };
+    treeBuilder.setSink(&sink);
     EXPECT_TRUE(error.parse(stack, tokens, treeBuilder));
+    EXPECT_TRUE(treeBuilder.hasError());
+    EXPECT_TRUE(sink.hasErrors());
+    EXPECT_THAT(logged.str(), HasSubstr("t.c:1: error: unexpected token: a expected:"));
 }
 
 } // namespace

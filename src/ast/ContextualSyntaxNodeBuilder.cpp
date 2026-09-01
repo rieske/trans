@@ -13,7 +13,9 @@ int foldBitFieldWidth(AbstractSyntaxTreeBuilderContext& context) {
     long width = 0;
     if (!widthExpr || !widthExpr->foldToHostLong(width) || width < 0
             || width > static_cast<long>(std::numeric_limits<int>::max())) {
-        throw std::runtime_error { "bit-field width is not a constant" };
+        const translation_unit::Context where = widthExpr
+                ? widthExpr->getContext() : translation_unit::Context { "", 0 };
+        context.error(where, "bit-field width is not a constant");
     }
     return static_cast<int>(width);
 }
@@ -479,6 +481,9 @@ ContextualSyntaxNodeBuilder::ContextualSyntaxNodeBuilder(const parser::Grammar& 
 
     bind(s_enumerator, { s_id_for_enum }, [](AbstractSyntaxTreeBuilderContext& context) {
         auto id = context.popTerminal();
+        if (context.environment().session().enums.containsInCurrentScope(id.value)) {
+            context.error(id.context, "redefinition of enumerator `" + id.value + "`");
+        }
         context.environment().addEnumerator(id.value);
     });
     bind(s_enumerator, { s_id_for_enum, grammar.symbolId("="), s_enum_const_exp }, [](AbstractSyntaxTreeBuilderContext& context) {
@@ -487,8 +492,11 @@ ContextualSyntaxNodeBuilder::ContextualSyntaxNodeBuilder(const parser::Grammar& 
                 auto id = context.popTerminal();
                 type::IntegerConstant ice;
                 if (!expr->evaluateConstant(ice)) {
-                    throw std::runtime_error {
-                            "enumerator initializer is not a constant expression: " + id.value };
+                    context.error(id.context,
+                            "enumerator initializer is not a constant expression: " + id.value);
+                }
+                if (context.environment().session().enums.containsInCurrentScope(id.value)) {
+                    context.error(id.context, "redefinition of enumerator `" + id.value + "`");
                 }
                 context.environment().addEnumerator(id.value, std::move(ice));
             });
@@ -641,14 +649,15 @@ void ContextualSyntaxNodeBuilder::bind(int lhs, std::vector<int> rhs, Creator cr
 void ContextualSyntaxNodeBuilder::updateContext(const parser::Production& production, AbstractSyntaxTreeBuilderContext& context) const {
     const int id = production.getId();
     if (id < 0 || static_cast<std::size_t>(id) >= creators_.size() || !creators_[id]) {
-        noCreatorDefined(production);
+        noCreatorDefined(production, context);
     }
     creators_[id](context);
 }
 
-void ContextualSyntaxNodeBuilder::noCreatorDefined(const parser::Production& production) const {
-    throw std::runtime_error {
-            "language construct not implemented yet (production `" + grammar->str(production) + "`)" };
+void ContextualSyntaxNodeBuilder::noCreatorDefined(const parser::Production& production,
+        AbstractSyntaxTreeBuilderContext& context) const {
+    context.error({ "", 0 },
+            "language construct not implemented yet (production `" + grammar->str(production) + "`)");
 }
 
 void ContextualSyntaxNodeBuilder::loopJumpStatement(AbstractSyntaxTreeBuilderContext& context) {

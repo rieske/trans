@@ -17,8 +17,8 @@ void doNothing(AbstractSyntaxTreeBuilderContext&) {
 // Grammar covers more of C than the AST builder implements. Register explicit stubs so
 // unsupported constructs fail with a clear message instead of "no AST creator defined".
 std::function<void(AbstractSyntaxTreeBuilderContext&)> notImplementedYet(const char* feature) {
-    return [feature](AbstractSyntaxTreeBuilderContext&) {
-        throw std::runtime_error { std::string(feature) + " is not implemented yet" };
+    return [feature](AbstractSyntaxTreeBuilderContext& context) {
+        context.error({ "", 0 }, std::string(feature) + " is not implemented yet");
     };
 }
 
@@ -72,7 +72,7 @@ void typedefName(AbstractSyntaxTreeBuilderContext& context) {
     auto name = context.popTerminal();
     auto type = context.environment().lookupTypedef(name.value);
     if (!type) {
-        throw std::runtime_error { "unknown typedef name: " + name.value };
+        context.error(name.context, "unknown typedef name: " + name.value);
     }
     context.pushTypeSpecifier(TypeSpecifier { *type, name.value });
 }
@@ -161,10 +161,10 @@ void addDeclarationTypeSpecifier(AbstractSyntaxTreeBuilderContext& context) {
 DeclarationSpecifiers popResolvedSpecQualifiers(AbstractSyntaxTreeBuilderContext& context) {
     auto specs = context.popDeclarationSpecifiers();
     if (!specs.resolveTypeofAtParseTime(context.environment())) {
-        throw std::runtime_error { "cannot determine type of typeof operand" };
+        context.error({ "", 0 }, "cannot determine type of typeof operand");
     }
     if (specs.getTypeSpecifiers().empty()) {
-        throw std::runtime_error { "cannot determine type of spec-qualifier-list" };
+        context.error({ "", 0 }, "cannot determine type of spec-qualifier-list");
     }
     return specs;
 }
@@ -537,7 +537,7 @@ void sizeofTypeExpression(AbstractSyntaxTreeBuilderContext& context) {
     auto typeSpec = context.popTypeSpecifier();
     auto sizeofKw = context.popTerminal(); // sizeof
     if (!typeSpec.resolveTypeofAtParseTime(context.environment())) {
-        throw std::runtime_error { "cannot determine type of typeof operand" };
+        context.error(sizeofKw.context, "cannot determine type of typeof operand");
     }
     if (auto bytes = type::sizeofObject(typeSpec.getType(), context.environment().gnuExtensions())) {
         context.pushExpression(std::make_unique<ConstantExpression>(
@@ -759,7 +759,7 @@ void initializedDeclaration(AbstractSyntaxTreeBuilderContext& context) {
     auto initializedDeclarators = context.popInitializedDeclarators();
     if (!declarationSpecifiers.resolveTypeofAtParseTime(context.environment())
             && declarationSpecifiers.isTypedef()) {
-        throw std::runtime_error { "cannot determine type of typeof operand" };
+        context.error({ "", 0 }, "cannot determine type of typeof operand");
     }
     context.environment().registerInitializedDeclaration(declarationSpecifiers, initializedDeclarators);
     context.pushDeclaration(std::make_unique<Declaration>(declarationSpecifiers, std::move(initializedDeclarators)));

@@ -15,6 +15,7 @@
 #include "scanner/Token.h"
 #include "translation_unit/Context.h"
 #include "types/Type.h"
+#include "util/Diagnostic.h"
 
 #include <cstddef>
 #include <stdexcept>
@@ -26,22 +27,23 @@ namespace ast {
 namespace {
 
 // Exhaustive: new OffsetofStatus values fail to compile under -Wswitch-enum.
-[[noreturn]] void failOffsetof(const translation_unit::Context& context, type::OffsetofStatus status,
-        const std::string& member) {
-    const std::string prefix = translation_unit::to_string(context) + ": error: ";
+bool failOffsetof(const translation_unit::Context& context, type::OffsetofStatus status,
+        const std::string& member, AbstractSyntaxTreeBuilder& builder) {
     switch (status) {
     case type::OffsetofStatus::Incomplete:
-        throw std::runtime_error { prefix + "offsetof on incomplete type" };
-    case type::OffsetofStatus::Missing:
-        throw std::runtime_error {
-                prefix + "no member named ‘" + member + "’ in structure or union" };
-    case type::OffsetofStatus::BitField:
-        throw std::runtime_error {
-                prefix + "cannot compute offset of bit-field ‘" + member + "’" };
-    case type::OffsetofStatus::Ok:
+        builder.sink().error(context, "offsetof on incomplete type");
         break;
+    case type::OffsetofStatus::Missing:
+        builder.sink().error(context, "no member named ‘" + member + "’ in structure or union");
+        break;
+    case type::OffsetofStatus::BitField:
+        builder.sink().error(context, "cannot compute offset of bit-field ‘" + member + "’");
+        break;
+    case type::OffsetofStatus::Ok:
+        throw std::logic_error { "failOffsetof on Ok" };
     }
-    throw std::logic_error { "unreachable OffsetofStatus" };
+    builder.err();
+    return false;
 }
 
 bool isInt128Lexeme(const std::string& lexeme) {
@@ -179,7 +181,7 @@ std::unique_ptr<Block> GnuExtensions::parseCompoundBlock(parser::TokenStream& ou
             { "void", "void", ctx },
             { ")", ")", ctx },
     };
-    AbstractSyntaxTreeBuilder nested { grammar, parent.session(), parent.environment() };
+    AbstractSyntaxTreeBuilder nested { grammar, parent };
     if (!consumeToStop(nested, outer, table, prefix, sizeof prefix / sizeof prefix[0],
             *compound, scanner::Token::END, true)) {
         return nullptr;
@@ -200,7 +202,7 @@ std::unique_ptr<Expression> GnuExtensions::parseAssignmentExpression(parser::Tok
             { "id", "__gnu_x", ctx },
             { "=", "=", ctx },
     };
-    AbstractSyntaxTreeBuilder nested { grammar, parent.session(), parent.environment() };
+    AbstractSyntaxTreeBuilder nested { grammar, parent };
     if (!consumeToStop(nested, outer, table, prefix, sizeof prefix / sizeof prefix[0],
             *assignment, ",", false)) {
         return nullptr;
@@ -224,7 +226,7 @@ std::optional<TypeSpecifier> GnuExtensions::parseTypeName(parser::TokenStream& o
             { "sizeof", "sizeof", ctx },
             { "(", "(", ctx },
     };
-    AbstractSyntaxTreeBuilder nested { grammar, parent.session(), parent.environment() };
+    AbstractSyntaxTreeBuilder nested { grammar, parent };
     if (!consumeToStop(nested, outer, table, prefix, sizeof prefix / sizeof prefix[0],
             *typeName, stopLookahead, false, ")")) {
         return std::nullopt;
@@ -402,7 +404,7 @@ bool GnuExtensions::acceptOffsetof(parser::TokenStream& tokenStream,
                 Constant { std::to_string(off.offsetBytes), type::signedInteger(), context }));
         return true;
     }
-    failOffsetof(context, off.status, member);
+    return failOffsetof(context, off.status, member, builder);
 }
 
 } // namespace ast
