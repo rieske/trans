@@ -750,6 +750,16 @@ INSTANTIATE_TEST_SUITE_P(Compiler, SemanticErrorCatalog, testing::Values(
         "error: no member named",
     },
     SemanticErrorCase{
+        "offsetofIncomplete",
+        R"prg(
+            struct S;
+            int main() {
+                return (int)__builtin_offsetof(struct S, x);
+            }
+        )prg",
+        "offsetof on incomplete type",
+    },
+    SemanticErrorCase{
         "sizeofIncompleteArrayBeforeCompletion",
         R"prg(
             extern char a[];
@@ -764,5 +774,17 @@ INSTANTIATE_TEST_SUITE_P(Compiler, SemanticErrorCatalog, testing::Values(
         "incomplete type",
     }
 ), [](const testing::TestParamInfo<SemanticErrorCase> &info) { return std::string{info.param.name}; });
+
+TEST(Compiler, bitFieldWidthNotConstantIsError) {
+    SourceProgram program{R"prg(
+        int n;
+        struct S { int x:n; };
+        int main() { return 0; }
+    )prg"};
+    program.compile();
+    program.assertCompilationErrors("bit-field width is not a constant");
+    EXPECT_THAT(program.getCompilationErrors(), Not(HasSubstr("parsing failed")));
+    EXPECT_THAT(program.getCompilationErrors(), Not(HasSubstr("Error: bit-field")));
+}
 
 } // namespace

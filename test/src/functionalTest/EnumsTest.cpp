@@ -236,6 +236,29 @@ TEST(Compiler, enumeratorRedefinitionIsError) {
     EXPECT_THAT(program.getCompilationErrors(), Not(HasSubstr("Error: redefinition")));
 }
 
+TEST(Compiler, enumeratorBareRedefinitionIsError) {
+    SourceProgram program{R"prg(
+        enum { A, A };
+        int main() { return 0; }
+    )prg"};
+    program.compile();
+    program.assertCompilationErrors("error: redefinition of enumerator");
+    EXPECT_THAT(program.getCompilationErrors(), Not(HasSubstr("parsing failed")));
+    EXPECT_THAT(program.getCompilationErrors(), Not(HasSubstr("Error: redefinition")));
+}
+
+TEST(Compiler, enumeratorInitializerNotConstantIsError) {
+    SourceProgram program{R"prg(
+        int f(void);
+        enum { A = f() };
+        int main() { return 0; }
+    )prg"};
+    program.compile();
+    program.assertCompilationErrors("enumerator initializer is not a constant expression");
+    EXPECT_THAT(program.getCompilationErrors(), Not(HasSubstr("parsing failed")));
+    EXPECT_THAT(program.getCompilationErrors(), Not(HasSubstr("Error: enumerator")));
+}
+
 TEST(Compiler, enumSameValueRedefinitionIsError) {
     SourceProgram program{R"prg(
         enum E { A = 1, A = 1 };
