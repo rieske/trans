@@ -117,6 +117,40 @@ TEST(Cfg, consecutiveLabelsMakeEmptyBlock) {
     expectIdentity(names.strings, body);
 }
 
+TEST(Cfg, eliminateJumpToNextRemovesAdjacentUncond) {
+    IntermediateRepresentation names;
+    IrN n { names.strings };
+    const Cfg cfg = eliminateJumpToNext(buildCfg({
+            ir::jump(n("L")),
+            ir::label(n("L")),
+            ir::inc(n("x")),
+    }));
+
+    ASSERT_THAT(cfg, SizeIs(2));
+    EXPECT_THAT(cfg[0].insts, IsEmpty());
+    EXPECT_THAT(cfg[1].label, Eq(n("L")));
+    EXPECT_THAT(dumpBody(names.strings, flattenCfg(cfg)), Not(HasSubstr("GOTO")));
+}
+
+TEST(Cfg, eliminateJumpToNextChainsThroughEmptyBlocks) {
+    IntermediateRepresentation names;
+    IrN n { names.strings };
+    const Cfg cfg = eliminateJumpToNext(buildCfg({
+            ir::jump(n("A")),
+            ir::label(n("A")),
+            ir::jump(n("B")),
+            ir::label(n("B")),
+            ir::voidReturn(),
+    }));
+
+    EXPECT_THAT(dumpBody(names.strings, flattenCfg(cfg)), StrEq(
+            "PROC f\n"
+            "A:\n"
+            "B:\n"
+            "\tRETURN\n"
+            "ENDPROC f\n"));
+}
+
 TEST(Cfg, flattenKeepsJumpToNext) {
     IntermediateRepresentation names;
     IrN n { names.strings };
@@ -165,6 +199,62 @@ TEST(Cfg, validateRejectsUnlabeledAfterUncondTerminator) {
     extra.insts.push_back(ir::inc(n("x")));
     cfg.push_back(std::move(extra));
     EXPECT_THROW(validateCfg(cfg), std::logic_error);
+}
+
+TEST(Cfg, eliminateUnreachableDropsLabeledBlockAfterUncondGoto) {
+    IntermediateRepresentation names;
+    IrN n { names.strings };
+    const std::vector<Instruction> body {
+            ir::jump(n("end")),
+            ir::label(n("dead")),
+            ir::inc(n("x")),
+            ir::label(n("end")),
+            ir::voidReturn(),
+    };
+
+    const Cfg cfg = eliminateUnreachable(buildCfg(body));
+
+    ASSERT_THAT(cfg, SizeIs(2));
+    EXPECT_THAT(cfg[0].label, Eq(kNoSymbol));
+    ASSERT_THAT(cfg[0].insts, SizeIs(1));
+    EXPECT_THAT(cfg[0].insts[0].op, Eq(Op::Jump));
+    EXPECT_THAT(cfg[1].label, Eq(n("end")));
+    EXPECT_THAT(dumpBody(names.strings, flattenCfg(cfg)), HasSubstr("GOTO end"));
+    EXPECT_THAT(dumpBody(names.strings, flattenCfg(cfg)), Not(HasSubstr("dead:")));
+}
+
+TEST(Cfg, eliminateUnreachableKeepsCondJumpFallthrough) {
+    IntermediateRepresentation names;
+    IrN n { names.strings };
+    const std::vector<Instruction> body {
+            ir::zeroCompare(n("x")),
+            ir::jump(n("else"), JumpCondition::IF_EQUAL),
+            ir::inc(n("t")),
+            ir::jump(n("end")),
+            ir::label(n("else")),
+            ir::inc(n("e")),
+            ir::label(n("end")),
+            ir::voidReturn(),
+    };
+
+    const Cfg cfg = eliminateUnreachable(buildCfg(body));
+
+    ASSERT_THAT(cfg, SizeIs(4));
+    expectIdentity(names.strings, flattenCfg(cfg));
+    EXPECT_THAT(dumpBody(names.strings, flattenCfg(cfg)), AllOf(HasSubstr("INC t"), HasSubstr("INC e")));
+}
+
+TEST(Cfg, eliminateUnreachableKeepsEntryAndJumpTarget) {
+    IntermediateRepresentation names;
+    IrN n { names.strings };
+    const std::vector<Instruction> body {
+            ir::inc(n("x")),
+            ir::jump(n("L")),
+            ir::label(n("L")),
+            ir::voidReturn(),
+    };
+
+    EXPECT_THAT(flattenCfg(eliminateUnreachable(buildCfg(body))), SizeIs(body.size()));
 }
 
 } // namespace
