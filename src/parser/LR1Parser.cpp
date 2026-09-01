@@ -7,8 +7,10 @@
 #include "SyntaxTreeBuilder.h"
 #include "TokenStream.h"
 #include "Action.h"
+#include "scanner/Scanner.h"
 #include "scanner/Token.h"
 #include "scanner/TokenFilter.h"
+#include "util/Diagnostic.h"
 
 namespace parser {
 
@@ -101,7 +103,15 @@ std::unique_ptr<SyntaxTree> LR1Parser::parse(scanner::Scanner& scanner, SyntaxTr
         return filter.nextToken();
     }, scanner.session(), *parsingTable.getGrammar() };
 
-    runLrParse(parsingTable, tokenStream, syntaxTreeBuilder, extensions);
+    try {
+        runLrParse(parsingTable, tokenStream, syntaxTreeBuilder, extensions);
+    } catch (const scanner::LexError& error) {
+        if (syntaxTreeBuilder.hasSink()) {
+            syntaxTreeBuilder.sink().error(error.where, error.what());
+            return nullptr;
+        }
+        throw;
+    }
     if (syntaxTreeBuilder.aborted()) {
         return nullptr;
     }

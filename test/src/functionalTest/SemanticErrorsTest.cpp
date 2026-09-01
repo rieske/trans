@@ -697,7 +697,7 @@ INSTANTIATE_TEST_SUITE_P(Compiler, SemanticErrorCatalog, testing::Values(
                 return 0;
             }
         )prg",
-        "width of bit-field",
+        "error: width of bit-field exceeds its type",
     },
     SemanticErrorCase{
         "bitFieldNamedZeroWidth",
@@ -760,6 +760,35 @@ INSTANTIATE_TEST_SUITE_P(Compiler, SemanticErrorCatalog, testing::Values(
         "offsetof on incomplete type",
     },
     SemanticErrorCase{
+        "newlineInStringLiteral",
+        R"prg(
+            int main() {
+                char *s = "hello
+world";
+                return 0;
+            }
+        )prg",
+        "newline encountered in string literal",
+    },
+    SemanticErrorCase{
+        "invalidFloatingExponent",
+        R"prg(
+            int main() {
+                return 1e;
+            }
+        )prg",
+        "Can't reach next state",
+    },
+    SemanticErrorCase{
+        "floatRemainder",
+        R"prg(
+            int main() {
+                return 1.0 % 2.0;
+            }
+        )prg",
+        "invalid operands to % (integer type required)",
+    },
+    SemanticErrorCase{
         "sizeofIncompleteArrayBeforeCompletion",
         R"prg(
             extern char a[];
@@ -785,6 +814,41 @@ TEST(Compiler, bitFieldWidthNotConstantIsError) {
     program.assertCompilationErrors("bit-field width is not a constant");
     EXPECT_THAT(program.getCompilationErrors(), Not(HasSubstr("parsing failed")));
     EXPECT_THAT(program.getCompilationErrors(), Not(HasSubstr("Error: bit-field")));
+}
+
+TEST(Compiler, bitFieldWidthTooWideIsSinkError) {
+    SourceProgram program{R"prg(
+        struct S { int x:33; };
+        int main() { return 0; }
+    )prg"};
+    program.compile();
+    program.assertCompilationErrors("error: width of bit-field exceeds its type");
+    EXPECT_THAT(program.getCompilationErrors(), Not(HasSubstr("parsing failed")));
+    EXPECT_THAT(program.getCompilationErrors(), Not(HasSubstr("Error: width")));
+}
+
+TEST(Compiler, newlineInStringIsSinkError) {
+    SourceProgram program{R"prg(
+        int main() {
+            char *s = "hello
+world";
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.assertCompilationErrors("newline encountered in string literal");
+    EXPECT_THAT(program.getCompilationErrors(), Not(HasSubstr("parsing failed")));
+    EXPECT_THAT(program.getCompilationErrors(), Not(HasSubstr("Error: newline")));
+}
+
+TEST(Compiler, floatRemainderIsError) {
+    SourceProgram program{R"prg(
+        int main() { return 1.0 % 2.0; }
+    )prg"};
+    program.compile();
+    program.assertCompilationErrors("invalid operands to % (integer type required)");
+    EXPECT_THAT(program.getCompilationErrors(), Not(HasSubstr("Error: multiplication")));
+    EXPECT_THAT(program.getCompilationErrors(), Not(HasSubstr("not implemented")));
 }
 
 } // namespace

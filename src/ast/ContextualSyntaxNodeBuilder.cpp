@@ -22,12 +22,17 @@ int foldBitFieldWidth(AbstractSyntaxTreeBuilderContext& context) {
 }
 
 void completeRecordFromSpec(AbstractSyntaxTreeBuilderContext& context, type::Type& record,
-        std::vector<type::MemberSpec> members, bool isUnion) {
+        std::vector<type::MemberSpec> members, bool isUnion,
+        const translation_unit::Context& where) {
     const bool packed = context.environment().session().recordPacked.consume();
-    if (isUnion) {
-        type::completeUnion(record, std::move(members), packed);
-    } else {
-        type::completeStructure(record, std::move(members), packed);
+    try {
+        if (isUnion) {
+            type::completeUnion(record, std::move(members), packed);
+        } else {
+            type::completeStructure(record, std::move(members), packed);
+        }
+    } catch (const std::invalid_argument& error) {
+        context.error(where, error.what());
     }
 }
 
@@ -557,26 +562,32 @@ ContextualSyntaxNodeBuilder::ContextualSyntaxNodeBuilder(const parser::Grammar& 
     });
 
     bind(s_struct_or_union_spec, { s_struct_or_union, s_identifier, s_open_brace, s_struct_decl_list, s_close_brace }, [](AbstractSyntaxTreeBuilderContext& context) {
-                context.popTerminal(); // }
+                const auto close = context.popTerminal(); // }
                 context.popTerminal(); // {
                 auto tag = context.popTerminal();
                 auto members = context.popStructMemberList();
                 bool isUnion = context.popIsUnion();
                 // Shared incomplete tag so self-referential members keep one layout identity.
                 type::Type tagType = context.environment().ensureStructTag(tag.value);
-                completeRecordFromSpec(context, tagType, std::move(members), isUnion);
+                completeRecordFromSpec(context, tagType, std::move(members), isUnion, close.context);
+                if (context.failed()) {
+                    return;
+                }
                 // Shared body: tagType already sees completion via structureBodyIdentity().
                 TypeSpecifier spec { tagType, tag.value };
                 spec.markDefinesRecord();
                 context.pushTypeSpecifier(std::move(spec));
             });
     bind(s_struct_or_union_spec, { s_struct_or_union, s_open_brace, s_struct_decl_list, s_close_brace }, [](AbstractSyntaxTreeBuilderContext& context) {
-                context.popTerminal(); // }
+                const auto close = context.popTerminal(); // }
                 context.popTerminal(); // {
                 auto members = context.popStructMemberList();
                 bool isUnion = context.popIsUnion();
                 type::Type completed = type::incompleteRecord();
-                completeRecordFromSpec(context, completed, std::move(members), isUnion);
+                completeRecordFromSpec(context, completed, std::move(members), isUnion, close.context);
+                if (context.failed()) {
+                    return;
+                }
                 TypeSpecifier spec { completed, "" };
                 spec.markDefinesRecord();
                 context.pushTypeSpecifier(std::move(spec));

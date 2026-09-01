@@ -485,9 +485,15 @@ void SemanticAnalysisVisitor::visit(ast::ArithmeticExpression& expression) {
     const type::Type resultType = applyUsualArithmeticConversions(
             *expression.getLeftOperand(), *expression.getRightOperand(),
             symbolTable, annotations());
-    if (op == '%' && type::isComplex(resultType)) {
-        semanticError("invalid operands to % (complex type)", expression.getContext());
-        return;
+    if (op == '%') {
+        if (type::isComplex(resultType) || type::isComplex(leftValue) || type::isComplex(rightValue)) {
+            semanticError("invalid operands to % (complex type)", expression.getContext());
+            return;
+        }
+        if (!type::isIntegral(resultType)) {
+            semanticError("invalid operands to % (integer type required)", expression.getContext());
+            return;
+        }
     }
     expression.setResultSymbol(annotations(), symbolTable.createTemporarySymbol(resultType));
 }
