@@ -18,5 +18,19 @@ TEST(Function, copyAssignment) {
     EXPECT_THAT(t2.to_string(), Eq("void(int)"));
 }
 
+TEST(Function, typeCopyStaysEquivalentAndIndependent) {
+    auto original = type::function(
+            type::voidType(), { type::signedInteger(), type::pointer(type::signedCharacter()) }, true);
+    auto copy = original;
+    EXPECT_TRUE(copy.equivalentTo(original));
+    EXPECT_EQ(copy.to_string(), original.to_string());
+
+    copy = type::function(type::signedInteger());
+    EXPECT_TRUE(original.isFunction());
+    EXPECT_TRUE(original.equivalentTo(type::function(
+            type::voidType(), { type::signedInteger(), type::pointer(type::signedCharacter()) }, true)));
+    EXPECT_TRUE(copy.equivalentTo(type::function(type::signedInteger())));
+}
+
 } // namespace
 

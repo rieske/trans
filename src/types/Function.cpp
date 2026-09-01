@@ -5,67 +5,53 @@
 
 namespace type {
 
+struct Function::Impl {
+    std::unique_ptr<Type> returnType;
+    std::vector<std::unique_ptr<Type>> arguments;
+    bool variadic { false };
+};
+
 Function::Function(std::unique_ptr<Type> returnType, std::vector<std::unique_ptr<Type>> arguments,
         bool variadic) :
-    returnType{std::move(returnType)},
-    arguments{std::move(arguments)},
-    variadic{variadic}
+    impl_ { std::make_shared<Impl>() }
 {
-}
-
-Function::Function(const Function& rhs):
-    returnType{std::make_unique<Type>(*rhs.returnType)},
-    variadic{rhs.variadic}
-{
-    for (const auto& arg: rhs.arguments) {
-        arguments.push_back(std::make_unique<Type>(*arg));
-    }
-}
-
-Function& Function::operator=(const Function& rhs) {
-	if (this != &rhs) {
-		returnType.reset(new Type(*rhs.returnType));
-        arguments.clear();
-        for (const auto& arg: rhs.arguments) {
-            arguments.push_back(std::make_unique<Type>(*arg));
-        }
-        variadic = rhs.variadic;
-	}
-	return *this;
+    impl_->returnType = std::move(returnType);
+    impl_->arguments = std::move(arguments);
+    impl_->variadic = variadic;
 }
 
 Type Function::getReturnType() const {
-    return *returnType;
+    return *impl_->returnType;
 }
 
 std::vector<Type> Function::getArguments() const {
     std::vector<Type> args;
-    for (const auto& arg: arguments) {
+    for (const auto& arg : impl_->arguments) {
         args.push_back(*arg);
     }
     return args;
 }
 
 std::size_t Function::argumentCount() const {
-    return arguments.size();
+    return impl_->arguments.size();
 }
 
 bool Function::isVariadic() const {
-    return variadic;
+    return impl_->variadic;
 }
 
 std::string Function::to_string() const {
     std::stringstream str;
-    str << returnType->to_string();
+    str << impl_->returnType->to_string();
     str << "(";
-    for (auto it = arguments.begin(); it != arguments.end(); ++it) {
+    for (auto it = impl_->arguments.begin(); it != impl_->arguments.end(); ++it) {
         str << (*it)->to_string();
-        if (it < arguments.end()-1) {
+        if (it < impl_->arguments.end() - 1) {
             str << ", ";
         }
     }
-    if (variadic) {
-        if (!arguments.empty()) {
+    if (impl_->variadic) {
+        if (!impl_->arguments.empty()) {
             str << ", ";
         }
         str << "...";
