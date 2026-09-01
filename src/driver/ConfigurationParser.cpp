@@ -160,7 +160,7 @@ ParseResult helpResult(const std::string& executable) {
     out << " -Wl,<opts>              Pass comma-separated options to the linker\n";
     out << " -o <file>               Place output in <file>\n";
     out << " -std=<standard>         Language standard (default: gnu)\n";
-    out << " -masm=intel|att         Assembly dialect (default: intel)\n";
+    out << " -masm=intel|att         Assembly dialect (default: att)\n";
     out << " --resources <dir>       Resources base directory\n";
     out << " --log=scanner,parser    Enable scanner/parser logging\n";
     ParseResult result;

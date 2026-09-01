@@ -103,8 +103,8 @@ TEST_F(ConfigurationParserTest, createsDefaultTransConfiguration) {
     ASSERT_THAT(configuration.getGrammarPath(), StrEq("resources/configuration/grammar.bnf"));
     ASSERT_THAT(configuration.isScannerLoggingEnabled(), Eq(false));
     ASSERT_THAT(configuration.isParserLoggingEnabled(), Eq(false));
-    ASSERT_THAT(configuration.getAssemblyDialect(), Eq(AssemblyDialect::Intel));
-    ASSERT_THAT(configuration.assemblyDialectTag(), StrEq("intel"));
+    ASSERT_THAT(configuration.getAssemblyDialect(), Eq(AssemblyDialect::AtAndT));
+    ASSERT_THAT(configuration.assemblyDialectTag(), StrEq("att"));
     ASSERT_THAT(configuration.gnuExtensions(), Eq(true));
     ASSERT_THAT(configuration.getPreprocessorStdFlag(), StrEq(""));
 }
@@ -254,6 +254,7 @@ TEST_F(ConfigurationParserTest, helpHasNoConfiguration) {
     ASSERT_TRUE(isHelp(result));
     ASSERT_THAT(result.message, HasSubstr("Usage"));
     ASSERT_THAT(result.message, HasSubstr("-masm=intel|att"));
+    ASSERT_THAT(result.message, HasSubstr("default: att"));
     ASSERT_THAT(result.message, Not(HasSubstr("--grammar")));
     ASSERT_THAT(result.message, HasSubstr("--resources"));
     ASSERT_THAT(result.message, HasSubstr("-v"));

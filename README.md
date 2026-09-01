@@ -7,7 +7,7 @@ trans
 ## About
 
 A C compiler for x86-64 System V. Host `gcc` preprocesses and links. Default
-assembly is Intel/NASM; `-a att` is AT&T/GAS.
+assembly is AT&T/GAS; `-masm=intel` is Intel/NASM.
 
 ## Structure
 
@@ -29,7 +29,7 @@ An AST visitor at the core that orchestrates the semantic analysis.
 
 ### Code Generator
 An AST visitor that generates intermediate code. `AssemblyGenerator` walks that IR
-and `StackMachine` emits 64-bit assembly (Intel/NASM by default, AT&T/GAS with `-a att`).
+and `StackMachine` emits 64-bit assembly (AT&T/GAS by default, Intel/NASM with `-masm=intel`).
 
 ## Building
 
@@ -38,8 +38,8 @@ Prerequisites:
 - a C++20 compiler (g++ or clang++)
 - a build tool (Make or Ninja; the root `Makefile` shells out to CMake either way)
 - gcc - preprocessor and linker
-- nasm - default assembler (Intel functional tests)
-- GNU as - AT&T assembler (`-a att` functional tests)
+- GNU as - default assembler (AT&T functional tests)
+- nasm - Intel assembler (`-masm=intel` functional tests)
 
 From the repo root:
 
