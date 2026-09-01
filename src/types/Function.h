@@ -13,20 +13,20 @@ class Function {
 public:
     Function(std::unique_ptr<Type> returnType, std::vector<std::unique_ptr<Type>> arguments = {},
             bool variadic = false);
-    Function(const Function& rhs);
+    Function(const Function&) = default;
+    Function(Function&&) noexcept = default;
+    Function& operator=(const Function&) = default;
+    Function& operator=(Function&&) noexcept = default;
 
-    Function& operator=(const Function& rhs);
-
-    Type getReturnType() const;
-    std::vector<Type> getArguments() const;
+    const Type& getReturnType() const;
+    const std::vector<Type>& getArguments() const;
     std::size_t argumentCount() const;
     bool isVariadic() const;
 
     std::string to_string() const;
 private:
-    std::unique_ptr<Type> returnType;
-    std::vector<std::unique_ptr<Type>> arguments;
-    bool variadic { false };
+    struct Impl;
+    std::shared_ptr<Impl> impl_;
 };
 
 
