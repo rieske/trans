@@ -36,6 +36,9 @@ public:
     void makeNonterminalNode(const parser::Production& production) override;
     parser::ParseExtensions* parseExtensions() override;
     void setSink(diag::Sink* sink) override;
+    bool aborted() const override;
+    void fail() { treeBuilderContext.fail(); }
+    bool failed() const { return treeBuilderContext.failed(); }
 
     std::unique_ptr<parser::SyntaxTree> build() override;
 

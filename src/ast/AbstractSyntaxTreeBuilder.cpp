@@ -64,6 +64,10 @@ void AbstractSyntaxTreeBuilder::setSink(diag::Sink* sink) {
     treeBuilderContext.setSink(sink);
 }
 
+bool AbstractSyntaxTreeBuilder::aborted() const {
+    return hasError() || treeBuilderContext.failed();
+}
+
 scanner::LexicalSession& AbstractSyntaxTreeBuilder::session() {
     return treeBuilderContext.environment().session();
 }

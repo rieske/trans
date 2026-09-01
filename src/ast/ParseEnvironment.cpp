@@ -1,7 +1,5 @@
 #include "ParseEnvironment.h"
 
-#include <stdexcept>
-
 #include "Block.h"
 #include "Declaration.h"
 #include "Expression.h"
@@ -159,23 +157,22 @@ void ParseEnvironment::tryDefineObject(const DeclarationSpecifiers& specs, Decla
     }
 }
 
-void ParseEnvironment::addEnumerator(std::string name) {
+bool ParseEnvironment::addEnumerator(std::string name) {
     if (!enumBody_) {
-        addEnumerator(std::move(name), type::fromLiteralBits(0, type::signedInteger()));
-        return;
+        return addEnumerator(std::move(name), type::fromLiteralBits(0, type::signedInteger()));
     }
-    addEnumerator(std::move(name), enumBody_->next);
+    return addEnumerator(std::move(name), enumBody_->next);
 }
 
-void ParseEnvironment::addEnumerator(std::string name, type::IntegerConstant value) {
+bool ParseEnvironment::addEnumerator(std::string name, type::IntegerConstant value) {
     if (session_.enums.containsInCurrentScope(name)) {
-        throw std::runtime_error { "redefinition of enumerator `" + name + "`" };
+        return false;
     }
     session_.enums.add(name, value);
     const type::SignedBits v = type::signedValue(value);
     if (!enumBody_) {
         enumBody_ = EnumBody { type::nextEnumerator(value), v, v };
-        return;
+        return true;
     }
     if (v < enumBody_->min) {
         enumBody_->min = v;
@@ -184,6 +181,7 @@ void ParseEnvironment::addEnumerator(std::string name, type::IntegerConstant val
         enumBody_->max = v;
     }
     enumBody_->next = type::nextEnumerator(value);
+    return true;
 }
 
 bool ParseEnvironment::lookupEnumConstant(const std::string& name,

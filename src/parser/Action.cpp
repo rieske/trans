@@ -129,7 +129,7 @@ bool Action::parse(std::stack<parse_state>& parsingStack, TokenStream& tokenStre
         }
         parsingStack.push(parsingTable_->go_to(parsingStack.top(), production_->getDefiningSymbol()));
         syntaxTreeBuilder.makeNonterminalNode(*production_);
-        return false;
+        return syntaxTreeBuilder.aborted();
     }
     case Kind::Error: {
         syntaxTreeBuilder.err();

@@ -16,6 +16,7 @@ int foldBitFieldWidth(AbstractSyntaxTreeBuilderContext& context) {
         const translation_unit::Context where = widthExpr
                 ? widthExpr->getContext() : translation_unit::Context { "", 0 };
         context.error(where, "bit-field width is not a constant");
+        return 0;
     }
     return static_cast<int>(width);
 }
@@ -483,6 +484,7 @@ ContextualSyntaxNodeBuilder::ContextualSyntaxNodeBuilder(const parser::Grammar& 
         auto id = context.popTerminal();
         if (context.environment().session().enums.containsInCurrentScope(id.value)) {
             context.error(id.context, "redefinition of enumerator `" + id.value + "`");
+            return;
         }
         context.environment().addEnumerator(id.value);
     });
@@ -494,9 +496,11 @@ ContextualSyntaxNodeBuilder::ContextualSyntaxNodeBuilder(const parser::Grammar& 
                 if (!expr->evaluateConstant(ice)) {
                     context.error(id.context,
                             "enumerator initializer is not a constant expression: " + id.value);
+                    return;
                 }
                 if (context.environment().session().enums.containsInCurrentScope(id.value)) {
                     context.error(id.context, "redefinition of enumerator `" + id.value + "`");
+                    return;
                 }
                 context.environment().addEnumerator(id.value, std::move(ice));
             });
@@ -591,10 +595,16 @@ ContextualSyntaxNodeBuilder::ContextualSyntaxNodeBuilder(const parser::Grammar& 
     });
     bind(s_struct_declarator, { s_declarator, grammar.symbolId(":"), grammar.symbolId("<const_exp>") }, [](AbstractSyntaxTreeBuilderContext& context) {
                 const int width = foldBitFieldWidth(context);
+                if (context.failed()) {
+                    return;
+                }
                 context.addStructDeclarator(context.popDeclarator(), width);
             });
     bind(s_struct_declarator, { grammar.symbolId(":"), grammar.symbolId("<const_exp>") }, [](AbstractSyntaxTreeBuilderContext& context) {
                 const int width = foldBitFieldWidth(context);
+                if (context.failed()) {
+                    return;
+                }
                 context.addStructDeclarator(nullptr, width);
             });
     bind(s_struct_declarator_list, { s_struct_declarator }, doNothing);
@@ -603,7 +613,11 @@ ContextualSyntaxNodeBuilder::ContextualSyntaxNodeBuilder(const parser::Grammar& 
     bind(s_struct_decl, { s_spec_qualifier_list, s_struct_declarator_list, s_semicolon }, [](AbstractSyntaxTreeBuilderContext& context) {
                 context.popTerminal(); // ;
                 auto declarators = context.popStructDeclarators();
-                auto baseType = popResolvedSpecQualifiers(context).getResolvedType();
+                auto specs = popResolvedSpecQualifiers(context);
+                if (context.failed()) {
+                    return;
+                }
+                auto baseType = specs.getResolvedType();
                 for (auto& [declarator, bitWidth] : declarators) {
                     if (!declarator) {
                         context.addStructMember("", baseType, bitWidth);
@@ -618,6 +632,9 @@ ContextualSyntaxNodeBuilder::ContextualSyntaxNodeBuilder(const parser::Grammar& 
     bind(s_struct_decl, { s_spec_qualifier_list, s_semicolon }, [](AbstractSyntaxTreeBuilderContext& context) {
                 context.popTerminal(); // ;
                 auto specs = popResolvedSpecQualifiers(context);
+                if (context.failed()) {
+                    return;
+                }
                 if (specs.isUntaggedRecordBody()) {
                     context.addStructMember("", specs.getResolvedType());
                 }
@@ -650,6 +667,7 @@ void ContextualSyntaxNodeBuilder::updateContext(const parser::Production& produc
     const int id = production.getId();
     if (id < 0 || static_cast<std::size_t>(id) >= creators_.size() || !creators_[id]) {
         noCreatorDefined(production, context);
+        return;
     }
     creators_[id](context);
 }

@@ -46,6 +46,13 @@ bool failOffsetof(const translation_unit::Context& context, type::OffsetofStatus
     return false;
 }
 
+bool failGnu(AbstractSyntaxTreeBuilder& builder) {
+    if (!builder.failed()) {
+        builder.err();
+    }
+    return false;
+}
+
 bool isInt128Lexeme(const std::string& lexeme) {
     return lexeme == "__int128" || lexeme == "__int128_t" || lexeme == "__uint128_t";
 }
@@ -107,10 +114,10 @@ bool GnuExtensions::isTypeExtensionToken(const scanner::Token& token) const {
     return token.id == "id" && isInt128Lexeme(token.lexeme);
 }
 
-bool GnuExtensions::consumeToStop(AbstractSyntaxTreeBuilder& nested, parser::TokenStream& outer,
-        const parser::ParsingTable& table, const scanner::Token* prefix, std::size_t prefixCount,
-        int stopSymbol, const std::string& stopLookahead, bool endAfterMatchedBrace,
-        const std::string& presentStopAs) {
+bool GnuExtensions::consumeToStop(AbstractSyntaxTreeBuilder& parent, AbstractSyntaxTreeBuilder& nested,
+        parser::TokenStream& outer, const parser::ParsingTable& table, const scanner::Token* prefix,
+        std::size_t prefixCount, int stopSymbol, const std::string& stopLookahead,
+        bool endAfterMatchedBrace, const std::string& presentStopAs) {
     const translation_unit::Context ctx = outer.getCurrentToken().context;
     scanner::LexicalSession& session = nested.session();
     std::size_t prefixIndex = 0;
@@ -157,7 +164,10 @@ bool GnuExtensions::consumeToStop(AbstractSyntaxTreeBuilder& nested, parser::Tok
 
     const parser::LrStop stop { stopSymbol, innerLookahead, &live };
     if (parser::runLrParse(table, nestedStream, nested, this, stop) != parser::LrFinish::Stopped
-            || nested.hasError()) {
+            || nested.aborted()) {
+        if (nested.failed()) {
+            parent.fail();
+        }
         return false;
     }
     return true;
@@ -182,7 +192,7 @@ std::unique_ptr<Block> GnuExtensions::parseCompoundBlock(parser::TokenStream& ou
             { ")", ")", ctx },
     };
     AbstractSyntaxTreeBuilder nested { grammar, parent };
-    if (!consumeToStop(nested, outer, table, prefix, sizeof prefix / sizeof prefix[0],
+    if (!consumeToStop(parent, nested, outer, table, prefix, sizeof prefix / sizeof prefix[0],
             *compound, scanner::Token::END, true)) {
         return nullptr;
     }
@@ -203,7 +213,7 @@ std::unique_ptr<Expression> GnuExtensions::parseAssignmentExpression(parser::Tok
             { "=", "=", ctx },
     };
     AbstractSyntaxTreeBuilder nested { grammar, parent };
-    if (!consumeToStop(nested, outer, table, prefix, sizeof prefix / sizeof prefix[0],
+    if (!consumeToStop(parent, nested, outer, table, prefix, sizeof prefix / sizeof prefix[0],
             *assignment, ",", false)) {
         return nullptr;
     }
@@ -227,7 +237,7 @@ std::optional<TypeSpecifier> GnuExtensions::parseTypeName(parser::TokenStream& o
             { "(", "(", ctx },
     };
     AbstractSyntaxTreeBuilder nested { grammar, parent };
-    if (!consumeToStop(nested, outer, table, prefix, sizeof prefix / sizeof prefix[0],
+    if (!consumeToStop(parent, nested, outer, table, prefix, sizeof prefix / sizeof prefix[0],
             *typeName, stopLookahead, false, ")")) {
         return std::nullopt;
     }
@@ -243,12 +253,10 @@ bool GnuExtensions::acceptStatementPrimary(parser::TokenStream& tokenStream,
     tokenStream.nextToken();
     auto block = parseCompoundBlock(tokenStream, parsingTable, builder);
     if (!block) {
-        builder.err();
-        return false;
+        return failGnu(builder);
     }
     if (tokenStream.getCurrentToken().id != ")") {
-        builder.err();
-        return false;
+        return failGnu(builder);
     }
     tokenStream.nextToken();
     builder.pushExpression(std::make_unique<StatementExpression>(context, std::move(block)));
@@ -277,33 +285,27 @@ bool GnuExtensions::acceptVaArg(parser::TokenStream& tokenStream,
     const translation_unit::Context context = tokenStream.getCurrentToken().context;
     tokenStream.nextToken();
     if (tokenStream.getCurrentToken().id != "(") {
-        builder.err();
-        return false;
+        return failGnu(builder);
     }
     tokenStream.nextToken();
     auto ap = parseAssignmentExpression(tokenStream, parsingTable, builder);
     if (!ap) {
-        builder.err();
-        return false;
+        return failGnu(builder);
     }
     if (tokenStream.getCurrentToken().id != ",") {
-        builder.err();
-        return false;
+        return failGnu(builder);
     }
     tokenStream.nextToken();
     auto typeSpec = parseTypeName(tokenStream, parsingTable, builder);
     if (!typeSpec) {
-        builder.err();
-        return false;
+        return failGnu(builder);
     }
     if (tokenStream.getCurrentToken().id != ")") {
-        builder.err();
-        return false;
+        return failGnu(builder);
     }
     tokenStream.nextToken();
     if (!typeSpec->resolveTypeofAtParseTime(builder.environment()) || !typeSpec->hasType()) {
-        builder.err();
-        return false;
+        return failGnu(builder);
     }
     std::vector<std::unique_ptr<Expression>> args;
     args.push_back(std::move(ap));
@@ -324,35 +326,29 @@ bool GnuExtensions::acceptTypesCompatibleP(parser::TokenStream& tokenStream,
     const translation_unit::Context context = tokenStream.getCurrentToken().context;
     tokenStream.nextToken();
     if (tokenStream.getCurrentToken().id != "(") {
-        builder.err();
-        return false;
+        return failGnu(builder);
     }
     tokenStream.nextToken();
     auto type1 = parseTypeName(tokenStream, parsingTable, builder, ",");
     if (!type1) {
-        builder.err();
-        return false;
+        return failGnu(builder);
     }
     if (tokenStream.getCurrentToken().id != ",") {
-        builder.err();
-        return false;
+        return failGnu(builder);
     }
     tokenStream.nextToken();
     auto type2 = parseTypeName(tokenStream, parsingTable, builder, ")");
     if (!type2) {
-        builder.err();
-        return false;
+        return failGnu(builder);
     }
     if (tokenStream.getCurrentToken().id != ")") {
-        builder.err();
-        return false;
+        return failGnu(builder);
     }
     tokenStream.nextToken();
     if (!type1->resolveTypeofAtParseTime(builder.environment())
             || !type2->resolveTypeofAtParseTime(builder.environment())
             || !type1->hasType() || !type2->hasType()) {
-        builder.err();
-        return false;
+        return failGnu(builder);
     }
     const bool compatible = type1->getType().sameUnqualifiedType(type2->getType());
     builder.pushExpression(std::make_unique<ConstantExpression>(
@@ -369,34 +365,28 @@ bool GnuExtensions::acceptOffsetof(parser::TokenStream& tokenStream,
     const translation_unit::Context context = tokenStream.getCurrentToken().context;
     tokenStream.nextToken();
     if (tokenStream.getCurrentToken().id != "(") {
-        builder.err();
-        return false;
+        return failGnu(builder);
     }
     tokenStream.nextToken();
     auto typeSpec = parseTypeName(tokenStream, parsingTable, builder, ",");
     if (!typeSpec) {
-        builder.err();
-        return false;
+        return failGnu(builder);
     }
     if (tokenStream.getCurrentToken().id != ",") {
-        builder.err();
-        return false;
+        return failGnu(builder);
     }
     tokenStream.nextToken();
     if (tokenStream.getCurrentToken().id != "id") {
-        builder.err();
-        return false;
+        return failGnu(builder);
     }
     const std::string member = tokenStream.getCurrentToken().lexeme;
     tokenStream.nextToken();
     if (tokenStream.getCurrentToken().id != ")") {
-        builder.err();
-        return false;
+        return failGnu(builder);
     }
     tokenStream.nextToken();
     if (!typeSpec->resolveTypeofAtParseTime(builder.environment()) || !typeSpec->hasType()) {
-        builder.err();
-        return false;
+        return failGnu(builder);
     }
     const type::OffsetofResult off = type::resolveOffsetof(typeSpec->getType(), member);
     if (off.status == type::OffsetofStatus::Ok) {

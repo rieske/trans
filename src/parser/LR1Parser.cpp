@@ -1,7 +1,6 @@
 #include "LR1Parser.h"
 
 #include <stack>
-#include <stdexcept>
 
 #include "ParseExtensions.h"
 #include "ParsingTable.h"
@@ -10,7 +9,6 @@
 #include "Action.h"
 #include "scanner/Token.h"
 #include "scanner/TokenFilter.h"
-#include "util/Diagnostic.h"
 
 namespace parser {
 
@@ -37,6 +35,9 @@ LrFinish runLrParse(const ParsingTable& parsingTable, TokenStream& tokenStream,
     parsingStack.push(0);
     int nest = 0;
     for (;;) {
+        if (syntaxTreeBuilder.aborted()) {
+            return LrFinish::Complete;
+        }
         const scanner::Token& current = tokenStream.getCurrentToken();
         const Action action = parsingTable.action(parsingStack.top(), current);
         // Prefix tokens for a dummy subparse are not live. Peeking them would
@@ -48,7 +49,7 @@ LrFinish runLrParse(const ParsingTable& parsingTable, TokenStream& tokenStream,
                     parsingStack.push(*nextState);
                     continue;
                 }
-                if (syntaxTreeBuilder.hasError()) {
+                if (syntaxTreeBuilder.aborted()) {
                     return LrFinish::Complete;
                 }
             } else if (action.kind() == Action::Kind::Error
@@ -59,7 +60,9 @@ LrFinish runLrParse(const ParsingTable& parsingTable, TokenStream& tokenStream,
                             kTypeSpecFirstProbe, kTypeSpecFirstProbe, current.context, *probeId };
                     const Action asTypeKeyword = parsingTable.action(parsingStack.top(), typeProbe);
                     if (asTypeKeyword.kind() == Action::Kind::Reduce) {
-                        asTypeKeyword.parse(parsingStack, tokenStream, syntaxTreeBuilder);
+                        if (asTypeKeyword.parse(parsingStack, tokenStream, syntaxTreeBuilder)) {
+                            return LrFinish::Complete;
+                        }
                         continue;
                     }
                 }
@@ -70,7 +73,9 @@ LrFinish runLrParse(const ParsingTable& parsingTable, TokenStream& tokenStream,
                 && action.reduceDefiningSymbol() == stop->definingSymbol
                 && tokenStream.getCurrentToken().id == stop->lookahead
                 && nest == 0) {
-            action.parse(parsingStack, tokenStream, syntaxTreeBuilder);
+            if (action.parse(parsingStack, tokenStream, syntaxTreeBuilder)) {
+                return LrFinish::Complete;
+            }
             return LrFinish::Stopped;
         }
         if (stop && live && action.kind() == Action::Kind::Shift) {
@@ -96,15 +101,8 @@ std::unique_ptr<SyntaxTree> LR1Parser::parse(scanner::Scanner& scanner, SyntaxTr
         return filter.nextToken();
     }, scanner.session(), *parsingTable.getGrammar() };
 
-    try {
-        runLrParse(parsingTable, tokenStream, syntaxTreeBuilder, extensions);
-    } catch (const std::runtime_error&) {
-        if (syntaxTreeBuilder.hasSink() && syntaxTreeBuilder.sink().hasErrors()) {
-            return nullptr;
-        }
-        throw;
-    }
-    if (syntaxTreeBuilder.hasError()) {
+    runLrParse(parsingTable, tokenStream, syntaxTreeBuilder, extensions);
+    if (syntaxTreeBuilder.aborted()) {
         return nullptr;
     }
     return syntaxTreeBuilder.build();
