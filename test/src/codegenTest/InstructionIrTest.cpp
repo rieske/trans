@@ -19,6 +19,7 @@
 #include "codegen/Value.h"
 #include "symbols/AddressPlan.h"
 #include "types/ObjectAbi.h"
+#include "types/Type.h"
 
 namespace {
 
@@ -375,6 +376,27 @@ TEST(InstructionIr, procedureInternsNameAndTemps) {
     ASSERT_THAT(p.vaXmmHomes, SizeIs(SYSV_SSE_ARG_REGS));
     EXPECT_THAT(ir.strings.get(p.vaGpHomes[0]), Eq(vaGpHomeName(0)));
     EXPECT_THAT(ir.strings.get(p.vaXmmHomes[0]), Eq(vaXmmHomeName(0)));
+}
+
+TEST(InstructionIr, addFrameTempPushesDistinctExpressionTemps) {
+    IntermediateRepresentation ir;
+    Procedure p;
+    p.name = ir.strings.intern("f");
+    const int a = addFrameTemp(ir.strings, p, type::signedInteger());
+    const int b = addFrameTemp(ir.strings, p, type::signedInteger());
+
+    EXPECT_NE(a, b);
+    ASSERT_THAT(p.frame.locals, SizeIs(2));
+    EXPECT_EQ(p.frame.locals[0].id(), a);
+    EXPECT_EQ(p.frame.locals[1].id(), b);
+    EXPECT_TRUE(p.frame.locals[0].isExpressionTemp());
+    EXPECT_TRUE(p.frame.locals[1].isExpressionTemp());
+    EXPECT_EQ(p.frame.locals[0].getIndex(), 0);
+    EXPECT_EQ(p.frame.locals[1].getIndex(), 0);
+    EXPECT_EQ(p.frame.locals[0].getType(), Type::INTEGRAL);
+    EXPECT_EQ(p.frame.locals[0].getSizeInBytes(), 4);
+    EXPECT_THAT(ir.strings.get(a), Eq("__t0"));
+    EXPECT_THAT(ir.strings.get(b), Eq("__t1"));
 }
 
 TEST(InstructionIr, procedurePreservesFrame) {

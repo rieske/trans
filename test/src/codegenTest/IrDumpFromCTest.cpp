@@ -53,8 +53,8 @@ TEST(IrDumpFromC, vlaSizeofIsUseTimeProduct) {
     EXPECT_THAT(compileToIr("int vlasz(int n) { return (int)sizeof(int [n]); }\n"), StrEq(
             "PROC vlasz\n"
             "\t$t0 := L$loc1_n\n"
-            "\t__cs0 := 4\n"
-            "\t$t0 := $t0 * __cs0\n"
+            "\t__t0 := 4\n"
+            "\t$t0 := $t0 * __t0\n"
             "\t$t1 := $t0\n"
             "\tRETURN $t1\n"
             "ENDPROC vlasz\n"));
