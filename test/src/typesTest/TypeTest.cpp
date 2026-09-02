@@ -415,6 +415,17 @@ TEST(Type, getElementTypeOnNonArrayThrows) {
     EXPECT_THROW(signedInteger().getArraySize(), std::domain_error);
 }
 
+TEST(Type, memberCopySharesPayload) {
+    using namespace type;
+    Type::Member original { "x", signedInteger(), 0 };
+    Type::Member copy = original;
+    ASSERT_NE(original.type.get(), nullptr);
+    EXPECT_EQ(original.type.get(), copy.type.get());
+    EXPECT_TRUE(original.type->equivalentTo(signedInteger()));
+    EXPECT_THAT(copy.name, Eq("x"));
+    EXPECT_THAT(copy.offsetBytes, Eq(0));
+}
+
 TEST(Type, structureMembersHaveOffsetsAndSize) {
     using namespace type;
     auto s = structure({

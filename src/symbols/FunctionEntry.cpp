@@ -31,11 +31,11 @@ std::size_t FunctionEntry::argumentCount() const {
     return type.argumentCount();
 }
 
-std::vector<type::Type> FunctionEntry::arguments() const {
+const std::vector<type::Type>& FunctionEntry::arguments() const {
     return type.getArguments();
 }
 
-type::Type FunctionEntry::returnType() const {
+const type::Type& FunctionEntry::returnType() const {
     return type.getReturnType();
 }
 

@@ -21,8 +21,8 @@ public:
     bool hasInternalLinkage() const;
 
     std::size_t argumentCount() const;
-    std::vector<type::Type> arguments() const;
-    type::Type returnType() const;
+    const std::vector<type::Type>& arguments() const;
+    const type::Type& returnType() const;
 
 private:
     std::string name;

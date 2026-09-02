@@ -11,8 +11,6 @@ class Type;
 
 class Function {
 public:
-    Function(std::unique_ptr<Type> returnType, std::vector<std::unique_ptr<Type>> arguments = {},
-            bool variadic = false);
     Function(const Function&) = default;
     Function(Function&&) noexcept = default;
     Function& operator=(const Function&) = default;
@@ -25,6 +23,8 @@ public:
 
     std::string to_string() const;
 private:
+    friend class Type;
+    Function(Type returnType, std::vector<Type> arguments, bool variadic);
     struct Impl;
     std::shared_ptr<Impl> impl_;
 };
