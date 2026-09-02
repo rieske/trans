@@ -36,11 +36,10 @@ struct DataWordSink : AggregateInitSink {
     SemanticAnalysisVisitor& visitor;
     translation_unit::Context context;
     std::vector<symbols::StaticInitValue>& words;
-    int wordCount;
     bool failed { false };
 
     DataWordSink(SemanticAnalysisVisitor& v, translation_unit::Context ctx,
-            std::vector<symbols::StaticInitValue>& w, int wc);
+            std::vector<symbols::StaticInitValue>& w);
 
     bool ok() const override;
     void error(const std::string& message) override;
