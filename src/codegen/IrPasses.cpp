@@ -19,10 +19,13 @@ IntermediateRepresentation sealProcedures(IntermediateRepresentation ir) {
     return ir;
 }
 
-IntermediateRepresentation applyCfgPasses(IntermediateRepresentation ir) {
+IntermediateRepresentation applyCfgPasses(IntermediateRepresentation ir, int optLevel) {
     for (auto& procedure : ir.procedures) {
-        procedure.body = flattenCfg(
-                eliminateJumpToNext(eliminateUnreachable(buildCfg(procedure.body))));
+        Cfg cfg = buildCfg(procedure.body);
+        if (optLevel >= 1) {
+            cfg = eliminateUnreachable(std::move(cfg));
+        }
+        procedure.body = flattenCfg(eliminateJumpToNext(std::move(cfg)));
     }
     return ir;
 }

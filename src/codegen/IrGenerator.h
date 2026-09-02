@@ -6,7 +6,7 @@
 
 namespace codegen {
 
-IntermediateRepresentation generateIr(ast::AbstractSyntaxTree& tree);
+IntermediateRepresentation generateIr(ast::AbstractSyntaxTree& tree, int optLevel = 1);
 
 } // namespace codegen
 

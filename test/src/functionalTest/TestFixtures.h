@@ -13,6 +13,9 @@
 using namespace testing;
 
 std::string functionalTestDialectTag();
+std::string functionalTestOptFlag();
+std::string functionalTestMatrixTag();
+std::vector<std::string> functionalTestFlags(std::vector<std::string> extra = {});
 
 class Program {
   public:

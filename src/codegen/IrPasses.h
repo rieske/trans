@@ -10,22 +10,11 @@ namespace codegen {
 void sealProcedure(Procedure& procedure);
 IntermediateRepresentation sealProcedures(IntermediateRepresentation ir);
 
-// buildCfg, eliminateUnreachable, eliminateJumpToNext, flattenCfg.
-IntermediateRepresentation applyCfgPasses(IntermediateRepresentation ir);
+IntermediateRepresentation applyCfgPasses(IntermediateRepresentation ir, int optLevel = 1);
 
-// Mid-end pass manager. packFrameValues stays after this list (IrGenerator.cpp).
-using IrPass = IntermediateRepresentation (*)(IntermediateRepresentation);
-
-inline constexpr IrPass kMidEndPasses[] = {
-    sealProcedures,
-    applyCfgPasses,
-};
-
-inline IntermediateRepresentation runIrPasses(IntermediateRepresentation ir) {
-    for (auto pass : kMidEndPasses) {
-        ir = pass(std::move(ir));
-    }
-    return ir;
+inline IntermediateRepresentation runIrPasses(IntermediateRepresentation ir, int optLevel = 1) {
+    ir = sealProcedures(std::move(ir));
+    return applyCfgPasses(std::move(ir), optLevel);
 }
 
 } // namespace codegen

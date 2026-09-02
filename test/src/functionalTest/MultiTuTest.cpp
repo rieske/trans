@@ -19,7 +19,7 @@ bool fileExists(const std::string& path) {
 }
 
 std::string dialectStem(const std::string& base) {
-    return base + "_" + functionalTestDialectTag();
+    return base + "_" + functionalTestMatrixTag();
 }
 
 std::string writeTmpC(const std::string& stem, const std::string& body) {
@@ -35,19 +35,14 @@ void removePath(const std::string& path) {
     unlink(path.c_str());
 }
 
-std::vector<std::string> dialectFlags(std::vector<std::string> flags) {
-    flags.insert(flags.begin(), "-masm=" + functionalTestDialectTag());
-    return flags;
-}
-
 int compileOnly(const std::string& sourcePath, std::string* errOut = nullptr) {
-    ArgvBuffer args { { sourcePath }, dialectFlags({ "-c" }) };
+    ArgvBuffer args { { sourcePath }, functionalTestFlags({ "-c" }) };
     return runDriver(args, errOut);
 }
 
 int compileOnlyTo(const std::string& sourcePath, const std::string& objectPath,
         std::string* errOut = nullptr) {
-    ArgvBuffer args { { sourcePath }, dialectFlags({ "-c", "-o" + objectPath }) };
+    ArgvBuffer args { { sourcePath }, functionalTestFlags({ "-c", "-o" + objectPath }) };
     return runDriver(args, errOut);
 }
 
@@ -71,12 +66,9 @@ std::string nmObject(const std::string& objectPath) {
 }
 
 int runTransBinary(const std::vector<std::string>& extraAndFiles, std::string* errOut = nullptr) {
-    std::vector<std::string> argv {
-            transBinaryPath(),
-            "--resources=" + getResourcesBaseDir(),
-            "-masm=" + functionalTestDialectTag()
-    };
-    argv.insert(argv.end(), extraAndFiles.begin(), extraAndFiles.end());
+    std::vector<std::string> argv { transBinaryPath(), "--resources=" + getResourcesBaseDir() };
+    const auto flags = functionalTestFlags(extraAndFiles);
+    argv.insert(argv.end(), flags.begin(), flags.end());
     util::ProcessResult result = util::runProcess(argv);
     if (errOut) {
         *errOut = result.stderrOutput;

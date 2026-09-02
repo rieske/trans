@@ -254,11 +254,12 @@ TEST(Driver, makefileCflagsCompileOnlySucceedsSilently) {
 
 TEST(Driver, verbosePrintsIgnoredFlags) {
     auto sourcePath = writeTempSource("cflags_verbose.c", kTrivialMain);
-    ArgvBuffer args { { sourcePath.string() }, { "-v", "-O2", "-c" } };
+    ArgvBuffer args { { sourcePath.string() }, { "-v", "-O2", "-g", "-c" } };
     std::string errors;
     std::string output;
     EXPECT_EQ(runDriver(args, &errors, &output), 0) << errors;
-    EXPECT_THAT(errors, HasSubstr("ignoring -O2"));
+    EXPECT_THAT(errors, HasSubstr("ignoring -g"));
+    EXPECT_THAT(errors, Not(HasSubstr("ignoring -O2")));
     EXPECT_THAT(output, HasSubstr("Compiling"));
     EXPECT_TRUE(std::filesystem::exists(sourcePath.string() + ".o"));
     removeCompileArtifacts(sourcePath);
@@ -308,6 +309,32 @@ TEST(Driver, dashSWithDashONamesTheAssembly) {
     EXPECT_FALSE(std::filesystem::exists(stem.string() + ".s"));
     EXPECT_FALSE(std::filesystem::exists(sourcePath.string() + ".o"));
     std::filesystem::remove(outPath);
+    removeCompileArtifacts(sourcePath);
+}
+
+TEST(Driver, optLevelGatesLabeledDeadCodeInAssembly) {
+    const char* src = "int f(void) { goto end; dead: return 123456; end: return 0; }\n";
+    auto sourcePath = writeTempSource("dce_gate.c", src);
+    auto o0Path = sourcePath.parent_path() / "dce_o0.s";
+    auto o1Path = sourcePath.parent_path() / "dce_o1.s";
+    std::filesystem::remove(o0Path);
+    std::filesystem::remove(o1Path);
+
+    std::string errors;
+    ArgvBuffer o0Args { { sourcePath.string() }, { "-S", "-O0", "-o", o0Path.string() } };
+    EXPECT_EQ(runDriver(o0Args, &errors), 0) << errors;
+    ArgvBuffer o1Args { { sourcePath.string() }, { "-S", "-O1", "-o", o1Path.string() } };
+    EXPECT_EQ(runDriver(o1Args, &errors), 0) << errors;
+
+    std::ifstream o0In { o0Path };
+    std::ifstream o1In { o1Path };
+    const std::string o0((std::istreambuf_iterator<char>(o0In)), std::istreambuf_iterator<char>());
+    const std::string o1((std::istreambuf_iterator<char>(o1In)), std::istreambuf_iterator<char>());
+    EXPECT_THAT(o0, HasSubstr("123456"));
+    EXPECT_THAT(o1, Not(HasSubstr("123456")));
+
+    std::filesystem::remove(o0Path);
+    std::filesystem::remove(o1Path);
     removeCompileArtifacts(sourcePath);
 }
 

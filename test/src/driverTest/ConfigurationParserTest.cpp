@@ -107,6 +107,7 @@ TEST_F(ConfigurationParserTest, createsDefaultTransConfiguration) {
     ASSERT_THAT(configuration.assemblyDialectTag(), StrEq("att"));
     ASSERT_THAT(configuration.gnuExtensions(), Eq(true));
     ASSERT_THAT(configuration.getPreprocessorStdFlag(), StrEq(""));
+    ASSERT_THAT(configuration.optLevel(), Eq(1));
 }
 
 TEST_F(ConfigurationParserTest, isoAliasDoesNotForwardStdToPreprocessor) {
@@ -259,6 +260,8 @@ TEST_F(ConfigurationParserTest, helpHasNoConfiguration) {
     ASSERT_THAT(result.message, HasSubstr("--resources"));
     ASSERT_THAT(result.message, HasSubstr("-v"));
     ASSERT_THAT(result.message, HasSubstr("ignored"));
+    ASSERT_THAT(result.message, HasSubstr("-O, -O<n>"));
+    ASSERT_THAT(result.message, HasSubstr("default: 1"));
 }
 
 TEST_F(ConfigurationParserTest, longHelpIsTheSameAsDashH) {
@@ -287,7 +290,8 @@ TEST_F(ConfigurationParserTest, makefileCflagsAreIgnored) {
     ASSERT_TRUE(config(result).isCompileOnly());
     ASSERT_THAT(config(result).getPreprocessorArgs(), IsEmpty());
     ASSERT_THAT(config(result).getIgnoredFlags(),
-            ElementsAre("-O2", "-g", "-Wall", "-Wextra", "-Werror", "-pipe", "-fPIC"));
+            ElementsAre("-g", "-Wall", "-Wextra", "-Werror", "-pipe", "-fPIC"));
+    ASSERT_THAT(config(result).optLevel(), Eq(2));
     ASSERT_FALSE(config(result).isVerbose());
 }
 
@@ -295,6 +299,39 @@ TEST_F(ConfigurationParserTest, ignoredFlagsDoNotEatFollowingTokens) {
     auto result = parse({ "trans", "-O", "test.c" });
     ASSERT_TRUE(succeeded(result));
     ASSERT_THAT(*config(result).getSourceFiles().begin(), StrEq("test.c"));
+    ASSERT_THAT(config(result).optLevel(), Eq(1));
+}
+
+TEST_F(ConfigurationParserTest, dashO0IsLevelZero) {
+    auto result = parse({ "trans", "-O0", "test.c" });
+    ASSERT_TRUE(succeeded(result));
+    ASSERT_THAT(config(result).optLevel(), Eq(0));
+    ASSERT_TRUE(config(result).getIgnoredFlags().empty());
+}
+
+TEST_F(ConfigurationParserTest, dashO1IsLevelOne) {
+    auto result = parse({ "trans", "-O1", "test.c" });
+    ASSERT_TRUE(succeeded(result));
+    ASSERT_THAT(config(result).optLevel(), Eq(1));
+}
+
+TEST_F(ConfigurationParserTest, dashO3IsLevelThree) {
+    auto result = parse({ "trans", "-O3", "test.c" });
+    ASSERT_TRUE(succeeded(result));
+    ASSERT_THAT(config(result).optLevel(), Eq(3));
+}
+
+TEST_F(ConfigurationParserTest, lastOptLevelWins) {
+    auto result = parse({ "trans", "-O0", "-O2", "-O0", "test.c" });
+    ASSERT_TRUE(succeeded(result));
+    ASSERT_THAT(config(result).optLevel(), Eq(0));
+}
+
+TEST_F(ConfigurationParserTest, letterOFlagsStayIgnored) {
+    auto result = parse({ "trans", "-Os", "-Og", "-Ofast", "test.c" });
+    ASSERT_TRUE(succeeded(result));
+    ASSERT_THAT(config(result).optLevel(), Eq(1));
+    ASSERT_THAT(config(result).getIgnoredFlags(), ElementsAre("-Os", "-Og", "-Ofast"));
 }
 
 TEST_F(ConfigurationParserTest, warningIgnoreDoesNotSwallowWl) {
@@ -308,7 +345,8 @@ TEST_F(ConfigurationParserTest, dashIStillForwardedAmongIgnoredFlags) {
     auto result = parse({ "trans", "-O2", "-Iinc", "-Wall", "test.c" });
     ASSERT_TRUE(succeeded(result));
     ASSERT_THAT(config(result).getPreprocessorArgs(), ElementsAre("-I", "inc"));
-    ASSERT_THAT(config(result).getIgnoredFlags(), ElementsAre("-O2", "-Wall"));
+    ASSERT_THAT(config(result).getIgnoredFlags(), ElementsAre("-Wall"));
+    ASSERT_THAT(config(result).optLevel(), Eq(2));
 }
 
 TEST_F(ConfigurationParserTest, verboseIsLastWinsAssign) {

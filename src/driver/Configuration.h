@@ -44,6 +44,7 @@ class Configuration {
     void setPreprocessOnly();
     void setVerbose(bool verbose = true);
     void setIgnoredFlags(std::vector<std::string> flags);
+    void setOptLevel(int level);
 
     std::vector<std::string> getSourceFiles() const;
     std::string getLexPath() const;
@@ -65,6 +66,7 @@ class Configuration {
     bool isPreprocessOnly() const;
     bool isVerbose() const;
     const std::vector<std::string>& getIgnoredFlags() const;
+    int optLevel() const;
 
   private:
     std::vector<std::string> sourceFiles;
@@ -82,6 +84,7 @@ class Configuration {
     std::vector<std::string> linkerArgs_ {};
     bool verbose_ {false};
     std::vector<std::string> ignoredFlags_ {};
+    int optLevel_ { 1 };
     std::string outputPath {};
 };
 

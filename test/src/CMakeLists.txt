@@ -259,19 +259,21 @@ target_link_libraries(functionalTest PRIVATE GTest::gmock driver translation_uni
 add_dependencies(functionalTest trans)
 target_compile_definitions(functionalTest PRIVATE "TRANS_BINARY=\"$<TARGET_FILE:trans>\"")
 
-# Dialect x gtest shard matrix (TRANS_ASM_DIALECT). Override: -DFUNCTIONAL_TEST_SHARDS=16
+# Dialect x opt x gtest shard matrix. Override: -DFUNCTIONAL_TEST_SHARDS=16
 set(FUNCTIONAL_TEST_SHARDS 8 CACHE STRING "Number of gtest shards for functionalTest (ctest -j runs them in parallel)")
 if(NOT FUNCTIONAL_TEST_SHARDS MATCHES "^[1-9][0-9]*$")
   message(FATAL_ERROR "FUNCTIONAL_TEST_SHARDS must be a positive integer (got: ${FUNCTIONAL_TEST_SHARDS})")
 endif()
 math(EXPR functional_last_shard "${FUNCTIONAL_TEST_SHARDS} - 1")
 foreach(dialect intel att)
-  foreach(shard RANGE 0 ${functional_last_shard})
-    set(test_name functionalTest_${dialect}_shard${shard})
-    add_test(NAME ${test_name} COMMAND functionalTest)
-    set_tests_properties(${test_name} PROPERTIES
-      LABELS "functional;${dialect}"
-      ENVIRONMENT "TRANS_ASM_DIALECT=${dialect};GTEST_TOTAL_SHARDS=${FUNCTIONAL_TEST_SHARDS};GTEST_SHARD_INDEX=${shard}"
-    )
+  foreach(opt 0 1)
+    foreach(shard RANGE 0 ${functional_last_shard})
+      set(test_name functionalTest_${dialect}_O${opt}_shard${shard})
+      add_test(NAME ${test_name} COMMAND functionalTest)
+      set_tests_properties(${test_name} PROPERTIES
+        LABELS "functional;${dialect}_O${opt}"
+        ENVIRONMENT "TRANS_ASM_DIALECT=${dialect};TRANS_OPT_LEVEL=${opt};GTEST_TOTAL_SHARDS=${FUNCTIONAL_TEST_SHARDS};GTEST_SHARD_INDEX=${shard}"
+      )
+    endforeach()
   endforeach()
 endforeach()

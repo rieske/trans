@@ -21,7 +21,7 @@ enum class Compiler { Trans, Gcc };
 namespace detail {
 
 inline std::string dialectStem(const std::string& base) {
-    return base + "_" + functionalTestDialectTag();
+    return base + "_" + functionalTestMatrixTag();
 }
 
 inline std::string writeTmpC(const std::string& stem, const std::string& body) {
@@ -37,13 +37,8 @@ inline void removePath(const std::string& path) {
     unlink(path.c_str());
 }
 
-inline std::vector<std::string> dialectFlags(std::vector<std::string> flags) {
-    flags.insert(flags.begin(), "-masm=" + functionalTestDialectTag());
-    return flags;
-}
-
 inline int compileTrans(const std::string& sourcePath, const std::string& objectPath, std::string* errOut) {
-    ArgvBuffer args { { sourcePath }, dialectFlags({ "-c", "-o" + objectPath }) };
+    ArgvBuffer args { { sourcePath }, functionalTestFlags({ "-c", "-o" + objectPath }) };
     return runDriver(args, errOut);
 }
 
