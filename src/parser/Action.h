@@ -3,8 +3,6 @@
 
 #include <cstddef>
 #include <memory>
-#include <optional>
-#include <stack>
 #include <string>
 #include <vector>
 
@@ -13,13 +11,12 @@
 
 namespace parser {
 
-class ParsingTable;
 class Grammar;
 class Production;
 using parse_state = size_t;
 
 // Value-type LR action cell (shift / reduce / accept / error).
-// Replaces the former virtual Action hierarchy + unique_ptr heap cells.
+// Table generation and error reporting. The product loop does not execute these.
 class Action {
 public:
     enum class Kind : char {
@@ -32,20 +29,16 @@ public:
     Action() = default;
 
     static Action shift(parse_state state);
-    static Action reduce(const Production& production, const ParsingTable* parsingTable);
+    static Action reduce(const Production& production);
     static Action accept();
     static Action error(parse_state state,
             std::shared_ptr<const std::vector<int>> candidateSymbols,
             const Grammar* grammar);
 
     Kind kind() const noexcept { return kind_; }
-    std::optional<int> reduceDefiningSymbol() const;
     parse_state shiftState() const;
     int productionId() const;
 
-    // Returns true when the parse is finished (accept or error).
-    bool parse(std::stack<parse_state>& parsingStack, TokenStream& tokenStream,
-            SyntaxTreeBuilder& syntaxTreeBuilder) const;
     void reportError(TokenStream& tokenStream, SyntaxTreeBuilder& syntaxTreeBuilder) const;
 
     std::string toString() const;
@@ -56,7 +49,6 @@ private:
     Kind kind_ { Kind::Accept };
     parse_state state_ { 0 };
     const Production* production_ { nullptr };
-    const ParsingTable* parsingTable_ { nullptr };
     std::shared_ptr<const std::vector<int>> candidateSymbols_;
     const Grammar* grammar_ { nullptr };
 };

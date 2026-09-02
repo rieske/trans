@@ -5,7 +5,6 @@
 #include <string>
 
 #include "Grammar.h"
-#include "ParsingTable.h"
 #include "Production.h"
 #include "util/Diagnostic.h"
 
@@ -17,13 +16,6 @@ const char REDUCE_ACTION = 'r';
 const char ERROR_ACTION = 'e';
 const char ACCEPT_ACTION = 'a';
 } // namespace
-
-std::optional<int> Action::reduceDefiningSymbol() const {
-    if (kind_ != Kind::Reduce || production_ == nullptr) {
-        return std::nullopt;
-    }
-    return production_->getDefiningSymbol();
-}
 
 parse_state Action::shiftState() const {
     if (kind_ != Kind::Shift) {
@@ -46,11 +38,10 @@ Action Action::shift(parse_state state) {
     return action;
 }
 
-Action Action::reduce(const Production& production, const ParsingTable* parsingTable) {
+Action Action::reduce(const Production& production) {
     Action action;
     action.kind_ = Kind::Reduce;
     action.production_ = &production;
-    action.parsingTable_ = parsingTable;
     return action;
 }
 
@@ -110,33 +101,6 @@ bool Action::equals(const Action& other) const {
                 && *candidateSymbols_ == *other.candidateSymbols_;
     }
     throw std::logic_error { "Action::equals: unhandled Kind" };
-}
-
-bool Action::parse(std::stack<parse_state>& parsingStack, TokenStream& tokenStream,
-        SyntaxTreeBuilder& syntaxTreeBuilder) const {
-    switch (kind_) {
-    case Kind::Accept:
-        return true;
-    case Kind::Shift: {
-        parsingStack.push(state_);
-        const scanner::Token& token = tokenStream.getCurrentToken();
-        syntaxTreeBuilder.makeTerminalNode(std::string { token.id }, std::string { token.lexeme }, token.context);
-        tokenStream.nextToken();
-        return false;
-    }
-    case Kind::Reduce: {
-        for (size_t i = production_->size(); i > 0; --i) {
-            parsingStack.pop();
-        }
-        parsingStack.push(parsingTable_->go_to(parsingStack.top(), production_->getDefiningSymbol()));
-        syntaxTreeBuilder.makeNonterminalNode(*production_);
-        return syntaxTreeBuilder.aborted();
-    }
-    case Kind::Error:
-        reportError(tokenStream, syntaxTreeBuilder);
-        return true;
-    }
-    throw std::logic_error { "Action::parse: unhandled Kind" };
 }
 
 void Action::reportError(TokenStream& tokenStream, SyntaxTreeBuilder& syntaxTreeBuilder) const {

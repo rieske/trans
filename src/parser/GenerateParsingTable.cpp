@@ -43,7 +43,7 @@ void computeActionTable(const CanonicalCollection& canonicalCollection,
                         actions.addAction(
                                 currentState,
                                 grammar.terminalIdFromBit(bit),
-                                Action::reduce(production, nullptr));
+                                Action::reduce(production));
                     }
                 }
             }

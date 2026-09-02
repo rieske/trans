@@ -28,7 +28,6 @@ target_link_libraries(parserGeneratorTest PRIVATE GTest::gmock_main parser drive
 add_test(NAME parserGeneratorTest COMMAND parserGeneratorTest)
 
 add_executable(parserTest
-        parserTest/AcceptActionTest.cpp
         parserTest/ActionValueTest.cpp
         parserTest/BNFGrammarReaderTest.cpp
         parserTest/CanonicalCollectionTest.cpp
@@ -44,7 +43,6 @@ add_executable(parserTest
         parserTest/ParsingTableTest.cpp
         parserTest/LR1ParserTest.cpp
         parserTest/ProductionTest.cpp
-        parserTest/ShiftActionTest.cpp
         parserTest/TokenMatcher.h
         parserTest/TokenStreamTest.cpp
         )

@@ -11,7 +11,6 @@
 
 #include <memory>
 #include <sstream>
-#include <stack>
 #include <vector>
 
 namespace {
@@ -35,7 +34,7 @@ TEST(Action, equalsComparesKindsAndPayloads) {
 
     Action shift1 = Action::shift(1);
     Action shift2 = Action::shift(2);
-    Action reduce = Action::reduce(production, nullptr);
+    Action reduce = Action::reduce(production);
     Action accept = Action::accept();
     auto cands = std::make_shared<const std::vector<int>>(std::vector<int>{ 1, 2 });
     Action error = Action::error(0, cands, &grammar);
@@ -48,7 +47,7 @@ TEST(Action, equalsComparesKindsAndPayloads) {
     EXPECT_FALSE(shift1.equals(shift2));
     EXPECT_FALSE(shift1.equals(accept));
     EXPECT_TRUE(accept.equals(Action::accept()));
-    EXPECT_TRUE(reduce.equals(Action::reduce(production, nullptr)));
+    EXPECT_TRUE(reduce.equals(Action::reduce(production)));
     EXPECT_TRUE(error.equals(errorSame));
     EXPECT_FALSE(error.equals(errorOther));
     EXPECT_FALSE(reduce.equals(error));
@@ -64,32 +63,14 @@ TEST(Action, toStringReduceAndError) {
     Grammar grammar = builder.build();
     const Production& production = grammar.getRuleById(0);
 
-    Action reduce = Action::reduce(production, nullptr);
+    Action reduce = Action::reduce(production);
     EXPECT_THAT(reduce.toString(), Eq("r " + std::to_string(production.getId())));
+    EXPECT_THAT(Action::shift(42).toString(), Eq("s 42"));
+    EXPECT_THAT(Action::accept().toString(), Eq("a"));
 
     auto cands = std::make_shared<const std::vector<int>>(std::vector<int>{ grammar.getEndSymbol() });
     Action error = Action::error(0, cands, &grammar);
     EXPECT_THAT(error.toString(), Eq("e 0 " + std::to_string(grammar.getEndSymbol())));
-}
-
-TEST(Action, errorParseReportsAndStops) {
-    GrammarBuilder builder;
-    builder.defineRule("<S>", { "a" });
-    Grammar grammar = builder.build();
-    auto cands = std::make_shared<const std::vector<int>>(std::vector<int>{ grammar.getTerminalIDs().front() });
-    Action error = Action::error(0, cands, &grammar);
-
-    std::stack<parse_state> stack;
-    scanner::LexicalSession session;
-    TokenStream tokens { []() { return scanner::Token{ "a", "a", { "t.c", 1 } }; }, session, grammar };
-    NullSyntaxTreeBuilder treeBuilder;
-    std::ostringstream logged;
-    diag::Sink sink { logged };
-    treeBuilder.setSink(&sink);
-    EXPECT_TRUE(error.parse(stack, tokens, treeBuilder));
-    EXPECT_TRUE(treeBuilder.hasError());
-    EXPECT_TRUE(sink.hasErrors());
-    EXPECT_THAT(logged.str(), HasSubstr("t.c:1: error: unexpected token: a expected:"));
 }
 
 TEST(Action, reportErrorDoesNotNeedAStack) {

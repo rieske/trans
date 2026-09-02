@@ -81,7 +81,7 @@ Action ParsingTable::action(parse_state state, const scanner::Token& lookahead) 
     case kShift:
         return Action::shift(looked.payload);
     case kReduce:
-        return Action::reduce(grammar_->getRuleById(looked.payload), this);
+        return Action::reduce(grammar_->getRuleById(looked.payload));
     case kAccept:
         return Action::accept();
     case kEmpty:
