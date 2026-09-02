@@ -801,6 +801,74 @@ world";
             }
         )prg",
         "incomplete type",
+    },
+    SemanticErrorCase{
+        "flexibleArrayMemberBraceInit",
+        R"prg(
+            struct S { int n; int data[]; };
+            struct S s = { 1, { 2, 3 } };
+            int main(void) { return 0; }
+        )prg",
+        "initialization of a flexible array member",
+    },
+    SemanticErrorCase{
+        "flexibleArrayMemberDesignatedInit",
+        R"prg(
+            struct S { int n; int data[]; };
+            struct S s = { .n = 1, .data = { 2 } };
+            int main(void) { return 0; }
+        )prg",
+        "initialization of a flexible array member",
+    },
+    SemanticErrorCase{
+        "flexibleArrayMemberPositionalInit",
+        R"prg(
+            struct S { int n; int data[]; };
+            struct S s = { 1, 2 };
+            int main(void) { return 0; }
+        )prg",
+        "initialization of a flexible array member",
+    },
+    SemanticErrorCase{
+        "flexibleArrayMemberLocalBraceInit",
+        R"prg(
+            int main(void) {
+                struct S { int n; int data[]; } s = { 1, { 2 } };
+                return 0;
+            }
+        )prg",
+        "initialization of a flexible array member",
+    },
+    SemanticErrorCase{
+        "flexibleArrayMemberCompoundLiteral",
+        R"prg(
+            struct S { int n; int data[]; };
+            int main(void) {
+                return ((struct S){ 1, { 2 } }).n;
+            }
+        )prg",
+        "initialization of a flexible array member",
+    },
+    SemanticErrorCase{
+        "vlaBraceInit",
+        R"prg(
+            int main(void) {
+                int n = 3;
+                int a[n] = { 1, 2, 3 };
+                return 0;
+            }
+        )prg",
+        "array brace initializers for incomplete arrays are not implemented",
+    },
+    SemanticErrorCase{
+        "zeroLengthArrayBraceInit",
+        R"prg(
+            int main(void) {
+                int a[0] = { 1 };
+                return 0;
+            }
+        )prg",
+        "array brace initializers for incomplete arrays are not implemented",
     }
 ), [](const testing::TestParamInfo<SemanticErrorCase> &info) { return std::string{info.param.name}; });
 
@@ -849,6 +917,59 @@ TEST(Compiler, floatRemainderIsError) {
     program.assertCompilationErrors("invalid operands to % (integer type required)");
     EXPECT_THAT(program.getCompilationErrors(), Not(HasSubstr("Error: multiplication")));
     EXPECT_THAT(program.getCompilationErrors(), Not(HasSubstr("not implemented")));
+}
+
+TEST(Compiler, flexibleArrayMemberBraceInitIsSinkError) {
+    SourceProgram program{R"prg(
+        struct S { int n; int data[]; };
+        struct S s = { 1, { 2, 3 } };
+        int main(void) { return 0; }
+    )prg"};
+    program.compile();
+    program.assertCompilationErrors("initialization of a flexible array member");
+    EXPECT_THAT(program.getCompilationErrors(), Not(HasSubstr("not implemented")));
+    EXPECT_THAT(program.getCompilationErrors(), Not(HasSubstr("parsing failed")));
+}
+
+TEST(Compiler, vlaBraceInitIsNotFlexibleArrayMemberError) {
+    SourceProgram program{R"prg(
+        int main(void) {
+            int n = 3;
+            int a[n] = { 1, 2, 3 };
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.assertCompilationErrors("array brace initializers for incomplete arrays are not implemented");
+    EXPECT_THAT(program.getCompilationErrors(), Not(HasSubstr("flexible array member")));
+}
+
+TEST(Compiler, zeroLengthArrayBraceInitIsNotFlexibleArrayMemberError) {
+    SourceProgram program{R"prg(
+        int main(void) {
+            int a[0] = { 1 };
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.assertCompilationErrors("array brace initializers for incomplete arrays are not implemented");
+    EXPECT_THAT(program.getCompilationErrors(), Not(HasSubstr("flexible array member")));
+}
+
+TEST(Compiler, flexibleArrayMemberPositionalInitReportsOnce) {
+    SourceProgram program{R"prg(
+        struct S { int n; int data[]; };
+        struct S s = { 1, 2 };
+        int main(void) { return 0; }
+    )prg"};
+    program.compile();
+    program.assertCompilationErrors("initialization of a flexible array member");
+    const std::string err = program.getCompilationErrors();
+    const char* needle = "initialization of a flexible array member";
+    const std::size_t first = err.find(needle);
+    ASSERT_NE(first, std::string::npos);
+    EXPECT_EQ(err.find(needle, first + 1), std::string::npos);
+    EXPECT_THAT(err, Not(HasSubstr("not implemented")));
 }
 
 } // namespace

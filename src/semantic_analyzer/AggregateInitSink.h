@@ -41,11 +41,9 @@ void forEachRepresentationUnit(int size, int offsetBytes, Leaf&& leaf) {
 }
 
 // Implicit zero of an unwritten aggregate: the object representation, not members.
-template<typename Leaf, typename Incomplete>
-void forEachUnwrittenRepresentation(const type::Type& t, int offsetBytes, Leaf&& leaf,
-        Incomplete&& incompleteArrayError) {
+template<typename Leaf>
+void forEachUnwrittenRepresentation(const type::Type& t, int offsetBytes, Leaf&& leaf) {
     if (t.isArray() && t.getArraySize() <= 0) {
-        incompleteArrayError();
         return;
     }
     forEachRepresentationUnit(t.getSize(), offsetBytes, leaf);
