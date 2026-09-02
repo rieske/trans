@@ -96,13 +96,14 @@ ContextualSyntaxNodeBuilder::ContextualSyntaxNodeBuilder(const parser::Grammar& 
     int s_close_paren = grammar.symbolId(")");
     int s_open_bracket = grammar.symbolId("[");
     int s_close_bracket = grammar.symbolId("]");
+    int s_conditional_exp = grammar.symbolId("<conditional_exp>");
 
     bind(s_direct_declarator, { s_identifier }, identifierDeclarator);
     bind(s_direct_declarator, { s_open_paren, s_declarator, s_close_paren }, parenthesizedDeclarator);
-    bind(s_direct_declarator, { s_direct_declarator, s_open_bracket, grammar.symbolId("<conditional_exp>"), s_close_bracket }, arrayDeclarator);
+    bind(s_direct_declarator, { s_direct_declarator, s_open_bracket, s_conditional_exp, s_close_bracket }, arrayDeclarator);
     bind(s_direct_declarator, { s_direct_declarator, s_open_bracket, s_close_bracket }, abstractArrayDeclarator);
     bind(s_direct_declarator, { s_direct_declarator, s_open_bracket, s_type_qualifier_list, s_close_bracket }, abstractArrayDeclaratorQualified);
-    bind(s_direct_declarator, { s_direct_declarator, s_open_bracket, s_type_qualifier_list, grammar.symbolId("<conditional_exp>"), s_close_bracket }, arrayDeclaratorQualified);
+    bind(s_direct_declarator, { s_direct_declarator, s_open_bracket, s_type_qualifier_list, s_conditional_exp, s_close_bracket }, arrayDeclaratorQualified);
     bind(s_direct_declarator, { s_direct_declarator, s_open_paren, s_param_type_list, s_close_paren }, functionDeclarator);
     bind(s_direct_declarator, { s_direct_declarator, s_open_paren, s_close_paren }, noargFunctionDeclarator);
 
@@ -128,14 +129,14 @@ ContextualSyntaxNodeBuilder::ContextualSyntaxNodeBuilder(const parser::Grammar& 
     bind(s_abstract_declarator, { s_pointer, s_direct_abstract_declarator }, pointerToDeclarator);
 
     bind(s_direct_abstract_declarator, { s_open_paren, s_abstract_declarator, s_close_paren }, parenthesizedDeclarator);
-    bind(s_direct_abstract_declarator, { s_direct_abstract_declarator, s_open_bracket, grammar.symbolId("<conditional_exp>"), s_close_bracket }, arrayDeclarator);
-    bind(s_direct_abstract_declarator, { s_open_bracket, grammar.symbolId("<conditional_exp>"), s_close_bracket }, abstractArrayOnlySized);
+    bind(s_direct_abstract_declarator, { s_direct_abstract_declarator, s_open_bracket, s_conditional_exp, s_close_bracket }, arrayDeclarator);
+    bind(s_direct_abstract_declarator, { s_open_bracket, s_conditional_exp, s_close_bracket }, abstractArrayOnlySized);
     bind(s_direct_abstract_declarator, { s_direct_abstract_declarator, s_open_bracket, s_close_bracket }, abstractArrayDeclarator);
     bind(s_direct_abstract_declarator, { s_open_bracket, s_close_bracket }, abstractArrayOnlyUnsized);
     bind(s_direct_abstract_declarator, { s_direct_abstract_declarator, s_open_bracket, s_type_qualifier_list, s_close_bracket }, abstractArrayDeclaratorQualified);
     bind(s_direct_abstract_declarator, { s_open_bracket, s_type_qualifier_list, s_close_bracket }, abstractArrayOnlyQualifiedUnsized);
-    bind(s_direct_abstract_declarator, { s_direct_abstract_declarator, s_open_bracket, s_type_qualifier_list, grammar.symbolId("<conditional_exp>"), s_close_bracket }, arrayDeclaratorQualified);
-    bind(s_direct_abstract_declarator, { s_open_bracket, s_type_qualifier_list, grammar.symbolId("<conditional_exp>"), s_close_bracket }, abstractArrayOnlyQualifiedSized);
+    bind(s_direct_abstract_declarator, { s_direct_abstract_declarator, s_open_bracket, s_type_qualifier_list, s_conditional_exp, s_close_bracket }, arrayDeclaratorQualified);
+    bind(s_direct_abstract_declarator, { s_open_bracket, s_type_qualifier_list, s_conditional_exp, s_close_bracket }, abstractArrayOnlyQualifiedSized);
     bind(s_direct_abstract_declarator, { s_direct_abstract_declarator, s_open_paren, s_param_type_list, s_close_paren }, functionDeclarator);
     bind(s_direct_abstract_declarator, { s_open_paren, s_param_type_list, s_close_paren }, abstractFuncOnly);
     bind(s_direct_abstract_declarator, { s_direct_abstract_declarator, s_open_paren, s_close_paren }, noargFunctionDeclarator);
@@ -267,7 +268,6 @@ ContextualSyntaxNodeBuilder::ContextualSyntaxNodeBuilder(const parser::Grammar& 
     bind(s_logical_or_exp, { s_logical_and_exp }, doNothing);
     bind(s_logical_or_exp, { s_logical_or_exp, grammar.symbolId("||"), s_logical_and_exp }, logicalOrExpression);
 
-    int s_conditional_exp = grammar.symbolId("<conditional_exp>");
     bind(s_conditional_exp, { s_logical_or_exp }, doNothing);
     bind(s_conditional_exp, { s_logical_or_exp, grammar.symbolId("?"), s_exp, grammar.symbolId(":"), s_conditional_exp }, conditionalExpression);
 
@@ -356,8 +356,8 @@ ContextualSyntaxNodeBuilder::ContextualSyntaxNodeBuilder(const parser::Grammar& 
     int s_case = grammar.symbolId("case");
     int s_default = grammar.symbolId("default");
     // s_identifier defined earlier with declarators / primary_exp.
-    bind(s_labeled_stat_matched, { s_case, grammar.symbolId("<conditional_exp>"), s_colon, s_matched }, caseLabel);
-    bind(s_labeled_stat_unmatched, { s_case, grammar.symbolId("<conditional_exp>"), s_colon, s_unmatched }, caseLabel);
+    bind(s_labeled_stat_matched, { s_case, s_conditional_exp, s_colon, s_matched }, caseLabel);
+    bind(s_labeled_stat_unmatched, { s_case, s_conditional_exp, s_colon, s_unmatched }, caseLabel);
     bind(s_labeled_stat_matched, { s_default, s_colon, s_matched }, defaultLabel);
     bind(s_labeled_stat_unmatched, { s_default, s_colon, s_unmatched }, defaultLabel);
     bind(s_labeled_stat_matched, { s_identifier, s_colon, s_matched }, namedLabel);
@@ -473,8 +473,6 @@ ContextualSyntaxNodeBuilder::ContextualSyntaxNodeBuilder(const parser::Grammar& 
     int s_enumerator = grammar.symbolId("<enumerator>");
     int s_enum_kw = grammar.symbolId("enum");
     int s_id_for_enum = grammar.symbolId("id");
-    int s_enum_const_exp = grammar.symbolId("<conditional_exp>");
-
     bind(s_enumerator, { s_id_for_enum }, [](AbstractSyntaxTreeBuilderContext& context) {
         auto id = context.popTerminal();
         if (context.environment().session().enums.containsInCurrentScope(id.value)) {
@@ -483,7 +481,7 @@ ContextualSyntaxNodeBuilder::ContextualSyntaxNodeBuilder(const parser::Grammar& 
         }
         context.environment().addEnumerator(id.value);
     });
-    bind(s_enumerator, { s_id_for_enum, grammar.symbolId("="), s_enum_const_exp }, [](AbstractSyntaxTreeBuilderContext& context) {
+    bind(s_enumerator, { s_id_for_enum, grammar.symbolId("="), s_conditional_exp }, [](AbstractSyntaxTreeBuilderContext& context) {
                 auto expr = context.popExpression();
                 context.popTerminal(); // =
                 auto id = context.popTerminal();
@@ -594,14 +592,14 @@ ContextualSyntaxNodeBuilder::ContextualSyntaxNodeBuilder(const parser::Grammar& 
     bind(s_struct_declarator, { s_declarator }, [](AbstractSyntaxTreeBuilderContext& context) {
         context.addStructDeclarator(context.popDeclarator());
     });
-    bind(s_struct_declarator, { s_declarator, grammar.symbolId(":"), grammar.symbolId("<conditional_exp>") }, [](AbstractSyntaxTreeBuilderContext& context) {
+    bind(s_struct_declarator, { s_declarator, grammar.symbolId(":"), s_conditional_exp }, [](AbstractSyntaxTreeBuilderContext& context) {
                 const int width = foldBitFieldWidth(context);
                 if (context.failed()) {
                     return;
                 }
                 context.addStructDeclarator(context.popDeclarator(), width);
             });
-    bind(s_struct_declarator, { grammar.symbolId(":"), grammar.symbolId("<conditional_exp>") }, [](AbstractSyntaxTreeBuilderContext& context) {
+    bind(s_struct_declarator, { grammar.symbolId(":"), s_conditional_exp }, [](AbstractSyntaxTreeBuilderContext& context) {
                 const int width = foldBitFieldWidth(context);
                 if (context.failed()) {
                     return;
