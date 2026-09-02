@@ -1,6 +1,7 @@
 #include "AggregateInitWalk.h"
 
 #include "AggregateDesignatorPath.h"
+#include "AggregateInitError.h"
 #include "CharArrayStringInit.h"
 
 #include "ast/InitializerListExpression.h"
@@ -27,7 +28,7 @@ std::optional<type::FoundMember> firstSubobjectOf(const type::Type& t, int baseO
     }
     if (t.isArray()) {
         if (t.getArraySize() <= 0) {
-            sink.error("array brace initializers for incomplete arrays are not implemented");
+            sink.error(unsizedArrayInitError(t));
             return std::nullopt;
         }
         return place(t.getElementType(), baseOffset);
@@ -158,7 +159,7 @@ std::size_t fillSlottedFromStream(const AggregateSlots& slots,
         const std::vector<ast::InitializerElement>& elements, std::size_t ei, AggregateInitSink& sink) {
     const int n = slots.count();
     if (slots.isArray && n <= 0) {
-        sink.error("array brace initializers for incomplete arrays are not implemented");
+        sink.error(unsizedArrayInitError(slots.type));
         return ei;
     }
     for (int i = 0; i < n && sink.ok(); ++i) {
@@ -252,7 +253,7 @@ std::size_t fillFromPath(const type::Type& root, int baseOffset, std::vector<Des
         if (item.isArray) {
             const int n = container.getArraySize();
             if (n <= 0) {
-                sink.error("array brace initializers for incomplete arrays are not implemented");
+                sink.error(unsizedArrayInitError(container));
                 return ei;
             }
             const int stride = container.getElementStride();
@@ -335,7 +336,7 @@ void walkSlottedAggregate(const AggregateSlots& slots, const std::vector<ast::In
         AggregateInitSink& sink, const std::function<void(std::size_t&)>& applyDesignator) {
     const int n = slots.count();
     if (slots.isArray && n <= 0) {
-        sink.error("array brace initializers for incomplete arrays are not implemented");
+        sink.error(unsizedArrayInitError(slots.type));
         return;
     }
     std::size_t ei = 0;
@@ -371,7 +372,7 @@ void walkSlottedAggregate(const AggregateSlots& slots, const std::vector<ast::In
         if (slot->type.isAggregate() && !nested) {
             const std::size_t before = ei;
             ei = fillFromStream(slot->type, slot->offsetBytes, src, ei, sink);
-            if (ei == before) {
+            if (ei == before && sink.ok()) {
                 sink.onUnwritten(*slot);
             }
             ++positional;

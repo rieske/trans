@@ -40,9 +40,6 @@ void FieldPlanSink::onUnwritten(const type::FoundMember& slot) {
                 field.zeroInitialize = true;
                 field.sourceName = zero.getName();
                 plan.push_back(std::move(field));
-            },
-            [&]() {
-                error("array brace initializers for incomplete arrays are not implemented");
             });
 }
 
@@ -165,9 +162,6 @@ void DataWordSink::onUnwritten(const type::FoundMember& slot) {
     forEachUnwrittenRepresentation(slot.type, slot.offsetBytes,
             [&](int off, const type::Type& storeType) {
                 storeBitsAt(words, wordCount, off, 0, storeType.getSize());
-            },
-            [&]() {
-                error("array brace initializers for incomplete arrays are not implemented");
             });
 }
 

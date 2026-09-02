@@ -629,6 +629,39 @@ TEST(Compiler, flexibleArrayMemberMustBeLast) {
     program.assertCompilationErrors("structure member has incomplete type");
 }
 
+TEST(Compiler, flexibleArrayMemberOmittedInitializer) {
+    SourceProgram program{R"prg(int printf(const char *, ...);
+        struct S {
+            int n;
+            int data[];
+        };
+        struct S s = { 1 };
+        int main() {
+            struct S t = { 2 };
+            printf("%d %d", s.n, t.n);
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("1 2");
+}
+
+TEST(Compiler, flexibleArrayMemberStringInit) {
+    SourceProgram program{R"prg(int printf(const char *, ...);
+        struct T {
+            int n;
+            char s[];
+        };
+        struct T t = { 1, "hi" };
+        int main() {
+            printf("%d %d %d %d", t.n, t.s[0], t.s[1], t.s[2]);
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("1 104 105 0");
+}
+
 TEST(Compiler, flexibleArrayMemberCannotBeOnlyMember) {
     SourceProgram program{R"prg(
         struct S {

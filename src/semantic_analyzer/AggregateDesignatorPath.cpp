@@ -1,5 +1,7 @@
 #include "AggregateDesignatorPath.h"
 
+#include "AggregateInitError.h"
+
 #include <optional>
 
 namespace semantic_analyzer {
@@ -71,7 +73,7 @@ bool resolveDesignator(const type::Type& destType, int baseOffset,
             const long idx = *step.index;
             const int n = cur.getArraySize();
             if (n <= 0) {
-                error = "array brace initializers for incomplete arrays are not implemented";
+                error = unsizedArrayInitError(cur);
                 return false;
             }
             if (idx < 0 || idx >= n) {
