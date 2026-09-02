@@ -6,7 +6,6 @@
 
 #include "Grammar.h"
 #include "Production.h"
-#include "util/Diagnostic.h"
 
 namespace parser {
 
@@ -101,19 +100,6 @@ bool Action::equals(const Action& other) const {
                 && *candidateSymbols_ == *other.candidateSymbols_;
     }
     throw std::logic_error { "Action::equals: unhandled Kind" };
-}
-
-void Action::reportError(TokenStream& tokenStream, SyntaxTreeBuilder& syntaxTreeBuilder) const {
-    syntaxTreeBuilder.err();
-    const scanner::Token& currentToken = tokenStream.getCurrentToken();
-    std::ostringstream message;
-    message << "unexpected token: " << currentToken.lexeme << " expected:";
-    if (candidateSymbols_ && grammar_) {
-        for (const auto candidate : *candidateSymbols_) {
-            message << " " << grammar_->getSymbolById(candidate);
-        }
-    }
-    syntaxTreeBuilder.sink().error(currentToken.context, message.str());
 }
 
 } // namespace parser

@@ -13,6 +13,7 @@
 namespace parser {
 
 struct ParsingTableAccess;
+class SyntaxTreeBuilder;
 
 class ParsingTable {
 public:
@@ -29,6 +30,8 @@ public:
 	explicit ParsingTable(const Grammar* grammar);
 
 	Action action(parse_state state, const scanner::Token& lookahead) const;
+	void reportError(parse_state state, const scanner::Token& current,
+			SyntaxTreeBuilder& syntaxTreeBuilder) const;
 	ActionCell cell(parse_state state, int symbolId) const;
 	parse_state go_to(parse_state state, int nonterminal) const;
 	std::optional<parse_state> tryGoTo(parse_state state, int nonterminal) const;

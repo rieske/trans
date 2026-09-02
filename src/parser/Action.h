@@ -6,17 +6,12 @@
 #include <string>
 #include <vector>
 
-#include "TokenStream.h"
-#include "SyntaxTreeBuilder.h"
-
 namespace parser {
 
 class Grammar;
 class Production;
 using parse_state = size_t;
 
-// Value-type LR action cell (shift / reduce / accept / error).
-// Table generation and error reporting. The product loop does not execute these.
 class Action {
 public:
     enum class Kind : char {
@@ -38,8 +33,6 @@ public:
     Kind kind() const noexcept { return kind_; }
     parse_state shiftState() const;
     int productionId() const;
-
-    void reportError(TokenStream& tokenStream, SyntaxTreeBuilder& syntaxTreeBuilder) const;
 
     std::string toString() const;
     bool equals(const Action& other) const;

@@ -8,7 +8,6 @@
 #include "Production.h"
 #include "SyntaxTreeBuilder.h"
 #include "TokenStream.h"
-#include "Action.h"
 #include "scanner/Scanner.h"
 #include "scanner/Token.h"
 #include "scanner/TokenFilter.h"
@@ -121,7 +120,7 @@ LrFinish runLrParse(const ParsingTable& parsingTable, TokenStream& tokenStream,
             }
             break;
         default:
-            parsingTable.action(state, current).reportError(tokenStream, syntaxTreeBuilder);
+            parsingTable.reportError(state, current, syntaxTreeBuilder);
             return LrFinish::Complete;
         }
     }
