@@ -237,10 +237,9 @@ void SemanticAnalysisVisitor::visit(ast::IdentifierExpression& identifier) {
     // Ordinary objects/functions hide enumerators in the same scope (C).
     // Prefer a visible symbol before a parse-time enumerator fold.
     // Clear that fold so the name is an lvalue again.
-    if (symbolTable.hasSymbol(name)) {
+    if (const auto* entry = symbolTable.find(name)) {
         identifier.clearFoldedConstant();
-        auto entry = symbolTable.lookup(name);
-        if (type::isBareFunction(entry.getType())) {
+        if (type::isBareFunction(entry->getType())) {
             // Dual table (see SymbolTable::insertFunction): bare-function ValueEntry for
             // visibility plus functions[] for designator metadata. Parameters are
             // pointer-to-function after adjustedParameterType, so they take the value path.
@@ -251,7 +250,7 @@ void SemanticAnalysisVisitor::visit(ast::IdentifierExpression& identifier) {
             setFunctionDesignator(identifier, symbolTable, annotations());
             return;
         }
-        identifier.setResultSymbol(annotations(), entry);
+        identifier.setResultSymbol(annotations(), *entry);
         return;
     }
 
