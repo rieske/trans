@@ -6,6 +6,7 @@
 #include "codegen/Instruction.h"
 #include "codegen/IrPasses.h"
 #include "codegen/Value.h"
+#include "types/Type.h"
 
 namespace {
 
@@ -41,6 +42,22 @@ int lastOf(const std::vector<Value>& values, int id) {
 
 bool disjointSlots(int a, int aWords, int b, int bWords) {
     return b + bWords <= a || a + aWords <= b;
+}
+
+TEST(FrameLayout, addFrameTempSequentialUsesShareSlot) {
+    IrStringTable strings;
+    Procedure p;
+    p.name = strings.intern("f");
+    const int t1 = addFrameTemp(strings, p, type::signedInteger());
+    const int t2 = addFrameTemp(strings, p, type::signedInteger());
+
+    std::vector<Value> values = packFrameValues(
+            p.frame.locals,
+            {
+                    ir::assignConstant(strings.intern("1"), t1),
+                    ir::assignConstant(strings.intern("2"), t2),
+            });
+    EXPECT_EQ(slotOf(values, t1), slotOf(values, t2));
 }
 
 TEST(FrameLayout, oneWordTempsReuseAfterLastUse) {

@@ -1,9 +1,12 @@
 #include "Instruction.h"
 
 #include "SysVCallConv.h"
+#include "ValueKind.h"
 #include "types/ObjectAbi.h"
+#include "types/SysVClassify.h"
 
 #include <stdexcept>
+#include <string>
 
 namespace codegen {
 
@@ -22,6 +25,25 @@ void internProcedureTemps(IrStringTable& strings, Procedure& procedure) {
     for (std::size_t i = 0; i < SYSV_SSE_ARG_REGS; ++i) {
         procedure.vaXmmHomes[i] = strings.intern(vaXmmHomeName(i));
     }
+}
+
+int addFrameTemp(IrStringTable& strings, Procedure& procedure, const type::Type& type) {
+    int n = 0;
+    std::string name;
+    do {
+        name = "__t" + std::to_string(n++);
+    } while (strings.find(name) != kNoSymbol);
+    Value scratch {
+            strings.intern(name),
+            0,
+            valueKindFromCType(type),
+            type.getSize(),
+            type::sysv::classify(type)
+    };
+    scratch.markExpressionTemp();
+    const int scratchId = scratch.id();
+    procedure.frame.locals.push_back(std::move(scratch));
+    return scratchId;
 }
 
 namespace {

@@ -10,6 +10,10 @@
 #include "codegen/Value.h"
 #include "symbols/AddressPlan.h"
 
+namespace type {
+class Type;
+}
+
 namespace codegen {
 
 // Mid-end opcode stream. Procedure::body stays the persistent linear
@@ -108,6 +112,7 @@ struct IntermediateRepresentation {
 };
 
 void internProcedureTemps(IrStringTable& strings, Procedure& procedure);
+int addFrameTemp(IrStringTable& strings, Procedure& procedure, const type::Type& type);
 
 enum class InstructionClass { Label, Terminator, Ordinary };
 

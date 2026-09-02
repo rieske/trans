@@ -4,41 +4,13 @@
 #include <stdexcept>
 
 #include "Instruction.h"
-#include "ValueKind.h"
-#include "types/ObjectAbi.h"
-#include "types/SysVClassify.h"
 #include "types/TypeQuery.h"
 
 namespace codegen {
 
 int CodeGeneratingVisitor::addScratchValue(const type::Type& scratchType) {
     assert(currentProcedure_ && "scratch Value outside of a procedure");
-    int index = 0;
-    auto consider = [&index](const Value& v) {
-        const int end = v.getIndex() + type::object_abi::valueWords(v.getSizeInBytes());
-        if (end > index) {
-            index = end;
-        }
-    };
-    for (const auto& v : currentProcedure_->frame.locals) {
-        consider(v);
-    }
-    for (const auto& v : currentProcedure_->frame.arguments) {
-        consider(v);
-    }
-    const int home = type::object_abi::takeAlignedWords(
-            index, scratchType.getAlignment(), type::object_abi::valueWords(scratchType.getSize()));
-    Value scratch {
-            id("__cs" + std::to_string(convertLabel_++)),
-            home,
-            valueKindFromCType(scratchType),
-            scratchType.getSize(),
-            type::sysv::classify(scratchType)
-    };
-    scratch.markExpressionTemp();
-    const int scratchId = scratch.id();
-    currentProcedure_->frame.locals.push_back(std::move(scratch));
-    return scratchId;
+    return addFrameTemp(module_.strings, *currentProcedure_, scratchType);
 }
 
 namespace {
