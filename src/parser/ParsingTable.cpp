@@ -13,11 +13,6 @@
 namespace {
 static Logger& logger = LogManager::getComponentLogger(Component::PARSER);
 
-constexpr uint8_t kEmpty = 0;
-constexpr uint8_t kShift = 1;
-constexpr uint8_t kReduce = 2;
-constexpr uint8_t kAccept = 3;
-
 int terminalColumn(int symbolId, int minTerminal) {
     return symbolId - minTerminal;
 }
@@ -66,10 +61,10 @@ ParsingTable::ActionCell ParsingTable::cell(parse_state state, int symbolId) con
             && terminalColumns_ > 0) {
         const std::size_t index = cellIndex(state, terminalColumn(symbolId, minTerminal_), terminalColumns_);
         const uint8_t kind = actionKind_[index];
-        if (kind == kShift || kind == kReduce || kind == kAccept) {
+        if (kind == kCellShift || kind == kCellReduce || kind == kCellAccept) {
             return { kind, actionPayload_[index] };
         }
-        if (kind != kEmpty) {
+        if (kind != kCellEmpty) {
             throw std::logic_error { "ParsingTable::cell: invalid compiled cell kind" };
         }
     }
@@ -81,13 +76,13 @@ Action ParsingTable::action(parse_state state, const scanner::Token& lookahead) 
 
     const ActionCell looked = cell(state, lookahead.symbolId);
     switch (looked.kind) {
-    case kShift:
+    case kCellShift:
         return Action::shift(looked.payload);
-    case kReduce:
+    case kCellReduce:
         return Action::reduce(grammar_->getRuleById(looked.payload));
-    case kAccept:
+    case kCellAccept:
         return Action::accept();
-    case kEmpty:
+    case kCellEmpty:
         break;
     default:
         throw std::logic_error { "ParsingTable::action: invalid compiled cell kind" };
@@ -99,11 +94,10 @@ Action ParsingTable::action(parse_state state, const scanner::Token& lookahead) 
             return Action::error(0,
                     std::make_shared<const std::vector<int>>(
                             errorCandidates_.begin() + begin,
-                            errorCandidates_.begin() + end),
-                    grammar_);
+                            errorCandidates_.begin() + end));
         }
     }
-    return Action::error(0, kEmptyCandidates, grammar_);
+    return Action::error(0, kEmptyCandidates);
 }
 
 void ParsingTable::reportError(parse_state state, const scanner::Token& current,

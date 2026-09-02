@@ -4,7 +4,6 @@
 #include <stdexcept>
 #include <string>
 
-#include "Grammar.h"
 #include "Production.h"
 
 namespace parser {
@@ -51,13 +50,11 @@ Action Action::accept() {
 }
 
 Action Action::error(parse_state state,
-        std::shared_ptr<const std::vector<int>> candidateSymbols,
-        const Grammar* grammar) {
+        std::shared_ptr<const std::vector<int>> candidateSymbols) {
     Action action;
     action.kind_ = Kind::Error;
     action.state_ = state;
     action.candidateSymbols_ = std::move(candidateSymbols);
-    action.grammar_ = grammar;
     return action;
 }
 

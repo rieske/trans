@@ -8,7 +8,6 @@
 
 namespace parser {
 
-class Grammar;
 class Production;
 using parse_state = size_t;
 
@@ -27,8 +26,7 @@ public:
     static Action reduce(const Production& production);
     static Action accept();
     static Action error(parse_state state,
-            std::shared_ptr<const std::vector<int>> candidateSymbols,
-            const Grammar* grammar);
+            std::shared_ptr<const std::vector<int>> candidateSymbols);
 
     Kind kind() const noexcept { return kind_; }
     parse_state shiftState() const;
@@ -43,7 +41,6 @@ private:
     parse_state state_ { 0 };
     const Production* production_ { nullptr };
     std::shared_ptr<const std::vector<int>> candidateSymbols_;
-    const Grammar* grammar_ { nullptr };
 };
 
 } // namespace parser

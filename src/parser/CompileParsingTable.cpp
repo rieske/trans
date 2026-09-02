@@ -15,11 +15,6 @@
 namespace parser {
 namespace {
 
-constexpr uint8_t kEmpty = 0;
-constexpr uint8_t kShift = 1;
-constexpr uint8_t kReduce = 2;
-constexpr uint8_t kAccept = 3;
-
 template<typename T>
 void writeCommaList(std::ostream& out, const std::vector<T>& values) {
     for (std::size_t i = 0; i < values.size(); ++i) {
@@ -56,11 +51,11 @@ void requireFitsI16(std::size_t value, const char* what) {
 uint8_t compiledKind(const Action& action) {
     switch (action.kind()) {
     case Action::Kind::Shift:
-        return kShift;
+        return ParsingTable::kCellShift;
     case Action::Kind::Reduce:
-        return kReduce;
+        return ParsingTable::kCellReduce;
     case Action::Kind::Accept:
-        return kAccept;
+        return ParsingTable::kCellAccept;
     case Action::Kind::Error:
         throw std::logic_error { "compileParsingTable: error is not an explicit cell" };
     }
@@ -165,7 +160,8 @@ ParsingTable ParsingTableAccess::compile(
     table.minNonterminal_ = minMaxOrZero(minNonterminal, !haveNonterminal);
     table.maxNonterminal_ = minMaxOrZero(maxNonterminal, !haveNonterminal);
     table.nonterminalColumns_ = nonterminalColumns;
-    table.actionKind_.assign(states * static_cast<std::size_t>(std::max(terminalColumns, 0)), kEmpty);
+    table.actionKind_.assign(states * static_cast<std::size_t>(std::max(terminalColumns, 0)),
+            ParsingTable::kCellEmpty);
     table.actionPayload_.assign(table.actionKind_.size(), 0);
     table.gotos_.assign(states * static_cast<std::size_t>(std::max(nonterminalColumns, 0)), -1);
     table.terminalIds_ = grammar.getTerminalIDs();

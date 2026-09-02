@@ -2,7 +2,6 @@
 #include "gmock/gmock.h"
 
 #include "parser/Action.h"
-#include "parser/GrammarBuilder.h"
 #include "parser/LookaheadActionTable.h"
 
 #include <memory>
@@ -44,11 +43,8 @@ TEST(LookaheadActionTable, throwsOnConflictingAction) {
 
 TEST(LookaheadActionTable, addActionRejectsErrorCells) {
     LookaheadActionTable table;
-    GrammarBuilder builder;
-    builder.defineRule("<S>", { "a" });
-    Grammar grammar = builder.build();
     auto candidates = std::make_shared<const std::vector<int>>(std::vector<int>{ 1 });
-    EXPECT_THROW(table.addAction(0, 1, Action::error(0, candidates, &grammar)), std::runtime_error);
+    EXPECT_THROW(table.addAction(0, 1, Action::error(0, candidates)), std::runtime_error);
 }
 
 TEST(LookaheadActionTable, storesErrorCandidatesWithoutSynthesizingActions) {

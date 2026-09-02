@@ -23,11 +23,10 @@ TEST(Action, equalsComparesKindsAndPayloads) {
     Action reduce = Action::reduce(production);
     Action accept = Action::accept();
     auto cands = std::make_shared<const std::vector<int>>(std::vector<int>{ 1, 2 });
-    Action error = Action::error(0, cands, &grammar);
-    Action errorSame = Action::error(0, cands, &grammar);
+    Action error = Action::error(0, cands);
+    Action errorSame = Action::error(0, cands);
     Action errorOther = Action::error(0,
-            std::make_shared<const std::vector<int>>(std::vector<int>{ 3 }),
-            &grammar);
+            std::make_shared<const std::vector<int>>(std::vector<int>{ 3 }));
 
     EXPECT_TRUE(shift1.equals(Action::shift(1)));
     EXPECT_FALSE(shift1.equals(shift2));
@@ -55,7 +54,7 @@ TEST(Action, toStringReduceAndError) {
     EXPECT_THAT(Action::accept().toString(), Eq("a"));
 
     auto cands = std::make_shared<const std::vector<int>>(std::vector<int>{ grammar.getEndSymbol() });
-    Action error = Action::error(0, cands, &grammar);
+    Action error = Action::error(0, cands);
     EXPECT_THAT(error.toString(), Eq("e 0 " + std::to_string(grammar.getEndSymbol())));
 }
 
