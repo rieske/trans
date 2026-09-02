@@ -110,6 +110,18 @@ void AnnotationStore::setCallPlan(NodeRef node, CallPlan plan) {
     this->node(node).callPlan = std::move(plan);
 }
 
+void AnnotationStore::setFunctionFrame(NodeRef node, FunctionFrame frame) {
+    this->node(node).functionFrame = std::move(frame);
+}
+
+const FunctionFrame* AnnotationStore::functionFrame(NodeRef node) const {
+    auto* n = nodeIfAny(node);
+    if (!n || !n->functionFrame) {
+        return nullptr;
+    }
+    return &*n->functionFrame;
+}
+
 const CallPlan* AnnotationStore::callPlan(NodeRef node) const {
     auto* n = nodeIfAny(node);
     if (!n || !n->callPlan) {

@@ -895,30 +895,31 @@ void CodeGeneratingVisitor::visit(ast::FormalArgument& parameter) {
 }
 
 void CodeGeneratingVisitor::visit(ast::FunctionDefinition& function) {
-    // Semantic analysis skips setSymbol when the definition is invalid (e.g. name conflicts).
-    if (!function.hasSymbol()) {
+    // SA writes a frame only for a valid definition (e.g. no name conflict).
+    const auto* frame = store_.functionFrame(&function);
+    if (!frame) {
         return;
     }
 
     function.visitDeclarator(*this);
 
     std::vector<Value> values;
-    for (auto& valueSymbol : function.getLocalVariables()) {
+    for (const auto& valueSymbol : frame->locals) {
         values.push_back(valueFromSymbol(module_.strings, valueSymbol.second));
     }
     std::vector<Value> arguments;
-    for (auto& argumentSymbol : function.getArguments()) {
+    for (const auto& argumentSymbol : frame->arguments) {
         arguments.push_back(valueFromSymbol(module_.strings, argumentSymbol));
     }
     Procedure procedure;
-    procedure.name = id(function.getSymbol()->getName());
+    procedure.name = id(frame->symbol.getName());
     procedure.frame.locals = std::move(values);
     procedure.frame.arguments = std::move(arguments);
-    const bool variadic = function.getSymbol()->getType().isVariadic();
+    const bool variadic = frame->symbol.getType().isVariadic();
     procedure.memoryReturn = type::object_abi::typeNeedsMemoryReturn(
-            function.getSymbol()->returnType());
+            frame->symbol.returnType());
     procedure.variadic = variadic;
-    procedure.exported = !function.getSymbol()->hasInternalLinkage();
+    procedure.exported = !frame->symbol.hasInternalLinkage();
     internProcedureTemps(module_.strings, procedure);
 
     std::vector<Instruction>* previousBody = currentBody_;

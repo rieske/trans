@@ -38,17 +38,6 @@ void FunctionDefinition::visitBodyChildren(AbstractSyntaxTreeVisitor& visitor) {
     body->visitChildren(visitor);
 }
 
-void FunctionDefinition::setSymbol(symbols::FunctionEntry symbol) {
-    this->symbol = std::make_unique<symbols::FunctionEntry>(symbol);
-}
-
-symbols::FunctionEntry* FunctionDefinition::getSymbol() const {
-    if (!symbol) {
-        throw std::runtime_error { "FunctionDefinition::getSymbol() == nullptr" };
-    }
-    return symbol.get();
-}
-
 std::string FunctionDefinition::getName() const {
     return declarator->getName();
 }
@@ -71,22 +60,6 @@ std::vector<std::string> FunctionDefinition::definedFunctionParameterNames() con
         throw std::logic_error { "function definition declarator is not a function" };
     }
     return fn->parameterNames();
-}
-
-void FunctionDefinition::setLocalVariables(std::map<std::string, symbols::ValueEntry> localVariables) {
-    this->localVariables = localVariables;
-}
-
-void FunctionDefinition::setArguments(std::vector<symbols::ValueEntry> arguments) {
-    this->arguments = arguments;
-}
-
-std::map<std::string, symbols::ValueEntry> FunctionDefinition::getLocalVariables() const {
-    return localVariables;
-}
-
-std::vector<symbols::ValueEntry> FunctionDefinition::getArguments() const {
-    return arguments;
 }
 
 } // namespace ast
