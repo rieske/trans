@@ -90,10 +90,6 @@ const LabelEntry* AnnotationStore::label(NodeRef node, LabelSlot slot) const {
     return it->second.get();
 }
 
-bool AnnotationStore::hasLabel(NodeRef node, LabelSlot slot) const {
-    return label(node, slot) != nullptr;
-}
-
 void AnnotationStore::setAddressPlan(NodeRef node, AddressPlan plan) {
     this->node(node).addressPlan = std::move(plan);
 }
@@ -152,10 +148,6 @@ const CallPlan* AnnotationStore::callPlan(NodeRef node) const {
         return nullptr;
     }
     return &*n->callPlan;
-}
-
-void AnnotationStore::addStructFieldInit(NodeRef node, StructFieldInit init) {
-    this->node(node).fieldInits.push_back(std::move(init));
 }
 
 void AnnotationStore::setStructFieldInits(NodeRef node, std::vector<StructFieldInit> inits) {

@@ -63,7 +63,6 @@ class Configuration {
     std::string getPreprocessorStdFlag() const;
     const std::vector<std::string>& getPreprocessorArgs() const;
     const std::vector<std::string>& getLinkerArgs() const;
-    bool isPreprocessOnly() const;
     bool isVerbose() const;
     const std::vector<std::string>& getIgnoredFlags() const;
     int optLevel() const;

@@ -27,10 +27,6 @@ type::Function FunctionEntry::getType() const {
     return type;
 }
 
-std::size_t FunctionEntry::argumentCount() const {
-    return type.argumentCount();
-}
-
 const std::vector<type::Type>& FunctionEntry::arguments() const {
     return type.getArguments();
 }

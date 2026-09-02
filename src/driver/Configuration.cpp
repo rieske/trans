@@ -177,10 +177,6 @@ const std::vector<std::string>& Configuration::getLinkerArgs() const {
     return linkerArgs_;
 }
 
-bool Configuration::isPreprocessOnly() const {
-    return stopAfter_ == StopAfter::Preprocess;
-}
-
 bool Configuration::isVerbose() const {
     return verbose_;
 }

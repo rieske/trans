@@ -20,7 +20,6 @@ public:
     translation_unit::Context getContext() const;
     bool hasInternalLinkage() const;
 
-    std::size_t argumentCount() const;
     const std::vector<type::Type>& arguments() const;
     const type::Type& returnType() const;
 

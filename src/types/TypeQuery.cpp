@@ -25,20 +25,6 @@ bool isNullConstantCandidate(const Type& t) {
 
 } // namespace
 
-bool productValueCompatible(const Type& a, const Type& b) {
-    Type la = productDecay(a);
-    Type ra = productDecay(b);
-    if (la.isVoid() || ra.isVoid()) {
-        return false;
-    }
-    // Product-loose record-to-record (struct/union); pin tests cover structure pairs
-    // and union pairs intentionally.
-    if (la.isRecord() || ra.isRecord()) {
-        return recordsCompatible(la, ra);
-    }
-    return isProductScalar(la) && isProductScalar(ra);
-}
-
 bool productAssignFrom(const Type& dest, const Type& source) {
     // Own gate (not "valueCompatible plus ..."): see TypeQuery.h.
     if (dest.isVoid() || isBareFunction(dest)) {

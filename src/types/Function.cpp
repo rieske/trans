@@ -29,10 +29,6 @@ const std::vector<Type>& Function::getArguments() const {
     return impl_->arguments;
 }
 
-std::size_t Function::argumentCount() const {
-    return impl_->arguments.size();
-}
-
 bool Function::isVariadic() const {
     return impl_->variadic;
 }

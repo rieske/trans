@@ -114,19 +114,6 @@ inline bool isTentativeRecord(const Type& t) {
     return t.isRecord() && !t.isCompleteRecord() && t.memberCount() > 0;
 }
 
-inline bool isVariablyModified(const Type& t) {
-    if (t.isVariableArray()) {
-        return true;
-    }
-    if (t.isArray()) {
-        return isVariablyModified(t.getElementType());
-    }
-    if (t.isPointer()) {
-        return isVariablyModified(t.dereference());
-    }
-    return false;
-}
-
 // VLA whose size cannot be formed: a [*] layer, or an array of such.
 inline bool hasUnspecifiedVlaSize(const Type& t) {
     if (t.isVariableArray()) {
@@ -239,18 +226,6 @@ inline bool isRealType(const Type& t) {
 
 inline bool isArithmeticType(const Type& t) {
     return isRealType(t) || isComplex(t);
-}
-
-// True when arithmetic / shifts should treat `t` as unsigned (pointers/arrays
-// are address values; unsigned integrals; floats are not).
-inline bool isUnsignedSide(const Type& t) {
-    if (t.kind() == TypeKind::Pointer || t.kind() == TypeKind::Array) {
-        return true;
-    }
-    if (isIntegral(t)) {
-        return !t.getPrimitive().isSigned();
-    }
-    return false;
 }
 
 // Signedness for live Values / stack homes (SAR default).
@@ -526,13 +501,9 @@ inline GenericSelectionChoice selectGenericAssociation(
     return GenericSelectionChoice { GenericSelectionStatus::NoMatch, {} };
 }
 
-// Operand compatibility after array/function decay (not assignment).
-bool productValueCompatible(const Type& a, const Type& b);
-
 // Git-shaped assign gate on types alone (assignment / init / call args).
-// Not a pure subset of productValueCompatible: dest arrays never assign; source
-// arrays decay; incomplete dest rejected; function designators only into
-// function-pointer dest; integral 0 into pointers.
+// Dest arrays never assign; source arrays decay; incomplete dest rejected;
+// function designators only into function-pointer dest; integral 0 into pointers.
 // Expression-sensitive null forms ((void*)0) live in SA productAssignOk / checkAssign.
 bool productAssignFrom(const Type& dest, const Type& source);
 
