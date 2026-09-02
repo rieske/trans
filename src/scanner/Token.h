@@ -15,8 +15,8 @@ public:
 
     static const std::string END;
 
-    std::string_view id;
-    std::string_view lexeme;
+    std::string id;
+    std::string lexeme;
     translation_unit::Context context;
     int symbolId;
 };
