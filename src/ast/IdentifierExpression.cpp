@@ -4,8 +4,6 @@
 #include "ParseEnvironment.h"
 #include "types/IntegerConstant.h"
 
-#include <cassert>
-
 namespace ast {
 
 IdentifierExpression::IdentifierExpression(std::string identifier, translation_unit::Context context) :
@@ -52,18 +50,13 @@ bool IdentifierExpression::evaluateConstant(type::IntegerConstant& value) const 
     return true;
 }
 
-void IdentifierExpression::setStringConstantLabel(std::string label) {
-    stringConstantLabel = std::move(label);
+void IdentifierExpression::setRodataLabel(symbols::AnnotationStore& store, std::string label) {
+    store.setRodataLabel(this, std::move(label));
     lval = false;
 }
 
-bool IdentifierExpression::hasStringConstantLabel() const {
-    return stringConstantLabel.has_value();
-}
-
-const std::string& IdentifierExpression::getStringConstantLabel() const {
-    assert(stringConstantLabel.has_value());
-    return *stringConstantLabel;
+const std::string* IdentifierExpression::rodataLabel(const symbols::AnnotationStore& store) const {
+    return store.rodataLabel(this);
 }
 
 } // namespace ast

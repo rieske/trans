@@ -122,6 +122,30 @@ const FunctionFrame* AnnotationStore::functionFrame(NodeRef node) const {
     return &*n->functionFrame;
 }
 
+void AnnotationStore::setRodataLabel(NodeRef node, std::string label) {
+    this->node(node).rodataLabel = std::move(label);
+}
+
+const std::string* AnnotationStore::rodataLabel(NodeRef node) const {
+    auto* n = nodeIfAny(node);
+    if (!n || !n->rodataLabel) {
+        return nullptr;
+    }
+    return &*n->rodataLabel;
+}
+
+void AnnotationStore::setSizeofValue(NodeRef node, int bytes) {
+    this->node(node).sizeofValue = bytes;
+}
+
+const int* AnnotationStore::sizeofValue(NodeRef node) const {
+    auto* n = nodeIfAny(node);
+    if (!n || !n->sizeofValue) {
+        return nullptr;
+    }
+    return &*n->sizeofValue;
+}
+
 const CallPlan* AnnotationStore::callPlan(NodeRef node) const {
     auto* n = nodeIfAny(node);
     if (!n || !n->callPlan) {

@@ -154,6 +154,26 @@ TEST(AnnotationStore, functionFrameRoundTrip) {
     EXPECT_EQ(store.functionFrame(&node + 1), nullptr);
 }
 
+TEST(AnnotationStore, rodataLabelRoundTrip) {
+    symbols::AnnotationStore store;
+    int node = 11;
+    store.setRodataLabel(&node, "L$str0");
+    const auto* label = store.rodataLabel(&node);
+    ASSERT_NE(label, nullptr);
+    EXPECT_EQ(*label, "L$str0");
+    EXPECT_EQ(store.rodataLabel(&node + 1), nullptr);
+}
+
+TEST(AnnotationStore, sizeofValueRoundTrip) {
+    symbols::AnnotationStore store;
+    int node = 12;
+    store.setSizeofValue(&node, 8);
+    const auto* bytes = store.sizeofValue(&node);
+    ASSERT_NE(bytes, nullptr);
+    EXPECT_EQ(*bytes, 8);
+    EXPECT_EQ(store.sizeofValue(&node + 1), nullptr);
+}
+
 TEST(AnnotationStore, clearEmptiesAll) {
     symbols::AnnotationStore store;
     int node = 4;
@@ -165,12 +185,16 @@ TEST(AnnotationStore, clearEmptiesAll) {
     type::Type fnType = type::function(type::signedInteger(), {});
     store.setFunctionFrame(&node, symbols::FunctionFrame {
             symbols::FunctionEntry { "f", fnType.getFunction(), ctx }, {}, {} });
+    store.setRodataLabel(&node, "L$str1");
+    store.setSizeofValue(&node, 4);
     store.clear();
     EXPECT_EQ(store.callPlan(&node), nullptr);
     EXPECT_FALSE(store.hasResult(&node));
     EXPECT_EQ(store.lvalue(&node), nullptr);
     EXPECT_FALSE(store.hasLabel(&node, symbols::LabelSlot::Exit));
     EXPECT_EQ(store.functionFrame(&node), nullptr);
+    EXPECT_EQ(store.rodataLabel(&node), nullptr);
+    EXPECT_EQ(store.sizeofValue(&node), nullptr);
 }
 
 TEST(AnnotationStore, indexPlanVariant) {

@@ -58,17 +58,24 @@ bool UnaryExpression::isLval() const {
     return lexeme() == "*";
 }
 
-void UnaryExpression::setSizeofValue(int bytes) {
-    sizeofValue = bytes;
+void UnaryExpression::setSizeofValue(symbols::AnnotationStore& store, int bytes) {
+    store.setSizeofValue(this, bytes);
 }
 
-int UnaryExpression::getSizeofValue() const {
-    return sizeofValue;
+const int* UnaryExpression::sizeofValue(const symbols::AnnotationStore& store) const {
+    return store.sizeofValue(this);
 }
 
 bool UnaryExpression::evaluateConstant(type::IntegerConstant& value) const {
-    if (lexeme() == "sizeof" && sizeofValue >= 0) {
-        value = type::fromLiteralBits(static_cast<type::Bits>(sizeofValue), type::signedInteger());
+    if (lexeme() == "sizeof") {
+        if (!_operand || !_operand->hasExpressionType()) {
+            return false;
+        }
+        const auto bytes = type::sizeofObject(operandType(), true);
+        if (!bytes) {
+            return false;
+        }
+        value = type::fromLiteralBits(static_cast<type::Bits>(*bytes), type::signedInteger());
         return true;
     }
     type::IntegerConstant operand;

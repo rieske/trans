@@ -25,12 +25,8 @@ public:
     void setFalsyLabel(symbols::AnnotationStore& store, symbols::LabelEntry falsyLabel);
     symbols::LabelEntry* getFalsyLabel(symbols::AnnotationStore& store) const;
 
-    void setSizeofValue(int bytes);
-    int getSizeofValue() const;
-
-private:
-    // Residual SA product for sizeof fold; feeds evaluateConstant. Optional later store.
-    int sizeofValue { -1 };
+    void setSizeofValue(symbols::AnnotationStore& store, int bytes);
+    const int* sizeofValue(const symbols::AnnotationStore& store) const;
 };
 
 } // namespace ast

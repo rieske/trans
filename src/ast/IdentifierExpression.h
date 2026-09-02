@@ -27,16 +27,13 @@ public:
     void clearFoldedConstant();
     bool evaluateConstant(type::IntegerConstant& value) const override;
 
-    // Rodata label for __func__ (same CG path as string literals).
-    void setStringConstantLabel(std::string label);
-    bool hasStringConstantLabel() const;
-    const std::string& getStringConstantLabel() const;
+    void setRodataLabel(symbols::AnnotationStore& store, std::string label);
+    const std::string* rodataLabel(const symbols::AnnotationStore& store) const;
 
 private:
     std::string identifier;
     translation_unit::Context context;
     std::optional<type::IntegerConstant> foldedConstant;
-    std::optional<std::string> stringConstantLabel;
 };
 
 } // namespace ast

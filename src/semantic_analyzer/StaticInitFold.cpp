@@ -57,8 +57,8 @@ std::optional<symbols::StaticAddress> functionLabel(
 
 std::optional<symbols::StaticAddress> foldIdentifierDesignator(
         const ast::IdentifierExpression& id, const symbols::AnnotationStore& store) {
-    if (id.hasStringConstantLabel()) {
-        return symbols::StaticAddress { id.getStringConstantLabel() };
+    if (const auto* label = id.rodataLabel(store)) {
+        return symbols::StaticAddress { *label };
     }
     if (auto fn = functionLabel(id, store)) {
         return fn;
@@ -171,14 +171,14 @@ std::optional<symbols::StaticAddress> foldDesignatorAddress(
 std::optional<symbols::StaticAddress> foldAddress(
         const ast::Expression& expr, const symbols::AnnotationStore& store) {
     if (auto* literal = dynamic_cast<const ast::StringLiteralExpression*>(&expr)) {
-        if (literal->getConstantSymbol().empty()) {
-            return std::nullopt;
+        if (const auto* label = literal->rodataLabel(store)) {
+            return symbols::StaticAddress { *label };
         }
-        return symbols::StaticAddress { literal->getConstantSymbol() };
+        return std::nullopt;
     }
     if (auto* id = dynamic_cast<const ast::IdentifierExpression*>(&expr)) {
-        if (id->hasStringConstantLabel()) {
-            return symbols::StaticAddress { id->getStringConstantLabel() };
+        if (const auto* label = id->rodataLabel(store)) {
+            return symbols::StaticAddress { *label };
         }
         if (auto fn = functionLabel(*id, store)) {
             return fn;

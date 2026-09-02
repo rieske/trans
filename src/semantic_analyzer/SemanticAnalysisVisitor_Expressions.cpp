@@ -168,8 +168,7 @@ void SemanticAnalysisVisitor::visit(ast::ConstantExpression& constant) {
 }
 
 void SemanticAnalysisVisitor::visit(ast::StringLiteralExpression& stringLiteral) {
-    std::string constantSymbol = symbolTable.newConstant(stringLiteral.getValue());
-    stringLiteral.setConstantSymbol(constantSymbol);
+    stringLiteral.setRodataLabel(annotations(), symbolTable.newConstant(stringLiteral.getValue()));
     auto address = symbolTable.createTemporarySymbol(type::pointer(type::signedCharacter()));
     stringLiteral.setAggregateAddressResult(annotations(), address, stringLiteral.expressionType());
 }
@@ -222,7 +221,7 @@ void SemanticAnalysisVisitor::visit(ast::UnaryExpression& expression) {
         }
         const type::Type measured = expression.operandType();
         if (auto bytes = type::sizeofObject(measured, gnuExtensions_)) {
-            expression.setSizeofValue(*bytes);
+            expression.setSizeofValue(annotations(), *bytes);
         } else if (!type::hasComputableRuntimeSize(measured)) {
             semanticError(
                     "invalid application of ‘sizeof’ to incomplete type ‘" + measured.to_string() + "’",

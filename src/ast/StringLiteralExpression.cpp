@@ -22,12 +22,12 @@ std::string StringLiteralExpression::getValue() const {
     return value;
 }
 
-void StringLiteralExpression::setConstantSymbol(std::string constantSymbol) {
-    this->constantSymbol = constantSymbol;
+void StringLiteralExpression::setRodataLabel(symbols::AnnotationStore& store, std::string label) {
+    store.setRodataLabel(this, std::move(label));
 }
 
-std::string StringLiteralExpression::getConstantSymbol() const {
-    return constantSymbol;
+const std::string* StringLiteralExpression::rodataLabel(const symbols::AnnotationStore& store) const {
+    return store.rodataLabel(this);
 }
 
 std::optional<type::Type> StringLiteralExpression::typeAtParseTime(const ParseEnvironment&) const {
