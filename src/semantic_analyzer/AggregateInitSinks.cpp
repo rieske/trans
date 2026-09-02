@@ -86,8 +86,8 @@ void FieldPlanSink::placeInteger(const type::FoundMember& slot, long value) {
 }
 
 DataWordSink::DataWordSink(SemanticAnalysisVisitor& v, translation_unit::Context ctx,
-        std::vector<symbols::StaticInitValue>& w, int wc)
-        : visitor { v }, context { std::move(ctx) }, words { w }, wordCount { wc } {
+        std::vector<symbols::StaticInitValue>& w)
+        : visitor { v }, context { std::move(ctx) }, words { w } {
 }
 
 bool DataWordSink::ok() const {
@@ -114,15 +114,25 @@ unsigned long long numericBits(const symbols::StaticInitValue& word) {
     return 0;
 }
 
-void storeBitsAt(std::vector<symbols::StaticInitValue>& words, int wordCount, int offsetBytes,
+void ensureWord(std::vector<symbols::StaticInitValue>& words, int wi) {
+    if (wi < 0) {
+        return;
+    }
+    if (static_cast<std::size_t>(wi) >= words.size()) {
+        words.resize(static_cast<std::size_t>(wi) + 1, symbols::StaticWord {});
+    }
+}
+
+void storeBitsAt(std::vector<symbols::StaticInitValue>& words, int offsetBytes,
         unsigned long long value, int storeSizeBytes) {
     if (offsetBytes < 0 || storeSizeBytes <= 0) {
         return;
     }
     const int wi = type::object_abi::wordIndexAt(offsetBytes);
-    if (wi < 0 || wi >= wordCount) {
+    if (wi < 0) {
         return;
     }
+    ensureWord(words, wi);
     auto& word = words[static_cast<std::size_t>(wi)];
     if (storeSizeBytes >= type::object_abi::MACHINE_WORD_SIZE) {
         word = symbols::StaticWord { value };
@@ -137,15 +147,16 @@ void storeBitsAt(std::vector<symbols::StaticInitValue>& words, int wordCount, in
     word = symbols::StaticWord { wordVal };
 }
 
-void storeAddressAt(std::vector<symbols::StaticInitValue>& words, int wordCount, int offsetBytes,
+void storeAddressAt(std::vector<symbols::StaticInitValue>& words, int offsetBytes,
         symbols::StaticInitValue value) {
     if (offsetBytes < 0) {
         return;
     }
     const int wi = type::object_abi::wordIndexAt(offsetBytes);
-    if (wi < 0 || wi >= wordCount) {
+    if (wi < 0) {
         return;
     }
+    ensureWord(words, wi);
     words[static_cast<std::size_t>(wi)] = std::move(value);
 }
 
@@ -156,12 +167,12 @@ void DataWordSink::onUnwritten(const type::FoundMember& slot) {
         return;
     }
     if (!slot.type.isAggregate()) {
-        storeBitsAt(words, wordCount, slot.offsetBytes, 0, slot.type.getSize());
+        storeBitsAt(words, slot.offsetBytes, 0, slot.type.getSize());
         return;
     }
     forEachUnwrittenRepresentation(slot.type, slot.offsetBytes,
             [&](int off, const type::Type& storeType) {
-                storeBitsAt(words, wordCount, off, 0, storeType.getSize());
+                storeBitsAt(words, off, 0, storeType.getSize());
             });
 }
 
@@ -177,7 +188,7 @@ void DataWordSink::placeScalar(const type::FoundMember& slot, ast::Expression* v
         return;
     }
     if (std::holds_alternative<symbols::StaticAddress>(*folded)) {
-        storeAddressAt(words, wordCount, offsetBytes, std::move(*folded));
+        storeAddressAt(words, offsetBytes, std::move(*folded));
         return;
     }
     unsigned long long bits = 0;
@@ -190,9 +201,10 @@ void DataWordSink::placeScalar(const type::FoundMember& slot, ast::Expression* v
         const auto& bf = *slot.bitField;
         const int absBit = slot.offsetBytes * 8 + bf.shift;
         const int wi = type::object_abi::wordIndexAt(absBit / 8);
-        if (wi < 0 || wi >= wordCount) {
+        if (wi < 0) {
             return;
         }
+        ensureWord(words, wi);
         auto& word = words[static_cast<std::size_t>(wi)];
         unsigned long long wordVal = numericBits(word);
         const int shift = absBit % (type::object_abi::MACHINE_WORD_SIZE * 8);
@@ -204,18 +216,18 @@ void DataWordSink::placeScalar(const type::FoundMember& slot, ast::Expression* v
     }
     const auto pieces = symbols::asDataWords(*folded);
     if (pieces.size() == 1) {
-        storeBitsAt(words, wordCount, offsetBytes, numericBits(pieces.front()), storeType.getSize());
+        storeBitsAt(words, offsetBytes, numericBits(pieces.front()), storeType.getSize());
         return;
     }
     int off = offsetBytes;
     for (const auto& piece : pieces) {
-        storeBitsAt(words, wordCount, off, numericBits(piece), type::object_abi::MACHINE_WORD_SIZE);
+        storeBitsAt(words, off, numericBits(piece), type::object_abi::MACHINE_WORD_SIZE);
         off += type::object_abi::MACHINE_WORD_SIZE;
     }
 }
 
 void DataWordSink::placeInteger(const type::FoundMember& slot, long value) {
-    storeBitsAt(words, wordCount, slot.offsetBytes, static_cast<unsigned long long>(value),
+    storeBitsAt(words, slot.offsetBytes, static_cast<unsigned long long>(value),
             slot.type.getSize());
 }
 

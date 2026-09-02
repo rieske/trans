@@ -240,7 +240,7 @@ void SemanticAnalysisVisitor::lowerStaticAggregateInit(const std::string& name,
     }
     std::vector<symbols::StaticInitValue> words(
             static_cast<std::size_t>(wordCount), symbols::StaticWord {});
-    DataWordSink sink { *this, context, words, wordCount };
+    DataWordSink sink { *this, context, words };
     walkAggregateInit(objectType, list, 0, sink);
     if (!sink.ok()) {
         return;

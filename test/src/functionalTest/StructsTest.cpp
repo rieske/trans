@@ -662,6 +662,22 @@ TEST(Compiler, flexibleArrayMemberStringInit) {
     program.runAndExpect("1 104 105 0");
 }
 
+TEST(Compiler, flexibleArrayMemberLongStringInit) {
+    SourceProgram program{R"prg(int printf(const char *, ...);
+        struct T {
+            int n;
+            char s[];
+        };
+        struct T t = { 1, "hello world" };
+        int main() {
+            printf("%d %s %d", t.n, t.s, (int)sizeof t);
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("1 hello world 4");
+}
+
 TEST(Compiler, flexibleArrayMemberCannotBeOnlyMember) {
     SourceProgram program{R"prg(
         struct S {
