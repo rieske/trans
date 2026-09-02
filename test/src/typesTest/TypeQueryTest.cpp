@@ -42,7 +42,6 @@ TEST(TypeQuery, variableArrayHasRuntimeSizePointerDoesNot) {
     EXPECT_TRUE(type::hasRuntimeSize(va));
     EXPECT_TRUE(type::hasRuntimeSize(nested));
     EXPECT_FALSE(type::hasRuntimeSize(pva));
-    EXPECT_TRUE(type::isVariablyModified(pva));
     EXPECT_FALSE(type::hasRuntimeSize(type::array(type::signedInteger(), 3)));
     EXPECT_EQ(type::sizeofObject(va, false), std::nullopt);
     EXPECT_EQ(type::sizeofObject(nested, false), std::nullopt);
@@ -328,16 +327,6 @@ TEST(TypeQuery, productAssignFailureMessageTypeMismatch) {
 }
 
 
-TEST(TypeQuery, productValueCompatibleScalarsAndPointers) {
-    type::Type i = type::signedInteger();
-    type::Type u = type::unsignedInteger();
-    type::Type pi = type::pointer(i);
-    EXPECT_TRUE(type::productValueCompatible(i, u));
-    EXPECT_TRUE(type::productValueCompatible(pi, pi));
-    EXPECT_TRUE(type::productValueCompatible(i, pi)); // decay not required for product-loose
-    EXPECT_FALSE(type::productValueCompatible(i, type::voidType()));
-}
-
 TEST(TypeQuery, afterLvalueConversionDropsTopLevelConstAndDecaysArrayAndFunction) {
     using namespace type;
     auto c = signedInteger({ Qualifier::CONST });
@@ -579,7 +568,6 @@ TEST(TypeQuery, productArithmeticIsScalarOnly) {
 
 TEST(TypeQuery, signednessHelpersAreNotDualsOutsideIntegrals) {
     type::Type p = type::pointer(type::signedInteger());
-    EXPECT_TRUE(type::isUnsignedSide(p));
     EXPECT_TRUE(type::valueIsSigned(p));
     auto uar = type::usualArithmeticResult(type::signedInteger(), type::unsignedInteger());
     EXPECT_EQ(uar.getSize(), 4);

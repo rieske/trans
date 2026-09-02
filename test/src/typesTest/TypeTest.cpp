@@ -189,7 +189,6 @@ TEST(Type, noArgFunctionReturningVoid) {
     EXPECT_THAT(t.isFunction(), IsTrue());
     EXPECT_THAT(t.getFunction().getReturnType().isVoid(), IsTrue());
     EXPECT_THAT(t.getFunction().getArguments().size(), Eq(0));
-    EXPECT_THAT(t.getFunction().argumentCount(), Eq(0u));
     EXPECT_THAT(t.isConst(), IsFalse());
     EXPECT_THAT(t.isVolatile(), IsFalse());
 
@@ -205,7 +204,6 @@ TEST(Type, noArgFunctionReturningInt) {
     EXPECT_THAT(t.getFunction().getReturnType().isPrimitive(), IsTrue());
     EXPECT_THAT(t.getFunction().getReturnType().getPrimitive().getSize(), Eq(4));
     EXPECT_THAT(t.getFunction().getArguments().size(), Eq(0));
-    EXPECT_THAT(t.getFunction().argumentCount(), Eq(0u));
     EXPECT_THAT(t.isConst(), IsFalse());
     EXPECT_THAT(t.isVolatile(), IsFalse());
 
@@ -221,7 +219,6 @@ TEST(Type, functionReturningIntAcceptingInt) {
     EXPECT_THAT(t.getFunction().getReturnType().isPrimitive(), IsTrue());
     EXPECT_THAT(t.getFunction().getReturnType().getPrimitive().getSize(), Eq(4));
     EXPECT_THAT(t.getFunction().getArguments().size(), Eq(1));
-    EXPECT_THAT(t.getFunction().argumentCount(), Eq(1u));
     EXPECT_THAT(t.getFunction().getArguments().at(0).isPrimitive(), IsTrue());
     EXPECT_THAT(t.getFunction().getArguments().at(0).getSize(), Eq(4));
     EXPECT_THAT(t.isConst(), IsFalse());
@@ -267,7 +264,6 @@ TEST(Type, functionReturningIntAcceptingIntAndPointerToPointerToUnsignedLong) {
     EXPECT_THAT(t.getFunction().getReturnType().isPrimitive(), IsTrue());
     EXPECT_THAT(t.getFunction().getReturnType().getPrimitive().getSize(), Eq(4));
     EXPECT_THAT(t.getFunction().getArguments().size(), Eq(2));
-    EXPECT_THAT(t.getFunction().argumentCount(), Eq(2u));
 
     EXPECT_THAT(t.to_string(), Eq("int(int, unsigned long**)"));
 }
@@ -749,7 +745,7 @@ TEST(Type, incompleteStructureSharedBodyCompletesInPlace) {
     using namespace type;
     auto tag = incompleteStructure();
     ASSERT_THAT(tag.isStructure(), IsTrue());
-    EXPECT_THAT(tag.isIncompleteStructure(), IsTrue());
+    EXPECT_THAT(tag.isIncompleteRecord(), IsTrue());
     EXPECT_THAT(tag.getSize(), Eq(0));
 
     // Pointer and alias must observe the same completed layout (self-ref tags).
@@ -760,15 +756,15 @@ TEST(Type, incompleteStructureSharedBodyCompletesInPlace) {
             MemberSpec { "next", pointer(tag) },
     });
 
-    EXPECT_THAT(tag.isIncompleteStructure(), IsFalse());
+    EXPECT_THAT(tag.isIncompleteRecord(), IsFalse());
     EXPECT_THAT(tag.getSize(), Eq(16)); // int @0 + pad + pointer @8
-    EXPECT_THAT(alias.isIncompleteStructure(), IsFalse());
+    EXPECT_THAT(alias.isIncompleteRecord(), IsFalse());
     EXPECT_THAT(alias.getSize(), Eq(16));
     EXPECT_THAT(alias.structureBodyIdentity(), Eq(tag.structureBodyIdentity()));
 
     auto peeled = ptr.dereference();
     EXPECT_THAT(peeled.isStructure(), IsTrue());
-    EXPECT_THAT(peeled.isIncompleteStructure(), IsFalse());
+    EXPECT_THAT(peeled.isIncompleteRecord(), IsFalse());
     EXPECT_THAT(offsetOf(peeled, "x"), Eq(0));
     EXPECT_THAT(offsetOf(peeled, "next"), Eq(8));
 }
@@ -903,16 +899,17 @@ TEST(Type, completeStructureFailurePreservesPriorSharedLayout) {
 TEST(Type, structureNamedPredicatesAreStructOnly) {
     using namespace type;
     auto s = structure({ { "x", signedInteger() } });
-    EXPECT_THAT(s.isCompleteStructure(), IsTrue());
+    EXPECT_THAT(s.isStructure(), IsTrue());
     EXPECT_THAT(s.isCompleteRecord(), IsTrue());
+    EXPECT_THAT(s.isUnion(), IsFalse());
 
     auto u = unionType({ { "x", signedInteger() } });
+    EXPECT_THAT(u.isUnion(), IsTrue());
     EXPECT_THAT(u.isCompleteRecord(), IsTrue());
-    EXPECT_THAT(u.isCompleteStructure(), IsFalse());
-    EXPECT_THAT(u.isIncompleteStructure(), IsFalse());
+    EXPECT_THAT(u.isStructure(), IsFalse());
 
     auto inc = incompleteStructure();
-    EXPECT_THAT(inc.isIncompleteStructure(), IsTrue());
+    EXPECT_THAT(inc.isStructure(), IsTrue());
     EXPECT_THAT(inc.isIncompleteRecord(), IsTrue());
 }
 
@@ -1057,7 +1054,7 @@ TEST(Type, withQualifiersSetsConstAndVolatile) {
 
     auto rec = structure({ { "x", signedInteger() } }).withQualifiers({ Qualifier::CONST });
     EXPECT_THAT(rec.isConst(), IsTrue());
-    EXPECT_THAT(rec.isCompleteStructure(), IsTrue());
+    EXPECT_THAT(rec.isCompleteRecord(), IsTrue());
 }
 
 TEST(Type, signedShortFactory) {

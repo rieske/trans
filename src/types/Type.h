@@ -151,8 +151,6 @@ public:
     bool isAggregate() const;
     // Complete struct or union layout.
     bool isCompleteRecord() const;
-    // Complete C struct only (not unions). Prefer isCompleteRecord for both kinds.
-    bool isCompleteStructure() const { return isStructure() && isCompleteRecord(); }
 
     // Record members (struct or union).
     const std::vector<Member>& getMembers() const;
@@ -160,8 +158,6 @@ public:
 
     // True when this is a record with no completed layout yet.
     bool isIncompleteRecord() const;
-    // Incomplete C struct only (not unions). Prefer isIncompleteRecord for both kinds.
-    bool isIncompleteStructure() const { return isStructure() && isIncompleteRecord(); }
 
     bool isConst() const;
     bool isVolatile() const;

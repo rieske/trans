@@ -15,7 +15,6 @@ using type::object_abi::frameLayout;
 using type::object_abi::takeAlignedWords;
 using type::object_abi::typeNeedsMemoryReturn;
 using type::object_abi::valueWords;
-using type::object_abi::wordByteOffset;
 using type::object_abi::wordIndexAt;
 
 TEST(ObjectAbi, valueWordsAtLeastOne) {
@@ -36,8 +35,6 @@ TEST(ObjectAbi, dataWordsZeroWhenEmpty) {
 }
 
 TEST(ObjectAbi, wordIndexHelpers) {
-    EXPECT_EQ(wordByteOffset(0), 0);
-    EXPECT_EQ(wordByteOffset(2), 16);
     EXPECT_EQ(wordIndexAt(0), 0);
     EXPECT_EQ(wordIndexAt(8), 1);
     EXPECT_EQ(wordIndexAt(15), 1);

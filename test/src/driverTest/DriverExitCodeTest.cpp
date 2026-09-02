@@ -608,7 +608,6 @@ TEST(Configuration, stageSettersAreActionsNotToggles) {
 
     configuration.setPreprocessOnly();
     EXPECT_EQ(configuration.stopAfter(), StopAfter::Preprocess);
-    EXPECT_TRUE(configuration.isPreprocessOnly());
     EXPECT_FALSE(configuration.isAssemblyOnly());
 }
 

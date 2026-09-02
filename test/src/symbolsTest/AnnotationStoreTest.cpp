@@ -77,8 +77,10 @@ TEST(AnnotationStore, structFieldInits) {
     b.addressName = "a1";
     b.sourceName = "z1";
     b.zeroInitialize = true;
-    store.addStructFieldInit(&node, std::move(a));
-    store.addStructFieldInit(&node, std::move(b));
+    std::vector<symbols::StructFieldInit> first;
+    first.push_back(std::move(a));
+    first.push_back(std::move(b));
+    store.setStructFieldInits(&node, std::move(first));
 
     const auto& inits = store.structFieldInits(&node);
     ASSERT_EQ(inits.size(), 2u);
@@ -191,7 +193,7 @@ TEST(AnnotationStore, clearEmptiesAll) {
     EXPECT_EQ(store.callPlan(&node), nullptr);
     EXPECT_FALSE(store.hasResult(&node));
     EXPECT_EQ(store.lvalue(&node), nullptr);
-    EXPECT_FALSE(store.hasLabel(&node, symbols::LabelSlot::Exit));
+    EXPECT_EQ(store.label(&node, symbols::LabelSlot::Exit), nullptr);
     EXPECT_EQ(store.functionFrame(&node), nullptr);
     EXPECT_EQ(store.rodataLabel(&node), nullptr);
     EXPECT_EQ(store.sizeofValue(&node), nullptr);
@@ -220,10 +222,10 @@ TEST(AnnotationStore, labelSlots) {
     int node = 0;
     store.setLabel(&node, symbols::LabelSlot::Falsy, symbols::LabelEntry { "Lf" });
     store.setLabel(&node, symbols::LabelSlot::Exit, symbols::LabelEntry { "Le" });
-    ASSERT_TRUE(store.hasLabel(&node, symbols::LabelSlot::Falsy));
+    ASSERT_NE(store.label(&node, symbols::LabelSlot::Falsy), nullptr);
     EXPECT_EQ(store.label(&node, symbols::LabelSlot::Falsy)->getName(), "Lf");
     EXPECT_EQ(store.label(&node, symbols::LabelSlot::Exit)->getName(), "Le");
-    EXPECT_FALSE(store.hasLabel(&node, symbols::LabelSlot::Truthy));
+    EXPECT_EQ(store.label(&node, symbols::LabelSlot::Truthy), nullptr);
     // Overwrite same slot.
     store.setLabel(&node, symbols::LabelSlot::Falsy, symbols::LabelEntry { "Lf2" });
     EXPECT_EQ(store.label(&node, symbols::LabelSlot::Falsy)->getName(), "Lf2");

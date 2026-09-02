@@ -23,10 +23,6 @@ type::Type Expression::valueType(const symbols::AnnotationStore& store) const {
     return expressionType();
 }
 
-bool Expression::hasDecayedArrayValue(const symbols::AnnotationStore& store) const {
-    return isArrayObjectType() && hasResultSymbol(store) && valueType(store).isPointer();
-}
-
 void Expression::setTypeAndResult(symbols::AnnotationStore& store, symbols::ValueEntry result) {
     setType(result.getType());
     form = ValueForm::Scalar;

@@ -26,7 +26,7 @@ TEST(Expression, valueTypeFallsBackToExpressionType) {
     EXPECT_FALSE(id.hasResultSymbol(store));
 }
 
-TEST(Expression, hasDecayedArrayValue) {
+TEST(Expression, arrayObjectKeepsArrayTypeAndPointerResult) {
     symbols::AnnotationStore store;
     ast::IdentifierExpression id("a", ctx());
     type::Type arr = type::array(type::signedInteger(), 3);
@@ -34,7 +34,7 @@ TEST(Expression, hasDecayedArrayValue) {
     id.setAggregateAddressResult(store, addr, arr);
     EXPECT_TRUE(id.holdsAggregateAddress());
     EXPECT_TRUE(id.isArrayObjectType());
-    EXPECT_TRUE(id.hasDecayedArrayValue(store));
+    EXPECT_TRUE(id.valueType(store).isPointer());
     EXPECT_TRUE(store.hasResult(&id));
 }
 
@@ -43,8 +43,8 @@ TEST(Expression, setTypeAndResultIsScalar) {
     ast::IdentifierExpression id("x", ctx());
     symbols::ValueEntry v("x", type::signedInteger(), ctx(), 0);
     id.setTypeAndResult(store, v);
-    EXPECT_EQ(id.valueForm(), ast::ValueForm::Scalar);
     EXPECT_FALSE(id.holdsAggregateAddress());
+    EXPECT_FALSE(id.holdsFunctionDesignator());
     EXPECT_TRUE(id.hasResultSymbol(store));
     EXPECT_EQ(store.result(&id)->getName(), "x");
 }
@@ -54,7 +54,6 @@ TEST(Expression, isArrayObjectTypeFalseForScalar) {
     ast::IdentifierExpression id("x", ctx());
     id.setType(type::signedInteger());
     EXPECT_FALSE(id.isArrayObjectType());
-    EXPECT_FALSE(id.hasDecayedArrayValue(store));
 }
 
 TEST(Expression, valueTypeAndGetResultAreStoreOnly) {
@@ -65,7 +64,6 @@ TEST(Expression, valueTypeAndGetResultAreStoreOnly) {
     EXPECT_TRUE(id.valueType(store).isPrimitive());
     EXPECT_EQ(id.getResultSymbol(store)->getName(), "x");
     EXPECT_TRUE(id.hasResultSymbol(store));
-    EXPECT_FALSE(id.hasDecayedArrayValue(store));
 }
 
 TEST(Expression, resultGoneWhenStoreCleared) {
@@ -79,7 +77,6 @@ TEST(Expression, resultGoneWhenStoreCleared) {
     EXPECT_TRUE(id.valueType(store).isPrimitive());
     EXPECT_FALSE(id.hasResultSymbol(store));
     EXPECT_EQ(store.value(&id, symbols::ValueSlot::Result), nullptr);
-    EXPECT_FALSE(id.hasDecayedArrayValue(store));
 }
 
 TEST(Expression, functionDesignatorFormWritesStore) {
@@ -104,7 +101,8 @@ TEST(Expression, takeValueFromCopiesScalarResultAndLvalue) {
     src.setTypeAndResult(store, v);
     src.setLvalueSymbol(store, addr);
     dest.takeValueFrom(src, store);
-    EXPECT_EQ(dest.valueForm(), ast::ValueForm::Scalar);
+    EXPECT_FALSE(dest.holdsAggregateAddress());
+    EXPECT_FALSE(dest.holdsFunctionDesignator());
     EXPECT_TRUE(dest.expressionType().isPrimitive());
     EXPECT_EQ(dest.getResultSymbol(store)->getName(), "x");
     EXPECT_EQ(dest.getLvalueSymbol(store)->getName(), "xp");

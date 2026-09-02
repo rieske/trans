@@ -69,11 +69,6 @@ inline FrameLayout frameLayout(int localWordCount, int calleeSavedBytes) {
     return frame;
 }
 
-// Byte offset of word index (word 0 at the lowest address).
-inline int wordByteOffset(int wordIndex) {
-    return wordIndex * MACHINE_WORD_SIZE;
-}
-
 // Word index containing byteOffset (truncating division).
 inline int wordIndexAt(int byteOffset) {
     return byteOffset / MACHINE_WORD_SIZE;

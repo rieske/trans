@@ -41,8 +41,6 @@ public:
 
     // Dual-type: array expressions keep the array as expression type.
     bool isArrayObjectType() const { return hasExpressionType() && expressionType().isArray(); }
-    // Array expression type with pointer result (true dual ownership after SA).
-    bool hasDecayedArrayValue(const symbols::AnnotationStore& store) const;
 
     // Type of the Result symbol after SA (prefer for arithmetic / assign source value).
     type::Type valueType(const symbols::AnnotationStore& store) const;
@@ -83,7 +81,6 @@ public:
     // Probe with hasResultSymbol before calling when the expression may have failed analysis.
     symbols::ValueEntry* getResultSymbol(symbols::AnnotationStore& store) const;
 
-    ValueForm valueForm() const { return form; }
     bool holdsAggregateAddress() const { return form == ValueForm::AggregateAddress; }
     bool holdsFunctionDesignator() const { return form == ValueForm::FunctionDesignator; }
 

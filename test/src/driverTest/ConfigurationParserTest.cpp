@@ -513,7 +513,7 @@ TEST_F(ConfigurationParserTest, includePathSeparateAndStuckAreForwarded) {
     ASSERT_TRUE(succeeded(result));
     ASSERT_THAT(config(result).getPreprocessorArgs(), ElementsAre("-I", "inc", "-I", "lib"));
     ASSERT_FALSE(config(result).isCompileOnly());
-    ASSERT_FALSE(config(result).isPreprocessOnly());
+    ASSERT_NE(config(result).stopAfter(), StopAfter::Preprocess);
 }
 
 TEST_F(ConfigurationParserTest, defineAndUndefineAreForwardedInOrder) {
@@ -675,20 +675,20 @@ TEST_F(ConfigurationParserTest, mfMissingValueIsAnError) {
 TEST_F(ConfigurationParserTest, dashESetsPreprocessOnly) {
     auto result = parse({ "trans", "-E", "test.c" });
     ASSERT_TRUE(succeeded(result));
-    ASSERT_TRUE(config(result).isPreprocessOnly());
+    ASSERT_EQ(config(result).stopAfter(), StopAfter::Preprocess);
     ASSERT_FALSE(config(result).isCompileOnly());
 }
 
 TEST_F(ConfigurationParserTest, dashEWinsOverDashC) {
     auto result = parse({ "trans", "-c", "-E", "test.c" });
     ASSERT_TRUE(succeeded(result));
-    ASSERT_TRUE(config(result).isPreprocessOnly());
+    ASSERT_EQ(config(result).stopAfter(), StopAfter::Preprocess);
 }
 
 TEST_F(ConfigurationParserTest, dashEThenDashCStillPreprocessOnly) {
     auto result = parse({ "trans", "-E", "-c", "test.c" });
     ASSERT_TRUE(succeeded(result));
-    ASSERT_TRUE(config(result).isPreprocessOnly());
+    ASSERT_EQ(config(result).stopAfter(), StopAfter::Preprocess);
 }
 
 TEST_F(ConfigurationParserTest, dashSSetsAssemblyOnly) {
@@ -724,7 +724,6 @@ TEST_F(ConfigurationParserTest, dashEIsMostRestrictiveStop) {
     auto result = parse({ "trans", "-S", "-c", "-E", "test.c" });
     ASSERT_TRUE(succeeded(result));
     ASSERT_EQ(config(result).stopAfter(), StopAfter::Preprocess);
-    ASSERT_TRUE(config(result).isPreprocessOnly());
     ASSERT_TRUE(config(result).stopsBeforeLink());
 }
 
@@ -732,7 +731,6 @@ TEST_F(ConfigurationParserTest, lessRestrictiveStopFlagDoesNotDemote) {
     auto result = parse({ "trans", "-E", "-S", "-c", "test.c" });
     ASSERT_TRUE(succeeded(result));
     ASSERT_EQ(config(result).stopAfter(), StopAfter::Preprocess);
-    ASSERT_TRUE(config(result).isPreprocessOnly());
     ASSERT_FALSE(config(result).isAssemblyOnly());
     ASSERT_FALSE(config(result).isCompileOnly());
 }

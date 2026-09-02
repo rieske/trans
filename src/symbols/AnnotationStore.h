@@ -78,7 +78,6 @@ public:
     void setLabel(NodeRef node, LabelSlot slot, LabelEntry label);
     LabelEntry* label(NodeRef node, LabelSlot slot);
     const LabelEntry* label(NodeRef node, LabelSlot slot) const;
-    bool hasLabel(NodeRef node, LabelSlot slot) const;
 
     void setAddressPlan(NodeRef node, AddressPlan plan);
     const AddressPlan* addressPlan(NodeRef node) const;
@@ -95,7 +94,6 @@ public:
     void setSizeofValue(NodeRef node, int bytes);
     const int* sizeofValue(NodeRef node) const;
 
-    void addStructFieldInit(NodeRef node, StructFieldInit init);
     void setStructFieldInits(NodeRef node, std::vector<StructFieldInit> inits);
     const std::vector<StructFieldInit>& structFieldInits(NodeRef node) const;
 

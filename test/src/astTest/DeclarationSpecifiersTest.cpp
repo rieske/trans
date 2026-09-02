@@ -156,7 +156,7 @@ TEST(DeclarationSpecifiers, constAppliesToNonPrimitiveType) {
             DeclarationSpecifiers { TypeSpecifier { rec, "S" } } };
     auto t = d.getResolvedType();
     EXPECT_TRUE(t.isConst());
-    EXPECT_TRUE(t.isCompleteStructure());
+    EXPECT_TRUE(t.isCompleteRecord());
     EXPECT_EQ(t.structureBodyIdentity(), rec.structureBodyIdentity());
 }
 
@@ -179,7 +179,7 @@ TEST(DeclarationSpecifiers, toTypeSpecifierAppliesConstKeepsStoredName) {
     auto taggedTs = tagged.toTypeSpecifier();
     EXPECT_EQ(taggedTs.getName(), "S");
     EXPECT_TRUE(taggedTs.getType().isConst());
-    EXPECT_TRUE(taggedTs.getType().isCompleteStructure());
+    EXPECT_TRUE(taggedTs.getType().isCompleteRecord());
 
     DeclarationSpecifiers untagged {
             type::Qualifier::CONST,
