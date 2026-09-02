@@ -47,8 +47,20 @@ TEST(CSNBCreators, productGrammarRegistersKnownProductions) {
 
     const auto* intType = production(grammar, "<type_spec>", { "int" });
     const auto* unitPostfix = production(grammar, "<postfix_exp>", { "<primary_exp>" });
+    const auto* unaryAddr = production(grammar, "<unary_exp>", { "&", "<cast_exp>" });
+    const auto* assignEq = production(grammar, "<assignment_exp>",
+            { "<unary_exp>", "=", "<assignment_exp>" });
+    const auto* caseConst = production(grammar, "<labeled_stat_matched>",
+            { "case", "<conditional_exp>", ":", "<matched>" });
     ASSERT_NE(intType, nullptr);
     ASSERT_NE(unitPostfix, nullptr);
+    ASSERT_NE(unaryAddr, nullptr);
+    ASSERT_NE(assignEq, nullptr);
+    ASSERT_NE(caseConst, nullptr);
+    EXPECT_FALSE(grammar.trySymbolId("<const_exp>").has_value());
+    EXPECT_FALSE(grammar.trySymbolId("<unary_operator>").has_value());
+    EXPECT_FALSE(grammar.trySymbolId("<assignment_operator>").has_value());
+    EXPECT_FALSE(grammar.trySymbolId("<stat_list>").has_value());
 
     EXPECT_NO_THROW(builder.updateContext(*unitPostfix, context));
 

@@ -63,8 +63,8 @@ TEST(LR1Parser, lr1HasAtLeastAsManyStatesAsLalrOnProductGrammar) {
     EXPECT_GE(lr1.stateCount(), lalr.stateCount());
     EXPECT_GE(lalr.stateCount(), 1u);
     // Known sizes for the product grammar (guards accidental collapse/explosion).
-    EXPECT_EQ(lalr.stateCount(), 479u);
-    EXPECT_EQ(lr1.stateCount(), 2540u);
+    EXPECT_EQ(lalr.stateCount(), 491u);
+    EXPECT_EQ(lr1.stateCount(), 2819u);
 }
 
 } // namespace
