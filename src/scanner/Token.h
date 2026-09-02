@@ -2,6 +2,7 @@
 #define _TOKEN_H_
 
 #include <string>
+#include <string_view>
 
 #include "translation_unit/Context.h"
 
@@ -9,8 +10,8 @@ namespace scanner {
 
 class Token {
 public:
-    Token(std::string id, std::string lexeme, const translation_unit::Context& context);
-    Token(std::string id, std::string lexeme, const translation_unit::Context& context, int symbolId);
+    Token(std::string_view id, std::string_view lexeme, const translation_unit::Context& context,
+            int symbolId = -1);
 
     static const std::string END;
 

@@ -6,6 +6,7 @@
 #include <map>
 #include <optional>
 #include <ostream>
+#include <string_view>
 #include <unordered_map>
 #include <vector>
 
@@ -37,7 +38,7 @@ public:
 
     std::string getSymbolById(int symbolId) const;
     int symbolId(std::string definition) const;
-    std::optional<int> trySymbolId(const std::string& definition) const;
+    std::optional<int> trySymbolId(std::string_view definition) const;
 
     bool isTerminal(int symbolId) const;
 
@@ -52,7 +53,7 @@ public:
     std::string str(const Production& production) const;
 
 private:
-    std::map<std::string, int> symbolIDs;
+    std::map<std::string, int, std::less<>> symbolIDs;
 
     std::vector<int> nonterminalIDs;
     std::vector<int> terminalIDs;

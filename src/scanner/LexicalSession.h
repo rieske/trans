@@ -5,6 +5,7 @@
 #include "IdentifierTable.h"
 
 #include <stack>
+#include <string_view>
 #include <vector>
 
 namespace scanner {
@@ -87,9 +88,9 @@ struct LexicalSession {
     RecordPacked recordPacked;
     PendingTransparentUnion transparentUnion;
 
-    bool isTypedef(const std::string& name) const { return names.hasTypedef(name); }
-    bool isEnumerator(const std::string& name) const { return enums.contains(name); }
-    bool lookupEnumerator(const std::string& name, type::IntegerConstant& value) const {
+    bool isTypedef(std::string_view name) const { return names.hasTypedef(name); }
+    bool isEnumerator(std::string_view name) const { return enums.contains(name); }
+    bool lookupEnumerator(std::string_view name, type::IntegerConstant& value) const {
         return enums.lookup(name, value);
     }
 

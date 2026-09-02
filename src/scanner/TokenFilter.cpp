@@ -3,36 +3,37 @@
 #include "scanner/LexicalSession.h"
 #include "util/StringLiteralDecode.h"
 
+#include <string_view>
 #include <utility>
 #include <vector>
 
 namespace scanner {
 namespace {
 
-bool isDroppedMarker(const std::string& lexeme) {
+bool isDroppedMarker(std::string_view lexeme) {
     return lexeme == "__extension__";
 }
 
-bool isAsmPrefix(const std::string& lexeme) {
+bool isAsmPrefix(std::string_view lexeme) {
     return lexeme == "volatile"
             || lexeme == "const"
             || lexeme == "goto"
             || lexeme == "inline";
 }
 
-bool isAttribute(const std::string& lexeme) {
+bool isAttribute(std::string_view lexeme) {
     return lexeme == "__attribute__";
 }
 
-bool isPackedAttribute(const std::string& lexeme) {
+bool isPackedAttribute(std::string_view lexeme) {
     return lexeme == "packed" || lexeme == "__packed__";
 }
 
-bool isTransparentUnionAttribute(const std::string& lexeme) {
+bool isTransparentUnionAttribute(std::string_view lexeme) {
     return lexeme == "transparent_union" || lexeme == "__transparent_union__";
 }
 
-bool isAsmKeyword(const std::string& lexeme) {
+bool isAsmKeyword(std::string_view lexeme) {
     return lexeme == "__asm__" || lexeme == "__asm" || lexeme == "asm";
 }
 
@@ -41,7 +42,7 @@ bool isWideStringPrefixToken(const Token& t) {
             && (t.lexeme == "L" || t.lexeme == "u" || t.lexeme == "U" || t.lexeme == "u8");
 }
 
-const char* isoKeywordAlias(const std::string& lexeme) {
+const char* isoKeywordAlias(std::string_view lexeme) {
     if (lexeme == "_Noreturn") {
         return "noreturn";
     }
@@ -51,7 +52,7 @@ const char* isoKeywordAlias(const std::string& lexeme) {
     return nullptr;
 }
 
-const char* gnuKeywordAlias(const std::string& lexeme) {
+const char* gnuKeywordAlias(std::string_view lexeme) {
     static const std::pair<const char*, const char*> kMap[] = {
             { "__const", "const" },
             { "__const__", "const" },

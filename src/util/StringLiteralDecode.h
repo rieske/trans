@@ -2,13 +2,14 @@
 #define UTIL_STRINGLITERALDECODE_H_
 
 #include <string>
+#include <string_view>
 #include <vector>
 
 namespace util {
 
 // Decode a C string token ("...") into the bytes it stores in a char array,
 // including the trailing NUL. Handles simple escapes, hex \xNN, and octal \nnn.
-std::vector<unsigned char> decodeStringLiteralBytes(const std::string &token);
+std::vector<unsigned char> decodeStringLiteralBytes(std::string_view token);
 
 // Decode a C character-constant token ('a', '\n', '\xFE', '\033') to 0..255.
 bool decodeCharConstant(const std::string& token, long& value);

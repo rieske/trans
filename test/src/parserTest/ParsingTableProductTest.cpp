@@ -9,6 +9,8 @@
 #include "TableAssertions.h"
 #include "scanner/Token.h"
 
+#include <string>
+
 using namespace parser;
 
 namespace {
@@ -49,6 +51,39 @@ TEST(ParsingTableProduct, unknownLookaheadIsErrorActionNotThrow) {
     Action action;
     ASSERT_NO_THROW(action = table.action(0, token));
     EXPECT_EQ(action.kind(), Action::Kind::Error);
+}
+
+TEST(ParsingTableProduct, cellAgreesWithActionKindAndPayload) {
+    Grammar grammar = productGrammar();
+    ParsingTable table { &grammar };
+    const char* names[] = { "int", "id", "(", ")", "{", ";", scanner::Token::END.c_str() };
+    for (std::size_t state = 0; state < table.stateCount() && state < 32; ++state) {
+        for (const char* name : names) {
+            const auto symbolId = grammar.trySymbolId(name);
+            if (!symbolId) {
+                continue;
+            }
+            scanner::Token token { name, name, { "t.c", 1 }, *symbolId };
+            const Action action = table.action(state, token);
+            const ParsingTable::ActionCell cell = table.cell(state, *symbolId);
+            switch (action.kind()) {
+            case Action::Kind::Shift:
+                EXPECT_EQ(cell.kind, ParsingTable::kCellShift);
+                EXPECT_EQ(cell.payload, action.shiftState());
+                break;
+            case Action::Kind::Reduce:
+                EXPECT_EQ(cell.kind, ParsingTable::kCellReduce);
+                EXPECT_EQ(cell.payload, action.productionId());
+                break;
+            case Action::Kind::Accept:
+                EXPECT_EQ(cell.kind, ParsingTable::kCellAccept);
+                break;
+            case Action::Kind::Error:
+                EXPECT_EQ(cell.kind, ParsingTable::kCellEmpty);
+                break;
+            }
+        }
+    }
 }
 
 TEST(ParsingTableProduct, rejectsGrammarThatIsNotTheProductGrammar) {

@@ -3,6 +3,7 @@
 
 #include <map>
 #include <string>
+#include <string_view>
 #include <vector>
 
 #include "types/IntegerConstant.h"
@@ -14,15 +15,15 @@ namespace scanner {
 class EnumConstantRegistry {
 public:
     void add(const std::string& name, type::IntegerConstant value);
-    bool lookup(const std::string& name, type::IntegerConstant& value) const;
-    bool contains(const std::string& name) const;
-    bool containsInCurrentScope(const std::string& name) const;
+    bool lookup(std::string_view name, type::IntegerConstant& value) const;
+    bool contains(std::string_view name) const;
+    bool containsInCurrentScope(std::string_view name) const;
 
     void enterScope();
     void leaveScope();
 
 private:
-    std::vector<std::map<std::string, type::IntegerConstant>> scopes_ { {} };
+    std::vector<std::map<std::string, type::IntegerConstant, std::less<>>> scopes_ { {} };
 };
 
 } // namespace scanner

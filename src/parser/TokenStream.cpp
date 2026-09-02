@@ -5,6 +5,7 @@
 
 #include <optional>
 #include <stdexcept>
+#include <string>
 #include <string_view>
 
 namespace parser {
@@ -13,25 +14,7 @@ namespace {
 
 // Closed transition membership: after consuming this token id, next name is
 // AsType / AsIdentifier, or keep current role (nullopt). Extend via these
-// helpers only - do not add one-off previous-token specials in nextToken.
-
-bool isTagKeyword(std::string_view id) {
-    return id == "struct" || id == "union" || id == "enum";
-}
-
-bool isMemberOp(std::string_view id) {
-    return id == "." || id == "->";
-}
-
-// Declarator / unary '*': next name is an identifier.
-bool isStar(std::string_view id) {
-    return id == "*";
-}
-
-// After a typedef_name token, the next name is the object/declarator identifier.
-bool isTypedefNameToken(std::string_view id) {
-    return id == "typedef_name";
-}
+// tables only - do not add one-off previous-token specials in nextToken.
 
 // Keywords, unaries (except '*'), assigns/relops, primaries that put the next
 // name in expression position. Extend this table only - keep roleAfter closed.
@@ -46,44 +29,20 @@ constexpr std::string_view kExpressionCues[] = {
         "id", "int_const", "char_const", "float_const", "string", "enumeration_const",
 };
 
-bool isExpressionCue(std::string_view id) {
-    for (std::string_view cue : kExpressionCues) {
-        if (cue == id) {
-            return true;
-        }
-    }
-    return false;
-}
+constexpr std::string_view kIdentifierRoles[] = {
+        "struct", "union", "enum", ".", "->", "*", "typedef_name",
+        "int", "char", "void", "short", "long", "signed", "unsigned",
+        "float", "double",
+};
 
 // Restart type position. Intentionally omits ':' (label/case vs ternary).
 // ',' prefers type-list / multi-declarator type reuse (`void f(int a, size_t b)`)
 // over multi-declarator object lists that reuse a typedef spelling as a name
 // without a shadow (`int a, T` in an inner scope). Shadows cover the common
 // object case; a full type-vs-expression lattice is out of product scope.
-bool isTypeRestart(std::string_view id) {
-    return id == ";" || id == "{" || id == "}" || id == ")" || id == "]"
-            || id == "(" || id == ",";
-}
-
-// Primitive type-specifiers put the next name in declarator position (`int T`).
-// Qualifiers (const/volatile) intentionally keep context (nullopt) so
-// `const foo_t x` still treats foo_t as a typedef_name.
-bool isPrimitiveTypeSpec(std::string_view id) {
-    return id == "int" || id == "char" || id == "void" || id == "short"
-            || id == "long" || id == "signed" || id == "unsigned"
-            || id == "float" || id == "double";
-}
-
-std::optional<LexIdContext> roleAfter(std::string_view id) {
-    if (isTagKeyword(id) || isMemberOp(id) || isStar(id) || isTypedefNameToken(id)
-            || isExpressionCue(id) || isPrimitiveTypeSpec(id)) {
-        return LexIdContext::AsIdentifier;
-    }
-    if (isTypeRestart(id)) {
-        return LexIdContext::AsType;
-    }
-    return std::nullopt;
-}
+constexpr std::string_view kTypeRestarts[] = {
+        ";", "{", "}", ")", "]", "(", ",",
+};
 
 } // namespace
 
@@ -130,16 +89,45 @@ TokenStream::TokenStream(std::function<scanner::Token()> scan, scanner::LexicalS
     scan { std::move(scan) },
     session_ { session },
     grammar_ { grammar },
-    current_ { classifyAndStamp(this->scan()) },
-    classifiedRevision_ { session.names.revision() }
+    current_ { scanner::Token::END, scanner::Token::END, translation_unit::Context { "", 0 } }
 {
+    indexRoles();
+    current_ = classifyAndStamp(this->scan());
+    classifiedRevision_ = session.names.revision();
+}
+
+void TokenStream::indexRoles() {
+    const int endId = grammar_.getEndSymbol();
+    const std::size_t size = endId < 0 ? 0 : static_cast<std::size_t>(endId) + 1;
+    roleAfterId_.assign(size, std::nullopt);
+    auto setRole = [&](std::string_view name, LexIdContext role) {
+        if (const auto id = grammar_.trySymbolId(name)) {
+            if (*id >= 0 && static_cast<std::size_t>(*id) < roleAfterId_.size()) {
+                roleAfterId_[static_cast<std::size_t>(*id)] = role;
+            }
+        }
+    };
+    for (std::string_view cue : kExpressionCues) {
+        setRole(cue, LexIdContext::AsIdentifier);
+    }
+    for (std::string_view name : kIdentifierRoles) {
+        setRole(name, LexIdContext::AsIdentifier);
+    }
+    for (std::string_view name : kTypeRestarts) {
+        setRole(name, LexIdContext::AsType);
+    }
+    idId_ = grammar_.trySymbolId("id").value_or(-1);
+    typedefNameId_ = grammar_.trySymbolId("typedef_name").value_or(-1);
 }
 
 // Transitions use the reclassified token id so shadows and type promotions
 // feed roleAfter (not the raw FA id).
 void TokenStream::advanceIdContext(const scanner::Token& token) {
-    if (auto next = roleAfter(token.id)) {
-        idContext_ = *next;
+    const int id = token.symbolId;
+    if (id >= 0 && static_cast<std::size_t>(id) < roleAfterId_.size()) {
+        if (const auto next = roleAfterId_[static_cast<std::size_t>(id)]) {
+            idContext_ = *next;
+        }
     }
 }
 
@@ -149,23 +137,31 @@ void TokenStream::setIdContext(LexIdContext context) {
 }
 
 scanner::Token TokenStream::classifyAndStamp(const scanner::Token& token) const {
-    std::string id = token.id;
-    if (id == "id" || id == "typedef_name") {
-        if (session_.names.isIdentifierShadow(token.lexeme)) {
-            id = "id";
-        } else if (!session_.isTypedef(token.lexeme)) {
-            id = "id";
-        } else if (idContext_ == LexIdContext::AsIdentifier) {
-            id = "id";
+    scanner::Token out = token;
+    if (token.id == "id" || token.id == "typedef_name") {
+        if (session_.names.isIdentifierShadow(token.lexeme)
+                || !session_.isTypedef(token.lexeme)
+                || idContext_ == LexIdContext::AsIdentifier) {
+            if (idId_ < 0) {
+                throw std::logic_error { "TokenStream: not a grammar terminal: id" };
+            }
+            out.id = "id";
+            out.symbolId = idId_;
         } else {
-            id = "typedef_name";
+            if (typedefNameId_ < 0) {
+                throw std::logic_error { "TokenStream: not a grammar terminal: typedef_name" };
+            }
+            out.id = "typedef_name";
+            out.symbolId = typedefNameId_;
         }
+        return out;
     }
-    const auto symbolId = grammar_.trySymbolId(id);
+    const auto symbolId = grammar_.trySymbolId(token.id);
     if (!symbolId) {
-        throw std::logic_error { "TokenStream: not a grammar terminal: " + id };
+        throw std::logic_error { "TokenStream: not a grammar terminal: " + std::string { token.id } };
     }
-    return { std::move(id), token.lexeme, token.context, *symbolId };
+    out.symbolId = *symbolId;
+    return out;
 }
 
 void TokenStream::refreshCurrent() const {
