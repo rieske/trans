@@ -114,8 +114,8 @@ bool consumeEncodedByte(const std::string& body, std::size_t& pos, unsigned char
 
 } // namespace
 
-std::vector<unsigned char> decodeStringLiteralBytes(const std::string &token) {
-    std::string body = token;
+std::vector<unsigned char> decodeStringLiteralBytes(std::string_view token) {
+    std::string body { token };
     if (body.size() >= 2 && body.front() == '"' && body.back() == '"') {
         body = body.substr(1, body.size() - 2);
     }

@@ -97,3 +97,5 @@ TEST(GnuExtensionsTryGoto, isTypeExtensionTokenOnlyForInt128Spellings) {
     EXPECT_FALSE(extensions.isTypeExtensionToken({ "id", "x", { "t.c", 1 } }));
     EXPECT_FALSE(extensions.isTypeExtensionToken({ "int", "int", { "t.c", 1 } }));
 }
+
+

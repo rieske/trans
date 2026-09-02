@@ -105,7 +105,7 @@ TEST(ScannerTokens, punctuatorsDotArrowQuestionColonEllipsis) {
     auto toks = scanAll(path);
     std::vector<std::string> ids;
     for (const auto &t : toks) {
-        ids.push_back(t.id);
+        ids.push_back(std::string { t.id });
     }
     EXPECT_THAT(ids, Contains("."));
     EXPECT_THAT(ids, Contains("->"));
@@ -279,7 +279,7 @@ TEST(ScannerTokens, compoundPunctuatorIsOneTokenAtStartLine) {
     auto toks = scanAll(path);
     std::vector<std::string> ids;
     for (const auto& t : toks) {
-        ids.push_back(t.id);
+        ids.push_back(std::string { t.id });
     }
     EXPECT_THAT(ids, ElementsAre("id", "<<=", "id", ";"));
     EXPECT_EQ(toks[1].lexeme, "<<=");

@@ -30,7 +30,7 @@ std::vector<std::pair<std::string, std::string>> filterIds(const std::string& pa
         if (t.id == Token::END) {
             break;
         }
-        out.push_back({ t.id, t.lexeme });
+        out.push_back({ std::string { t.id }, std::string { t.lexeme } });
     }
     return out;
 }

@@ -2,6 +2,7 @@
 
 #include <sstream>
 #include <stdexcept>
+#include <string>
 
 #include "Grammar.h"
 #include "ParsingTable.h"
@@ -119,7 +120,7 @@ bool Action::parse(std::stack<parse_state>& parsingStack, TokenStream& tokenStre
     case Kind::Shift: {
         parsingStack.push(state_);
         const scanner::Token& token = tokenStream.getCurrentToken();
-        syntaxTreeBuilder.makeTerminalNode(token.id, token.lexeme, token.context);
+        syntaxTreeBuilder.makeTerminalNode(std::string { token.id }, std::string { token.lexeme }, token.context);
         tokenStream.nextToken();
         return false;
     }
@@ -131,21 +132,24 @@ bool Action::parse(std::stack<parse_state>& parsingStack, TokenStream& tokenStre
         syntaxTreeBuilder.makeNonterminalNode(*production_);
         return syntaxTreeBuilder.aborted();
     }
-    case Kind::Error: {
-        syntaxTreeBuilder.err();
-        const scanner::Token& currentToken = tokenStream.getCurrentToken();
-        std::ostringstream message;
-        message << "unexpected token: " << currentToken.lexeme << " expected:";
-        if (candidateSymbols_ && grammar_) {
-            for (const auto candidate : *candidateSymbols_) {
-                message << " " << grammar_->getSymbolById(candidate);
-            }
-        }
-        syntaxTreeBuilder.sink().error(currentToken.context, message.str());
+    case Kind::Error:
+        reportError(tokenStream, syntaxTreeBuilder);
         return true;
     }
-    }
     throw std::logic_error { "Action::parse: unhandled Kind" };
+}
+
+void Action::reportError(TokenStream& tokenStream, SyntaxTreeBuilder& syntaxTreeBuilder) const {
+    syntaxTreeBuilder.err();
+    const scanner::Token& currentToken = tokenStream.getCurrentToken();
+    std::ostringstream message;
+    message << "unexpected token: " << currentToken.lexeme << " expected:";
+    if (candidateSymbols_ && grammar_) {
+        for (const auto candidate : *candidateSymbols_) {
+            message << " " << grammar_->getSymbolById(candidate);
+        }
+    }
+    syntaxTreeBuilder.sink().error(currentToken.context, message.str());
 }
 
 } // namespace parser

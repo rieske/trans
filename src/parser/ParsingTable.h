@@ -16,9 +16,20 @@ struct ParsingTableAccess;
 
 class ParsingTable {
 public:
+	static constexpr uint8_t kCellEmpty = 0;
+	static constexpr uint8_t kCellShift = 1;
+	static constexpr uint8_t kCellReduce = 2;
+	static constexpr uint8_t kCellAccept = 3;
+
+	struct ActionCell {
+		uint8_t kind { kCellEmpty };
+		uint16_t payload { 0 };
+	};
+
 	explicit ParsingTable(const Grammar* grammar);
 
 	Action action(parse_state state, const scanner::Token& lookahead) const;
+	ActionCell cell(parse_state state, int symbolId) const;
 	parse_state go_to(parse_state state, int nonterminal) const;
 	std::optional<parse_state> tryGoTo(parse_state state, int nonterminal) const;
 	const Grammar* getGrammar() const { return grammar_; }

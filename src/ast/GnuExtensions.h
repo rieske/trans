@@ -68,6 +68,8 @@ private:
     int primaryExpId_ { 0 };
     int typeSpecId_ { 0 };
     int unaryExpId_ { 0 };
+    int lparenId_ { -1 };
+    int idId_ { -1 };
 };
 
 } // namespace ast

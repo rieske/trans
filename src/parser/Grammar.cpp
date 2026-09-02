@@ -12,7 +12,7 @@ Grammar::Grammar(std::map<std::string, int> symbolIDs,
         std::vector<int> terminals,
         std::vector<int> nonterminals,
         std::vector<Production> rules):
-    symbolIDs{std::move(symbolIDs)},
+    symbolIDs{symbolIDs.begin(), symbolIDs.end()},
     nonterminalIDs{std::move(nonterminals)},
     terminalIDs{std::move(terminals)},
     startSymbol { -1 },
@@ -97,7 +97,7 @@ int Grammar::symbolId(std::string definition) const {
     return symbolIDs.at(definition);
 }
 
-std::optional<int> Grammar::trySymbolId(const std::string& definition) const {
+std::optional<int> Grammar::trySymbolId(std::string_view definition) const {
     const auto it = symbolIDs.find(definition);
     if (it == symbolIDs.end()) {
         return std::nullopt;

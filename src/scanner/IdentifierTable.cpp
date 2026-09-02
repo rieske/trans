@@ -8,11 +8,11 @@ void IdentifierTable::addTypedef(const std::string& name, const type::Type& type
     ++revision_;
 }
 
-bool IdentifierTable::hasTypedef(const std::string& name) const {
+bool IdentifierTable::hasTypedef(std::string_view name) const {
     return lookupTypedef(name).has_value();
 }
 
-std::optional<type::Type> IdentifierTable::lookupTypedef(const std::string& name) const {
+std::optional<type::Type> IdentifierTable::lookupTypedef(std::string_view name) const {
     for (auto it = scopes_.rbegin(); it != scopes_.rend(); ++it) {
         auto found = it->typedefs.find(name);
         if (found != it->typedefs.end()) {
@@ -26,7 +26,7 @@ void IdentifierTable::addObject(const std::string& name, const type::Type& type)
     scopes_.back().objects.insert_or_assign(name, type);
 }
 
-std::optional<type::Type> IdentifierTable::lookupObject(const std::string& name) const {
+std::optional<type::Type> IdentifierTable::lookupObject(std::string_view name) const {
     auto pending = pendingObjects_.find(name);
     if (pending != pendingObjects_.end()) {
         return pending->second;
@@ -74,7 +74,7 @@ void IdentifierTable::addIdentifierShadow(const std::string& name) {
     ++revision_;
 }
 
-bool IdentifierTable::isIdentifierShadow(const std::string& name) const {
+bool IdentifierTable::isIdentifierShadow(std::string_view name) const {
     for (auto it = scopes_.rbegin(); it != scopes_.rend(); ++it) {
         if (it->shadows.count(name) > 0) {
             return true;

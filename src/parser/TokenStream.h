@@ -6,6 +6,7 @@
 #include <functional>
 #include <optional>
 #include <string_view>
+#include <vector>
 
 namespace scanner {
 class LexicalSession;
@@ -34,6 +35,7 @@ public:
     void setIdContext(LexIdContext context);
 
 private:
+    void indexRoles();
     void advanceIdContext(const scanner::Token& token);
     scanner::Token classifyAndStamp(const scanner::Token& token) const;
     void refreshCurrent() const;
@@ -43,10 +45,13 @@ private:
     scanner::LexicalSession& session_;
     const Grammar& grammar_;
     LexIdContext idContext_ { LexIdContext::AsType };
+    std::vector<std::optional<LexIdContext>> roleAfterId_;
 
     mutable scanner::Token current_;
     std::optional<scanner::Token> lookahead_;
     mutable unsigned classifiedRevision_ { 0 };
+    int idId_ { -1 };
+    int typedefNameId_ { -1 };
 
     struct SpecifierLookahead {
         enum class Op { None, OpenBlock, OpenRecord, OpenEnumBody, Close, EndDeclarators };

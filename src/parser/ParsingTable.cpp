@@ -55,29 +55,39 @@ void ParsingTable::validate() const {
     }
 }
 
+ParsingTable::ActionCell ParsingTable::cell(parse_state state, int symbolId) const {
+    if (symbolId < 0) {
+        throw std::logic_error { "ParsingTable::cell: lookahead is not a grammar terminal" };
+    }
+    if (state < stateCount_ && inTerminalRange(symbolId, minTerminal_, maxTerminal_)
+            && terminalColumns_ > 0) {
+        const std::size_t index = cellIndex(state, terminalColumn(symbolId, minTerminal_), terminalColumns_);
+        const uint8_t kind = actionKind_[index];
+        if (kind == kShift || kind == kReduce || kind == kAccept) {
+            return { kind, actionPayload_[index] };
+        }
+        if (kind != kEmpty) {
+            throw std::logic_error { "ParsingTable::cell: invalid compiled cell kind" };
+        }
+    }
+    return {};
+}
+
 Action ParsingTable::action(parse_state state, const scanner::Token& lookahead) const {
     static const auto kEmptyCandidates = std::make_shared<const std::vector<int>>();
 
-    if (lookahead.symbolId < 0) {
-        throw std::logic_error { "ParsingTable::action: lookahead is not a grammar terminal" };
-    }
-
-    if (state < stateCount_ && inTerminalRange(lookahead.symbolId, minTerminal_, maxTerminal_)
-            && terminalColumns_ > 0) {
-        const std::size_t index = cellIndex(state,
-                terminalColumn(lookahead.symbolId, minTerminal_), terminalColumns_);
-        switch (actionKind_[index]) {
-        case kShift:
-            return Action::shift(actionPayload_[index]);
-        case kReduce:
-            return Action::reduce(grammar_->getRuleById(actionPayload_[index]), this);
-        case kAccept:
-            return Action::accept();
-        case kEmpty:
-            break;
-        default:
-            throw std::logic_error { "ParsingTable::action: invalid compiled cell kind" };
-        }
+    const ActionCell looked = cell(state, lookahead.symbolId);
+    switch (looked.kind) {
+    case kShift:
+        return Action::shift(looked.payload);
+    case kReduce:
+        return Action::reduce(grammar_->getRuleById(looked.payload), this);
+    case kAccept:
+        return Action::accept();
+    case kEmpty:
+        break;
+    default:
+        throw std::logic_error { "ParsingTable::action: invalid compiled cell kind" };
     }
     if (state < stateCount_ && state + 1 < errorOffset_.size()) {
         const uint32_t begin = errorOffset_[state];

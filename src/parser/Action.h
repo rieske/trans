@@ -46,6 +46,7 @@ public:
     // Returns true when the parse is finished (accept or error).
     bool parse(std::stack<parse_state>& parsingStack, TokenStream& tokenStream,
             SyntaxTreeBuilder& syntaxTreeBuilder) const;
+    void reportError(TokenStream& tokenStream, SyntaxTreeBuilder& syntaxTreeBuilder) const;
 
     std::string toString() const;
     bool equals(const Action& other) const;

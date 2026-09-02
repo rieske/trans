@@ -1,9 +1,11 @@
 #include "LR1Parser.h"
 
-#include <stack>
+#include <string>
+#include <vector>
 
 #include "ParseExtensions.h"
 #include "ParsingTable.h"
+#include "Production.h"
 #include "SyntaxTreeBuilder.h"
 #include "TokenStream.h"
 #include "Action.h"
@@ -28,41 +30,59 @@ namespace {
 // any type-spec first token would; the real token stays current for retry.
 constexpr const char* kTypeSpecFirstProbe = "int";
 
+void applyShift(std::vector<parse_state>& stack, parse_state next, TokenStream& tokenStream,
+        SyntaxTreeBuilder& syntaxTreeBuilder) {
+    stack.push_back(next);
+    const scanner::Token& token = tokenStream.getCurrentToken();
+    syntaxTreeBuilder.makeTerminalNode(std::string { token.id }, std::string { token.lexeme }, token.context);
+    tokenStream.nextToken();
+}
+
+bool applyReduce(std::vector<parse_state>& stack, const Production& production,
+        const ParsingTable& parsingTable, SyntaxTreeBuilder& syntaxTreeBuilder) {
+    stack.resize(stack.size() - production.size());
+    stack.push_back(parsingTable.go_to(stack.back(), production.getDefiningSymbol()));
+    syntaxTreeBuilder.makeNonterminalNode(production);
+    return syntaxTreeBuilder.aborted();
+}
+
 } // namespace
 
 LrFinish runLrParse(const ParsingTable& parsingTable, TokenStream& tokenStream,
         SyntaxTreeBuilder& syntaxTreeBuilder, ParseExtensions* extensions,
         std::optional<LrStop> stop) {
-    std::stack<parse_state> parsingStack;
-    parsingStack.push(0);
+    std::vector<parse_state> parsingStack { 0 };
     int nest = 0;
+    const Grammar* grammar = parsingTable.getGrammar();
+    const int lparenId = grammar->trySymbolId("(").value_or(-2);
+    const int lbracketId = grammar->trySymbolId("[").value_or(-2);
+    const int rparenId = grammar->trySymbolId(")").value_or(-2);
+    const int rbracketId = grammar->trySymbolId("]").value_or(-2);
     for (;;) {
         if (syntaxTreeBuilder.aborted()) {
             return LrFinish::Complete;
         }
         const scanner::Token& current = tokenStream.getCurrentToken();
-        const Action action = parsingTable.action(parsingStack.top(), current);
-        // Prefix tokens for a dummy subparse are not live. Peeking them would
-        // scan the first live token and corrupt nest.
+        const parse_state state = parsingStack.back();
+        const ParsingTable::ActionCell cell = parsingTable.cell(state, current.symbolId);
         const bool live = !stop || stop->live == nullptr || *stop->live;
         if (extensions && live) {
-            if (const auto nextState = extensions->tryGoto(parsingStack.top(), tokenStream, parsingTable)) {
+            if (const auto nextState = extensions->tryGoto(state, tokenStream, parsingTable)) {
                 if (extensions->accept(tokenStream, parsingTable, syntaxTreeBuilder)) {
-                    parsingStack.push(*nextState);
+                    parsingStack.push_back(*nextState);
                     continue;
                 }
                 if (syntaxTreeBuilder.aborted()) {
                     return LrFinish::Complete;
                 }
-            } else if (action.kind() == Action::Kind::Error
+            } else if (cell.kind == ParsingTable::kCellEmpty
                     && extensions->isTypeExtensionToken(current)) {
-                const auto probeId = parsingTable.getGrammar()->trySymbolId(kTypeSpecFirstProbe);
+                const auto probeId = grammar->trySymbolId(kTypeSpecFirstProbe);
                 if (probeId) {
-                    const scanner::Token typeProbe {
-                            kTypeSpecFirstProbe, kTypeSpecFirstProbe, current.context, *probeId };
-                    const Action asTypeKeyword = parsingTable.action(parsingStack.top(), typeProbe);
-                    if (asTypeKeyword.kind() == Action::Kind::Reduce) {
-                        if (asTypeKeyword.parse(parsingStack, tokenStream, syntaxTreeBuilder)) {
+                    const ParsingTable::ActionCell asType = parsingTable.cell(state, *probeId);
+                    if (asType.kind == ParsingTable::kCellReduce) {
+                        if (applyReduce(parsingStack, grammar->getRuleById(asType.payload),
+                                parsingTable, syntaxTreeBuilder)) {
                             return LrFinish::Complete;
                         }
                         continue;
@@ -72,23 +92,36 @@ LrFinish runLrParse(const ParsingTable& parsingTable, TokenStream& tokenStream,
         }
         if (stop
                 && live
-                && action.reduceDefiningSymbol() == stop->definingSymbol
+                && cell.kind == ParsingTable::kCellReduce
+                && grammar->getRuleById(cell.payload).getDefiningSymbol() == stop->definingSymbol
                 && tokenStream.getCurrentToken().id == stop->lookahead
                 && nest == 0) {
-            if (action.parse(parsingStack, tokenStream, syntaxTreeBuilder)) {
+            if (applyReduce(parsingStack, grammar->getRuleById(cell.payload), parsingTable, syntaxTreeBuilder)) {
                 return LrFinish::Complete;
             }
             return LrFinish::Stopped;
         }
-        if (stop && live && action.kind() == Action::Kind::Shift) {
-            const std::string& id = tokenStream.getCurrentToken().id;
-            if (id == "(" || id == "[") {
+        if (stop && live && cell.kind == ParsingTable::kCellShift) {
+            const int id = tokenStream.getCurrentToken().symbolId;
+            if (id == lparenId || id == lbracketId) {
                 ++nest;
-            } else if ((id == ")" || id == "]") && nest > 0) {
+            } else if ((id == rparenId || id == rbracketId) && nest > 0) {
                 --nest;
             }
         }
-        if (action.parse(parsingStack, tokenStream, syntaxTreeBuilder)) {
+        switch (cell.kind) {
+        case ParsingTable::kCellAccept:
+            return LrFinish::Complete;
+        case ParsingTable::kCellShift:
+            applyShift(parsingStack, cell.payload, tokenStream, syntaxTreeBuilder);
+            break;
+        case ParsingTable::kCellReduce:
+            if (applyReduce(parsingStack, grammar->getRuleById(cell.payload), parsingTable, syntaxTreeBuilder)) {
+                return LrFinish::Complete;
+            }
+            break;
+        default:
+            parsingTable.action(state, current).reportError(tokenStream, syntaxTreeBuilder);
             return LrFinish::Complete;
         }
     }

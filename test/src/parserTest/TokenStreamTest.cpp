@@ -10,6 +10,7 @@
 #include "types/Type.h"
 
 #include <stdexcept>
+#include <string>
 
 using namespace testing;
 using namespace parser;
@@ -28,6 +29,12 @@ Grammar streamGrammar() {
 
 } // namespace
 
+TEST(Token, defaultSymbolIdIsUnset) {
+    const Token token { "id", "x", { "f", 1 } };
+    ASSERT_EQ(token.symbolId, -1);
+    ASSERT_EQ(token.id, "id");
+}
+
 TEST(Token, isAValueType) {
     const Token token { "id", "x", { "f", 1 }, 7 };
     const Token copy { token };
@@ -39,6 +46,40 @@ TEST(Token, isAValueType) {
     ASSERT_EQ(assigned.symbolId, 7);
     ASSERT_EQ(assigned.id, "id");
     ASSERT_EQ(assigned.lexeme, "x");
+}
+
+TEST(Token, copyKeepsIdAndLexemeAfterTemporaryDies) {
+    const Token copy { Token { "id", "hello", { "f", 1 }, 3 } };
+    ASSERT_EQ(copy.id, "id");
+    ASSERT_EQ(copy.lexeme, "hello");
+    ASSERT_EQ(copy.symbolId, 3);
+}
+
+TEST(Token, lexemeIsIndependentOfSourceString) {
+    std::string lex = "abc";
+    const Token token { "id", lex, { "f", 1 } };
+    lex = "xyz";
+    ASSERT_EQ(token.lexeme, "abc");
+    ASSERT_EQ(token.id, "id");
+}
+
+TEST(Token, classifyRemapDoesNotNeedAViewCtor) {
+    const Grammar grammar = streamGrammar();
+    scanner::LexicalSession session;
+    session.names.addTypedef("T", type::signedInteger());
+    std::vector<scanner::Token> tokens {
+            { "id", "T", { "f", 1 } },
+            { scanner::Token::END, scanner::Token::END, { "f", 1 } },
+    };
+    int i = 0;
+    TokenStream ts { [&]() { return tokens[i++]; }, session, grammar };
+    const Token classified = ts.getCurrentToken();
+    EXPECT_EQ(classified.id, "typedef_name");
+    EXPECT_EQ(classified.symbolId, *grammar.trySymbolId("typedef_name"));
+    EXPECT_EQ(classified.lexeme, "T");
+    const Token copy { classified };
+    EXPECT_EQ(copy.id, "typedef_name");
+    EXPECT_EQ(copy.lexeme, "T");
 }
 
 TEST(TokenStream, usesScannerToRetrieveNextToken) {

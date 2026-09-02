@@ -6,7 +6,7 @@ void EnumConstantRegistry::add(const std::string& name, type::IntegerConstant va
     scopes_.back().insert_or_assign(name, std::move(value));
 }
 
-bool EnumConstantRegistry::lookup(const std::string& name, type::IntegerConstant& value) const {
+bool EnumConstantRegistry::lookup(std::string_view name, type::IntegerConstant& value) const {
     for (auto it = scopes_.rbegin(); it != scopes_.rend(); ++it) {
         auto found = it->find(name);
         if (found != it->end()) {
@@ -17,12 +17,12 @@ bool EnumConstantRegistry::lookup(const std::string& name, type::IntegerConstant
     return false;
 }
 
-bool EnumConstantRegistry::contains(const std::string& name) const {
+bool EnumConstantRegistry::contains(std::string_view name) const {
     type::IntegerConstant unused;
     return lookup(name, unused);
 }
 
-bool EnumConstantRegistry::containsInCurrentScope(const std::string& name) const {
+bool EnumConstantRegistry::containsInCurrentScope(std::string_view name) const {
     return scopes_.back().find(name) != scopes_.back().end();
 }
 

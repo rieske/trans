@@ -5,6 +5,7 @@
 #include <optional>
 #include <set>
 #include <string>
+#include <string_view>
 #include <vector>
 
 #include "types/Type.h"
@@ -17,11 +18,11 @@ namespace scanner {
 class IdentifierTable {
 public:
     void addTypedef(const std::string& name, const type::Type& type);
-    bool hasTypedef(const std::string& name) const;
-    std::optional<type::Type> lookupTypedef(const std::string& name) const;
+    bool hasTypedef(std::string_view name) const;
+    std::optional<type::Type> lookupTypedef(std::string_view name) const;
 
     void addObject(const std::string& name, const type::Type& type);
-    std::optional<type::Type> lookupObject(const std::string& name) const;
+    std::optional<type::Type> lookupObject(std::string_view name) const;
     void addPendingObject(const std::string& name, const type::Type& type);
     void clearPendingObjects();
 
@@ -29,7 +30,7 @@ public:
     void leaveScope();
 
     void addIdentifierShadow(const std::string& name);
-    bool isIdentifierShadow(const std::string& name) const;
+    bool isIdentifierShadow(std::string_view name) const;
 
     void addPendingParameterShadow(const std::string& name);
     void clearPendingParameterShadows();
@@ -37,9 +38,9 @@ public:
 
 private:
     struct Scope {
-        std::map<std::string, type::Type> typedefs;
-        std::map<std::string, type::Type> objects;
-        std::set<std::string> shadows;
+        std::map<std::string, type::Type, std::less<>> typedefs;
+        std::map<std::string, type::Type, std::less<>> objects;
+        std::set<std::string, std::less<>> shadows;
     };
 
     void flushPendingParameterShadows();
@@ -48,7 +49,7 @@ private:
     unsigned revision_ { 0 };
     std::vector<Scope> scopes_ { Scope {} };
     std::set<std::string> pendingParameterShadows_;
-    std::map<std::string, type::Type> pendingObjects_;
+    std::map<std::string, type::Type, std::less<>> pendingObjects_;
 };
 
 } // namespace scanner

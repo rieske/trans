@@ -20,6 +20,7 @@
 #include <cstddef>
 #include <stdexcept>
 #include <string>
+#include <string_view>
 #include <vector>
 
 namespace ast {
@@ -53,7 +54,7 @@ bool failGnu(AbstractSyntaxTreeBuilder& builder) {
     return false;
 }
 
-bool isInt128Lexeme(const std::string& lexeme) {
+bool isInt128Lexeme(std::string_view lexeme) {
     return lexeme == "__int128" || lexeme == "__int128_t" || lexeme == "__uint128_t";
 }
 
@@ -70,6 +71,8 @@ void GnuExtensions::cacheGrammarIds(const parser::Grammar& grammar) {
     primaryExpId_ = grammar.symbolId("<primary_exp>");
     typeSpecId_ = grammar.symbolId("<type_spec>");
     unaryExpId_ = grammar.symbolId("<unary_exp>");
+    lparenId_ = grammar.trySymbolId("(").value_or(-1);
+    idId_ = grammar.trySymbolId("id").value_or(-1);
     cachedIds_ = true;
 }
 
@@ -77,13 +80,13 @@ std::optional<std::size_t> GnuExtensions::tryGoto(std::size_t state, parser::Tok
         const parser::ParsingTable& parsingTable) {
     cacheGrammarIds(*parsingTable.getGrammar());
     const scanner::Token& current = tokenStream.getCurrentToken();
-    if (current.id == "(" && tokenStream.peek().id == "{") {
+    if (current.symbolId == lparenId_ && tokenStream.peek().id == "{") {
         return parsingTable.tryGoTo(state, primaryExpId_);
     }
-    if (current.id == "id" && isInt128Lexeme(current.lexeme)) {
+    if (current.symbolId == idId_ && isInt128Lexeme(current.lexeme)) {
         return parsingTable.tryGoTo(state, typeSpecId_);
     }
-    if (current.id == "id"
+    if (current.symbolId == idId_
             && (current.lexeme == "__builtin_va_arg"
                     || current.lexeme == "__builtin_types_compatible_p"
                     || current.lexeme == "__builtin_offsetof")) {
@@ -94,15 +97,16 @@ std::optional<std::size_t> GnuExtensions::tryGoto(std::size_t state, parser::Tok
 
 bool GnuExtensions::accept(parser::TokenStream& tokenStream, const parser::ParsingTable& parsingTable,
         parser::SyntaxTreeBuilder& syntaxTreeBuilder) {
+    cacheGrammarIds(*parsingTable.getGrammar());
     auto& builder = static_cast<AbstractSyntaxTreeBuilder&>(syntaxTreeBuilder);
     const scanner::Token& current = tokenStream.getCurrentToken();
-    if (current.id == "(") {
+    if (current.symbolId == lparenId_) {
         return acceptStatementPrimary(tokenStream, parsingTable, builder);
     }
-    if (current.id == "id" && isInt128Lexeme(current.lexeme)) {
+    if (current.symbolId == idId_ && isInt128Lexeme(current.lexeme)) {
         return acceptInt128(tokenStream, builder);
     }
-    if (current.id == "id") {
+    if (current.symbolId == idId_) {
         return acceptVaArg(tokenStream, parsingTable, builder)
                 || acceptTypesCompatibleP(tokenStream, parsingTable, builder)
                 || acceptOffsetof(tokenStream, parsingTable, builder);
@@ -379,7 +383,7 @@ bool GnuExtensions::acceptOffsetof(parser::TokenStream& tokenStream,
     if (tokenStream.getCurrentToken().id != "id") {
         return failGnu(builder);
     }
-    const std::string member = tokenStream.getCurrentToken().lexeme;
+    const std::string member { tokenStream.getCurrentToken().lexeme };
     tokenStream.nextToken();
     if (tokenStream.getCurrentToken().id != ")") {
         return failGnu(builder);

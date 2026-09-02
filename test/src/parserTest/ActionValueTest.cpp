@@ -92,4 +92,23 @@ TEST(Action, errorParseReportsAndStops) {
     EXPECT_THAT(logged.str(), HasSubstr("t.c:1: error: unexpected token: a expected:"));
 }
 
+TEST(Action, reportErrorDoesNotNeedAStack) {
+    GrammarBuilder builder;
+    builder.defineRule("<S>", { "a" });
+    Grammar grammar = builder.build();
+    auto cands = std::make_shared<const std::vector<int>>(std::vector<int>{ grammar.getTerminalIDs().front() });
+    Action error = Action::error(0, cands, &grammar);
+
+    scanner::LexicalSession session;
+    TokenStream tokens { []() { return scanner::Token{ "a", "a", { "t.c", 1 } }; }, session, grammar };
+    NullSyntaxTreeBuilder treeBuilder;
+    std::ostringstream logged;
+    diag::Sink sink { logged };
+    treeBuilder.setSink(&sink);
+    error.reportError(tokens, treeBuilder);
+    EXPECT_TRUE(treeBuilder.hasError());
+    EXPECT_TRUE(sink.hasErrors());
+    EXPECT_THAT(logged.str(), HasSubstr("t.c:1: error: unexpected token: a expected:"));
+}
+
 } // namespace
