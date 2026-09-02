@@ -69,6 +69,14 @@ TEST(IrDumpFromC, gotoSkipsUnreachableLabel) {
             "ENDPROC f\n"));
 }
 
+TEST(IrDumpFromC, gotoKeepsUnreachableLabelAtO0) {
+    const char* src = "int f(void) { goto end; dead: return 1; end: return 0; }\n";
+    const std::string o0 = compileToIr(src, 0);
+    EXPECT_THAT(o0, HasSubstr("GOTO"));
+    EXPECT_THAT(o0, HasSubstr(":= 1"));
+    EXPECT_THAT(compileToIr(src, 1), Not(HasSubstr(":= 1")));
+}
+
 TEST(IrDumpFromC, dumpsAreStableAcrossCalls) {
     const char* src = "int add(int a, int b) { return a + b; }\n";
     EXPECT_EQ(compileToIr(src), compileToIr(src));

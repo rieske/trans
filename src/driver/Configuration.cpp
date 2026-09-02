@@ -95,6 +95,10 @@ void Configuration::setIgnoredFlags(std::vector<std::string> flags) {
     ignoredFlags_ = std::move(flags);
 }
 
+void Configuration::setOptLevel(int level) {
+    optLevel_ = level;
+}
+
 std::vector<std::string> Configuration::getSourceFiles() const {
     return sourceFiles;
 }
@@ -183,4 +187,8 @@ bool Configuration::isVerbose() const {
 
 const std::vector<std::string>& Configuration::getIgnoredFlags() const {
     return ignoredFlags_;
+}
+
+int Configuration::optLevel() const {
+    return optLevel_;
 }

@@ -65,7 +65,7 @@ std::string normalizeIrDump(const std::string& dump) {
 
 } // namespace
 
-std::string compileToIr(const std::string& source) {
+std::string compileToIr(const std::string& source, int optLevel) {
     static int seq = 0;
     const std::string path = writeTempSource("compile_to_ir_" + std::to_string(seq++), source);
 
@@ -94,7 +94,7 @@ std::string compileToIr(const std::string& source) {
         throw std::runtime_error { "compileToIr: semantic errors\n" + ignored.str() };
     }
 
-    codegen::IntermediateRepresentation ir = codegen::generateIr(*tree);
+    codegen::IntermediateRepresentation ir = codegen::generateIr(*tree, optLevel);
     for (const auto& procedure : ir.procedures) {
         for (const auto& instruction : procedure.body) {
             codegen::validateInstruction(instruction);

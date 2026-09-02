@@ -1,10 +1,12 @@
 #include "ConfigurationParser.h"
 #include "ResourcesLocation.h"
 
+#include <charconv>
 #include <optional>
 #include <sstream>
 #include <string>
 #include <string_view>
+#include <system_error>
 #include <utility>
 #include <vector>
 
@@ -129,6 +131,7 @@ struct CommandLine {
     std::vector<std::string> ignoredFlags;
     std::vector<std::string> files;
     std::string executable { "trans" };
+    int optLevel { 1 };
 };
 
 ParseResult errorResult(std::string message) {
@@ -149,7 +152,8 @@ ParseResult helpResult(const std::string& executable) {
     out << " -E                      Preprocess only\n";
     out << " -save-temps             Keep intermediate .i and .s files\n";
     out << " -v                      Print ignored flags and compile banners\n";
-    out << " -O*, -g*, -W*, -f*, -pipe  Accepted and ignored\n";
+    out << " -O, -O<n>               Optimization level (default: 1)\n";
+    out << " -g*, -W*, -f*, -pipe    Accepted and ignored\n";
     out << " -MMD, -MD, -MP, -MF, -MQ, -MT  Write gcc-style header dependencies\n";
     out << " -x c                    Treat the following input as C\n";
     out << " -I <dir>                Add include directory\n";
@@ -202,10 +206,26 @@ bool isIgnoredFlag(std::string_view arg) {
     }
     const char kind = arg[1];
     // -W* is ignored only when findOption did not claim a real option (e.g. -Wl,opts).
-    if (kind == 'O' || kind == 'g' || kind == 'f' || kind == 'W') {
+    if (kind == 'g' || kind == 'f' || kind == 'W') {
         return true;
     }
     return false;
+}
+
+std::optional<int> parseOptLevel(std::string_view arg) {
+    if (arg.size() < 2 || arg[0] != '-' || arg[1] != 'O') {
+        return std::nullopt;
+    }
+    const std::string_view rest = arg.substr(2);
+    if (rest.empty()) {
+        return 1;
+    }
+    int level = 0;
+    const auto parsed = std::from_chars(rest.data(), rest.data() + rest.size(), level);
+    if (parsed.ec != std::errc {} || parsed.ptr != rest.data() + rest.size()) {
+        return std::nullopt;
+    }
+    return level;
 }
 
 const OptionSpec* findOption(std::string_view arg) {
@@ -324,6 +344,15 @@ std::optional<ParseResult> walkArgv(int argc, char **argv, CommandLine& command)
         }
         if (arg.empty() || arg[0] != '-') {
             command.files.push_back(std::string(arg));
+            ++i;
+            continue;
+        }
+        if (arg.size() >= 2 && arg[1] == 'O') {
+            if (const auto level = parseOptLevel(arg)) {
+                command.optLevel = *level;
+            } else {
+                command.ignoredFlags.push_back(std::string(arg));
+            }
             ++i;
             continue;
         }
@@ -476,6 +505,7 @@ ParseResult apply(CommandLine command) {
     configuration.setPreprocessorArgs(std::move(command.preprocessorArgs));
     configuration.setLinkerArgs(std::move(command.linkerArgs));
     configuration.setIgnoredFlags(std::move(command.ignoredFlags));
+    configuration.setOptLevel(command.optLevel);
     if (command.files.empty()) {
         return errorResult("no input files");
     }

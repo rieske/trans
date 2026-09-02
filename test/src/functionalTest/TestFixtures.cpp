@@ -56,10 +56,39 @@ AssemblyDialect dialectFromEnvironment() {
 
 const AssemblyDialect kFunctionalTestDialect = dialectFromEnvironment();
 
+int optLevelFromEnvironment() {
+    const char* raw = std::getenv("TRANS_OPT_LEVEL");
+    if (raw == nullptr || raw[0] == '\0') {
+        return 1;
+    }
+    const std::string value { raw };
+    if (value.find_first_not_of("0123456789") != std::string::npos) {
+        throw std::runtime_error {
+                "TRANS_OPT_LEVEL must be a non-negative integer (got '" + value + "')" };
+    }
+    return std::stoi(value);
+}
+
+const int kFunctionalTestOptLevel = optLevelFromEnvironment();
+
 } // namespace
 
 std::string functionalTestDialectTag() {
     return assemblyDialectTag(kFunctionalTestDialect);
+}
+
+std::string functionalTestOptFlag() {
+    return "-O" + std::to_string(kFunctionalTestOptLevel);
+}
+
+std::string functionalTestMatrixTag() {
+    return functionalTestDialectTag() + "_O" + std::to_string(kFunctionalTestOptLevel);
+}
+
+std::vector<std::string> functionalTestFlags(std::vector<std::string> extra) {
+    extra.insert(extra.begin(), functionalTestOptFlag());
+    extra.insert(extra.begin(), "-masm=" + functionalTestDialectTag());
+    return extra;
 }
 
 std::string Program::executablePathFor(const std::string& sourcePath) {
@@ -83,7 +112,8 @@ void Program::addCompilerArg(std::string arg) {
 
 int Program::compileOnce(bool verbose) {
     std::vector<std::string> arguments{"trans", "--resources=../../../"};
-    arguments.push_back("-masm=" + functionalTestDialectTag());
+    const auto matrixFlags = functionalTestFlags();
+    arguments.insert(arguments.end(), matrixFlags.begin(), matrixFlags.end());
     arguments.insert(arguments.end(), extraCompilerArgs.begin(), extraCompilerArgs.end());
     arguments.push_back(sourceFilePath);
     std::vector<char *> argv;
@@ -101,12 +131,12 @@ int Program::compileOnce(bool verbose) {
         exitCode = transDriver.run((int)argv.size() - 1, argv.data());
     });
     if (verbose) {
-        std::cout << "[backend=" << functionalTestDialectTag() << "]\n" << outputStream.str();
+        std::cout << "[matrix=" << functionalTestMatrixTag() << "]\n" << outputStream.str();
     }
 
     compilationErrors = errorStream.str();
     if (exitCode != 0 && !compilationErrors.empty()) {
-        std::cerr << "[backend=" << functionalTestDialectTag() << "]\n" << compilationErrors;
+        std::cerr << "[matrix=" << functionalTestMatrixTag() << "]\n" << compilationErrors;
     }
     return exitCode;
 }
@@ -145,7 +175,7 @@ void Program::runAndExpect(std::string input, std::string expectedOutput) {
 
 void Program::assertOutputEquals(std::string expectedOutput) const {
     assertExecuted();
-    SCOPED_TRACE(std::string("backend=") + functionalTestDialectTag());
+    SCOPED_TRACE(std::string("matrix=") + functionalTestMatrixTag());
     EXPECT_THAT(readFileContents(outputPathFor(sourceFilePath)), Eq(expectedOutput));
 }
 
@@ -153,7 +183,7 @@ void Program::assertCompilationErrors(std::string expectedErrorFragment) const {
     if (compiled) {
         throw std::runtime_error{"Program is compiled without errors."};
     }
-    SCOPED_TRACE(std::string("backend=") + functionalTestDialectTag());
+    SCOPED_TRACE(std::string("matrix=") + functionalTestMatrixTag());
     EXPECT_THAT(compilationErrors, HasSubstr(expectedErrorFragment));
 }
 
@@ -189,14 +219,14 @@ std::string Program::readAssembly() const {
 void Program::assertCompiled() const {
     if (!compiled) {
         throw std::runtime_error{
-                std::string("Program is not compiled [backend=") + functionalTestDialectTag() + "]."};
+                std::string("Program is not compiled [matrix=") + functionalTestMatrixTag() + "]."};
     }
 }
 
 void Program::assertExecuted() const {
     if (!executed) {
         throw std::runtime_error{
-                std::string("Program has not executed [backend=") + functionalTestDialectTag() + "]."};
+                std::string("Program has not executed [matrix=") + functionalTestMatrixTag() + "]."};
     }
 }
 
@@ -208,7 +238,7 @@ std::string uniqueProgramNameForCurrentTest() {
         throw std::logic_error("SourceProgram requires an active gtest (current_test_info is null)");
     }
     std::string name = std::string(info->test_suite_name()) + "_" + info->name()
-            + "_" + functionalTestDialectTag();
+            + "_" + functionalTestMatrixTag();
     for (char &c : name) {
         if (c == '/' || c == '\\') {
             c = '_';

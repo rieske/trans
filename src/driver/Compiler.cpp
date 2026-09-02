@@ -343,7 +343,7 @@ std::optional<std::string> Compiler::compile(std::string sourceFileName) const {
         globalVariables.push_back(toGlobalVariable(symbol));
     }
 
-    codegen::IntermediateRepresentation ir = codegen::generateIr(*tree);
+    codegen::IntermediateRepresentation ir = codegen::generateIr(*tree, configuration.optLevel());
 
     // Materialize assembly only after frontend succeeds so failed compiles never create .s temps.
     std::optional<ScopedTempFile> assemblyTemp;

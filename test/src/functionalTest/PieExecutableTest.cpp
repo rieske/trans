@@ -36,7 +36,7 @@ int scanf(const char *, ...);
 
     program.compile();
     ASSERT_TRUE(executableIsPie(program.getExecutableFilePath()))
-            << "expected PIE (readelf Type DYN) for backend=" << functionalTestDialectTag()
+            << "expected PIE (readelf Type DYN) for matrix=" << functionalTestMatrixTag()
             << "; compiler link must pass -pie";
     program.runAndExpect("42");
 }
@@ -58,7 +58,7 @@ int scanf(const char *, ...);
 
     program.compile();
     ASSERT_TRUE(executableIsPie(program.getExecutableFilePath()))
-            << "expected PIE executable for backend=" << functionalTestDialectTag()
+            << "expected PIE executable for matrix=" << functionalTestMatrixTag()
             << " (mixed local function pointer + printf)";
     program.runAndExpect("7");
 }
@@ -78,7 +78,7 @@ int scanf(const char *, ...);
 
     program.compile();
     ASSERT_TRUE(executableIsPie(program.getExecutableFilePath()))
-            << "expected PIE executable for backend=" << functionalTestDialectTag()
+            << "expected PIE executable for matrix=" << functionalTestMatrixTag()
             << " (extern function address via GOT)";
     program.runAndExpect("1");
 }

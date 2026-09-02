@@ -5,6 +5,6 @@
 
 // Test-only. Same GNU + builtin-typedef installs as Compiler::compile.
 // Source is scanned as-is (no gcc -E).
-std::string compileToIr(const std::string& source);
+std::string compileToIr(const std::string& source, int optLevel = 1);
 
 #endif

@@ -6,12 +6,12 @@
 
 namespace codegen {
 
-IntermediateRepresentation generateIr(ast::AbstractSyntaxTree& tree) {
+IntermediateRepresentation generateIr(ast::AbstractSyntaxTree& tree, int optLevel) {
     CodeGeneratingVisitor visitor(tree.annotations(), tree.vlaExpressions());
     for (const auto& treeNode : tree) {
         treeNode->accept(visitor);
     }
-    IntermediateRepresentation ir = runIrPasses(visitor.takeIr());
+    IntermediateRepresentation ir = runIrPasses(visitor.takeIr(), optLevel);
     for (auto& procedure : ir.procedures) {
         procedure.frame.locals = packFrameValues(std::move(procedure.frame.locals), procedure.body);
     }

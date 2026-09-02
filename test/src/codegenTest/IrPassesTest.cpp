@@ -124,10 +124,66 @@ TEST(IrPasses, applyCfgPasses_keepsConditionalAndNonAdjacent) {
             "ENDPROC f\n"));
 }
 
-TEST(IrPasses, midEndPassListIsSealThenCfg) {
-    ASSERT_EQ(std::size(kMidEndPasses), 2u);
-    EXPECT_EQ(kMidEndPasses[0], static_cast<IrPass>(sealProcedures));
-    EXPECT_EQ(kMidEndPasses[1], static_cast<IrPass>(applyCfgPasses));
+TEST(IrPasses, applyCfgPasses_atO0KeepsLabeledDeadBlock) {
+    IntermediateRepresentation ir;
+    IrN n { ir.strings };
+    ir.procedures.push_back(makeProc(ir.strings, "f", {
+            ir::jump(n("end")),
+            ir::label(n("dead")),
+            ir::inc(n("x")),
+            ir::label(n("end")),
+            ir::voidReturn(),
+    }));
+
+    ir = applyCfgPasses(std::move(ir), 0);
+
+    EXPECT_THAT(toString(ir), StrEq(
+            "PROC f\n"
+            "\tGOTO end\n"
+            "dead:\n"
+            "\tINC x\n"
+            "end:\n"
+            "\tRETURN\n"
+            "ENDPROC f\n"));
+}
+
+TEST(IrPasses, applyCfgPasses_atO1DropsLabeledDeadBlock) {
+    IntermediateRepresentation ir;
+    IrN n { ir.strings };
+    ir.procedures.push_back(makeProc(ir.strings, "f", {
+            ir::jump(n("end")),
+            ir::label(n("dead")),
+            ir::inc(n("x")),
+            ir::label(n("end")),
+            ir::voidReturn(),
+    }));
+
+    ir = applyCfgPasses(std::move(ir), 1);
+
+    EXPECT_THAT(toString(ir), StrEq(
+            "PROC f\n"
+            "end:\n"
+            "\tRETURN\n"
+            "ENDPROC f\n"));
+}
+
+TEST(IrPasses, runIrPasses_atO0StillRemovesJumpToNext) {
+    IntermediateRepresentation ir;
+    IrN n { ir.strings };
+    ir.procedures.push_back(makeProc(ir.strings, "f", {
+            ir::jump(n("L")),
+            ir::label(n("L")),
+            ir::inc(n("x")),
+    }));
+
+    ir = runIrPasses(std::move(ir), 0);
+
+    EXPECT_THAT(toString(ir), StrEq(
+            "PROC f\n"
+            "L:\n"
+            "\tINC x\n"
+            "\tRETURN\n"
+            "ENDPROC f\n"));
 }
 
 TEST(IrPasses, runIrPasses_composesSealAndPeephole) {
