@@ -268,7 +268,7 @@ void SemanticAnalysisVisitor::visit(ast::IdentifierExpression& identifier) {
             return;
         }
         const std::string literal = "\"" + currentFunctionName + "\"";
-        identifier.setStringConstantLabel(symbolTable.newConstant(literal));
+        identifier.setRodataLabel(annotations(), symbolTable.newConstant(literal));
         identifier.setTypeAndResult(annotations(), symbolTable.createTemporarySymbol(
                 type::pointer(type::signedCharacter(), { type::Qualifier::CONST })));
         return;

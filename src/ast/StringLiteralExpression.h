@@ -16,16 +16,14 @@ public:
     translation_unit::Context getContext() const override;
     std::string getValue() const;
 
-    void setConstantSymbol(std::string constantSymbol);
-    std::string getConstantSymbol() const;
+    void setRodataLabel(symbols::AnnotationStore& store, std::string label);
+    const std::string* rodataLabel(const symbols::AnnotationStore& store) const;
 
     std::optional<type::Type> typeAtParseTime(const ParseEnvironment& environment) const override;
     void accept(AbstractSyntaxTreeVisitor& visitor) override;
 
 private:
     std::string value;
-    // Residual SA product (rodata label); not dual with store. Optional later store plan.
-    std::string constantSymbol;
     translation_unit::Context context;
 };
 

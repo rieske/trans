@@ -3,6 +3,7 @@
 
 #include <memory>
 #include <optional>
+#include <string>
 #include <unordered_map>
 #include <vector>
 
@@ -23,6 +24,8 @@ struct NodeAnnotations {
     std::optional<AddressPlan> addressPlan;
     std::optional<CallPlan> callPlan;
     std::optional<FunctionFrame> functionFrame;
+    std::optional<std::string> rodataLabel;
+    std::optional<int> sizeofValue;
     std::vector<StructFieldInit> fieldInits;
 };
 
@@ -85,6 +88,12 @@ public:
 
     void setFunctionFrame(NodeRef node, FunctionFrame frame);
     const FunctionFrame* functionFrame(NodeRef node) const;
+
+    void setRodataLabel(NodeRef node, std::string label);
+    const std::string* rodataLabel(NodeRef node) const;
+
+    void setSizeofValue(NodeRef node, int bytes);
+    const int* sizeofValue(NodeRef node) const;
 
     void addStructFieldInit(NodeRef node, StructFieldInit init);
     void setStructFieldInits(NodeRef node, std::vector<StructFieldInit> inits);

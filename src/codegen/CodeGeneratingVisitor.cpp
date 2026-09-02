@@ -358,10 +358,10 @@ void CodeGeneratingVisitor::visit(ast::FunctionCall& functionCall) {
 }
 
 void CodeGeneratingVisitor::visit(ast::IdentifierExpression& identifier) {
-    if (identifier.hasStringConstantLabel()) {
+    if (const auto* label = identifier.rodataLabel(store_)) {
         assert(identifier.hasResultSymbol(store_) && "__func__ needs Result temp");
         emit(ir::assignLabelAddress(
-                id(identifier.getStringConstantLabel()), id(*identifier.getResultSymbol(store_))));
+                id(*label), id(*identifier.getResultSymbol(store_))));
         return;
     }
     type::IntegerConstant ice;
@@ -404,8 +404,9 @@ void CodeGeneratingVisitor::visit(ast::ConstantExpression& constant) {
 }
 
 void CodeGeneratingVisitor::visit(ast::StringLiteralExpression& stringLiteral) {
-    emit(ir::assignLabelAddress(
-            id(stringLiteral.getConstantSymbol()), id(*stringLiteral.getResultSymbol(store_))));
+    const auto* label = stringLiteral.rodataLabel(store_);
+    assert(label && stringLiteral.hasResultSymbol(store_) && "string literal needs rodata label");
+    emit(ir::assignLabelAddress(id(*label), id(*stringLiteral.getResultSymbol(store_))));
 }
 
 void CodeGeneratingVisitor::emitIntegerConstant(const type::IntegerConstant& value,
@@ -485,9 +486,9 @@ void CodeGeneratingVisitor::visit(ast::PrefixExpression& expression) {
 
 void CodeGeneratingVisitor::visit(ast::UnaryExpression& expression) {
     if (expression.lexeme() == "sizeof") {
-        if (expression.getSizeofValue() >= 0) {
+        if (const auto* bytes = expression.sizeofValue(store_)) {
             emit(ir::assignConstant(
-                    id(std::to_string(expression.getSizeofValue())),
+                    id(std::to_string(*bytes)),
                     id(*expression.getResultSymbol(store_))));
             return;
         }
