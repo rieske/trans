@@ -202,12 +202,7 @@ Type::Type(const Primitive& primitive, std::vector<Qualifier> qualifiers) :
 }
 
 Type::Type(const Type& returnType, const std::vector<Type>& arguments, bool variadic) {
-    std::vector<std::unique_ptr<Type>> args;
-    for (const auto& arg : arguments) {
-        args.push_back(std::make_unique<Type>(arg));
-    }
-    _payload = FunctionPayload {
-            Function { std::make_unique<Type>(returnType), std::move(args), variadic } };
+    _payload = FunctionPayload { Function { returnType, arguments, variadic } };
 }
 
 const Type::RecordPayload* Type::recordPayload() const {
@@ -597,28 +592,10 @@ std::string Type::to_string() const {
 
 Type::Member::Member(std::string n, Type t, int off, std::optional<BitField> bits) :
         name { std::move(n) },
-        type { std::make_unique<Type>(std::move(t)) },
+        type { std::make_shared<Type>(std::move(t)) },
         offsetBytes { off },
         bitField { std::move(bits) }
 {
-}
-
-Type::Member::Member(const Member& other) :
-        name { other.name },
-        type { other.type ? std::make_unique<Type>(*other.type) : nullptr },
-        offsetBytes { other.offsetBytes },
-        bitField { other.bitField }
-{
-}
-
-Type::Member& Type::Member::operator=(const Member& other) {
-    if (this != &other) {
-        name = other.name;
-        type = other.type ? std::make_unique<Type>(*other.type) : nullptr;
-        offsetBytes = other.offsetBytes;
-        bitField = other.bitField;
-    }
-    return *this;
 }
 
 Type builtinVaListTagType() {

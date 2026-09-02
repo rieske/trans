@@ -5,19 +5,6 @@
 
 namespace type {
 
-namespace {
-
-std::vector<Type> takeTypes(std::vector<std::unique_ptr<Type>> args) {
-    std::vector<Type> out;
-    out.reserve(args.size());
-    for (auto& arg : args) {
-        out.push_back(std::move(*arg));
-    }
-    return out;
-}
-
-} // namespace
-
 struct Function::Impl {
     Impl(Type returnType, std::vector<Type> arguments, bool variadic) :
             returnType { std::move(returnType) },
@@ -30,9 +17,8 @@ struct Function::Impl {
     bool variadic { false };
 };
 
-Function::Function(std::unique_ptr<Type> returnType, std::vector<std::unique_ptr<Type>> arguments,
-        bool variadic) :
-    impl_ { std::make_shared<Impl>(std::move(*returnType), takeTypes(std::move(arguments)), variadic) } {
+Function::Function(Type returnType, std::vector<Type> arguments, bool variadic) :
+        impl_ { std::make_shared<Impl>(std::move(returnType), std::move(arguments), variadic) } {
 }
 
 const Type& Function::getReturnType() const {

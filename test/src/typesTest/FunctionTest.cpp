@@ -32,6 +32,17 @@ TEST(Function, typeCopyStaysEquivalentAndIndependent) {
     EXPECT_TRUE(copy.equivalentTo(type::function(type::signedInteger())));
 }
 
+TEST(Function, constructsFromValueTypes) {
+    auto fn = type::function(
+            type::signedInteger(), { type::signedInteger(), type::pointer(type::voidType()) }, true)
+            .getFunction();
+    EXPECT_TRUE(fn.getReturnType().equivalentTo(type::signedInteger()));
+    ASSERT_THAT(fn.getArguments().size(), Eq(2u));
+    EXPECT_TRUE(fn.getArguments()[0].equivalentTo(type::signedInteger()));
+    EXPECT_TRUE(fn.getArguments()[1].equivalentTo(type::pointer(type::voidType())));
+    EXPECT_TRUE(fn.isVariadic());
+}
+
 TEST(Function, accessorsShareUntilAssigned) {
     auto fn = type::function(type::voidType(), { type::signedInteger() }).getFunction();
     auto copy = fn;

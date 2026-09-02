@@ -59,16 +59,12 @@ class Type {
 public:
     struct Member {
         std::string name;
-        std::unique_ptr<Type> type;
+        std::shared_ptr<Type> type;
         int offsetBytes { 0 };
         std::optional<BitField> bitField;
 
         Member() = default;
         Member(std::string n, Type t, int off, std::optional<BitField> bits = {});
-        Member(const Member& other);
-        Member& operator=(const Member& other);
-        Member(Member&&) noexcept = default;
-        Member& operator=(Member&&) noexcept = default;
 
         bool isBitField() const { return bitField.has_value(); }
     };

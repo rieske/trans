@@ -26,6 +26,14 @@ TEST(FunctionEntry, storesNameTypeArgumentsAndContext) {
     EXPECT_FALSE(entry.hasInternalLinkage());
 }
 
+TEST(FunctionEntry, argumentsAndReturnAliasFunctionPayload) {
+    translation_unit::Context ctx { "t.c", 1 };
+    type::Type fnType = type::function(type::signedInteger(), { type::signedLong() });
+    symbols::FunctionEntry entry { "f", fnType.getFunction(), ctx };
+    EXPECT_EQ(&entry.arguments(), &entry.getType().getArguments());
+    EXPECT_EQ(&entry.returnType(), &entry.getType().getReturnType());
+}
+
 TEST(FunctionEntry, recordsInternalLinkage) {
     translation_unit::Context ctx { "t.c", 1 };
     type::Type fnType = type::function(type::signedInteger(), {});
