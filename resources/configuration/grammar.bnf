@@ -82,8 +82,8 @@
                             | <struct_declarator_list> ',' <struct_declarator>
                             ;
 <struct_declarator>         : <declarator>
-                            | <declarator> ':' <const_exp>
-                            |              ':' <const_exp>
+                            | <declarator> ':' <conditional_exp>
+                            |              ':' <conditional_exp>
                             ;
 <enum_spec>                 : 'enum' 'id' '{' <enumerator_list> '}'
                             | 'enum'      '{' <enumerator_list> '}'
@@ -94,17 +94,17 @@
                             | <enumerator_list> ','
                             ;
 <enumerator>                : 'id'
-                            | 'id' '=' <const_exp>
+                            | 'id' '=' <conditional_exp>
                             ;
 <declarator>                : <pointer> <direct_declarator>
                             |           <direct_declarator>
                             ;
 <direct_declarator>         : 'id'
                             | '(' <declarator> ')'
-                            | <direct_declarator> '[' <const_exp> ']'
+                            | <direct_declarator> '[' <conditional_exp> ']'
                             | <direct_declarator> '['       ']'
                             | <direct_declarator> '[' <type_qualifier_list> ']'
-                            | <direct_declarator> '[' <type_qualifier_list> <const_exp> ']'
+                            | <direct_declarator> '[' <type_qualifier_list> <conditional_exp> ']'
                             | <direct_declarator> '(' <param_type_list> ')'
                             | <direct_declarator> '(' <id_list> ')'
                             | <direct_declarator> '('       ')'
@@ -135,7 +135,7 @@
                             | '{' <initializer_list> ',' '}'
                             ;
 <designator>                : '.' 'id'
-                            | '[' <const_exp> ']'
+                            | '[' <conditional_exp> ']'
                             ;
 <designator_list>           : <designator>
                             | <designator_list> <designator>
@@ -155,14 +155,14 @@
                             |           <direct_abstract_declarator>
                             ;
 <direct_abstract_declarator> : '(' <abstract_declarator> ')'
-                            | <direct_abstract_declarator> '[' <const_exp> ']'
-                            |                              '[' <const_exp> ']'
+                            | <direct_abstract_declarator> '[' <conditional_exp> ']'
+                            |                              '[' <conditional_exp> ']'
                             | <direct_abstract_declarator> '['  ']'
                             |                              '['  ']'
                             | <direct_abstract_declarator> '[' <type_qualifier_list> ']'
                             |                              '[' <type_qualifier_list> ']'
-                            | <direct_abstract_declarator> '[' <type_qualifier_list> <const_exp> ']'
-                            |                              '[' <type_qualifier_list> <const_exp> ']'
+                            | <direct_abstract_declarator> '[' <type_qualifier_list> <conditional_exp> ']'
+                            |                              '[' <type_qualifier_list> <conditional_exp> ']'
                             | <direct_abstract_declarator> '(' <param_type_list> ')'
                             |                              '(' <param_type_list> ')'
                             | <direct_abstract_declarator> '('      ')'
@@ -186,11 +186,11 @@
                             | <iteration_stat_unmatched>
                             ;
 <labeled_stat_matched>      : 'id' ':' <matched>
-                            | 'case' <const_exp> ':' <matched>
+                            | 'case' <conditional_exp> ':' <matched>
                             | 'default' ':' <matched>
                             ;
 <labeled_stat_unmatched>    : 'id' ':' <unmatched>
-                            | 'case' <const_exp> ':' <unmatched>
+                            | 'case' <conditional_exp> ':' <unmatched>
                             | 'default' ':' <unmatched>
                             ;
 <exp_stat>                  : <exp> ';'
@@ -248,24 +248,20 @@
                             | <exp> ',' <assignment_exp>
                             ;
 <assignment_exp>            : <conditional_exp>
-                            | <unary_exp> <assignment_operator> <assignment_exp>
-                            ;
-<assignment_operator>       : '='
-                            | '*='
-                            | '/='
-                            | '%='
-                            | '+='
-                            | '-='
-                            | '<<='
-                            | '>>='
-                            | '&='
-                            | '^='
-                            | '|='
+                            | <unary_exp> '=' <assignment_exp>
+                            | <unary_exp> '*=' <assignment_exp>
+                            | <unary_exp> '/=' <assignment_exp>
+                            | <unary_exp> '%=' <assignment_exp>
+                            | <unary_exp> '+=' <assignment_exp>
+                            | <unary_exp> '-=' <assignment_exp>
+                            | <unary_exp> '<<=' <assignment_exp>
+                            | <unary_exp> '>>=' <assignment_exp>
+                            | <unary_exp> '&=' <assignment_exp>
+                            | <unary_exp> '^=' <assignment_exp>
+                            | <unary_exp> '|=' <assignment_exp>
                             ;
 <conditional_exp>           : <logical_or_exp>
                             | <logical_or_exp> '?' <exp> ':' <conditional_exp>
-                            ;
-<const_exp>                 : <conditional_exp>
                             ;
 <logical_or_exp>            : <logical_and_exp>
                             | <logical_or_exp> '||' <logical_and_exp>
@@ -311,16 +307,14 @@
 <unary_exp>                 : <postfix_exp>
                             | '++' <unary_exp>
                             | '--' <unary_exp>
-                            | <unary_operator> <cast_exp>
+                            | '&' <cast_exp>
+                            | '*' <cast_exp>
+                            | '+' <cast_exp>
+                            | '-' <cast_exp>
+                            | '~' <cast_exp>
+                            | '!' <cast_exp>
                             | 'sizeof' <unary_exp>
                             | 'sizeof' '(' <type_name> ')'
-                            ;
-<unary_operator>            : '&'
-                            | '*'
-                            | '+'
-                            | '-'
-                            | '~'
-                            | '!'
                             ;
 <postfix_exp>               : <primary_exp>
                             | <postfix_exp> '[' <exp> ']'

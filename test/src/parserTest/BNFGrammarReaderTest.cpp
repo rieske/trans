@@ -14,16 +14,21 @@ TEST(BNFGrammarReader, readsBNFGrammarConfiguration) {
     BNFFileReader reader;
     Grammar grammar = reader.readGrammar(getResourcePath("configuration/grammar.bnf"));
 
-    EXPECT_THAT(grammar.ruleCount(), Eq(284));
+    EXPECT_THAT(grammar.ruleCount(), Eq(281));
 
     EXPECT_THAT(grammar.getTerminalIDs(), SizeIs(96));
     for (const auto& terminal : grammar.getTerminalIDs()) {
         EXPECT_THAT(grammar.isTerminal(terminal), IsTrue());
     }
-    EXPECT_THAT(grammar.getNonterminalIDs(), SizeIs(75));
+    EXPECT_THAT(grammar.getNonterminalIDs(), SizeIs(72));
     for (const auto& nonterminal : grammar.getNonterminalIDs()) {
         EXPECT_THAT(grammar.isTerminal(nonterminal), IsFalse());
     }
+    EXPECT_FALSE(grammar.trySymbolId("<const_exp>").has_value());
+    EXPECT_FALSE(grammar.trySymbolId("<unary_operator>").has_value());
+    EXPECT_FALSE(grammar.trySymbolId("<assignment_operator>").has_value());
+    EXPECT_THAT(grammar.getProductionsOfSymbol(grammar.symbolId("<unary_exp>")), SizeIs(11));
+    EXPECT_THAT(grammar.getProductionsOfSymbol(grammar.symbolId("<assignment_exp>")), SizeIs(12));
 
     auto translationUnit = grammar.getProductionsOfSymbol(grammar.symbolId("<translation_unit>"));
     EXPECT_THAT(translationUnit, SizeIs(2));
