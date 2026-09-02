@@ -205,9 +205,6 @@
 <block_item>                : <decl>
                             | <stat>
                             ;
-<stat_list>                 : <stat>
-                            | <stat_list> <stat>
-                            ;
 <iteration_stat_matched>    : 'while' '(' <exp> ')' <matched>
                             | 'do' <matched> 'while' '(' <exp> ')' ';'
                             | 'for' '(' <exp> ';' <exp> ';' <exp> ')' <matched>

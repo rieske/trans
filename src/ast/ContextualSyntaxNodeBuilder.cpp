@@ -369,10 +369,6 @@ ContextualSyntaxNodeBuilder::ContextualSyntaxNodeBuilder(const parser::Grammar& 
     bind(s_stat, { s_matched }, doNothing);
     bind(s_stat, { s_unmatched }, doNothing);
 
-    int s_stat_list = grammar.symbolId("<stat_list>");
-    bind(s_stat_list, { s_stat }, statementList);
-    bind(s_stat_list, { s_stat_list, s_stat }, addToStatementList);
-
     int s_return = grammar.symbolId("return");
     bind(s_jump_stat, { grammar.symbolId("goto"), s_identifier, s_semicolon }, gotoStatement);
     bind(s_jump_stat, { grammar.symbolId("continue"), s_semicolon }, loopJumpStatement);

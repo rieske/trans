@@ -60,6 +60,7 @@ TEST(CSNBCreators, productGrammarRegistersKnownProductions) {
     EXPECT_FALSE(grammar.trySymbolId("<const_exp>").has_value());
     EXPECT_FALSE(grammar.trySymbolId("<unary_operator>").has_value());
     EXPECT_FALSE(grammar.trySymbolId("<assignment_operator>").has_value());
+    EXPECT_FALSE(grammar.trySymbolId("<stat_list>").has_value());
 
     EXPECT_NO_THROW(builder.updateContext(*unitPostfix, context));
 
