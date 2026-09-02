@@ -58,12 +58,19 @@ void ValueScope::insertFunctionArgument(std::string objectName, const type::Type
     }
 }
 
-symbols::ValueEntry ValueScope::lookup(const SymbolKey& key) const {
-    return localSymbols.at(key);
+const symbols::ValueEntry* ValueScope::find(const SymbolKey& key) const {
+    auto it = localSymbols.find(key);
+    if (it == localSymbols.end()) {
+        return nullptr;
+    }
+    return &it->second;
 }
 
-bool ValueScope::contains(const SymbolKey& key) const {
-    return localSymbols.find(key) != localSymbols.end();
+const symbols::ValueEntry& ValueScope::lookup(const SymbolKey& key) const {
+    if (const symbols::ValueEntry* entry = find(key)) {
+        return *entry;
+    }
+    throw std::out_of_range(key.source);
 }
 
 const symbols::ValueEntry* ValueScope::findArgumentBySource(const std::string& source) const {

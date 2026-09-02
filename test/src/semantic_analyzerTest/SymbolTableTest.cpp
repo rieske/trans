@@ -7,6 +7,7 @@
 #include "translation_unit/Context.h"
 #include "types/Type.h"
 
+#include <stdexcept>
 #include <variant>
 
 namespace {
@@ -341,6 +342,76 @@ TEST(SymbolTable, staticLocalObjectNameIsLDollarSt) {
 
     EXPECT_THAT(table.lookup("g").getName(), Eq("L$st1_g"));
     EXPECT_THAT(table.lookup("g").sourceName(), Eq("g"));
+}
+
+TEST(SymbolTable, findMissingIsNullAndLookupThrows) {
+    SymbolTable table;
+    EXPECT_EQ(table.find("nope"), nullptr);
+    EXPECT_THROW(table.lookup("nope"), std::out_of_range);
+}
+
+TEST(SymbolTable, findSeesFileScopeObject) {
+    SymbolTable table;
+    translation_unit::Context ctx { "t.c", 1 };
+    ASSERT_TRUE(table.insertSymbol("g", type::signedInteger(), ctx, symbols::Storage::Global));
+
+    const ValueEntry* found = table.find("g");
+    ASSERT_NE(found, nullptr);
+    EXPECT_THAT(found->getName(), Eq(table.lookup("g").getName()));
+    EXPECT_THAT(found->getName(), Eq("g"));
+}
+
+TEST(SymbolTable, findSeesFunctionName) {
+    SymbolTable table;
+    translation_unit::Context ctx { "t.c", 1 };
+    table.insertFunction("f", type::function(type::signedInteger(), {}).getFunction(), ctx);
+
+    EXPECT_FALSE(table.hasGlobalVariable("f"));
+    const ValueEntry* found = table.find("f");
+    ASSERT_NE(found, nullptr);
+    EXPECT_THAT(found->getName(), Eq("f"));
+    EXPECT_TRUE(found->getType().isFunction());
+}
+
+TEST(SymbolTable, findSeesLocalAndArgument) {
+    SymbolTable table;
+    translation_unit::Context ctx { "t.c", 1 };
+    const auto functionType = type::function(type::signedInteger(), { type::signedInteger() });
+    table.insertFunction("f", functionType.getFunction(), ctx);
+    table.startFunction("f", { "x" });
+    ASSERT_TRUE(table.insertSymbol("y", type::signedInteger(), ctx));
+
+    ASSERT_NE(table.find("x"), nullptr);
+    ASSERT_NE(table.find("y"), nullptr);
+    EXPECT_THAT(table.find("x")->getName(), Eq("L$loc1_x"));
+    EXPECT_THAT(table.find("y")->getName(), Eq("L$loc1_y"));
+}
+
+TEST(SymbolTable, findPrefersInnerScopeThenOuter) {
+    SymbolTable table;
+    translation_unit::Context ctx { "t.c", 1 };
+    startIntFunction(table);
+    ASSERT_TRUE(table.insertSymbol("x", type::signedInteger(), ctx));
+
+    table.enterBlockScope();
+    ASSERT_TRUE(table.insertSymbol("x", type::signedInteger(), ctx));
+    ASSERT_NE(table.find("x"), nullptr);
+    EXPECT_THAT(table.find("x")->getName(), Eq("L$loc2_x"));
+    table.exitBlockScope();
+
+    ASSERT_NE(table.find("x"), nullptr);
+    EXPECT_THAT(table.find("x")->getName(), Eq("L$loc1_x"));
+}
+
+TEST(SymbolTable, findDoesNotSeeEndedFunctionLocal) {
+    SymbolTable table;
+    translation_unit::Context ctx { "t.c", 1 };
+    startIntFunction(table);
+    ASSERT_TRUE(table.insertSymbol("x", type::signedInteger(), ctx));
+    table.endFunction();
+
+    EXPECT_EQ(table.find("x"), nullptr);
+    ASSERT_NE(table.find("f"), nullptr);
 }
 
 TEST(SymbolTable, unnamedStaticInitFromInsideFunctionUpdatesTuHome) {

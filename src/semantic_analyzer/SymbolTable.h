@@ -39,8 +39,8 @@ public:
     symbols::FunctionEntry findFunction(std::string name) const;
     bool isFunctionDefined(const std::string& name) const;
     void markFunctionDefined(const std::string& name);
-    bool hasSymbol(std::string symbolName) const;
-    symbols::ValueEntry lookup(std::string name) const;
+    const symbols::ValueEntry* find(const std::string& name) const;
+    const symbols::ValueEntry& lookup(const std::string& name) const;
     symbols::ValueEntry createTemporarySymbol(type::Type type);
     symbols::LabelEntry newLabel();
     void startFunction(std::string name, std::vector<std::string> formalArguments);

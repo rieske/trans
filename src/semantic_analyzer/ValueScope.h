@@ -28,8 +28,8 @@ public:
     void insertFunctionArgument(std::string objectName, const type::Type& type,
             translation_unit::Context context, std::string sourceName);
     symbols::ValueEntry createTemporarySymbol(type::Type type);
-    symbols::ValueEntry lookup(const SymbolKey& key) const;
-    bool contains(const SymbolKey& key) const;
+    const symbols::ValueEntry* find(const SymbolKey& key) const;
+    const symbols::ValueEntry& lookup(const SymbolKey& key) const;
     const symbols::ValueEntry* findArgumentBySource(const std::string& source) const;
     void setStaticInit(const SymbolKey& key, std::vector<symbols::StaticInitValue> words);
     void promoteExternToDefinition(const SymbolKey& key);

@@ -63,23 +63,21 @@ bool SymbolTable::insertSymbol(std::string name, const type::Type& type, transla
 
 ObjectBind SymbolTable::bindBlockScopeExtern(const std::string& name, const type::Type& type,
         translation_unit::Context context) {
-    try {
-        const symbols::ValueEntry existing = globalScope.lookup({ 0, name });
-        if (existing.getType().isFunction()) {
+    if (const symbols::ValueEntry* existing = globalScope.find({ 0, name })) {
+        if (existing->getType().isFunction()) {
             return ObjectBind::TypeConflict;
         }
-        const auto merged = existing.getType().composite(type);
+        const auto merged = existing->getType().composite(type);
         if (!merged) {
             return ObjectBind::TypeConflict;
         }
-        if (!merged->sameQualifiedType(existing.getType())) {
+        if (!merged->sameQualifiedType(existing->getType())) {
             globalScope.refineType({ 0, name }, *merged);
         }
         return ObjectBind::Bound;
-    } catch (std::out_of_range&) {
-        globalScope.insertSymbol({ 0, name }, type, context, symbols::Storage::Extern, name, name);
-        return ObjectBind::Bound;
     }
+    globalScope.insertSymbol({ 0, name }, type, context, symbols::Storage::Extern, name, name);
+    return ObjectBind::Bound;
 }
 
 std::string SymbolTable::newConstant(const std::string& value) {
@@ -150,17 +148,14 @@ bool SymbolTable::isAtFileScope() const {
 }
 
 bool SymbolTable::hasGlobalVariable(const std::string& name) const {
-    try {
-        return !globalScope.lookup({ 0, name }).getType().isFunction();
-    } catch (std::out_of_range&) {
-        return false;
-    }
+    const symbols::ValueEntry* entry = globalScope.find({ 0, name });
+    return entry && !entry->getType().isFunction();
 }
 
 void SymbolTable::setStaticInit(const std::string& name, std::vector<symbols::StaticInitValue> words) {
     if (!isAtFileScope()) {
         const SymbolKey key { currentScopeId(), name };
-        if (functionScopes.back().contains(key)) {
+        if (functionScopes.back().find(key)) {
             functionScopes.back().setStaticInit(key, std::move(words));
             return;
         }
@@ -203,28 +198,25 @@ ObjectBind SymbolTable::bindFileScopeObject(std::string name, const type::Type& 
     return ObjectBind::Bound;
 }
 
-bool SymbolTable::hasSymbol(std::string symbolName) const {
-    try {
-        lookup(symbolName);
-        return true;
-    } catch (std::out_of_range&) {
-        return false;
-    }
-}
-
-symbols::ValueEntry SymbolTable::lookup(std::string name) const {
+const symbols::ValueEntry* SymbolTable::find(const std::string& name) const {
     if (!functionScopes.empty()) {
         for (auto it = scopeIdStack.rbegin(); it != scopeIdStack.rend(); ++it) {
-            const SymbolKey key { *it, name };
-            if (functionScopes.back().contains(key)) {
-                return functionScopes.back().lookup(key);
+            if (const symbols::ValueEntry* entry = functionScopes.back().find({ *it, name })) {
+                return entry;
             }
         }
         if (const symbols::ValueEntry* argument = functionScopes.back().findArgumentBySource(name)) {
-            return *argument;
+            return argument;
         }
     }
-    return globalScope.lookup({ 0, name });
+    return globalScope.find({ 0, name });
+}
+
+const symbols::ValueEntry& SymbolTable::lookup(const std::string& name) const {
+    if (const symbols::ValueEntry* entry = find(name)) {
+        return *entry;
+    }
+    throw std::out_of_range(name);
 }
 
 symbols::ValueEntry SymbolTable::createTemporarySymbol(type::Type type) {
