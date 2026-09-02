@@ -8,6 +8,7 @@
 
 #include "AddressPlan.h"
 #include "AnnotationTypes.h"
+#include "FunctionFrame.h"
 #include "LabelEntry.h"
 #include "ValueEntry.h"
 
@@ -21,6 +22,7 @@ struct NodeAnnotations {
     std::unordered_map<LabelSlot, std::unique_ptr<LabelEntry>> labels;
     std::optional<AddressPlan> addressPlan;
     std::optional<CallPlan> callPlan;
+    std::optional<FunctionFrame> functionFrame;
     std::vector<StructFieldInit> fieldInits;
 };
 
@@ -80,6 +82,9 @@ public:
 
     void setCallPlan(NodeRef node, CallPlan plan);
     const CallPlan* callPlan(NodeRef node) const;
+
+    void setFunctionFrame(NodeRef node, FunctionFrame frame);
+    const FunctionFrame* functionFrame(NodeRef node) const;
 
     void addStructFieldInit(NodeRef node, StructFieldInit init);
     void setStructFieldInits(NodeRef node, std::vector<StructFieldInit> inits);

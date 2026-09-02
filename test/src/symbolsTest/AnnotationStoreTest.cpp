@@ -3,10 +3,14 @@
 #include <stdexcept>
 
 #include "symbols/AnnotationStore.h"
+#include "symbols/FunctionEntry.h"
+#include "symbols/FunctionFrame.h"
 #include "symbols/LabelEntry.h"
 #include "symbols/ValueEntry.h"
 #include "types/Type.h"
 #include "translation_unit/Context.h"
+
+#include <map>
 
 namespace {
 
@@ -127,6 +131,29 @@ TEST(AnnotationStore, lvalueSlot) {
     EXPECT_EQ(cstore.lvalue(&node)->getName(), "lv");
 }
 
+TEST(AnnotationStore, functionFrameRoundTrip) {
+    symbols::AnnotationStore store;
+    int node = 10;
+    translation_unit::Context ctx { "t.c", 1 };
+    type::Type fnType = type::function(type::signedInteger(), { type::signedInteger() });
+    symbols::FunctionEntry symbol { "add", fnType.getFunction(), ctx };
+    symbols::ValueEntry local { "L$loc1_x", type::signedInteger(), ctx, 0 };
+    symbols::ValueEntry arg { "L$loc1_a", type::signedInteger(), ctx, 0 };
+    std::map<std::string, symbols::ValueEntry> locals;
+    locals.emplace(local.getName(), local);
+    store.setFunctionFrame(&node, symbols::FunctionFrame {
+            std::move(symbol), std::move(locals), { arg } });
+
+    const auto* got = store.functionFrame(&node);
+    ASSERT_NE(got, nullptr);
+    EXPECT_EQ(got->symbol.getName(), "add");
+    ASSERT_EQ(got->locals.size(), 1u);
+    EXPECT_EQ(got->locals.begin()->first, "L$loc1_x");
+    ASSERT_EQ(got->arguments.size(), 1u);
+    EXPECT_EQ(got->arguments[0].getName(), "L$loc1_a");
+    EXPECT_EQ(store.functionFrame(&node + 1), nullptr);
+}
+
 TEST(AnnotationStore, clearEmptiesAll) {
     symbols::AnnotationStore store;
     int node = 4;
@@ -135,11 +162,15 @@ TEST(AnnotationStore, clearEmptiesAll) {
     store.setResult(&node, symbols::ValueEntry("r", type::signedInteger(), ctx, 0));
     store.setLvalue(&node, symbols::ValueEntry("lv", type::pointer(type::signedInteger()), ctx, 1));
     store.setLabel(&node, symbols::LabelSlot::Exit, symbols::LabelEntry { "Lx" });
+    type::Type fnType = type::function(type::signedInteger(), {});
+    store.setFunctionFrame(&node, symbols::FunctionFrame {
+            symbols::FunctionEntry { "f", fnType.getFunction(), ctx }, {}, {} });
     store.clear();
     EXPECT_EQ(store.callPlan(&node), nullptr);
     EXPECT_FALSE(store.hasResult(&node));
     EXPECT_EQ(store.lvalue(&node), nullptr);
     EXPECT_FALSE(store.hasLabel(&node, symbols::LabelSlot::Exit));
+    EXPECT_EQ(store.functionFrame(&node), nullptr);
 }
 
 TEST(AnnotationStore, indexPlanVariant) {
