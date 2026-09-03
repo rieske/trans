@@ -268,8 +268,7 @@ bool Compiler::sourceFileNeedsGccPreprocessor(const std::string& sourceFileName,
 
 Compiler::Compiler(Configuration configuration) :
         configuration { configuration },
-        frontEnd { loadFrontEnd(configuration) },
-        parser { std::make_unique<parser::LR1Parser>(frontEnd->table()) }
+        frontEnd { loadFrontEnd(configuration) }
 {
 }
 
@@ -318,7 +317,7 @@ std::optional<std::string> Compiler::compile(std::string sourceFileName) const {
     auto syntaxTreeBuilder = ast::AbstractSyntaxTreeBuilder::create(
             &frontEnd->grammar(), session, configuration.gnuExtensions());
     syntaxTreeBuilder->setSink(&sink);
-    const bool parsed = parser->parse(*scanner, *syntaxTreeBuilder);
+    const bool parsed = parser::LR1Parser { frontEnd->table() }.parse(*scanner, *syntaxTreeBuilder);
     if (syntaxTreeBuilder->hasError()) {
         err << "Error: parsing failed with syntax errors\n";
         return std::nullopt;
