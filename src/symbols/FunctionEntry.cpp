@@ -1,5 +1,7 @@
 #include "FunctionEntry.h"
 
+#include "ValueEntry.h"
+
 namespace symbols {
 
 FunctionEntry::FunctionEntry(std::string name, type::Function type, translation_unit::Context context,
@@ -8,6 +10,12 @@ FunctionEntry::FunctionEntry(std::string name, type::Function type, translation_
         type { std::move(type) },
         context { std::move(context) },
         internalLinkage { internalLinkage }
+{
+}
+
+FunctionEntry::FunctionEntry(const ValueEntry& value) :
+        FunctionEntry { value.getName(), value.getType().getFunction(), value.getContext(),
+                value.isStatic() }
 {
 }
 

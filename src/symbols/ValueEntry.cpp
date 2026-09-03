@@ -23,6 +23,18 @@ void ValueEntry::refineType(const type::Type& refined) {
     type = refined;
 }
 
+void ValueEntry::setContext(translation_unit::Context newContext) {
+    context = std::move(newContext);
+}
+
+void ValueEntry::markFunctionDefined() {
+    functionDefined_ = true;
+}
+
+bool ValueEntry::isFunctionDefined() const {
+    return functionDefined_;
+}
+
 translation_unit::Context ValueEntry::getContext() const {
     return context;
 }

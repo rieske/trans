@@ -2,7 +2,6 @@
 #define _SYMBOL_TABLE_H_
 
 #include <map>
-#include <set>
 #include <string>
 #include <vector>
 
@@ -32,7 +31,7 @@ public:
     std::string newConstant(const std::string& value);
     // Unnamed static-duration object. Always a TU data home.
     symbols::ValueEntry createUnnamedStaticObject(type::Type type, translation_unit::Context context);
-    // Writes functions[name] and a global bare-function symbols::ValueEntry (dual-table invariant).
+    // One file-scope ValueEntry: full Function type and Static storage if internal.
     symbols::FunctionEntry insertFunction(std::string name, type::Function functionType, translation_unit::Context line,
             bool internalLinkage = false);
     symbols::FunctionEntry updateFunction(std::string name, type::Function functionType, translation_unit::Context line);
@@ -64,8 +63,6 @@ private:
     ObjectBind bindBlockScopeExtern(const std::string& name, const type::Type& type,
             translation_unit::Context context);
 
-    std::map<std::string, symbols::FunctionEntry> functions;
-    std::set<std::string> functionDefined;
     std::map<std::string, symbols::LabelEntry> labels;
     std::map<std::string, std::string> constants;
 

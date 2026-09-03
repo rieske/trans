@@ -37,6 +37,19 @@ std::string localObjectName(unsigned scopeId, const std::string& source) {
     return "L$loc" + std::to_string(scopeId) + "_" + source;
 }
 
+const symbols::ValueEntry* fileScopeFunction(const ValueScope& scope, const std::string& name) {
+    const symbols::ValueEntry* entry = scope.find({ 0, name });
+    if (!entry || !entry->getType().isFunction()) {
+        return nullptr;
+    }
+    return entry;
+}
+
+type::Type storedFunctionType(const type::Function& functionType) {
+    return type::function(
+            functionType.getReturnType(), functionType.getArguments(), functionType.isVariadic());
+}
+
 } // namespace
 
 bool SymbolTable::insertSymbol(std::string name, const type::Type& type, translation_unit::Context context,
@@ -107,40 +120,39 @@ void SymbolTable::insertFunctionArgument(std::string name, type::Type type, tran
 
 symbols::FunctionEntry SymbolTable::insertFunction(std::string name, type::Function functionType, translation_unit::Context context,
         bool internalLinkage) {
-    // Dual table invariant: every function is both
-    //   1) functions[name] -> symbols::FunctionEntry (return type, formals, linkage, designator metadata)
-    //   2) global symbols::ValueEntry with bare function type (ordinary-identifier visibility / hiding)
-    // hasFunction and bare-function symbols::ValueEntry lookup must agree for names written here.
-    // Parameters never use this path; they are adjustedParameterType to pointer-to-function.
-    symbols::FunctionEntry function { name, functionType, context, internalLinkage };
-    functions.insert(std::make_pair(name, function));
-    globalScope.insertSymbol({ 0, function.getName() },
-            type::function(functionType.getReturnType(), functionType.getArguments()), function.getContext(),
-            symbols::Storage::Global, function.getName(), function.getName());
-    return functions.at(name);
+    const symbols::Storage storage =
+            internalLinkage ? symbols::Storage::Static : symbols::Storage::Global;
+    globalScope.insertSymbol({ 0, name }, storedFunctionType(functionType), context, storage,
+            name, name);
+    return findFunction(name);
 }
 
 symbols::FunctionEntry SymbolTable::updateFunction(std::string name, type::Function functionType, translation_unit::Context context) {
-    const bool internalLinkage = functions.at(name).hasInternalLinkage();
-    symbols::FunctionEntry entry { name, std::move(functionType), context, internalLinkage };
-    functions.insert_or_assign(name, entry);
-    return functions.at(name);
+    const SymbolKey key { 0, name };
+    globalScope.refineType(key, storedFunctionType(functionType));
+    globalScope.setContext(key, std::move(context));
+    return findFunction(name);
 }
 
 symbols::FunctionEntry SymbolTable::findFunction(std::string name) const {
-    return functions.at(name);
+    const symbols::ValueEntry* entry = fileScopeFunction(globalScope, name);
+    if (!entry) {
+        throw std::out_of_range(name);
+    }
+    return symbols::FunctionEntry { *entry };
 }
 
 bool SymbolTable::hasFunction(const std::string& name) const {
-    return functions.find(name) != functions.end();
+    return fileScopeFunction(globalScope, name) != nullptr;
 }
 
 bool SymbolTable::isFunctionDefined(const std::string& name) const {
-    return functionDefined.find(name) != functionDefined.end();
+    const symbols::ValueEntry* entry = fileScopeFunction(globalScope, name);
+    return entry && entry->isFunctionDefined();
 }
 
 void SymbolTable::markFunctionDefined(const std::string& name) {
-    functionDefined.insert(name);
+    globalScope.markFunctionDefined({ 0, name });
 }
 
 bool SymbolTable::isAtFileScope() const {
