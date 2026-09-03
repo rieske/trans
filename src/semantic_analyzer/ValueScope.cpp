@@ -100,6 +100,14 @@ void ValueScope::refineType(const SymbolKey& key, const type::Type& type) {
     localSymbols.at(key).refineType(type);
 }
 
+void ValueScope::setContext(const SymbolKey& key, translation_unit::Context context) {
+    localSymbols.at(key).setContext(std::move(context));
+}
+
+void ValueScope::markFunctionDefined(const SymbolKey& key) {
+    localSymbols.at(key).markFunctionDefined();
+}
+
 symbols::ValueEntry ValueScope::createTemporarySymbol(type::Type type) {
     std::string tempName = generateTempName();
     const int index = allocateAutomatic(type);

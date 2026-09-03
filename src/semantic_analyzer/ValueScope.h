@@ -35,6 +35,8 @@ public:
     void promoteExternToDefinition(const SymbolKey& key);
     void markDefiningInitializer(const SymbolKey& key);
     void refineType(const SymbolKey& key, const type::Type& type);
+    void setContext(const SymbolKey& key, translation_unit::Context context);
+    void markFunctionDefined(const SymbolKey& key);
 
     const std::map<SymbolKey, symbols::ValueEntry>& getSymbols() const;
     std::vector<symbols::ValueEntry> getArguments() const;

@@ -32,9 +32,12 @@ public:
     // A file-scope declaration with an initializer, recorded at bind (not after lower).
     bool hasDefiningInitializer() const;
     void markDefiningInitializer();
+    void markFunctionDefined();
+    bool isFunctionDefined() const;
     type::Type getType() const;
     // File-scope redecl: replace with the C 6.2.7 composite type.
     void refineType(const type::Type& refined);
+    void setContext(translation_unit::Context context);
     translation_unit::Context getContext() const;
     int getIndex() const;
 
@@ -54,6 +57,7 @@ private:
 
     Storage storage;
     bool definingInitializer { false };
+    bool functionDefined_ { false };
     bool expressionTemp_ { false };
     std::vector<StaticInitValue> staticInitWords;
 };

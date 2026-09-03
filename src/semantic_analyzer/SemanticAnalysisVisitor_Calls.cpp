@@ -16,7 +16,8 @@ void setFunctionDesignator(ast::IdentifierExpression& identifier, SymbolTable& s
     const std::string& name = identifier.getIdentifier();
     assert(symbolTable.hasFunction(name));
     auto functionEntry = symbolTable.findFunction(name);
-    type::Type fnType = type::function(functionEntry.returnType(), functionEntry.arguments());
+    type::Type fnType = type::function(functionEntry.returnType(), functionEntry.arguments(),
+            functionEntry.getType().isVariadic());
     auto addr = symbolTable.createTemporarySymbol(type::pointer(fnType));
     identifier.setFunctionDesignatorResult(store, addr, fnType);
     symbols::FunctionDesignatorPlan plan;
@@ -240,13 +241,6 @@ void SemanticAnalysisVisitor::visit(ast::IdentifierExpression& identifier) {
     if (const auto* entry = symbolTable.find(name)) {
         identifier.clearFoldedConstant();
         if (type::isBareFunction(entry->getType())) {
-            // Dual table (see SymbolTable::insertFunction): bare-function ValueEntry for
-            // visibility plus functions[] for designator metadata. Parameters are
-            // pointer-to-function after adjustedParameterType, so they take the value path.
-            if (!symbolTable.hasFunction(name)) {
-                semanticError("symbol `" + name + "` is not a function", identifier.getContext());
-                return;
-            }
             setFunctionDesignator(identifier, symbolTable, annotations());
             return;
         }

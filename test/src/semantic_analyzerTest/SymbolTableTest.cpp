@@ -432,4 +432,72 @@ TEST(SymbolTable, unnamedStaticInitFromInsideFunctionUpdatesTuHome) {
     EXPECT_THAT(word->bits, Eq(9ull));
 }
 
+TEST(SymbolTable, insertFunctionValueHasVariadicAndInternalLinkage) {
+    SymbolTable table;
+    translation_unit::Context ctx { "t.c", 1 };
+    const auto fn = type::function(
+            type::signedInteger(), { type::signedInteger() }, true).getFunction();
+    table.insertFunction("log", fn, ctx, true);
+
+    EXPECT_TRUE(table.hasFunction("log"));
+    EXPECT_FALSE(table.hasGlobalVariable("log"));
+    const ValueEntry* found = table.find("log");
+    ASSERT_NE(found, nullptr);
+    EXPECT_THAT(found->getName(), Eq("log"));
+    ASSERT_TRUE(found->getType().isFunction());
+    EXPECT_TRUE(found->getType().getFunction().isVariadic());
+    EXPECT_TRUE(found->isStatic());
+
+    const auto entry = table.findFunction("log");
+    EXPECT_THAT(entry.getName(), Eq("log"));
+    EXPECT_TRUE(entry.getType().isVariadic());
+    EXPECT_TRUE(entry.hasInternalLinkage());
+    EXPECT_FALSE(table.isFunctionDefined("log"));
+}
+
+TEST(SymbolTable, updateFunctionRefinesTheSameValueAndKeepsLinkage) {
+    SymbolTable table;
+    translation_unit::Context proto { "t.c", 1 };
+    translation_unit::Context def { "t.c", 9 };
+    table.insertFunction("f", type::function(type::voidType(), {}).getFunction(), proto, true);
+    table.updateFunction("f", type::function(type::signedInteger(), {}).getFunction(), def);
+
+    const ValueEntry* found = table.find("f");
+    ASSERT_NE(found, nullptr);
+    ASSERT_TRUE(found->getType().isFunction());
+    EXPECT_TRUE(found->getType().getFunction().getReturnType().isPrimitive());
+    EXPECT_TRUE(found->isStatic());
+
+    const auto entry = table.findFunction("f");
+    EXPECT_TRUE(entry.getType().getReturnType().isPrimitive());
+    EXPECT_TRUE(entry.hasInternalLinkage());
+    EXPECT_THAT(entry.getContext().getOffset(), Eq(9u));
+}
+
+TEST(SymbolTable, functionParameterIsPointerNotHasFunction) {
+    SymbolTable table;
+    translation_unit::Context ctx { "t.c", 1 };
+    const auto cb = type::function(type::voidType(), {});
+    const auto fn = type::function(type::signedInteger(), { type::pointer(cb) }).getFunction();
+    table.insertFunction("apply", fn, ctx);
+    table.startFunction("apply", { "cb" });
+
+    EXPECT_TRUE(table.hasFunction("apply"));
+    EXPECT_FALSE(table.hasFunction("cb"));
+    const ValueEntry* param = table.find("cb");
+    ASSERT_NE(param, nullptr);
+    EXPECT_TRUE(param->getType().isPointer());
+    EXPECT_FALSE(param->getType().isFunction());
+}
+
+TEST(SymbolTable, markFunctionDefinedIsOnTheRecord) {
+    SymbolTable table;
+    translation_unit::Context ctx { "t.c", 1 };
+    table.insertFunction("f", type::function(type::signedInteger(), {}).getFunction(), ctx);
+    EXPECT_FALSE(table.isFunctionDefined("f"));
+    table.markFunctionDefined("f");
+    EXPECT_TRUE(table.isFunctionDefined("f"));
+    EXPECT_TRUE(table.find("f") != nullptr);
+}
+
 } // namespace

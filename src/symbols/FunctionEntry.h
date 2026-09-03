@@ -10,10 +10,13 @@
 
 namespace symbols {
 
+class ValueEntry;
+
 class FunctionEntry {
 public:
     FunctionEntry(std::string name, type::Function type, translation_unit::Context context,
             bool internalLinkage = false);
+    explicit FunctionEntry(const ValueEntry& value);
 
     const std::string& getName() const;
     type::Function getType() const;

@@ -1,10 +1,15 @@
 #include "gtest/gtest.h"
 
 #include "ast/AbstractSyntaxTree.h"
+#include "ast/Block.h"
 #include "ast/Declaration.h"
 #include "ast/DeclarationSpecifiers.h"
 #include "ast/Declarator.h"
+#include "ast/FormalArgument.h"
+#include "ast/FunctionDeclarator.h"
+#include "ast/FunctionDefinition.h"
 #include "ast/Identifier.h"
+#include "ast/IdentifierExpression.h"
 #include "ast/InitializedDeclarator.h"
 #include "ast/TerminalSymbol.h"
 #include "ast/TypeSpecifier.h"
@@ -23,6 +28,14 @@
 namespace {
 
 using namespace ast;
+
+translation_unit::Context ctx() {
+    return { "t.c", 1 };
+}
+
+DeclarationSpecifiers intSpecs() {
+    return DeclarationSpecifiers { TypeSpecifier { type::signedInteger(), "int" } };
+}
 
 std::unique_ptr<AbstractSyntaxTree> fileScopeInt(const std::string& name) {
     std::vector<std::unique_ptr<InitializedDeclarator>> declarators;
@@ -71,4 +84,36 @@ TEST(SemanticAnalyzer, missingSessionIsInternalError) {
     visitor.setAnnotationStore(tree->annotations());
     visitor.setVlaExpressions(tree->vlaExpressions());
     EXPECT_THROW((*tree->begin())->accept(visitor), std::logic_error);
+}
+
+TEST(SemanticAnalyzer, functionDesignatorKeepsVariadic) {
+    FormalArguments args;
+    args.push_back(FormalArgument {
+            intSpecs(), std::make_unique<Declarator>(std::make_unique<Identifier>(
+                    TerminalSymbol { "id", "x", ctx() })) });
+    auto fn = std::make_unique<FunctionDeclarator>(
+            std::make_unique<Identifier>(TerminalSymbol { "id", "f", ctx() }),
+            std::move(args), true);
+
+    auto designator = std::make_unique<IdentifierExpression>("f", ctx());
+    auto* used = designator.get();
+    std::vector<std::unique_ptr<AbstractSyntaxTreeNode>> bodyItems;
+    bodyItems.push_back(std::move(designator));
+
+    std::vector<std::unique_ptr<AbstractSyntaxTreeNode>> translationUnit;
+    translationUnit.push_back(std::make_unique<FunctionDefinition>(
+            intSpecs(),
+            std::make_unique<Declarator>(std::move(fn)),
+            std::make_unique<Block>(std::move(bodyItems))));
+    auto tree = std::make_unique<AbstractSyntaxTree>(std::move(translationUnit));
+    tree->setVlaExpressions(std::make_shared<VlaExpressionTable>());
+
+    scanner::LexicalSession session;
+    semantic_analyzer::SemanticAnalyzer analyzer { false };
+    std::ostringstream ignored;
+    diag::Sink sink(ignored);
+    ASSERT_TRUE(analyzer.analyze(*tree, session, sink)) << ignored.str();
+    ASSERT_TRUE(used->holdsFunctionDesignator());
+    ASSERT_TRUE(used->expressionType().isFunction());
+    EXPECT_TRUE(used->expressionType().getFunction().isVariadic());
 }
