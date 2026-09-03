@@ -3,6 +3,7 @@
 
 #include "EnumConstantRegistry.h"
 #include "IdentifierTable.h"
+#include "ParseTypeTable.h"
 
 #include <stack>
 #include <string_view>
@@ -77,13 +78,14 @@ private:
     bool pending_ { false };
 };
 
-// Compound `{` hops names and enumerators. Record `{` hops names only.
-// Enum `{` is not a C block; enumerators stay on the enclosing frame.
+// Compound `{` hops names, parse types, and enumerators. Record `{` hops
+// names and parse types. Enum `{` is not a C block; enumerators stay.
 enum class BraceFrame { Block, Record, EnumBody };
 
 // Not copyable: FA holds a raw pointer to the session.
 struct LexicalSession {
     IdentifierTable names;
+    ParseTypeTable types;
     EnumConstantRegistry enums;
     RecordPacked recordPacked;
     PendingTransparentUnion transparentUnion;
@@ -96,17 +98,21 @@ struct LexicalSession {
 
     void enterBlock() {
         names.enterScope();
+        types.enterScope();
         enums.enterScope();
     }
     void leaveBlock() {
         names.leaveScope();
+        types.leaveScope();
         enums.leaveScope();
     }
     void enterRecord() {
         names.enterScope();
+        types.enterScope();
     }
     void leaveRecord() {
         names.leaveScope();
+        types.leaveScope();
     }
     void openBrace(BraceFrame kind) {
         braces_.push_back(kind);
@@ -131,7 +137,7 @@ struct LexicalSession {
     }
     void endDeclarators() {
         names.clearPendingParameterShadows();
-        names.clearPendingObjects();
+        types.clearPending();
     }
 
     LexicalSession() {

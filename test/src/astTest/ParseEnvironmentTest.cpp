@@ -220,6 +220,25 @@ TEST(ParseEnvironment, registerInitializedDeclarationShadowsObjectReuse) {
     EXPECT_TRUE(session.names.isIdentifierShadow("T"));
 }
 
+TEST(ParseEnvironment, lookupValueTypeSeesFileScopeObjectAndParameter) {
+    LexicalSession session;
+    ParseEnvironment env{session};
+    translation_unit::Context ctx { "t", 1 };
+    env.defineObject("x", type::signedInteger());
+    auto fileScope = env.lookupValueType("x");
+    ASSERT_TRUE(fileScope.has_value());
+    EXPECT_TRUE(fileScope->equivalentTo(type::signedInteger()));
+
+    FormalArgument arg {
+            DeclarationSpecifiers { TypeSpecifier { type::signedInteger(), "int" } },
+            namedDeclarator("n") };
+    env.maybeDefineParameter(arg);
+    auto parameter = env.lookupValueType("n");
+    ASSERT_TRUE(parameter.has_value());
+    EXPECT_TRUE(parameter->equivalentTo(type::signedInteger()));
+    EXPECT_TRUE(env.typeOf(IdentifierExpression { "n", ctx })->equivalentTo(type::signedInteger()));
+}
+
 TEST(ParseEnvironment, defineObjectIsBraceScoped) {
     LexicalSession session;
     ParseEnvironment env{session};
@@ -633,6 +652,9 @@ TEST(ParseEnvironment, tryDefineObjectDefinesFunction) {
     auto t = env.lookupObject("cb");
     ASSERT_TRUE(t.has_value());
     EXPECT_TRUE(t->isFunction());
+    auto typeofFn = env.typeOf(IdentifierExpression { "cb", { "t", 1 } });
+    ASSERT_TRUE(typeofFn.has_value());
+    EXPECT_TRUE(typeofFn->isFunction());
 }
 
 TEST(ParseEnvironment, tryDefineObjectSkipsIncompleteParam) {

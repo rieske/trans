@@ -424,9 +424,9 @@ TEST(TokenStream, pendingParameterShadowClearedOnSemicolon) {
     ASSERT_EQ(ts.getCurrentToken().lexeme, "T");
 }
 
-TEST(TokenStream, braceScopePopsObjectType) {
+TEST(TokenStream, braceScopePopsParseType) {
     scanner::LexicalSession session;
-    session.names.addObject("x", type::signedInteger());
+    session.types.add("x", type::signedInteger());
     std::vector<scanner::Token> tokens {
         {"{", "{", {"f", 1}},
         {"}", "}", {"f", 1}},
@@ -437,12 +437,12 @@ TEST(TokenStream, braceScopePopsObjectType) {
     TokenStream ts { [&]() { return tokens[i++]; }, session, grammar };
     ASSERT_EQ(ts.getCurrentToken().id, "{");
     ts.nextToken();
-    session.names.addObject("x", type::signedCharacter());
-    auto inner = session.names.lookupObject("x");
+    session.types.add("x", type::signedCharacter());
+    auto inner = session.types.lookup("x");
     ASSERT_TRUE(inner.has_value());
     EXPECT_TRUE(inner->equivalentTo(type::signedCharacter()));
     ts.nextToken();
-    auto outer = session.names.lookupObject("x");
+    auto outer = session.types.lookup("x");
     ASSERT_TRUE(outer.has_value());
     EXPECT_TRUE(outer->equivalentTo(type::signedInteger()));
 }

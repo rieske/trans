@@ -15,6 +15,8 @@ add_library(scanner
         TokenFilter.cpp
         IdentifierTable.h
         IdentifierTable.cpp
+        ParseTypeTable.h
+        ParseTypeTable.cpp
         EnumConstantRegistry.h
         EnumConstantRegistry.cpp
         LexicalSession.h

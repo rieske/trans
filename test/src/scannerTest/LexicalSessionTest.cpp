@@ -179,77 +179,77 @@ TEST(IdentifierTable, pendingParameterShadowClearedWithoutFlush) {
     EXPECT_FALSE(reg.isIdentifierShadow("T"));
 }
 
-TEST(IdentifierTable, objectAddLookupAndLastWins) {
-    IdentifierTable names;
-    names.addObject("x", type::signedInteger());
-    auto t = names.lookupObject("x");
+TEST(ParseTypeTable, addLookupAndLastWins) {
+    ParseTypeTable types;
+    types.add("x", type::signedInteger());
+    auto t = types.lookup("x");
     ASSERT_TRUE(t.has_value());
     EXPECT_TRUE(t->equivalentTo(type::signedInteger()));
-    names.addObject("x", type::unsignedInteger());
-    t = names.lookupObject("x");
+    types.add("x", type::unsignedInteger());
+    t = types.lookup("x");
     ASSERT_TRUE(t.has_value());
     EXPECT_TRUE(t->equivalentTo(type::unsignedInteger()));
-    EXPECT_FALSE(names.lookupObject("missing").has_value());
+    EXPECT_FALSE(types.lookup("missing").has_value());
 }
 
-TEST(IdentifierTable, pendingObjectVisibleThenCleared) {
-    IdentifierTable names;
-    names.addPendingObject("n", type::signedInteger());
-    auto pending = names.lookupObject("n");
+TEST(ParseTypeTable, pendingVisibleThenCleared) {
+    ParseTypeTable types;
+    types.addPending("n", type::signedInteger());
+    auto pending = types.lookup("n");
     ASSERT_TRUE(pending.has_value());
     EXPECT_TRUE(pending->equivalentTo(type::signedInteger()));
-    names.clearPendingObjects();
-    EXPECT_FALSE(names.lookupObject("n").has_value());
+    types.clearPending();
+    EXPECT_FALSE(types.lookup("n").has_value());
 }
 
-TEST(IdentifierTable, pendingObjectFlushesIntoScope) {
-    IdentifierTable names;
-    names.addPendingObject("n", type::signedInteger());
-    names.enterScope();
-    auto t = names.lookupObject("n");
+TEST(ParseTypeTable, pendingFlushesIntoScope) {
+    ParseTypeTable types;
+    types.addPending("n", type::signedInteger());
+    types.enterScope();
+    auto t = types.lookup("n");
     ASSERT_TRUE(t.has_value());
     EXPECT_TRUE(t->equivalentTo(type::signedInteger()));
-    names.leaveScope();
-    EXPECT_FALSE(names.lookupObject("n").has_value());
+    types.leaveScope();
+    EXPECT_FALSE(types.lookup("n").has_value());
 }
 
-TEST(IdentifierTable, objectBraceScopesAndExtraLeaveKeepsRoot) {
-    IdentifierTable names;
-    names.addObject("x", type::signedInteger());
-    names.enterScope();
-    names.addObject("x", type::signedCharacter());
-    auto inner = names.lookupObject("x");
+TEST(ParseTypeTable, braceScopesAndExtraLeaveKeepsRoot) {
+    ParseTypeTable types;
+    types.add("x", type::signedInteger());
+    types.enterScope();
+    types.add("x", type::signedCharacter());
+    auto inner = types.lookup("x");
     ASSERT_TRUE(inner.has_value());
     EXPECT_TRUE(inner->equivalentTo(type::signedCharacter()));
-    names.leaveScope();
-    auto outer = names.lookupObject("x");
+    types.leaveScope();
+    auto outer = types.lookup("x");
     ASSERT_TRUE(outer.has_value());
     EXPECT_TRUE(outer->equivalentTo(type::signedInteger()));
-    names.leaveScope();
-    EXPECT_TRUE(names.lookupObject("x").has_value());
-    names.leaveScope();
-    names.addObject("y", type::signedInteger());
-    auto y = names.lookupObject("y");
+    types.leaveScope();
+    EXPECT_TRUE(types.lookup("x").has_value());
+    types.leaveScope();
+    types.add("y", type::signedInteger());
+    auto y = types.lookup("y");
     ASSERT_TRUE(y.has_value());
     EXPECT_TRUE(y->equivalentTo(type::signedInteger()));
 }
 
-TEST(IdentifierTable, oneEnterScopeHopsTypedefsAndObjects) {
-    IdentifierTable names;
-    names.addTypedef("T", type::signedInteger());
-    names.addObject("x", type::signedInteger());
-    names.enterScope();
-    names.addTypedef("T", type::signedCharacter());
-    names.addObject("x", type::signedCharacter());
-    auto innerTypedef = names.lookupTypedef("T");
-    auto innerObject = names.lookupObject("x");
+TEST(LexicalSession, enterBlockHopsTypedefsAndParseTypes) {
+    LexicalSession session;
+    session.names.addTypedef("T", type::signedInteger());
+    session.types.add("x", type::signedInteger());
+    session.enterBlock();
+    session.names.addTypedef("T", type::signedCharacter());
+    session.types.add("x", type::signedCharacter());
+    auto innerTypedef = session.names.lookupTypedef("T");
+    auto innerObject = session.types.lookup("x");
     ASSERT_TRUE(innerTypedef.has_value());
     ASSERT_TRUE(innerObject.has_value());
     EXPECT_TRUE(innerTypedef->equivalentTo(type::signedCharacter()));
     EXPECT_TRUE(innerObject->equivalentTo(type::signedCharacter()));
-    names.leaveScope();
-    auto outerTypedef = names.lookupTypedef("T");
-    auto outerObject = names.lookupObject("x");
+    session.leaveBlock();
+    auto outerTypedef = session.names.lookupTypedef("T");
+    auto outerObject = session.types.lookup("x");
     ASSERT_TRUE(outerTypedef.has_value());
     ASSERT_TRUE(outerObject.has_value());
     EXPECT_TRUE(outerTypedef->equivalentTo(type::signedInteger()));
@@ -265,16 +265,16 @@ TEST(LexicalSession, endDeclaratorsClearsPendingParameterShadows) {
     EXPECT_FALSE(session.names.isIdentifierShadow("T"));
 }
 
-TEST(LexicalSession, enterBlockSharesShadowAndObjectFrames) {
+TEST(LexicalSession, enterBlockSharesShadowAndParseTypeFrames) {
     LexicalSession session;
     session.names.addTypedef("T", type::signedInteger());
-    session.names.addObject("x", type::signedInteger());
+    session.types.add("x", type::signedInteger());
     session.enums.add("E", type::fromHostLong(1));
     session.enterBlock();
     session.names.addIdentifierShadow("T");
-    session.names.addObject("x", type::signedCharacter());
+    session.types.add("x", type::signedCharacter());
     EXPECT_TRUE(session.names.isIdentifierShadow("T"));
-    auto inner = session.names.lookupObject("x");
+    auto inner = session.types.lookup("x");
     ASSERT_TRUE(inner.has_value());
     EXPECT_TRUE(inner->equivalentTo(type::signedCharacter()));
     session.leaveBlock();
@@ -282,7 +282,7 @@ TEST(LexicalSession, enterBlockSharesShadowAndObjectFrames) {
     EXPECT_TRUE(session.names.hasTypedef("T"));
     EXPECT_TRUE(session.isTypedef("T"));
     EXPECT_TRUE(session.isEnumerator("E"));
-    auto outer = session.names.lookupObject("x");
+    auto outer = session.types.lookup("x");
     ASSERT_TRUE(outer.has_value());
     EXPECT_TRUE(outer->equivalentTo(type::signedInteger()));
 }
@@ -377,12 +377,12 @@ TEST(LexicalSession, extraLeaveBlockKeepsFileScopeBindings) {
     LexicalSession session;
     session.names.addTypedef("T", type::signedInteger());
     session.names.addIdentifierShadow("T");
-    session.names.addObject("x", type::signedInteger());
+    session.types.add("x", type::signedInteger());
     session.leaveBlock();
     EXPECT_TRUE(session.isTypedef("T"));
     EXPECT_TRUE(session.names.isIdentifierShadow("T"));
     EXPECT_TRUE(session.isTypedef("_Float32"));
-    auto x = session.names.lookupObject("x");
+    auto x = session.types.lookup("x");
     ASSERT_TRUE(x.has_value());
     EXPECT_TRUE(x->equivalentTo(type::signedInteger()));
 }
@@ -405,18 +405,18 @@ TEST(LexicalSession, enumBodyBraceDoesNotHopEnumeratorScope) {
     EXPECT_FALSE(session.isEnumerator("A"));
 }
 
-TEST(LexicalSession, recordBraceIsolatesObjectsNotEnumerators) {
+TEST(LexicalSession, recordBraceIsolatesParseTypesNotEnumerators) {
     LexicalSession session;
-    session.names.addObject("x", type::signedInteger());
+    session.types.add("x", type::signedInteger());
     session.enums.add("A", type::fromHostLong(1));
     session.openBrace(BraceFrame::Record);
-    session.names.addObject("x", type::signedCharacter());
+    session.types.add("x", type::signedCharacter());
     session.enums.add("B", type::fromHostLong(2));
-    auto inner = session.names.lookupObject("x");
+    auto inner = session.types.lookup("x");
     ASSERT_TRUE(inner.has_value());
     EXPECT_TRUE(inner->equivalentTo(type::signedCharacter()));
     session.closeBrace();
-    auto outer = session.names.lookupObject("x");
+    auto outer = session.types.lookup("x");
     ASSERT_TRUE(outer.has_value());
     EXPECT_TRUE(outer->equivalentTo(type::signedInteger()));
     EXPECT_TRUE(session.isEnumerator("A"));
