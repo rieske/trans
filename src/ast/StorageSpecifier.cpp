@@ -23,13 +23,17 @@ StorageSpecifier StorageSpecifier::TYPEDEF(translation_unit::Context context) {
 }
 
 StorageSpecifier::StorageSpecifier(Storage storage, translation_unit::Context context) :
-        TranslationUnitContextAware { context },
-        storage { storage }
+        storage { storage },
+        context { context }
 {
 }
 
 Storage StorageSpecifier::getStorage() const {
     return storage;
+}
+
+translation_unit::Context StorageSpecifier::getContext() const {
+    return context;
 }
 
 } // namespace ast

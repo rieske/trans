@@ -8,7 +8,6 @@
 
 #include "Configuration.h"
 #include "driver/LanguageFrontEnd.h"
-#include "parser/Parser.h"
 
 class Compiler {
 public:
@@ -32,7 +31,6 @@ public:
 private:
     Configuration configuration;
     std::shared_ptr<const LanguageFrontEnd> frontEnd;
-    std::unique_ptr<parser::Parser> parser;
 };
 
 #endif // COMPILER_H_

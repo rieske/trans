@@ -19,8 +19,6 @@ LR1Parser::LR1Parser(const ParsingTable& parsingTable) :
     parsingTable { parsingTable } {
 }
 
-LR1Parser::~LR1Parser() = default;
-
 namespace {
 
 // Representative terminal from FIRST(<type_spec>) for this product grammar.
@@ -126,7 +124,7 @@ LrFinish runLrParse(const ParsingTable& parsingTable, TokenStream& tokenStream,
     }
 }
 
-bool LR1Parser::parse(scanner::Scanner& scanner, SyntaxTreeBuilder& syntaxTreeBuilder) {
+bool LR1Parser::parse(scanner::Scanner& scanner, SyntaxTreeBuilder& syntaxTreeBuilder) const {
     ParseExtensions* extensions = syntaxTreeBuilder.parseExtensions();
     scanner::TokenFilter filter { [&scanner]() {
         return scanner.nextToken();

@@ -61,7 +61,6 @@ add_library(ast
         CaseLabel.cpp
         DefaultLabel.cpp
         TerminalSymbol.cpp
-        TranslationUnitContextAware.cpp
         TypeCast.cpp
         TypeNameExpression.cpp
         CompoundLiteral.cpp
@@ -133,7 +132,6 @@ add_library(ast
         CaseLabel.h
         DefaultLabel.h
         TerminalSymbol.h
-        TranslationUnitContextAware.h
         TypeCast.h
         TypeNameExpression.h
         CompoundLiteral.h

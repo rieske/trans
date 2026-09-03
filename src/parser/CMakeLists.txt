@@ -26,7 +26,6 @@ add_library(parser_core
         LookaheadActionTable.h
         LR1Item.h
         LR1Parser.h
-        Parser.h
         ParseExtensions.h
         ParsingTable.h
         Production.h

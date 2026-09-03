@@ -1,11 +1,12 @@
 #ifndef _LR1PARSER_H_
 #define _LR1PARSER_H_
 
-#include <memory>
 #include <optional>
 #include <string>
 
-#include "Parser.h"
+namespace scanner {
+class Scanner;
+}
 
 namespace parser {
 
@@ -26,13 +27,12 @@ LrFinish runLrParse(const ParsingTable& parsingTable, TokenStream& tokenStream,
         SyntaxTreeBuilder& syntaxTreeBuilder, ParseExtensions* extensions = nullptr,
         std::optional<LrStop> stop = std::nullopt);
 
-class LR1Parser: public Parser {
+class LR1Parser {
 public:
 	explicit LR1Parser(const ParsingTable& parsingTable);
 	LR1Parser(const ParsingTable&&) = delete;
-	virtual ~LR1Parser();
 
-	bool parse(scanner::Scanner& scanner, SyntaxTreeBuilder& syntaxTreeBuilder) override;
+	bool parse(scanner::Scanner& scanner, SyntaxTreeBuilder& syntaxTreeBuilder) const;
 private:
 	const ParsingTable& parsingTable;
 };
