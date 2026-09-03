@@ -22,44 +22,10 @@ std::optional<type::Type> IdentifierTable::lookupTypedef(std::string_view name) 
     return std::nullopt;
 }
 
-void IdentifierTable::addObject(const std::string& name, const type::Type& type) {
-    scopes_.back().objects.insert_or_assign(name, type);
-}
-
-std::optional<type::Type> IdentifierTable::lookupObject(std::string_view name) const {
-    auto pending = pendingObjects_.find(name);
-    if (pending != pendingObjects_.end()) {
-        return pending->second;
-    }
-    for (auto it = scopes_.rbegin(); it != scopes_.rend(); ++it) {
-        auto found = it->objects.find(name);
-        if (found != it->objects.end()) {
-            return found->second;
-        }
-    }
-    return std::nullopt;
-}
-
-void IdentifierTable::addPendingObject(const std::string& name, const type::Type& type) {
-    pendingObjects_.insert_or_assign(name, type);
-}
-
-void IdentifierTable::flushPendingObjects() {
-    for (const auto& entry : pendingObjects_) {
-        addObject(entry.first, entry.second);
-    }
-    pendingObjects_.clear();
-}
-
-void IdentifierTable::clearPendingObjects() {
-    pendingObjects_.clear();
-}
-
 void IdentifierTable::enterScope() {
     scopes_.push_back({});
     ++revision_;
     flushPendingParameterShadows();
-    flushPendingObjects();
 }
 
 void IdentifierTable::leaveScope() {

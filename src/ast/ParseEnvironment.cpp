@@ -46,7 +46,7 @@ std::optional<type::Type> ParseEnvironment::lookupTypedef(const std::string& nam
 }
 
 void ParseEnvironment::defineObject(const std::string& name, type::Type type) {
-    session_.names.addObject(name, type);
+    session_.types.add(name, type);
 }
 
 void ParseEnvironment::maybeDefineParameter(const FormalArgument& argument) {
@@ -54,13 +54,13 @@ void ParseEnvironment::maybeDefineParameter(const FormalArgument& argument) {
         return;
     }
     try {
-        session_.names.addPendingObject(argument.getName(), argument.getType());
+        session_.types.addPending(argument.getName(), argument.getType());
     } catch (const std::invalid_argument&) {
     }
 }
 
 std::optional<type::Type> ParseEnvironment::lookupObject(const std::string& name) const {
-    return session_.names.lookupObject(name);
+    return session_.types.lookup(name);
 }
 
 std::optional<type::Type> ParseEnvironment::lookupValueType(const std::string& name) const {
