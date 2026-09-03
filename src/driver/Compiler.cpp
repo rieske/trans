@@ -17,7 +17,6 @@
 #include "codegen/GlobalVariable.h"
 #include "codegen/IntelInstructionSet.h"
 #include "codegen/IrGenerator.h"
-#include "parser/SyntaxTreeBuilder.h"
 #include "scanner/LexFileScannerReader.h"
 #include "scanner/LexicalSession.h"
 #include "scanner/Scanner.h"
@@ -319,18 +318,15 @@ std::optional<std::string> Compiler::compile(std::string sourceFileName) const {
     auto syntaxTreeBuilder = ast::AbstractSyntaxTreeBuilder::create(
             &frontEnd->grammar(), session, configuration.gnuExtensions());
     syntaxTreeBuilder->setSink(&sink);
-    std::unique_ptr<parser::SyntaxTree> syntaxTree = parser->parse(*scanner, *syntaxTreeBuilder);
+    const bool parsed = parser->parse(*scanner, *syntaxTreeBuilder);
     if (syntaxTreeBuilder->hasError()) {
         err << "Error: parsing failed with syntax errors\n";
         return std::nullopt;
     }
-    if (!syntaxTree) {
+    if (!parsed) {
         return std::nullopt;
     }
-    auto* tree = dynamic_cast<ast::AbstractSyntaxTree*>(syntaxTree.get());
-    if (!tree) {
-        throw std::runtime_error { "expected AbstractSyntaxTree" };
-    }
+    std::unique_ptr<ast::AbstractSyntaxTree> tree = syntaxTreeBuilder->buildTree();
 
     semantic_analyzer::SemanticAnalyzer semanticAnalyzer { configuration.gnuExtensions() };
     if (!semanticAnalyzer.analyze(*tree, session, sink)) {

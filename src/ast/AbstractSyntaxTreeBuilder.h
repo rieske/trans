@@ -19,6 +19,7 @@ class ParseExtensions;
 
 namespace ast {
 
+class AbstractSyntaxTree;
 class Block;
 class Expression;
 
@@ -40,7 +41,7 @@ public:
     void fail() { treeBuilderContext.fail(); }
     bool failed() const { return treeBuilderContext.failed(); }
 
-    std::unique_ptr<parser::SyntaxTree> build() override;
+    std::unique_ptr<AbstractSyntaxTree> buildTree();
 
     scanner::LexicalSession& session();
     ParseEnvironment& environment();

@@ -83,11 +83,10 @@ std::string compileToIr(const std::string& source, int optLevel) {
     std::ostringstream ignored;
     diag::Sink sink { ignored };
     builder->setSink(&sink);
-    auto syntaxTree = parser.parse(*scanner, *builder);
-    auto* tree = dynamic_cast<ast::AbstractSyntaxTree*>(syntaxTree.get());
-    if (!tree) {
-        throw std::runtime_error { "compileToIr: expected AbstractSyntaxTree" };
+    if (!parser.parse(*scanner, *builder)) {
+        throw std::runtime_error { "compileToIr: parse failed\n" + ignored.str() };
     }
+    std::unique_ptr<ast::AbstractSyntaxTree> tree = builder->buildTree();
 
     semantic_analyzer::SemanticAnalyzer analyzer { configuration.gnuExtensions() };
     if (!analyzer.analyze(*tree, session, sink)) {

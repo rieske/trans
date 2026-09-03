@@ -126,7 +126,7 @@ LrFinish runLrParse(const ParsingTable& parsingTable, TokenStream& tokenStream,
     }
 }
 
-std::unique_ptr<SyntaxTree> LR1Parser::parse(scanner::Scanner& scanner, SyntaxTreeBuilder& syntaxTreeBuilder) {
+bool LR1Parser::parse(scanner::Scanner& scanner, SyntaxTreeBuilder& syntaxTreeBuilder) {
     ParseExtensions* extensions = syntaxTreeBuilder.parseExtensions();
     scanner::TokenFilter filter { [&scanner]() {
         return scanner.nextToken();
@@ -140,14 +140,11 @@ std::unique_ptr<SyntaxTree> LR1Parser::parse(scanner::Scanner& scanner, SyntaxTr
     } catch (const scanner::LexError& error) {
         if (syntaxTreeBuilder.hasSink()) {
             syntaxTreeBuilder.sink().error(error.where, error.what());
-            return nullptr;
+            return false;
         }
         throw;
     }
-    if (syntaxTreeBuilder.aborted()) {
-        return nullptr;
-    }
-    return syntaxTreeBuilder.build();
+    return !syntaxTreeBuilder.aborted();
 }
 
 } // namespace parser

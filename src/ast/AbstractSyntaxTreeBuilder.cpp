@@ -105,7 +105,7 @@ std::optional<TypeSpecifier> AbstractSyntaxTreeBuilder::takeTypeSpecifier() {
     return treeBuilderContext.popTypeSpecifier();
 }
 
-std::unique_ptr<parser::SyntaxTree> AbstractSyntaxTreeBuilder::build() {
+std::unique_ptr<AbstractSyntaxTree> AbstractSyntaxTreeBuilder::buildTree() {
     assertBuildable();
     auto tree = std::make_unique<AbstractSyntaxTree>(treeBuilderContext.popTranslationUnit());
     tree->setVlaExpressions(treeBuilderContext.environment().vlaExpressionsShared());

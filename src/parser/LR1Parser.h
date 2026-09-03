@@ -32,7 +32,7 @@ public:
 	LR1Parser(const ParsingTable&&) = delete;
 	virtual ~LR1Parser();
 
-	std::unique_ptr<SyntaxTree> parse(scanner::Scanner& scanner, SyntaxTreeBuilder& syntaxTreeBuilder) override;
+	bool parse(scanner::Scanner& scanner, SyntaxTreeBuilder& syntaxTreeBuilder) override;
 private:
 	const ParsingTable& parsingTable;
 };

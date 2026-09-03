@@ -30,7 +30,6 @@ add_library(parser_core
         ParseExtensions.h
         ParsingTable.h
         Production.h
-        SyntaxTree.h
         SyntaxTreeBuilder.h
         SyntaxTreeBuilder.cpp
         TokenStream.h)
