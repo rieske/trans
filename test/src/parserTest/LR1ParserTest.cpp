@@ -8,6 +8,7 @@
 #include "parser/Grammar.h"
 #include "parser/ParsingTable.h"
 #include "util/LogManager.h"
+#include "ast/AbstractSyntaxTree.h"
 #include "ast/AbstractSyntaxTreeBuilder.h"
 #include "driver/Configuration.h"
 #include "scanner/LexFileScannerReader.h"
@@ -38,7 +39,9 @@ TEST(LR1Parser, parsesTestProgram) {
             scannerReader.fromConfiguration(configuration.getLexPath()), session);
     auto builder = ast::AbstractSyntaxTreeBuilder::create(
             &grammar, session, configuration.gnuExtensions());
-    ASSERT_NO_THROW(parser.parse(*scanner, *builder));
+    ASSERT_TRUE(parser.parse(*scanner, *builder));
+    std::unique_ptr<ast::AbstractSyntaxTree> tree = builder->buildTree();
+    ASSERT_TRUE(tree != nullptr);
 }
 
 }

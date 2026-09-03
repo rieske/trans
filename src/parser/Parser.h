@@ -1,9 +1,6 @@
 #ifndef PARSER_H_
 #define PARSER_H_
 
-#include <memory>
-
-#include "SyntaxTree.h"
 #include "parser/SyntaxTreeBuilder.h"
 #include "scanner/Scanner.h"
 
@@ -13,7 +10,9 @@ class Parser {
 public:
 	virtual ~Parser() = default;
 
-	virtual std::unique_ptr<SyntaxTree> parse(scanner::Scanner& scanner, SyntaxTreeBuilder& syntaxTreeBuilder) = 0;
+	// Drives the builder. True if the input was accepted. The product is taken
+	// from the concrete builder after a successful parse.
+	virtual bool parse(scanner::Scanner& scanner, SyntaxTreeBuilder& syntaxTreeBuilder) = 0;
 };
 
 } // namespace parser

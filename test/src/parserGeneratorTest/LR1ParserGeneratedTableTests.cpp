@@ -41,7 +41,7 @@ void generateAndParseExample(AutomatonKind kind) {
             scannerReader.fromConfiguration(configuration.getLexPath()), session);
     auto syntaxTreeBuilder = ast::AbstractSyntaxTreeBuilder::create(
             &grammar, session, configuration.gnuExtensions());
-    ASSERT_NO_THROW(parser.parse(*scanner, *syntaxTreeBuilder));
+    ASSERT_TRUE(parser.parse(*scanner, *syntaxTreeBuilder));
 }
 
 // Full generate + parse path for both automaton kinds on the product grammar.

@@ -6,12 +6,11 @@
 
 #include "ast/AbstractSyntaxTreeNode.h"
 #include "ast/VlaExpressionTable.h"
-#include "parser/SyntaxTree.h"
 #include "symbols/AnnotationStore.h"
 
 namespace ast {
 
-class AbstractSyntaxTree: public parser::SyntaxTree {
+class AbstractSyntaxTree {
 private:
     std::vector<std::unique_ptr<AbstractSyntaxTreeNode>> translationUnit;
     symbols::AnnotationStore annotations_;
@@ -19,7 +18,6 @@ private:
 
 public:
     AbstractSyntaxTree(std::vector<std::unique_ptr<AbstractSyntaxTreeNode>> translationUnit);
-    virtual ~AbstractSyntaxTree() = default;
 
     auto begin() const -> decltype(translationUnit.begin());
     auto end() const -> decltype(translationUnit.end());
