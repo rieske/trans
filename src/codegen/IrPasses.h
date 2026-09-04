@@ -9,6 +9,7 @@ void sealProcedure(Procedure& procedure);
 IntermediateRepresentation sealProcedures(IntermediateRepresentation ir);
 
 void foldConstants(Procedure& procedure, IrStringTable& strings);
+void eliminateDeadTemps(Procedure& procedure);
 
 IntermediateRepresentation applyCfgPasses(IntermediateRepresentation ir, int optLevel = 1);
 
