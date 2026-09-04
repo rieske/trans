@@ -13,6 +13,7 @@ public:
     virtual ~ExpressionList();
 
     void accept(AbstractSyntaxTreeVisitor& visitor) override;
+    ExprKind exprKind() const override { return ExprKind::Comma; }
     std::optional<type::Type> typeAtParseTime(const ParseEnvironment& environment) const override;
 };
 

@@ -11,6 +11,8 @@
 namespace ast {
 
 class ParseEnvironment;
+class InitializerListExpression;
+class StringLiteralExpression;
 
 // Dual ownership of C type vs value:
 //   expressionType() - C type for sizeof / isArray (on the node)
@@ -23,11 +25,46 @@ enum class ValueForm {
     FunctionDesignator,
 };
 
+// For local queries; SA/CG walks stay on the visitor.
+enum class ExprKind {
+    Identifier,
+    Constant,
+    StringLiteral,
+    InitList,
+    ArrayAccess,
+    MemberAccess,
+    FunctionCall,
+    Prefix,
+    Postfix,
+    Unary,
+    TypeCast,
+    Arithmetic,
+    Shift,
+    Comparison,
+    Bitwise,
+    LogicalAnd,
+    LogicalOr,
+    Conditional,
+    Assignment,
+    Comma,
+    TypeName,
+    CompoundLiteral,
+    GenericSelection,
+    StatementExpression,
+};
+
 class Expression: public AbstractSyntaxTreeNode {
 public:
     virtual ~Expression() = default;
 
     virtual translation_unit::Context getContext() const = 0;
+
+    virtual ExprKind exprKind() const = 0;
+
+    const InitializerListExpression* asInitList() const;
+    InitializerListExpression* asInitList();
+    const StringLiteralExpression* asStringLiteral() const;
+    StringLiteralExpression* asStringLiteral();
 
     // Parse-time typeof. Identifiers consult the environment; other productions
     // use their operands. nullopt means the operand has no type yet.

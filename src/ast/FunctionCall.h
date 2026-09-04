@@ -16,6 +16,7 @@ public:
     virtual ~FunctionCall() = default;
 
     void accept(AbstractSyntaxTreeVisitor& visitor) override;
+    ExprKind exprKind() const override { return ExprKind::FunctionCall; }
     std::optional<type::Type> typeAtParseTime(const ParseEnvironment& environment) const override;
     bool evaluateConstant(type::IntegerConstant& value) const override;
     void visitArguments(AbstractSyntaxTreeVisitor& visitor);

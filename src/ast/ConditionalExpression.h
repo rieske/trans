@@ -17,6 +17,7 @@ public:
             std::unique_ptr<Expression> falseExpression);
 
     void accept(AbstractSyntaxTreeVisitor& visitor) override;
+    ExprKind exprKind() const override { return ExprKind::Conditional; }
     std::optional<type::Type> typeAtParseTime(const ParseEnvironment& environment) const override;
 
     void visitCondition(AbstractSyntaxTreeVisitor& visitor);

@@ -12,6 +12,7 @@ public:
     LogicalAndExpression(std::unique_ptr<Expression> leftHandSide, std::unique_ptr<Expression> rightHandSide);
 
     void accept(AbstractSyntaxTreeVisitor& visitor) override;
+    ExprKind exprKind() const override { return ExprKind::LogicalAnd; }
     bool evaluateConstant(type::IntegerConstant& value) const override;
 };
 

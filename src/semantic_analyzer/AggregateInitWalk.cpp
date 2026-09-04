@@ -102,7 +102,7 @@ void placeAt(const type::FoundMember& slot, ast::Expression* value, AggregateIni
         placeCharArrayBytes(slot, value, sink);
         return;
     }
-    if (auto* nestedList = value ? dynamic_cast<ast::InitializerListExpression*>(value) : nullptr) {
+    if (auto* nestedList = value ? value->asInitList() : nullptr) {
         if (slot.type.isAggregate()) {
             walkAggregateInit(slot.type, nestedList, slot.offsetBytes, sink);
             return;
@@ -136,7 +136,7 @@ void placeAt(const type::FoundMember& slot, ast::Expression* value, AggregateIni
         return;
     }
     if (value) {
-        auto* nested = dynamic_cast<ast::InitializerListExpression*>(value);
+        auto* nested = value->asInitList();
         while (nested) {
             if (nested->getElements().size() > 1) {
                 sink.error("excess elements in scalar initializer");
@@ -147,7 +147,7 @@ void placeAt(const type::FoundMember& slot, ast::Expression* value, AggregateIni
                 return;
             }
             value = nested->getElements().front().value.get();
-            nested = dynamic_cast<ast::InitializerListExpression*>(value);
+            nested = value->asInitList();
         }
         sink.placeScalar(slot, value);
     } else {
@@ -171,7 +171,7 @@ std::size_t fillSlottedFromStream(const AggregateSlots& slots,
             sink.onUnwritten(*slot);
             continue;
         }
-        auto* nested = dynamic_cast<ast::InitializerListExpression*>(elements[ei].value.get());
+        auto* nested = elements[ei].value->asInitList();
         if (nested && slot->type.isAggregate()) {
             walkAggregateInit(slot->type, nested, slot->offsetBytes, sink);
             ++ei;
@@ -201,7 +201,7 @@ std::size_t fillFromStream(const type::Type& destType, int baseOffset,
             sink.onUnwritten(place(destType, baseOffset));
             return ei;
         }
-        auto* nested = dynamic_cast<ast::InitializerListExpression*>(elements[ei].value.get());
+        auto* nested = elements[ei].value->asInitList();
         if (nested) {
             walkAggregateInit(destType, nested, baseOffset, sink);
             return ei + 1;
@@ -221,8 +221,7 @@ std::size_t fillFromStream(const type::Type& destType, int baseOffset,
     if (destType.isStructure() || destType.isArray()) {
         if (!isBarrier(ei)) {
             ast::Expression* value = elements[ei].value.get();
-            if (isCharArrayStringInit(destType, value)
-                    || dynamic_cast<ast::InitializerListExpression*>(value)) {
+            if (isCharArrayStringInit(destType, value) || value->asInitList()) {
                 placeAt(place(destType, baseOffset), value, sink);
                 return ei + 1;
             }
@@ -362,7 +361,7 @@ void walkSlottedAggregate(const AggregateSlots& slots, const std::vector<ast::In
         if (!slot) {
             break;
         }
-        auto* nested = dynamic_cast<ast::InitializerListExpression*>(el.value.get());
+        auto* nested = el.value->asInitList();
         if (nested && slot->type.isAggregate()) {
             walkAggregateInit(slot->type, nested, slot->offsetBytes, sink);
             ++ei;
@@ -414,7 +413,7 @@ void walkAggregateInit(const type::Type& targetType, const ast::InitializerListE
             return;
         }
 
-        auto* nestedValue = dynamic_cast<ast::InitializerListExpression*>(el.value.get());
+        auto* nestedValue = el.value->asInitList();
         if (nestedValue) {
             walkAggregateInit(dest.type, nestedValue, dest.offsetBytes, sink);
             ++ei;

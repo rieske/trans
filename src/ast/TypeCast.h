@@ -14,6 +14,7 @@ public:
     virtual ~TypeCast();
 
     void accept(AbstractSyntaxTreeVisitor& visitor) override;
+    ExprKind exprKind() const override { return ExprKind::TypeCast; }
     std::optional<type::Type> typeAtParseTime(const ParseEnvironment& environment) const override;
 
     // Target type specifier of the cast (not Expression::getType()).
