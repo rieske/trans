@@ -4,6 +4,37 @@
 
 namespace {
 
+TEST(Compiler, addAfterStoreThroughPointerUsesMemory) {
+    SourceProgram program{R"prg(int printf(const char *, ...);
+        int main() {
+            int a = 1;
+            int *p = &a;
+            *p = 2;
+            printf("%d", a + 1);
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("3");
+}
+
+TEST(Compiler, addAfterCalleeWritesThroughPointerUsesMemory) {
+    SourceProgram program{R"prg(int printf(const char *, ...);
+        int set(int *p) {
+            *p = 2;
+            return 0;
+        }
+        int main() {
+            int a = 1;
+            set(&a);
+            printf("%d", a + 1);
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("3");
+}
+
 TEST(Compiler, writesThroughPointerArgumentBeforeAnyCall) {
     SourceProgram program{R"prg(int printf(const char *, ...);
 int scanf(const char *, ...);

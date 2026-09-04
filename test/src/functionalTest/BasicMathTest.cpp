@@ -193,4 +193,57 @@ TEST(Compiler, unsignedLongDivMod) {
     program.runAndExpect("4611686018427387904 2 9223372036854775807 1");
 }
 
+TEST(Compiler, signedLongDivisionAndModuloOfNegatives) {
+    SourceProgram program{R"prg(int printf(const char *, ...);
+        int main() {
+            long a;
+            long b;
+            a = -1;
+            b = -1;
+            printf("%ld ", a / b);
+            a = -20;
+            b = 6;
+            printf("%ld ", a / b);
+            a = 20;
+            b = -6;
+            printf("%ld ", a / b);
+            a = -20;
+            b = -6;
+            printf("%ld ", a / b);
+            a = -20;
+            b = 6;
+            printf("%ld ", a % b);
+            a = 20;
+            b = -6;
+            printf("%ld ", a % b);
+            a = -20;
+            b = -6;
+            printf("%ld ", a % b);
+            a = -1;
+            b = -1;
+            printf("%ld", a % b);
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("1 -3 -3 3 -2 2 -2 0");
+}
+
+TEST(Compiler, signedLongArithmeticRightShift) {
+    SourceProgram program{R"prg(int printf(const char *, ...);
+        int main() {
+            long a;
+            a = -8;
+            printf("%ld ", a >> 1);
+            a = -1;
+            printf("%ld ", a >> 1);
+            a = -8;
+            printf("%ld", a >> 3);
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("-4 -1 -1");
+}
+
 }
