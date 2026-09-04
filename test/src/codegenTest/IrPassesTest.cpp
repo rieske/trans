@@ -47,6 +47,15 @@ ProcedureFrame ints(IrStringTable& strings, std::initializer_list<std::string_vi
     return frame;
 }
 
+ProcedureFrame exprTemps(IrStringTable& strings, std::initializer_list<std::string_view> names,
+        int size = 4) {
+    ProcedureFrame frame = ints(strings, names, size);
+    for (auto& local : frame.locals) {
+        local.markExpressionTemp();
+    }
+    return frame;
+}
+
 TEST(IrPasses, sealProcedures_padsFallOffEnd) {
     IntermediateRepresentation ir;
     IrN n { ir.strings };
@@ -479,6 +488,153 @@ TEST(IrPasses, runIrPasses_atO1Folds) {
 
     EXPECT_THAT(toString(ir), HasSubstr("t3 := 3"));
     EXPECT_THAT(toString(ir), Not(HasSubstr("t1 + t2")));
+}
+
+TEST(IrPasses, eliminateDeadTemps_dropsUnusedAssignConstants) {
+    IntermediateRepresentation ir;
+    IrN n { ir.strings };
+    ir.procedures.push_back(makeProc(ir.strings, "f", {
+            ir::assignConstant(n("1"), n("t1")),
+            ir::assignConstant(n("2"), n("t2")),
+            ir::ret(n("t2")),
+    }, exprTemps(ir.strings, { "t1", "t2" })));
+
+    eliminateDeadTemps(ir.procedures.front());
+
+    EXPECT_THAT(toString(ir), StrEq(
+            "PROC f\n"
+            "\tt2 := 2\n"
+            "\tRETURN t2\n"
+            "ENDPROC f\n"));
+    EXPECT_EQ(ir.procedures.front().frame.locals.size(), 1u);
+}
+
+TEST(IrPasses, eliminateDeadTemps_dropsDeadAssignAndUnary) {
+    IntermediateRepresentation ir;
+    IrN n { ir.strings };
+    ir.procedures.push_back(makeProc(ir.strings, "f", {
+            ir::assignConstant(n("1"), n("t1")),
+            ir::assign(n("t1"), n("t2")),
+            ir::unaryMinus(n("t2"), n("t3")),
+            ir::voidReturn(),
+    }, exprTemps(ir.strings, { "t1", "t2", "t3" })));
+
+    eliminateDeadTemps(ir.procedures.front());
+
+    EXPECT_THAT(toString(ir), StrEq(
+            "PROC f\n"
+            "\tRETURN\n"
+            "ENDPROC f\n"));
+    EXPECT_TRUE(ir.procedures.front().frame.locals.empty());
+}
+
+TEST(IrPasses, eliminateDeadTemps_keepsJoinAssignsWithLaterUse) {
+    IntermediateRepresentation ir;
+    IrN n { ir.strings };
+    ir.procedures.push_back(makeProc(ir.strings, "f", {
+            ir::zeroCompare(n("x")),
+            ir::jump(n("els"), JumpCondition::IF_EQUAL),
+            ir::assignConstant(n("0"), n("t")),
+            ir::jump(n("done")),
+            ir::label(n("els")),
+            ir::assignConstant(n("1"), n("t")),
+            ir::label(n("done")),
+            ir::ret(n("t")),
+    }, exprTemps(ir.strings, { "x", "t" })));
+
+    eliminateDeadTemps(ir.procedures.front());
+
+    EXPECT_THAT(toString(ir), HasSubstr("t := 0"));
+    EXPECT_THAT(toString(ir), HasSubstr("t := 1"));
+}
+
+TEST(IrPasses, eliminateDeadTemps_keepsNamedLocal) {
+    IntermediateRepresentation ir;
+    IrN n { ir.strings };
+    ProcedureFrame frame;
+    frame.locals.push_back(integral(ir.strings, "t0"));
+    frame.locals.back().markExpressionTemp();
+    frame.locals.push_back(integral(ir.strings, "a"));
+    ir.procedures.push_back(makeProc(ir.strings, "f", {
+            ir::assignConstant(n("1"), n("t0")),
+            ir::assign(n("t0"), n("a")),
+            ir::voidReturn(),
+    }, std::move(frame)));
+
+    eliminateDeadTemps(ir.procedures.front());
+
+    EXPECT_THAT(toString(ir), StrEq(
+            "PROC f\n"
+            "\tt0 := 1\n"
+            "\ta := t0\n"
+            "\tRETURN\n"
+            "ENDPROC f\n"));
+}
+
+TEST(IrPasses, eliminateDeadTemps_keepsAddressTaken) {
+    IntermediateRepresentation ir;
+    IrN n { ir.strings };
+    ProcedureFrame frame = exprTemps(ir.strings, { "t0", "p", "t1" }, 8);
+    ir.procedures.push_back(makeProc(ir.strings, "f", {
+            ir::assignConstant(n("1"), n("t0")),
+            ir::addressOf(n("t0"), n("p")),
+            ir::assignConstant(n("2"), n("t0")),
+            ir::dereference(n("p"), n("p"), n("t1")),
+            ir::ret(n("t1")),
+    }, std::move(frame)));
+
+    eliminateDeadTemps(ir.procedures.front());
+
+    EXPECT_THAT(toString(ir), HasSubstr("t0 := 2"));
+    EXPECT_THAT(toString(ir), HasSubstr("t0 := 1"));
+}
+
+TEST(IrPasses, applyCfgPasses_doesNotDropDeadTemps) {
+    IntermediateRepresentation ir;
+    IrN n { ir.strings };
+    ir.procedures.push_back(makeProc(ir.strings, "f", {
+            ir::assignConstant(n("1"), n("t1")),
+            ir::assignConstant(n("2"), n("t2")),
+            ir::ret(n("t2")),
+    }, exprTemps(ir.strings, { "t1", "t2" })));
+
+    ir = applyCfgPasses(std::move(ir), 1);
+
+    EXPECT_THAT(toString(ir), HasSubstr("t1 := 1"));
+}
+
+TEST(IrPasses, runIrPasses_atO0DoesNotDropDeadTemps) {
+    IntermediateRepresentation ir;
+    IrN n { ir.strings };
+    ir.procedures.push_back(makeProc(ir.strings, "f", {
+            ir::assignConstant(n("1"), n("t1")),
+            ir::assignConstant(n("2"), n("t2")),
+            ir::ret(n("t2")),
+    }, exprTemps(ir.strings, { "t1", "t2" })));
+
+    ir = runIrPasses(std::move(ir), 0);
+
+    EXPECT_THAT(toString(ir), HasSubstr("t1 := 1"));
+}
+
+TEST(IrPasses, runIrPasses_atO1FoldsThenDropsDeadTemps) {
+    IntermediateRepresentation ir;
+    IrN n { ir.strings };
+    ir.procedures.push_back(makeProc(ir.strings, "f", {
+            ir::assignConstant(n("1"), n("t1")),
+            ir::assignConstant(n("2"), n("t2")),
+            ir::add(n("t1"), n("t2"), n("t3")),
+            ir::ret(n("t3")),
+    }, exprTemps(ir.strings, { "t1", "t2", "t3" })));
+
+    ir = runIrPasses(std::move(ir), 1);
+
+    EXPECT_THAT(toString(ir), StrEq(
+            "PROC f\n"
+            "\tt3 := 3\n"
+            "\tRETURN t3\n"
+            "ENDPROC f\n"));
+    EXPECT_EQ(ir.procedures.front().frame.locals.size(), 1u);
 }
 
 } // namespace
