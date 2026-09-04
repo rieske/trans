@@ -3,19 +3,16 @@
 
 #include "Instruction.h"
 
-#include <utility>
-
 namespace codegen {
 
 void sealProcedure(Procedure& procedure);
 IntermediateRepresentation sealProcedures(IntermediateRepresentation ir);
 
+void foldConstants(Procedure& procedure, IrStringTable& strings);
+
 IntermediateRepresentation applyCfgPasses(IntermediateRepresentation ir, int optLevel = 1);
 
-inline IntermediateRepresentation runIrPasses(IntermediateRepresentation ir, int optLevel = 1) {
-    ir = sealProcedures(std::move(ir));
-    return applyCfgPasses(std::move(ir), optLevel);
-}
+IntermediateRepresentation runIrPasses(IntermediateRepresentation ir, int optLevel = 1);
 
 } // namespace codegen
 

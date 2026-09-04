@@ -77,6 +77,28 @@ TEST(IrDumpFromC, gotoKeepsUnreachableLabelAtO0) {
     EXPECT_THAT(compileToIr(src, 1), Not(HasSubstr(":= 1")));
 }
 
+TEST(IrDumpFromC, foldsLocalIntegerAddAtO1) {
+    const char* src = "int f(void) { int a = 1; int b = 2; return a + b; }\n";
+    EXPECT_THAT(compileToIr(src, 0), StrEq(
+            "PROC f\n"
+            "\t$t0 := 1\n"
+            "\tL$loc1_a := $t0\n"
+            "\t$t1 := 2\n"
+            "\tL$loc1_b := $t1\n"
+            "\t$t2 := L$loc1_a + L$loc1_b\n"
+            "\tRETURN $t2\n"
+            "ENDPROC f\n"));
+    EXPECT_THAT(compileToIr(src, 1), StrEq(
+            "PROC f\n"
+            "\t$t0 := 1\n"
+            "\tL$loc1_a := $t0\n"
+            "\t$t1 := 2\n"
+            "\tL$loc1_b := $t1\n"
+            "\t$t2 := 3\n"
+            "\tRETURN $t2\n"
+            "ENDPROC f\n"));
+}
+
 TEST(IrDumpFromC, dumpsAreStableAcrossCalls) {
     const char* src = "int add(int a, int b) { return a + b; }\n";
     EXPECT_EQ(compileToIr(src), compileToIr(src));
