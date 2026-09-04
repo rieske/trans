@@ -1,11 +1,9 @@
 #include "FunctionCall.h"
 
 #include "AbstractSyntaxTreeVisitor.h"
-#include "ConstantExpression.h"
 #include "GnuBuiltinFunctions.h"
 #include "IdentifierExpression.h"
 #include "ParseEnvironment.h"
-#include "StringLiteralExpression.h"
 #include "types/IntegerConstant.h"
 #include "types/TypeQuery.h"
 
@@ -18,8 +16,7 @@ bool isConstantPOperand(const Expression& expr) {
     if (expr.evaluateConstant(unused)) {
         return true;
     }
-    return dynamic_cast<const StringLiteralExpression*>(&expr) != nullptr
-            || dynamic_cast<const ConstantExpression*>(&expr) != nullptr;
+    return expr.asStringLiteral() != nullptr || expr.asConstant() != nullptr;
 }
 
 } // namespace
@@ -36,7 +33,7 @@ void FunctionCall::accept(AbstractSyntaxTreeVisitor& visitor) {
 }
 
 bool FunctionCall::isGnuConstantP() const {
-    auto* id = dynamic_cast<const IdentifierExpression*>(_operand.get());
+    auto* id = _operand->asIdentifier();
     return id && isGnuConstantPBuiltin(id->getIdentifier());
 }
 
