@@ -14,6 +14,7 @@ public:
     virtual ~PrefixExpression();
 
     void accept(AbstractSyntaxTreeVisitor& visitor) override;
+    ExprKind exprKind() const override { return ExprKind::Prefix; }
 };
 
 } // namespace ast

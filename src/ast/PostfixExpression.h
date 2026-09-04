@@ -14,6 +14,7 @@ public:
     PostfixExpression(std::unique_ptr<Expression> postfixExpression, std::string lexeme);
 
     void accept(AbstractSyntaxTreeVisitor& visitor) override;
+    ExprKind exprKind() const override { return ExprKind::Postfix; }
 
     void setPreOperationSymbol(symbols::AnnotationStore& store, symbols::ValueEntry resultSymbol);
     symbols::ValueEntry* getPreOperationSymbol(symbols::AnnotationStore& store) const;

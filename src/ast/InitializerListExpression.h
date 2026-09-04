@@ -60,6 +60,7 @@ public:
     virtual ~InitializerListExpression() = default;
 
     void accept(AbstractSyntaxTreeVisitor& visitor) override;
+    ExprKind exprKind() const override { return ExprKind::InitList; }
     std::optional<type::Type> typeAtParseTime(const ParseEnvironment& environment) const override;
 
     translation_unit::Context getContext() const override;

@@ -16,6 +16,7 @@ add_executable(astTest
     astTest/FunctionDefinitionTest.cpp
     astTest/ParseEnvironmentTest.cpp
     astTest/ExpressionDualTypeTest.cpp
+    astTest/ExpressionKindTest.cpp
         astTest/TypeSpecifierTest.cpp
         )
 target_link_libraries(astTest PRIVATE semantic_analyzer GTest::gmock_main ast translation_unit testUtil)

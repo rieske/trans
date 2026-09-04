@@ -15,6 +15,7 @@ public:
     UnaryExpression(std::string lexeme, std::unique_ptr<Expression> castExpression);
 
     void accept(AbstractSyntaxTreeVisitor& visitor) override;
+    ExprKind exprKind() const override { return ExprKind::Unary; }
     std::optional<type::Type> typeAtParseTime(const ParseEnvironment& environment) const override;
 
     bool isLval() const override;

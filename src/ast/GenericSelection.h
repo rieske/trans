@@ -24,6 +24,7 @@ public:
             std::vector<GenericAssociation> associations);
 
     void accept(AbstractSyntaxTreeVisitor& visitor) override;
+    ExprKind exprKind() const override { return ExprKind::GenericSelection; }
     std::optional<type::Type> typeAtParseTime(const ParseEnvironment& environment) const override;
 
     translation_unit::Context getContext() const override;

@@ -12,6 +12,7 @@ public:
     ArrayAccess(std::unique_ptr<Expression> postfixExpression, std::unique_ptr<Expression> subscriptExpression);
 
     void accept(AbstractSyntaxTreeVisitor& visitor) override;
+    ExprKind exprKind() const override { return ExprKind::ArrayAccess; }
     std::optional<type::Type> typeAtParseTime(const ParseEnvironment& environment) const override;
 
     // Lvalue address temp: Expression::setLvalueSymbol / getLvalueSymbol (store).

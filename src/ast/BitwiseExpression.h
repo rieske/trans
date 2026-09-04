@@ -14,6 +14,7 @@ public:
             std::unique_ptr<Expression> rightHandSide);
 
     void accept(AbstractSyntaxTreeVisitor& visitor) override;
+    ExprKind exprKind() const override { return ExprKind::Bitwise; }
     std::optional<type::Type> typeAtParseTime(const ParseEnvironment& environment) const override;
     bool evaluateConstant(type::IntegerConstant& value) const override {
         return foldOperands(value, lexeme());

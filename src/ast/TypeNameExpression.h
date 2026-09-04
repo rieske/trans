@@ -13,6 +13,7 @@ public:
     TypeNameExpression(TypeSpecifier typeSpecifier, translation_unit::Context context);
 
     void accept(AbstractSyntaxTreeVisitor& visitor) override;
+    ExprKind exprKind() const override { return ExprKind::TypeName; }
     std::optional<type::Type> typeAtParseTime(const ParseEnvironment& environment) const override;
     translation_unit::Context getContext() const override;
 

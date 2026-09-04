@@ -22,15 +22,18 @@ namespace semantic_analyzer {
 namespace {
 
 const ast::StringLiteralExpression* charArrayStringLiteral(const ast::Expression* init) {
-    if (auto* literal = dynamic_cast<const ast::StringLiteralExpression*>(init)) {
+    if (!init) {
+        return nullptr;
+    }
+    if (const auto* literal = init->asStringLiteral()) {
         return literal;
     }
-    auto* list = dynamic_cast<const ast::InitializerListExpression*>(init);
+    const auto* list = init->asInitList();
     if (!list || list->getElements().size() != 1 || list->getElements().front().isDesignated()
             || !list->getElements().front().value) {
         return nullptr;
     }
-    return dynamic_cast<const ast::StringLiteralExpression*>(list->getElements().front().value.get());
+    return list->getElements().front().value->asStringLiteral();
 }
 
 std::unique_ptr<ast::InitializerListExpression> braceListFromStringBytes(
@@ -94,7 +97,7 @@ IncompleteArrayBound incompleteArrayBoundFromInitializer(ast::Expression* init) 
     if (!init) {
         return IncompleteArrayBound::none();
     }
-    auto* list = dynamic_cast<ast::InitializerListExpression*>(init);
+    auto* list = init->asInitList();
     if (!list) {
         return IncompleteArrayBound::none();
     }
@@ -152,7 +155,7 @@ ast::Expression* unwrapScalarBrace(const ast::InitializerListExpression* list,
         return nullptr;
     }
     ast::Expression* value = elements.front().value.get();
-    auto* nested = dynamic_cast<ast::InitializerListExpression*>(value);
+    auto* nested = value->asInitList();
     while (nested) {
         if (nested->getElements().size() > 1) {
             visitor.semanticError("excess elements in scalar initializer", context);
@@ -165,7 +168,7 @@ ast::Expression* unwrapScalarBrace(const ast::InitializerListExpression* list,
             return nullptr;
         }
         value = nested->getElements().front().value.get();
-        nested = dynamic_cast<ast::InitializerListExpression*>(value);
+        nested = value->asInitList();
     }
     return value;
 }
@@ -250,7 +253,7 @@ void SemanticAnalysisVisitor::lowerStaticAggregateInit(const std::string& name,
 
 void SemanticAnalysisVisitor::lowerStaticInit(const std::string& name, const type::Type& objectType,
         ast::Expression* init, const translation_unit::Context& context) {
-    auto* list = dynamic_cast<ast::InitializerListExpression*>(init);
+    auto* list = init ? init->asInitList() : nullptr;
     if (list && (objectType.isRecord() || objectType.isArray())) {
         lowerStaticAggregateInit(name, objectType, list, context);
         return;
@@ -278,7 +281,7 @@ void SemanticAnalysisVisitor::lowerLocalInitializer(ast::InitializedDeclarator& 
         return;
     }
 
-    if (auto* list = dynamic_cast<ast::InitializerListExpression*>(declarator.getInitializer())) {
+    if (auto* list = declarator.getInitializer()->asInitList()) {
         if (objectType.isRecord() || objectType.isArray()) {
             planLocalAggregateFieldInits(&declarator, objectType, list, declarator.getContext());
             return;

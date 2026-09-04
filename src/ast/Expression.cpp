@@ -1,9 +1,32 @@
 #include "Expression.h"
 
+#include "InitializerListExpression.h"
+#include "StringLiteralExpression.h"
+
 #include <cassert>
 #include <stdexcept>
 
 namespace ast {
+
+const InitializerListExpression* Expression::asInitList() const {
+    return exprKind() == ExprKind::InitList
+            ? static_cast<const InitializerListExpression*>(this) : nullptr;
+}
+
+InitializerListExpression* Expression::asInitList() {
+    return const_cast<InitializerListExpression*>(
+            static_cast<const Expression*>(this)->asInitList());
+}
+
+const StringLiteralExpression* Expression::asStringLiteral() const {
+    return exprKind() == ExprKind::StringLiteral
+            ? static_cast<const StringLiteralExpression*>(this) : nullptr;
+}
+
+StringLiteralExpression* Expression::asStringLiteral() {
+    return const_cast<StringLiteralExpression*>(
+            static_cast<const Expression*>(this)->asStringLiteral());
+}
 
 void Expression::setType(const type::Type& type) {
     this->type = type;
