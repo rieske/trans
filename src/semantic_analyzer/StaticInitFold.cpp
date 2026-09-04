@@ -148,19 +148,23 @@ std::optional<symbols::StaticAddress> foldPointerArithmetic(
 
 std::optional<symbols::StaticAddress> foldDesignatorAddress(
         const ast::Expression& expr, const symbols::AnnotationStore& store) {
-    if (auto* id = dynamic_cast<const ast::IdentifierExpression*>(&expr)) {
-        return foldIdentifierDesignator(*id, store);
-    }
-    if (auto* member = dynamic_cast<const ast::MemberAccess*>(&expr)) {
-        return foldMemberDesignator(*member, store);
-    }
-    if (auto* access = dynamic_cast<const ast::ArrayAccess*>(&expr)) {
-        return foldIndexDesignator(*access, store);
-    }
-    if (auto* unary = dynamic_cast<const ast::UnaryExpression*>(&expr)) {
-        if (unary->lexeme() == "*" && unary->getOperandExpression()) {
-            return foldAddress(*unary->getOperandExpression(), store);
+    switch (expr.exprKind()) {
+    case ast::ExprKind::Identifier:
+        return foldIdentifierDesignator(
+                static_cast<const ast::IdentifierExpression&>(expr), store);
+    case ast::ExprKind::MemberAccess:
+        return foldMemberDesignator(static_cast<const ast::MemberAccess&>(expr), store);
+    case ast::ExprKind::ArrayAccess:
+        return foldIndexDesignator(static_cast<const ast::ArrayAccess&>(expr), store);
+    case ast::ExprKind::Unary: {
+        const auto& unary = static_cast<const ast::UnaryExpression&>(expr);
+        if (unary.lexeme() == "*" && unary.getOperandExpression()) {
+            return foldAddress(*unary.getOperandExpression(), store);
         }
+        break;
+    }
+    default:
+        break;
     }
     if (const auto* home = staticObjectHome(expr, store)) {
         return symbols::StaticAddress { home->getName() };
@@ -170,30 +174,42 @@ std::optional<symbols::StaticAddress> foldDesignatorAddress(
 
 std::optional<symbols::StaticAddress> foldAddress(
         const ast::Expression& expr, const symbols::AnnotationStore& store) {
-    if (auto* literal = dynamic_cast<const ast::StringLiteralExpression*>(&expr)) {
-        if (const auto* label = literal->rodataLabel(store)) {
+    switch (expr.exprKind()) {
+    case ast::ExprKind::StringLiteral: {
+        const auto& literal = static_cast<const ast::StringLiteralExpression&>(expr);
+        if (const auto* label = literal.rodataLabel(store)) {
             return symbols::StaticAddress { *label };
         }
         return std::nullopt;
     }
-    if (auto* id = dynamic_cast<const ast::IdentifierExpression*>(&expr)) {
-        if (const auto* label = id->rodataLabel(store)) {
+    case ast::ExprKind::Identifier: {
+        const auto& id = static_cast<const ast::IdentifierExpression&>(expr);
+        if (const auto* label = id.rodataLabel(store)) {
             return symbols::StaticAddress { *label };
         }
-        if (auto fn = functionLabel(*id, store)) {
+        if (auto fn = functionLabel(id, store)) {
             return fn;
         }
-    } else if (auto* unary = dynamic_cast<const ast::UnaryExpression*>(&expr)) {
-        if (unary->lexeme() == "&" && unary->getOperandExpression()) {
-            return foldDesignatorAddress(*unary->getOperandExpression(), store);
+        break;
+    }
+    case ast::ExprKind::Unary: {
+        const auto& unary = static_cast<const ast::UnaryExpression&>(expr);
+        if (unary.lexeme() == "&" && unary.getOperandExpression()) {
+            return foldDesignatorAddress(*unary.getOperandExpression(), store);
         }
-    } else if (auto* cast = dynamic_cast<const ast::TypeCast*>(&expr)) {
-        if (!cast->getOperandExpression()) {
+        break;
+    }
+    case ast::ExprKind::TypeCast: {
+        const auto& cast = static_cast<const ast::TypeCast&>(expr);
+        if (!cast.getOperandExpression()) {
             return std::nullopt;
         }
-        return foldAddress(*cast->getOperandExpression(), store);
-    } else if (auto* arith = dynamic_cast<const ast::ArithmeticExpression*>(&expr)) {
-        return foldPointerArithmetic(*arith, store);
+        return foldAddress(*cast.getOperandExpression(), store);
+    }
+    case ast::ExprKind::Arithmetic:
+        return foldPointerArithmetic(static_cast<const ast::ArithmeticExpression&>(expr), store);
+    default:
+        break;
     }
     if (expr.holdsAggregateAddress() || expr.isArrayObjectType()) {
         return foldDesignatorAddress(expr, store);
@@ -203,22 +219,22 @@ std::optional<symbols::StaticAddress> foldAddress(
 
 std::optional<symbols::StaticInitValue> foldFloating(
         const ast::Expression& expr, const symbols::AnnotationStore& store) {
-    if (auto* constant = dynamic_cast<const ast::ConstantExpression*>(&expr)) {
+    if (const auto* constant = expr.asConstant()) {
         util::FloatingBits parsed;
         if (!util::floatingLiteralBits(constant->getValue(), parsed)) {
             return std::nullopt;
         }
         return symbols::StaticFloat { parsed.bits, parsed.bitsHi, parsed.sizeBytes };
     }
-    auto* unary = dynamic_cast<const ast::UnaryExpression*>(&expr);
-    if (!unary) {
+    if (expr.exprKind() != ast::ExprKind::Unary) {
         return std::nullopt;
     }
-    const std::string op = unary->lexeme();
+    const auto& unary = static_cast<const ast::UnaryExpression&>(expr);
+    const std::string op = unary.lexeme();
     if (op != "+" && op != "-") {
         return std::nullopt;
     }
-    auto operand = foldStaticInit(*unary->getOperandExpression(), store);
+    auto operand = foldStaticInit(*unary.getOperandExpression(), store);
     if (!operand) {
         return std::nullopt;
     }

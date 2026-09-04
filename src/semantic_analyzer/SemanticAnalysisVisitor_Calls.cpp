@@ -62,7 +62,7 @@ std::optional<Callee> resolveCallee(ast::FunctionCall& functionCall, SymbolTable
         };
     }
 
-    if (auto* id = dynamic_cast<ast::IdentifierExpression*>(operandExpr)) {
+    if (auto* id = operandExpr->asIdentifier()) {
         errorDisplay = id->getIdentifier();
     } else {
         errorDisplay = operandSym->sourceName().empty() ? operandSym->getName() : operandSym->sourceName();
@@ -151,7 +151,7 @@ void analyzeConstantP(ast::FunctionCall& functionCall, SymbolTable& symbolTable,
 } // namespace
 
 void SemanticAnalysisVisitor::visit(ast::FunctionCall& functionCall) {
-    auto* idOperand = dynamic_cast<ast::IdentifierExpression*>(functionCall.getOperandExpression());
+    auto* idOperand = functionCall.getOperandExpression()->asIdentifier();
     if (gnuExtensions_ && idOperand) {
         if (const VaBuiltinSpec* spec = lookupVaBuiltin(idOperand->getIdentifier())) {
             analyzeVaBuiltin(functionCall, *spec, symbolTable, annotations(), *this);

@@ -122,13 +122,29 @@ TEST(ExpressionKind, everyLeafReportsItsKind) {
     }
 }
 
-TEST(ExpressionKind, asInitListAndAsStringLiteral) {
+TEST(ExpressionKind, typedAccessors) {
     ast::IdentifierExpression identifier("x", ctx());
+    EXPECT_EQ(identifier.asIdentifier(), &identifier);
+    EXPECT_EQ(identifier.asConstant(), nullptr);
     EXPECT_EQ(identifier.asInitList(), nullptr);
     EXPECT_EQ(identifier.asStringLiteral(), nullptr);
+    const ast::Expression& identifierAsExpr = identifier;
+    EXPECT_EQ(identifierAsExpr.asIdentifier(), &identifier);
+    EXPECT_EQ(identifierAsExpr.asConstant(), nullptr);
+
+    ast::ConstantExpression constant { ast::Constant("1", type::signedInteger(), ctx()) };
+    EXPECT_EQ(constant.asConstant(), &constant);
+    EXPECT_EQ(constant.asIdentifier(), nullptr);
+    EXPECT_EQ(constant.asInitList(), nullptr);
+    EXPECT_EQ(constant.asStringLiteral(), nullptr);
+    const ast::Expression& constantAsExpr = constant;
+    EXPECT_EQ(constantAsExpr.asConstant(), &constant);
+    EXPECT_EQ(constantAsExpr.asIdentifier(), nullptr);
 
     ast::InitializerListExpression list { std::vector<ast::InitializerElement> { } };
     EXPECT_EQ(list.asInitList(), &list);
+    EXPECT_EQ(list.asIdentifier(), nullptr);
+    EXPECT_EQ(list.asConstant(), nullptr);
     EXPECT_EQ(list.asStringLiteral(), nullptr);
     const ast::Expression& listAsExpr = list;
     EXPECT_EQ(listAsExpr.asInitList(), &list);
@@ -136,6 +152,8 @@ TEST(ExpressionKind, asInitListAndAsStringLiteral) {
 
     ast::StringLiteralExpression str("\"hi\"", ctx());
     EXPECT_EQ(str.asStringLiteral(), &str);
+    EXPECT_EQ(str.asIdentifier(), nullptr);
+    EXPECT_EQ(str.asConstant(), nullptr);
     EXPECT_EQ(str.asInitList(), nullptr);
     const ast::Expression& strAsExpr = str;
     EXPECT_EQ(strAsExpr.asStringLiteral(), &str);
