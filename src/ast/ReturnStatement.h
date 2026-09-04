@@ -14,6 +14,7 @@ public:
     virtual ~ReturnStatement() = default;
 
     void accept(AbstractSyntaxTreeVisitor& visitor) override;
+    NodeKind nodeKind() const override { return NodeKind::ReturnStatement; }
 
     std::unique_ptr<Expression> returnExpression;
 };

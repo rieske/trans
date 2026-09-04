@@ -22,7 +22,7 @@ std::optional<type::Type> StatementExpression::typeAtParseTime(const ParseEnviro
     if (items.empty()) {
         return type::voidType();
     }
-    if (auto* last = dynamic_cast<const Expression*>(items.back().get())) {
+    if (const auto* last = items.back() ? items.back()->asExpression() : nullptr) {
         return last->typeAtParseTime(inner);
     }
     return type::voidType();

@@ -16,6 +16,7 @@ public:
     virtual ~DefaultLabel() = default;
 
     void accept(AbstractSyntaxTreeVisitor& visitor) override;
+    NodeKind nodeKind() const override { return NodeKind::DefaultLabel; }
 
     void setLabel(symbols::AnnotationStore& store, symbols::LabelEntry label);
     symbols::LabelEntry* getLabel(symbols::AnnotationStore& store) const;

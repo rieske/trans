@@ -17,6 +17,7 @@ public:
     virtual ~FormalArgument() = default;
 
     void accept(AbstractSyntaxTreeVisitor& visitor) override;
+    NodeKind nodeKind() const override { return NodeKind::FormalArgument; }
     void visitSpecifiers(AbstractSyntaxTreeVisitor& visitor);
     void visitDeclarator(AbstractSyntaxTreeVisitor& visitor);
 

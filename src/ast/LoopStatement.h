@@ -14,6 +14,7 @@ public:
     virtual ~LoopStatement();
 
     void accept(AbstractSyntaxTreeVisitor& visitor) override;
+    NodeKind nodeKind() const override { return NodeKind::LoopStatement; }
 
     const std::unique_ptr<LoopHeader> header;
     const std::unique_ptr<AbstractSyntaxTreeNode> body;

@@ -15,6 +15,7 @@ public:
     virtual ~Declaration() = default;
 
     void accept(AbstractSyntaxTreeVisitor& visitor);
+    NodeKind nodeKind() const override { return NodeKind::Declaration; }
     void visitChildren(AbstractSyntaxTreeVisitor& visitor);
     void visitSpecifiers(AbstractSyntaxTreeVisitor& visitor);
 

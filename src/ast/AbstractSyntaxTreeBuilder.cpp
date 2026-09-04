@@ -86,7 +86,7 @@ void AbstractSyntaxTreeBuilder::pushTypeSpecifier(TypeSpecifier typeSpecifier) {
 
 std::unique_ptr<Block> AbstractSyntaxTreeBuilder::takeCompoundBlock() {
     auto node = treeBuilderContext.popStatement();
-    auto* block = dynamic_cast<Block*>(node.get());
+    auto* block = node ? node->asBlock() : nullptr;
     if (!block) {
         return nullptr;
     }
