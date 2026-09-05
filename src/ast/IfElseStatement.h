@@ -17,6 +17,7 @@ public:
     virtual ~IfElseStatement();
 
     void accept(AbstractSyntaxTreeVisitor& visitor) override;
+    NodeKind nodeKind() const override { return NodeKind::IfElseStatement; }
 
     symbols::LabelEntry* getFalsyLabel(symbols::AnnotationStore& store) const;
     void setFalsyLabel(symbols::AnnotationStore& store, symbols::LabelEntry falsyLabel);

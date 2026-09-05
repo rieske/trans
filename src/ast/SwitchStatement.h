@@ -21,6 +21,7 @@ public:
     virtual ~SwitchStatement() = default;
 
     void accept(AbstractSyntaxTreeVisitor& visitor) override;
+    NodeKind nodeKind() const override { return NodeKind::SwitchStatement; }
 
     void setExitLabel(symbols::AnnotationStore& store, symbols::LabelEntry exitLabel);
     symbols::LabelEntry* getExitLabel(symbols::AnnotationStore& store) const;

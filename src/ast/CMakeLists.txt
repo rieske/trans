@@ -1,5 +1,6 @@
 add_library(ast
         AbstractSyntaxTree.cpp
+        AbstractSyntaxTreeNode.cpp
         AbstractSyntaxTreeBuilder.cpp
         AbstractSyntaxTreeBuilderContext.cpp
         ParseEnvironment.cpp

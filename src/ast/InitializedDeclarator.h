@@ -15,6 +15,7 @@ public:
     InitializedDeclarator(std::unique_ptr<Declarator> declarator, std::unique_ptr<Expression> initializer = nullptr);
 
     void accept(AbstractSyntaxTreeVisitor& visitor) override;
+    NodeKind nodeKind() const override { return NodeKind::InitializedDeclarator; }
     void visitChildren(AbstractSyntaxTreeVisitor& visitor);
     // Split so SA can insert the name before analyzing a later initializer in the same declaration.
     void visitDeclarator(AbstractSyntaxTreeVisitor& visitor);

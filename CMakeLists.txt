@@ -29,7 +29,7 @@ add_library(trans_common INTERFACE)
 target_compile_features(trans_common INTERFACE cxx_std_20)
 target_compile_options(trans_common INTERFACE
   $<$<COMPILE_LANG_AND_ID:CXX,GNU,Clang,AppleClang>:
-    -Wall;-Wextra;-Wno-unused-parameter;-Werror;-pedantic
+    -Wall;-Wextra;-Wno-unused-parameter;-Werror;-pedantic;-fno-rtti
   >
 )
 
@@ -83,6 +83,12 @@ if(BUILD_TESTING)
     DOWNLOAD_EXTRACT_TIMESTAMP TRUE
   )
   FetchContent_MakeAvailable(googletest)
+  foreach(tgt gtest gtest_main gmock gmock_main)
+    if(TARGET ${tgt})
+      target_compile_options(${tgt} PRIVATE
+        $<$<COMPILE_LANG_AND_ID:CXX,GNU,Clang,AppleClang>:-fno-rtti>)
+    endif()
+  endforeach()
   add_subdirectory(test/src)
 endif()
 

@@ -15,6 +15,7 @@ public:
     GotoStatement(TerminalSymbol gotoKeyword, TerminalSymbol labelName);
 
     void accept(AbstractSyntaxTreeVisitor& visitor) override;
+    NodeKind nodeKind() const override { return NodeKind::GotoStatement; }
 
     void setTarget(symbols::AnnotationStore& store, symbols::LabelEntry target);
     symbols::LabelEntry* getTarget(symbols::AnnotationStore& store) const;

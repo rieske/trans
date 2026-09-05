@@ -17,6 +17,7 @@ public:
     LabeledStatement(TerminalSymbol labelName, std::unique_ptr<AbstractSyntaxTreeNode> statement);
 
     void accept(AbstractSyntaxTreeVisitor& visitor) override;
+    NodeKind nodeKind() const override { return NodeKind::LabeledStatement; }
 
     void setLabel(symbols::AnnotationStore& store, symbols::LabelEntry label);
     symbols::LabelEntry* getLabel(symbols::AnnotationStore& store) const;

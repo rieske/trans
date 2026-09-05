@@ -328,7 +328,7 @@ void SemanticAnalysisVisitor::visit(ast::StatementExpression& expression) {
     expression.body().accept(*this);
     const auto& items = expression.body().getItems();
     if (!items.empty()) {
-        if (auto* last = dynamic_cast<ast::Expression*>(items.back().get())) {
+        if (auto* last = items.back() ? items.back()->asExpression() : nullptr) {
             if (last->hasResultSymbol(annotations())) {
                 expression.takeValueFrom(*last, annotations());
                 return;

@@ -18,6 +18,8 @@ class DirectDeclarator: public AbstractSyntaxTreeNode {
 public:
     virtual ~DirectDeclarator() = default;
 
+    NodeKind nodeKind() const override { return NodeKind::DirectDeclarator; }
+
     std::string getName() const;
 
     translation_unit::Context getContext() const;

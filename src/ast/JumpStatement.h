@@ -13,6 +13,7 @@ public:
 	JumpStatement(TerminalSymbol jumpKeyword);
 
 	void accept(AbstractSyntaxTreeVisitor& visitor) override;
+	NodeKind nodeKind() const override { return NodeKind::JumpStatement; }
 
 	void setJumpTo(symbols::AnnotationStore& store, symbols::LabelEntry label);
 	symbols::LabelEntry* getJumpTo(symbols::AnnotationStore& store) const;

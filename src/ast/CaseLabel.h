@@ -16,6 +16,7 @@ public:
     virtual ~CaseLabel() = default;
 
     void accept(AbstractSyntaxTreeVisitor& visitor) override;
+    NodeKind nodeKind() const override { return NodeKind::CaseLabel; }
 
     void setLabel(symbols::AnnotationStore& store, symbols::LabelEntry label);
     symbols::LabelEntry* getLabel(symbols::AnnotationStore& store) const;

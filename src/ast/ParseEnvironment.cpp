@@ -86,7 +86,7 @@ void ParseEnvironment::defineTransient(const std::string& name, type::Type type)
 
 void ParseEnvironment::bindBlockDeclarations(const Block& block) {
     for (const auto& item : block.getItems()) {
-        auto* declaration = dynamic_cast<const Declaration*>(item.get());
+        const auto* declaration = item ? item->asDeclaration() : nullptr;
         if (!declaration) {
             continue;
         }

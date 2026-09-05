@@ -16,6 +16,7 @@ public:
     virtual ~Block() = default;
 
     void accept(AbstractSyntaxTreeVisitor& visitor) override;
+    NodeKind nodeKind() const override { return NodeKind::Block; }
     void visitChildren(AbstractSyntaxTreeVisitor& visitor) override;
 
     const std::vector<std::unique_ptr<AbstractSyntaxTreeNode>>& getItems() const {
