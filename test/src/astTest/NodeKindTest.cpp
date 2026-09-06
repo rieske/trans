@@ -177,11 +177,21 @@ TEST(NodeKind, typedAccessors) {
 
     ast::Declaration declaration { intSpecs() };
     EXPECT_EQ(declaration.asDeclaration(), &declaration);
+    EXPECT_EQ(declaration.asFunctionDefinition(), nullptr);
     EXPECT_EQ(declaration.asExpression(), nullptr);
     EXPECT_EQ(declaration.asBlock(), nullptr);
     const ast::AbstractSyntaxTreeNode& declarationAsNode = declaration;
     EXPECT_EQ(declarationAsNode.asDeclaration(), &declaration);
+    EXPECT_EQ(declarationAsNode.asFunctionDefinition(), nullptr);
     EXPECT_EQ(declarationAsNode.asExpression(), nullptr);
+
+    ast::FunctionDefinition function { intSpecs(), simpleDeclarator(), emptyBlock() };
+    EXPECT_EQ(function.asFunctionDefinition(), &function);
+    EXPECT_EQ(function.asDeclaration(), nullptr);
+    EXPECT_EQ(function.asStatement(), nullptr);
+    const ast::AbstractSyntaxTreeNode& functionAsNode = function;
+    EXPECT_EQ(functionAsNode.asFunctionDefinition(), &function);
+    EXPECT_EQ(functionAsNode.asDeclaration(), nullptr);
 
     ast::Block block;
     EXPECT_EQ(block.asBlock(), &block);

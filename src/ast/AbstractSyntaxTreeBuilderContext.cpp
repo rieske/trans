@@ -292,21 +292,21 @@ std::vector<BlockItem> AbstractSyntaxTreeBuilderContext::popStatementList() {
     return items;
 }
 
-void AbstractSyntaxTreeBuilderContext::pushExternalDeclaration(std::unique_ptr<AbstractSyntaxTreeNode> externalDeclaration) {
+void AbstractSyntaxTreeBuilderContext::pushExternalDeclaration(ExternalDeclaration externalDeclaration) {
     externalDeclarations.push(std::move(externalDeclaration));
 }
 
-std::unique_ptr<AbstractSyntaxTreeNode> AbstractSyntaxTreeBuilderContext::popExternalDeclaration() {
+ExternalDeclaration AbstractSyntaxTreeBuilderContext::popExternalDeclaration() {
     auto externalDeclaration = std::move(externalDeclarations.top());
     externalDeclarations.pop();
     return externalDeclaration;
 }
 
-void AbstractSyntaxTreeBuilderContext::addToTranslationUnit(std::unique_ptr<AbstractSyntaxTreeNode> externalDeclaration) {
+void AbstractSyntaxTreeBuilderContext::addToTranslationUnit(ExternalDeclaration externalDeclaration) {
     translationUnit.push_back(std::move(externalDeclaration));
 }
 
-std::vector<std::unique_ptr<AbstractSyntaxTreeNode> > AbstractSyntaxTreeBuilderContext::popTranslationUnit() {
+std::vector<ExternalDeclaration> AbstractSyntaxTreeBuilderContext::popTranslationUnit() {
     return std::move(translationUnit);
 }
 

@@ -26,9 +26,7 @@ bool SemanticAnalyzer::analyze(ast::AbstractSyntaxTree& tree, const scanner::Lex
     analyzerVisitor.setSink(&sink);
     analyzerVisitor.installGnuBuiltins();
 
-    for (const auto& treeNode : tree) {
-        treeNode->accept(analyzerVisitor);
-    }
+    tree.accept(analyzerVisitor);
     return analyzerVisitor.successfulSemanticAnalysis();
 }
 

@@ -20,6 +20,7 @@
 #include "InitializerListExpression.h"
 #include "types/Type.h"
 #include "ExpressionList.h"
+#include "ExternalDeclaration.h"
 #include "ForLoopHeader.h"
 #include "FunctionCall.h"
 #include "FunctionDefinition.h"

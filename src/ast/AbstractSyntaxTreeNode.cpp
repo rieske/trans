@@ -3,6 +3,7 @@
 #include "Block.h"
 #include "Declaration.h"
 #include "Expression.h"
+#include "FunctionDefinition.h"
 #include "Statement.h"
 
 namespace ast {
@@ -25,6 +26,16 @@ const Declaration* AbstractSyntaxTreeNode::asDeclaration() const {
 Declaration* AbstractSyntaxTreeNode::asDeclaration() {
     return const_cast<Declaration*>(
             static_cast<const AbstractSyntaxTreeNode*>(this)->asDeclaration());
+}
+
+const FunctionDefinition* AbstractSyntaxTreeNode::asFunctionDefinition() const {
+    return nodeKind() == NodeKind::FunctionDefinition
+            ? static_cast<const FunctionDefinition*>(this) : nullptr;
+}
+
+FunctionDefinition* AbstractSyntaxTreeNode::asFunctionDefinition() {
+    return const_cast<FunctionDefinition*>(
+            static_cast<const AbstractSyntaxTreeNode*>(this)->asFunctionDefinition());
 }
 
 const Block* AbstractSyntaxTreeNode::asBlock() const {
