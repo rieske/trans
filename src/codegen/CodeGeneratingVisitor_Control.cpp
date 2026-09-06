@@ -131,9 +131,7 @@ void CodeGeneratingVisitor::visit(ast::LoopStatement& loop) {
 }
 
 void CodeGeneratingVisitor::visit(ast::ForLoopHeader& loopHeader) {
-    if (loopHeader.initialization) {
-        loopHeader.initialization->accept(*this);
-    }
+    loopHeader.initialization.accept(*this);
 
     emit(ir::label(id(*loopHeader.getLoopEntry(store_))));
     if (loopHeader.clause) {

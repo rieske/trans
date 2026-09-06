@@ -28,6 +28,7 @@ add_library(ast
         ExpressionList.cpp
         ExpressionStatement.cpp
         ExternalDeclaration.cpp
+        ForInit.cpp
         ForLoopHeader.cpp
         FormalArgument.cpp
         FunctionCall.cpp
@@ -102,6 +103,7 @@ add_library(ast
         ExpressionList.h
         ExpressionStatement.h
         ExternalDeclaration.h
+        ForInit.h
         ForLoopHeader.h
         FormalArgument.h
         FunctionCall.h
