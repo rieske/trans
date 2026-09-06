@@ -189,9 +189,7 @@ void SemanticAnalysisVisitor::visit(ast::LoopStatement& loop) {
 }
 
 void SemanticAnalysisVisitor::visit(ast::ForLoopHeader& loopHeader) {
-    if (loopHeader.initialization) {
-        loopHeader.initialization->accept(*this);
-    }
+    loopHeader.initialization.accept(*this);
     if (loopHeader.clause) {
         loopHeader.clause->accept(*this);
     }

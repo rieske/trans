@@ -4,14 +4,12 @@
 
 namespace ast {
 
-ForLoopHeader::ForLoopHeader(std::unique_ptr<AbstractSyntaxTreeNode> initialization,
+ForLoopHeader::ForLoopHeader(ForInit initialization,
         std::unique_ptr<Expression> clause,
-        std::unique_ptr<Expression> increment,
-        bool declarationScoped) :
+        std::unique_ptr<Expression> increment) :
         LoopHeader(std::move(increment)),
         initialization { std::move(initialization) },
-        clause { std::move(clause) },
-        declarationScoped { declarationScoped } {
+        clause { std::move(clause) } {
 }
 
 ForLoopHeader::~ForLoopHeader() = default;

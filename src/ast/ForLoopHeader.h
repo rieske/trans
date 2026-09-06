@@ -3,28 +3,24 @@
 
 #include <memory>
 
+#include "ForInit.h"
 #include "LoopHeader.h"
 
 namespace ast {
 
-// for-init is either an expression, a declaration (C99), or absent — one optional AST node.
 class ForLoopHeader: public LoopHeader {
 public:
-    ForLoopHeader(std::unique_ptr<AbstractSyntaxTreeNode> initialization,
+    ForLoopHeader(ForInit initialization,
             std::unique_ptr<Expression> clause,
-            std::unique_ptr<Expression> increment,
-            bool declarationScoped = false);
+            std::unique_ptr<Expression> increment);
     virtual ~ForLoopHeader();
 
     void accept(AbstractSyntaxTreeVisitor& visitor) override;
 
-    bool opensBlockScope() const override { return declarationScoped; }
+    bool opensBlockScope() const override { return initialization.asDeclaration() != nullptr; }
 
-    const std::unique_ptr<AbstractSyntaxTreeNode> initialization;
+    const ForInit initialization;
     const std::unique_ptr<Expression> clause;
-
-private:
-    const bool declarationScoped;
 };
 
 } // namespace ast
