@@ -232,16 +232,127 @@ std::optional<Instruction> tryFold(const Instruction& inst,
 
 } // namespace
 
-void foldConstants(Procedure& procedure, IrStringTable& strings) {
+namespace {
+
+std::unordered_map<int, int> labelPredCounts(const std::vector<Instruction>& body) {
+    std::unordered_map<int, int> preds;
+    bool fall = true;
+    for (const auto& inst : body) {
+        if (inst.op == Op::Label) {
+            if (fall && inst.arg0 != kNoSymbol) {
+                ++preds[inst.arg0];
+            }
+            fall = true;
+            continue;
+        }
+        if (inst.op == Op::Jump && inst.arg0 != kNoSymbol) {
+            ++preds[inst.arg0];
+            if (inst.cond == JumpCondition::UNCONDITIONAL) {
+                fall = false;
+            }
+            continue;
+        }
+        if (instructionTransfersControl(inst)) {
+            fall = false;
+        }
+    }
+    return preds;
+}
+
+std::optional<bool> compareJumpTaken(JumpCondition cond, unsigned long long left,
+        unsigned long long right, int bytes, bool signedRel) {
+    const unsigned long long mask = widthMask(bytes);
+    const int width = bitWidth(bytes);
+    left &= mask;
+    right &= mask;
+    switch (cond) {
+    case JumpCondition::IF_EQUAL:
+        return left == right;
+    case JumpCondition::IF_NOT_EQUAL:
+        return left != right;
+    case JumpCondition::IF_BELOW:
+        if (signedRel) {
+            return asSigned(left, width) < asSigned(right, width);
+        }
+        return left < right;
+    case JumpCondition::IF_ABOVE:
+        if (signedRel) {
+            return asSigned(left, width) > asSigned(right, width);
+        }
+        return left > right;
+    case JumpCondition::IF_BELOW_OR_EQUAL:
+        if (signedRel) {
+            return asSigned(left, width) <= asSigned(right, width);
+        }
+        return left <= right;
+    case JumpCondition::IF_ABOVE_OR_EQUAL:
+        if (signedRel) {
+            return asSigned(left, width) >= asSigned(right, width);
+        }
+        return left >= right;
+    case JumpCondition::UNCONDITIONAL:
+        return std::nullopt;
+    }
+    return std::nullopt;
+}
+
+struct PendingCompare {
+    std::size_t index { 0 };
+    unsigned long long left { 0 };
+    unsigned long long right { 0 };
+    int bytes { 0 };
+};
+
+std::optional<PendingCompare> pendingFromCompare(const Instruction& inst, std::size_t index,
+        const std::unordered_map<int, unsigned long long>& known, const Procedure& procedure) {
+    if (inst.op == Op::ZeroCompare) {
+        const auto value = known.find(inst.arg0);
+        const Value* src = findValue(procedure, inst.arg0);
+        if (value == known.end() || !isFoldableInteger(src)) {
+            return std::nullopt;
+        }
+        return PendingCompare { index, value->second, 0ull, src->getSizeInBytes() };
+    }
+    if (inst.op == Op::ValueCompare) {
+        const auto left = known.find(inst.arg0);
+        const auto right = known.find(inst.arg1);
+        const Value* lhs = findValue(procedure, inst.arg0);
+        const Value* rhs = findValue(procedure, inst.arg1);
+        if (left == known.end() || right == known.end() || !isFoldableInteger(lhs)
+                || !isFoldableInteger(rhs)
+                || lhs->getSizeInBytes() != rhs->getSizeInBytes()) {
+            return std::nullopt;
+        }
+        return PendingCompare { index, left->second, right->second, lhs->getSizeInBytes() };
+    }
+    return std::nullopt;
+}
+
+} // namespace
+
+bool foldConstants(Procedure& procedure, IrStringTable& strings) {
+    const auto preds = labelPredCounts(procedure.body);
     std::unordered_map<int, unsigned long long> known;
     std::unordered_set<int> escaped;
-    for (auto& inst : procedure.body) {
+    std::optional<PendingCompare> pending;
+    std::vector<char> drop(procedure.body.size(), 0);
+    bool changed = false;
+    bool fall = true;
+
+    for (std::size_t i = 0; i < procedure.body.size(); ++i) {
+        Instruction& inst = procedure.body[i];
         if (inst.op == Op::Label) {
-            known.clear();
+            const bool keepKnown = fall && preds.count(inst.arg0) && preds.at(inst.arg0) == 1;
+            if (!keepKnown) {
+                known.clear();
+            }
+            pending.reset();
+            fall = true;
             continue;
         }
         if (auto repl = tryFold(inst, known, procedure, strings)) {
             inst = *repl;
+            changed = true;
         }
         SymbolRefs refs;
         collectSymbolRefs(inst, refs);
@@ -249,28 +360,66 @@ void foldConstants(Procedure& procedure, IrStringTable& strings) {
             escaped.insert(refs.addressOfBase);
             known.erase(refs.addressOfBase);
         }
+        bool recorded = false;
         if (inst.op == Op::AssignConstant && inst.arg1 == kNoSymbol
                 && escaped.count(inst.result) == 0) {
             const Value* dest = findValue(procedure, inst.result);
             if (isFoldableInteger(dest)) {
                 if (auto bits = parseConstBits(strings.get(inst.arg0))) {
                     known[inst.result] = *bits & widthMask(dest->getSizeInBytes());
-                    continue;
+                    recorded = true;
                 }
             }
-        }
-        if (inst.op == Op::Assign && escaped.count(inst.result) == 0) {
+        } else if (inst.op == Op::Assign && escaped.count(inst.result) == 0) {
             const auto src = known.find(inst.arg0);
             const Value* dest = findValue(procedure, inst.result);
             if (src != known.end() && isFoldableInteger(dest)) {
                 known[inst.result] = src->second & widthMask(dest->getSizeInBytes());
-                continue;
+                recorded = true;
             }
         }
-        for (int def : refs.defs) {
-            known.erase(def);
+        if (!recorded) {
+            for (int def : refs.defs) {
+                known.erase(def);
+            }
+        }
+
+        if (inst.op == Op::Jump && inst.cond != JumpCondition::UNCONDITIONAL && pending) {
+            const bool signedRel = inst.imm != 0;
+            if (auto taken = compareJumpTaken(inst.cond, pending->left, pending->right,
+                    pending->bytes, signedRel)) {
+                drop[pending->index] = 1;
+                if (*taken) {
+                    inst.cond = JumpCondition::UNCONDITIONAL;
+                } else {
+                    drop[i] = 1;
+                }
+                changed = true;
+            }
+            pending.reset();
+        } else if (auto next = pendingFromCompare(inst, i, known, procedure)) {
+            pending = next;
+        } else {
+            pending.reset();
+        }
+
+        if (!drop[i] && instructionTransfersControl(inst)
+                && (inst.op != Op::Jump || inst.cond == JumpCondition::UNCONDITIONAL)) {
+            fall = false;
         }
     }
+
+    if (changed) {
+        std::vector<Instruction> kept;
+        kept.reserve(procedure.body.size());
+        for (std::size_t i = 0; i < procedure.body.size(); ++i) {
+            if (!drop[i]) {
+                kept.push_back(procedure.body[i]);
+            }
+        }
+        procedure.body = std::move(kept);
+    }
+    return changed;
 }
 
 namespace {
@@ -507,8 +656,19 @@ IntermediateRepresentation runIrPasses(IntermediateRepresentation ir, int optLev
     ir = sealProcedures(std::move(ir));
     ir = applyCfgPasses(std::move(ir), optLevel);
     if (optLevel >= 1) {
+        for (int iter = 0; iter < 8; ++iter) {
+            bool folded = false;
+            for (auto& procedure : ir.procedures) {
+                if (foldConstants(procedure, ir.strings)) {
+                    folded = true;
+                }
+            }
+            ir = applyCfgPasses(std::move(ir), optLevel);
+            if (!folded) {
+                break;
+            }
+        }
         for (auto& procedure : ir.procedures) {
-            foldConstants(procedure, ir.strings);
             copyPropagate(procedure);
             eliminateDeadTemps(procedure);
         }

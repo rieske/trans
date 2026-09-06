@@ -8,7 +8,7 @@ namespace codegen {
 void sealProcedure(Procedure& procedure);
 IntermediateRepresentation sealProcedures(IntermediateRepresentation ir);
 
-void foldConstants(Procedure& procedure, IrStringTable& strings);
+bool foldConstants(Procedure& procedure, IrStringTable& strings);
 void copyPropagate(Procedure& procedure);
 void eliminateDeadTemps(Procedure& procedure);
 
