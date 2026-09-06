@@ -36,7 +36,7 @@ translation_unit::Context ctx() {
 }
 
 ast::TerminalSymbol term(const char* value = "x") {
-    return { "id", value, ctx() };
+    return { value, ctx() };
 }
 
 std::unique_ptr<ast::IdentifierExpression> idExpr(const char* name = "x") {
@@ -86,7 +86,7 @@ std::unique_ptr<ast::AbstractSyntaxTreeNode> makeNode(ast::NodeKind kind) {
     case ast::NodeKind::DefaultLabel:
         return std::make_unique<ast::DefaultLabel>(term("default"), emptyStmt());
     case ast::NodeKind::JumpStatement:
-        return std::make_unique<ast::JumpStatement>(ast::TerminalSymbol { "break", "break", ctx() });
+        return std::make_unique<ast::JumpStatement>(ast::TerminalSymbol { "break", ctx() });
     case ast::NodeKind::GotoStatement:
         return std::make_unique<ast::GotoStatement>(term("goto"), term("L"));
     case ast::NodeKind::ReturnStatement:

@@ -33,11 +33,11 @@ AbstractSyntaxTreeBuilderContext::AbstractSyntaxTreeBuilderContext(scanner::Lexi
 }
 
 void AbstractSyntaxTreeBuilderContext::pushTerminal(TerminalSymbol terminal) {
-    terminalSymbols.push(terminal);
+    terminalSymbols.push(std::move(terminal));
 }
 
 TerminalSymbol AbstractSyntaxTreeBuilderContext::popTerminal() {
-    auto terminal = terminalSymbols.top();
+    TerminalSymbol terminal = std::move(terminalSymbols.top());
     terminalSymbols.pop();
     return terminal;
 }

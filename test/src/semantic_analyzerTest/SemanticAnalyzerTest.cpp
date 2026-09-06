@@ -39,7 +39,7 @@ DeclarationSpecifiers intSpecs() {
 
 std::unique_ptr<AbstractSyntaxTree> fileScopeInt(const std::string& name) {
     std::vector<std::unique_ptr<InitializedDeclarator>> declarators;
-    TerminalSymbol id { "id", name, { "t.c", 1 } };
+    TerminalSymbol id { name, { "t.c", 1 } };
     declarators.push_back(std::make_unique<InitializedDeclarator>(
             std::make_unique<Declarator>(std::make_unique<Identifier>(id))));
 
@@ -90,9 +90,9 @@ TEST(SemanticAnalyzer, functionDesignatorKeepsVariadic) {
     FormalArguments args;
     args.push_back(FormalArgument {
             intSpecs(), std::make_unique<Declarator>(std::make_unique<Identifier>(
-                    TerminalSymbol { "id", "x", ctx() })) });
+                    TerminalSymbol { "x", ctx() })) });
     auto fn = std::make_unique<FunctionDeclarator>(
-            std::make_unique<Identifier>(TerminalSymbol { "id", "f", ctx() }),
+            std::make_unique<Identifier>(TerminalSymbol { "f", ctx() }),
             std::move(args), true);
 
     auto designator = std::make_unique<IdentifierExpression>("f", ctx());

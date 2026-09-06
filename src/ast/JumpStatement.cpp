@@ -8,8 +8,8 @@ namespace ast {
 
 JumpStatement::JumpStatement(TerminalSymbol jumpKeyword) :
 		jumpKeyword { jumpKeyword } {
-	if (jumpKeyword.type != "continue" && jumpKeyword.type != "break") {
-		throw std::runtime_error { "bad loop jump keyword: " + jumpKeyword.type };
+	if (jumpKeyword.value != "continue" && jumpKeyword.value != "break") {
+		throw std::runtime_error { "bad loop jump keyword: " + jumpKeyword.value };
 	}
 }
 

@@ -18,6 +18,7 @@ add_executable(astTest
     astTest/ExpressionDualTypeTest.cpp
     astTest/ExpressionKindTest.cpp
     astTest/NodeKindTest.cpp
+    astTest/TerminalSymbolTest.cpp
     astTest/BlockItemTest.cpp
         astTest/TypeSpecifierTest.cpp
         )

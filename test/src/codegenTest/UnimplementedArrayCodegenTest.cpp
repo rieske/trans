@@ -42,7 +42,7 @@ TEST(CodeGeneratingVisitor, arrayAccessWithoutSymbolsIsNoOp) {
 TEST(CodeGeneratingVisitor, arrayDeclaratorIsNoOp) {
     // Sized arrays are typed in semantic analysis; declarator codegen emits no IR.
     ArrayDeclarator declarator {
-            std::make_unique<Identifier>(TerminalSymbol { "id", "a", testContext() }),
+            std::make_unique<Identifier>(TerminalSymbol { "a", testContext() }),
             std::make_unique<ConstantExpression>(
                     Constant { "3", type::signedInteger(), testContext() })
     };

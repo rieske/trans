@@ -37,7 +37,7 @@ scanner::Token tokenFor(const Grammar& grammar, int symbolId) {
 
 class NullSyntaxTreeBuilder: public SyntaxTreeBuilder {
 public:
-    void makeTerminalNode(std::string, std::string, const translation_unit::Context&) override {}
+    void makeTerminalNode(std::string, const translation_unit::Context&) override {}
     void makeNonterminalNode(const Production&) override {}
 };
 
