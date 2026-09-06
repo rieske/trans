@@ -9,7 +9,6 @@
 #include "ast/DeclarationSpecifiers.h"
 #include "ast/ExpressionStatement.h"
 #include "ast/IdentifierExpression.h"
-#include "ast/IfStatement.h"
 #include "ast/NullStatement.h"
 #include "ast/TypeSpecifier.h"
 #include "scanner/LexicalSession.h"
@@ -25,19 +24,21 @@ ast::DeclarationSpecifiers intSpecs() {
     return ast::DeclarationSpecifiers { ast::TypeSpecifier { type::signedInteger(), "int" } };
 }
 
+TEST(Statement, asBlock) {
+    ast::Block block;
+    EXPECT_EQ(block.asBlock(), &block);
+    ast::NullStatement empty;
+    EXPECT_EQ(empty.asBlock(), nullptr);
+    ast::ExpressionStatement expressionStatement {
+            std::make_unique<ast::IdentifierExpression>("x", ctx()) };
+    EXPECT_EQ(expressionStatement.asBlock(), nullptr);
+}
+
 TEST(Statement, expressionStatementWrapsExpression) {
     auto expression = std::make_unique<ast::IdentifierExpression>("x", ctx());
     auto* raw = expression.get();
     ast::ExpressionStatement statement { std::move(expression) };
-    EXPECT_EQ(statement.nodeKind(), ast::NodeKind::ExpressionStatement);
     EXPECT_EQ(statement.expression.get(), raw);
-}
-
-TEST(Statement, ifBodyIsAStatement) {
-    ast::IfStatement statement {
-            std::make_unique<ast::IdentifierExpression>("x", ctx()),
-            std::make_unique<ast::NullStatement>() };
-    EXPECT_EQ(statement.body->nodeKind(), ast::NodeKind::NullStatement);
 }
 
 TEST(BuilderContext, popAsStatementPassesBlockThrough) {
@@ -46,7 +47,7 @@ TEST(BuilderContext, popAsStatementPassesBlockThrough) {
     context.pushStatement(std::make_unique<ast::Block>());
     auto statement = context.popAsStatement();
     ASSERT_NE(statement, nullptr);
-    EXPECT_EQ(statement->nodeKind(), ast::NodeKind::Block);
+    EXPECT_EQ(statement->asBlock(), statement.get());
 }
 
 TEST(BuilderContext, popAsStatementWrapsExpression) {
@@ -57,7 +58,6 @@ TEST(BuilderContext, popAsStatementWrapsExpression) {
     context.pushStatement(std::move(expression));
     auto statement = context.popAsStatement();
     ASSERT_NE(statement, nullptr);
-    EXPECT_EQ(statement->nodeKind(), ast::NodeKind::ExpressionStatement);
     auto* wrapped = static_cast<ast::ExpressionStatement*>(statement.get());
     EXPECT_EQ(wrapped->expression.get(), raw);
 }
@@ -76,7 +76,6 @@ TEST(CSNBCreators, emptyStatementPushesNullStatement) {
     ast::emptyStatement(context);
     auto statement = context.popAsStatement();
     ASSERT_NE(statement, nullptr);
-    EXPECT_EQ(statement->nodeKind(), ast::NodeKind::NullStatement);
 }
 
 } // namespace

@@ -17,7 +17,6 @@ add_executable(astTest
     astTest/ParseEnvironmentTest.cpp
     astTest/ExpressionDualTypeTest.cpp
     astTest/ExpressionKindTest.cpp
-    astTest/NodeKindTest.cpp
     astTest/TerminalSymbolTest.cpp
     astTest/BlockItemTest.cpp
     astTest/ExternalDeclarationTest.cpp

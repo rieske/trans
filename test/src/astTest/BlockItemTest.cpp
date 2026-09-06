@@ -45,6 +45,24 @@ TEST(BlockItem, holdsExpression) {
     EXPECT_EQ(asConst.asDeclaration(), nullptr);
 }
 
+TEST(BlockItem, takeBlockTakesBlock) {
+    auto block = std::make_unique<ast::Block>();
+    auto* raw = block.get();
+    ast::BlockItem item { std::move(block) };
+    auto taken = item.takeBlock();
+    ASSERT_NE(taken, nullptr);
+    EXPECT_EQ(taken.get(), raw);
+}
+
+TEST(BlockItem, takeBlockRejectsNonBlock) {
+    ast::BlockItem statement { std::make_unique<ast::VoidReturnStatement>() };
+    EXPECT_EQ(statement.takeBlock(), nullptr);
+    ast::BlockItem declaration { std::make_unique<ast::Declaration>(intSpecs()) };
+    EXPECT_EQ(declaration.takeBlock(), nullptr);
+    ast::BlockItem expression { std::make_unique<ast::IdentifierExpression>("x", ctx()) };
+    EXPECT_EQ(expression.takeBlock(), nullptr);
+}
+
 TEST(BlockItem, holdsStatement) {
     auto statement = std::make_unique<ast::VoidReturnStatement>();
     auto* raw = statement.get();

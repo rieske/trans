@@ -61,7 +61,6 @@ public:
 
     virtual translation_unit::Context getContext() const = 0;
 
-    NodeKind nodeKind() const override { return NodeKind::Expression; }
     virtual ExprKind exprKind() const = 0;
 
     IdentifierExpression* asIdentifier();

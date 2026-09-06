@@ -14,7 +14,6 @@ public:
     virtual ~ExpressionStatement() = default;
 
     void accept(AbstractSyntaxTreeVisitor& visitor) override;
-    NodeKind nodeKind() const override { return NodeKind::ExpressionStatement; }
 
     const std::unique_ptr<Expression> expression;
 };

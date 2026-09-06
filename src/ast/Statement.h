@@ -5,9 +5,13 @@
 
 namespace ast {
 
+class Block;
+
 class Statement: public AbstractSyntaxTreeNode {
 public:
     virtual ~Statement() = default;
+
+    virtual Block* asBlock() { return nullptr; }
 };
 
 } // namespace ast
