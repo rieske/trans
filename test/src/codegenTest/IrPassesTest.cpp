@@ -690,4 +690,188 @@ TEST(IrPasses, runIrPasses_atO1FoldsThenDropsDeadTemps) {
     EXPECT_EQ(ir.procedures.front().frame.locals.size(), 1u);
 }
 
+TEST(IrPasses, copyPropagate_rewritesTempCopyIntoAdd) {
+    IntermediateRepresentation ir;
+    IrN n { ir.strings };
+    ProcedureFrame frame = exprTemps(ir.strings, { "t1", "t2", "t3" });
+    frame.locals.push_back(integral(ir.strings, "x"));
+    ir.procedures.push_back(makeProc(ir.strings, "f", {
+            ir::assign(n("t1"), n("t2")),
+            ir::add(n("t2"), n("x"), n("t3")),
+            ir::ret(n("t3")),
+    }, std::move(frame)));
+
+    copyPropagate(ir.procedures.front());
+
+    EXPECT_THAT(toString(ir), StrEq(
+            "PROC f\n"
+            "\tt2 := t1\n"
+            "\tt3 := t1 + x\n"
+            "\tRETURN t3\n"
+            "ENDPROC f\n"));
+}
+
+TEST(IrPasses, copyPropagate_keepsNamedLocal) {
+    IntermediateRepresentation ir;
+    IrN n { ir.strings };
+    ProcedureFrame frame = exprTemps(ir.strings, { "t1", "t3" });
+    frame.locals.push_back(integral(ir.strings, "a"));
+    frame.locals.push_back(integral(ir.strings, "x"));
+    ir.procedures.push_back(makeProc(ir.strings, "f", {
+            ir::assign(n("t1"), n("a")),
+            ir::add(n("a"), n("x"), n("t3")),
+            ir::ret(n("t3")),
+    }, std::move(frame)));
+
+    copyPropagate(ir.procedures.front());
+
+    EXPECT_THAT(toString(ir), HasSubstr("t3 := a + x"));
+}
+
+TEST(IrPasses, copyPropagate_skipsSignednessChangingAssign) {
+    IntermediateRepresentation ir;
+    IrN n { ir.strings };
+    type::sysv::Classification signExt;
+    signExt.gprExtend = type::sysv::GprExtend::Sign;
+    type::sysv::Classification zeroExt;
+    zeroExt.gprExtend = type::sysv::GprExtend::Zero;
+    ProcedureFrame frame;
+    frame.locals.push_back(codegen::Value { n("t1"), 0, codegen::Type::INTEGRAL, 1, signExt });
+    frame.locals.back().markExpressionTemp();
+    frame.locals.push_back(codegen::Value { n("t2"), 0, codegen::Type::INTEGRAL, 1, zeroExt });
+    frame.locals.back().markExpressionTemp();
+    frame.locals.push_back(integral(ir.strings, "t3"));
+    frame.locals.back().markExpressionTemp();
+    frame.locals.push_back(integral(ir.strings, "x"));
+    ir.procedures.push_back(makeProc(ir.strings, "f", {
+            ir::assign(n("t1"), n("t2")),
+            ir::add(n("t2"), n("x"), n("t3")),
+            ir::ret(n("t3")),
+    }, std::move(frame)));
+
+    copyPropagate(ir.procedures.front());
+
+    EXPECT_THAT(toString(ir), HasSubstr("t3 := t2 + x"));
+}
+
+TEST(IrPasses, copyPropagate_skipsAddressTakenSrc) {
+    IntermediateRepresentation ir;
+    IrN n { ir.strings };
+    ProcedureFrame frame = exprTemps(ir.strings, { "t1", "t2", "t3", "p" }, 8);
+    frame.locals.push_back(integral(ir.strings, "x", 8));
+    ir.procedures.push_back(makeProc(ir.strings, "f", {
+            ir::addressOf(n("t1"), n("p")),
+            ir::assign(n("t1"), n("t2")),
+            ir::add(n("t2"), n("x"), n("t3")),
+            ir::ret(n("t3")),
+    }, std::move(frame)));
+
+    copyPropagate(ir.procedures.front());
+
+    EXPECT_THAT(toString(ir), HasSubstr("t3 := t2 + x"));
+}
+
+TEST(IrPasses, copyPropagate_doesNotRewriteAddressOf) {
+    IntermediateRepresentation ir;
+    IrN n { ir.strings };
+    ir.procedures.push_back(makeProc(ir.strings, "f", {
+            ir::assign(n("t1"), n("t2")),
+            ir::addressOf(n("t2"), n("p")),
+            ir::ret(n("p")),
+    }, exprTemps(ir.strings, { "t1", "t2", "p" }, 8)));
+
+    copyPropagate(ir.procedures.front());
+
+    EXPECT_THAT(toString(ir), HasSubstr("p := &t2"));
+}
+
+TEST(IrPasses, copyPropagate_clearsAtCall) {
+    IntermediateRepresentation ir;
+    IrN n { ir.strings };
+    ProcedureFrame frame = exprTemps(ir.strings, { "t1", "t2", "t3", "t4" });
+    frame.locals.push_back(integral(ir.strings, "x"));
+    ir.procedures.push_back(makeProc(ir.strings, "f", {
+            ir::assign(n("t1"), n("t2")),
+            ir::argument(n("t2")),
+            ir::call(n("g")),
+            ir::retrieve(n("t3")),
+            ir::add(n("t2"), n("x"), n("t4")),
+            ir::ret(n("t4")),
+    }, std::move(frame)));
+
+    copyPropagate(ir.procedures.front());
+
+    EXPECT_THAT(toString(ir), HasSubstr("PARAM t1"));
+    EXPECT_THAT(toString(ir), HasSubstr("t4 := t2 + x"));
+}
+
+TEST(IrPasses, copyPropagate_clearsAtLabel) {
+    IntermediateRepresentation ir;
+    IrN n { ir.strings };
+    ProcedureFrame frame = exprTemps(ir.strings, { "t1", "t2", "t3" });
+    frame.locals.push_back(integral(ir.strings, "x"));
+    ir.procedures.push_back(makeProc(ir.strings, "f", {
+            ir::assign(n("t1"), n("t2")),
+            ir::label(n("L")),
+            ir::add(n("t2"), n("x"), n("t3")),
+            ir::ret(n("t3")),
+    }, std::move(frame)));
+
+    copyPropagate(ir.procedures.front());
+
+    EXPECT_THAT(toString(ir), HasSubstr("t3 := t2 + x"));
+}
+
+TEST(IrPasses, applyCfgPasses_doesNotCopyPropagate) {
+    IntermediateRepresentation ir;
+    IrN n { ir.strings };
+    ProcedureFrame frame = exprTemps(ir.strings, { "t1", "t2", "t3" });
+    frame.locals.push_back(integral(ir.strings, "x"));
+    ir.procedures.push_back(makeProc(ir.strings, "f", {
+            ir::assign(n("t1"), n("t2")),
+            ir::add(n("t2"), n("x"), n("t3")),
+            ir::ret(n("t3")),
+    }, std::move(frame)));
+
+    ir = applyCfgPasses(std::move(ir), 1);
+
+    EXPECT_THAT(toString(ir), HasSubstr("t3 := t2 + x"));
+}
+
+TEST(IrPasses, runIrPasses_atO0DoesNotCopyPropagate) {
+    IntermediateRepresentation ir;
+    IrN n { ir.strings };
+    ProcedureFrame frame = exprTemps(ir.strings, { "t1", "t2", "t3" });
+    frame.locals.push_back(integral(ir.strings, "x"));
+    ir.procedures.push_back(makeProc(ir.strings, "f", {
+            ir::assign(n("t1"), n("t2")),
+            ir::add(n("t2"), n("x"), n("t3")),
+            ir::ret(n("t3")),
+    }, std::move(frame)));
+
+    ir = runIrPasses(std::move(ir), 0);
+
+    EXPECT_THAT(toString(ir), HasSubstr("t3 := t2 + x"));
+}
+
+TEST(IrPasses, runIrPasses_atO1CopyPropagatesThenDropsDeadCopy) {
+    IntermediateRepresentation ir;
+    IrN n { ir.strings };
+    ProcedureFrame frame = exprTemps(ir.strings, { "t1", "t2", "t3" });
+    frame.locals.push_back(integral(ir.strings, "x"));
+    ir.procedures.push_back(makeProc(ir.strings, "f", {
+            ir::assign(n("t1"), n("t2")),
+            ir::add(n("t2"), n("x"), n("t3")),
+            ir::ret(n("t3")),
+    }, std::move(frame)));
+
+    ir = runIrPasses(std::move(ir), 1);
+
+    EXPECT_THAT(toString(ir), StrEq(
+            "PROC f\n"
+            "\tt3 := t1 + x\n"
+            "\tRETURN t3\n"
+            "ENDPROC f\n"));
+}
+
 } // namespace
