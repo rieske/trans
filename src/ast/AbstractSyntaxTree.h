@@ -19,16 +19,12 @@ private:
 public:
     AbstractSyntaxTree(std::vector<ExternalDeclaration> translationUnit);
 
-    auto begin() const -> decltype(translationUnit.begin());
-    auto end() const -> decltype(translationUnit.end());
-
     symbols::AnnotationStore& annotations() { return annotations_; }
 
     void setVlaExpressions(std::shared_ptr<VlaExpressionTable> exprs) {
         vlaExpressions_ = std::move(exprs);
     }
     VlaExpressionTable* vlaExpressions() { return vlaExpressions_.get(); }
-    const VlaExpressionTable* vlaExpressions() const { return vlaExpressions_.get(); }
 
     void accept(ast::AbstractSyntaxTreeVisitor& visitor) const;
 };

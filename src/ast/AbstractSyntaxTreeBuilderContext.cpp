@@ -129,36 +129,42 @@ std::vector<Pointer> AbstractSyntaxTreeBuilderContext::popPointers() {
     return pointers;
 }
 
-void AbstractSyntaxTreeBuilderContext::pushStatement(std::unique_ptr<AbstractSyntaxTreeNode> statement) {
-    statementStack.push(std::move(statement));
+void AbstractSyntaxTreeBuilderContext::pushStatement(std::unique_ptr<Statement> statement) {
+    statementStack.push(BlockItem { std::move(statement) });
 }
 
-std::unique_ptr<AbstractSyntaxTreeNode> AbstractSyntaxTreeBuilderContext::popStatement() {
-    auto statement = std::move(statementStack.top());
+void AbstractSyntaxTreeBuilderContext::pushStatement(std::unique_ptr<Expression> expression) {
+    statementStack.push(BlockItem { std::move(expression) });
+}
+
+void AbstractSyntaxTreeBuilderContext::pushStatement(std::unique_ptr<Declaration> declaration) {
+    statementStack.push(BlockItem { std::move(declaration) });
+}
+
+BlockItem AbstractSyntaxTreeBuilderContext::popStatement() {
+    auto item = std::move(statementStack.top());
     statementStack.pop();
-    return statement;
+    return item;
 }
 
 std::unique_ptr<Statement> AbstractSyntaxTreeBuilderContext::popAsStatement() {
-    auto node = popStatement();
-    if (auto* statement = node ? node->asStatement() : nullptr) {
-        node.release();
-        return std::unique_ptr<Statement> { statement };
+    auto item = popStatement();
+    if (auto statement = item.takeStatement()) {
+        return statement;
     }
-    if (auto* expression = node ? node->asExpression() : nullptr) {
-        node.release();
-        return std::make_unique<ExpressionStatement>(std::unique_ptr<Expression> { expression });
+    if (auto expression = item.takeExpression()) {
+        return std::make_unique<ExpressionStatement>(std::move(expression));
     }
     return nullptr;
 }
 
 std::unique_ptr<Block> AbstractSyntaxTreeBuilderContext::popBlock() {
-    auto node = popStatement();
-    auto* block = node ? node->asBlock() : nullptr;
+    auto statement = popStatement().takeStatement();
+    auto* block = statement ? statement->asBlock() : nullptr;
     if (!block) {
         return nullptr;
     }
-    node.release();
+    statement.release();
     return std::unique_ptr<Block> { block };
 }
 
@@ -276,14 +282,14 @@ std::unique_ptr<Declaration> AbstractSyntaxTreeBuilderContext::popDeclaration() 
     return declaration;
 }
 
-void AbstractSyntaxTreeBuilderContext::newStatementList(std::unique_ptr<AbstractSyntaxTreeNode> statement) {
+void AbstractSyntaxTreeBuilderContext::newStatementList(BlockItem item) {
     std::vector<BlockItem> items;
-    items.push_back(BlockItem::fromNode(std::move(statement)));
+    items.push_back(std::move(item));
     statementLists.push(std::move(items));
 }
 
-void AbstractSyntaxTreeBuilderContext::addToStatementList(std::unique_ptr<AbstractSyntaxTreeNode> statement) {
-    statementLists.top().push_back(BlockItem::fromNode(std::move(statement)));
+void AbstractSyntaxTreeBuilderContext::addToStatementList(BlockItem item) {
+    statementLists.top().push_back(std::move(item));
 }
 
 std::vector<BlockItem> AbstractSyntaxTreeBuilderContext::popStatementList() {

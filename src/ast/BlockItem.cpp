@@ -12,23 +12,8 @@ BlockItem::BlockItem(std::unique_ptr<Expression> expression) :
         item_ { std::move(expression) } {
 }
 
-BlockItem::BlockItem(std::unique_ptr<AbstractSyntaxTreeNode> statement) :
+BlockItem::BlockItem(std::unique_ptr<Statement> statement) :
         item_ { std::move(statement) } {
-}
-
-BlockItem BlockItem::fromNode(std::unique_ptr<AbstractSyntaxTreeNode> node) {
-    if (!node) {
-        return BlockItem { std::unique_ptr<AbstractSyntaxTreeNode> {} };
-    }
-    if (auto* declaration = node->asDeclaration()) {
-        node.release();
-        return BlockItem { std::unique_ptr<Declaration> { declaration } };
-    }
-    if (auto* expression = node->asExpression()) {
-        node.release();
-        return BlockItem { std::unique_ptr<Expression> { expression } };
-    }
-    return BlockItem { std::move(node) };
 }
 
 const Declaration* BlockItem::asDeclaration() const {
@@ -36,11 +21,6 @@ const Declaration* BlockItem::asDeclaration() const {
         return held->get();
     }
     return nullptr;
-}
-
-Declaration* BlockItem::asDeclaration() {
-    return const_cast<Declaration*>(
-            static_cast<const BlockItem*>(this)->asDeclaration());
 }
 
 const Expression* BlockItem::asExpression() const {
@@ -53,6 +33,27 @@ const Expression* BlockItem::asExpression() const {
 Expression* BlockItem::asExpression() {
     return const_cast<Expression*>(
             static_cast<const BlockItem*>(this)->asExpression());
+}
+
+const Statement* BlockItem::asStatement() const {
+    if (const auto* held = std::get_if<std::unique_ptr<Statement>>(&item_)) {
+        return held->get();
+    }
+    return nullptr;
+}
+
+std::unique_ptr<Expression> BlockItem::takeExpression() {
+    if (auto* held = std::get_if<std::unique_ptr<Expression>>(&item_)) {
+        return std::move(*held);
+    }
+    return nullptr;
+}
+
+std::unique_ptr<Statement> BlockItem::takeStatement() {
+    if (auto* held = std::get_if<std::unique_ptr<Statement>>(&item_)) {
+        return std::move(*held);
+    }
+    return nullptr;
 }
 
 void BlockItem::accept(AbstractSyntaxTreeVisitor& visitor) const {

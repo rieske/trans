@@ -64,10 +64,8 @@ public:
     NodeKind nodeKind() const override { return NodeKind::Expression; }
     virtual ExprKind exprKind() const = 0;
 
-    const IdentifierExpression* asIdentifier() const;
     IdentifierExpression* asIdentifier();
     const ConstantExpression* asConstant() const;
-    ConstantExpression* asConstant();
     const InitializerListExpression* asInitList() const;
     InitializerListExpression* asInitList();
     const StringLiteralExpression* asStringLiteral() const;

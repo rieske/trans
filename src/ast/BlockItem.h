@@ -6,6 +6,7 @@
 
 #include "Declaration.h"
 #include "Expression.h"
+#include "Statement.h"
 
 namespace ast {
 
@@ -15,20 +16,21 @@ class BlockItem {
 public:
     explicit BlockItem(std::unique_ptr<Declaration> declaration);
     explicit BlockItem(std::unique_ptr<Expression> expression);
-    explicit BlockItem(std::unique_ptr<AbstractSyntaxTreeNode> statement);
-
-    static BlockItem fromNode(std::unique_ptr<AbstractSyntaxTreeNode> node);
+    explicit BlockItem(std::unique_ptr<Statement> statement);
 
     const Declaration* asDeclaration() const;
-    Declaration* asDeclaration();
     const Expression* asExpression() const;
     Expression* asExpression();
+    const Statement* asStatement() const;
+
+    std::unique_ptr<Expression> takeExpression();
+    std::unique_ptr<Statement> takeStatement();
 
     void accept(AbstractSyntaxTreeVisitor& visitor) const;
 
 private:
     std::variant<std::unique_ptr<Declaration>, std::unique_ptr<Expression>,
-            std::unique_ptr<AbstractSyntaxTreeNode>> item_;
+            std::unique_ptr<Statement>> item_;
 };
 
 } // namespace ast

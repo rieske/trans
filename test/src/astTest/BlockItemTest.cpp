@@ -21,33 +21,39 @@ ast::DeclarationSpecifiers intSpecs() {
     return ast::DeclarationSpecifiers { ast::TypeSpecifier { type::signedInteger(), "int" } };
 }
 
-TEST(BlockItem, fromNodeClassifiesDeclaration) {
+TEST(BlockItem, holdsDeclaration) {
     auto declaration = std::make_unique<ast::Declaration>(intSpecs());
     auto* raw = declaration.get();
-    ast::BlockItem item = ast::BlockItem::fromNode(std::move(declaration));
+    ast::BlockItem item { std::move(declaration) };
     EXPECT_EQ(item.asDeclaration(), raw);
     EXPECT_EQ(item.asExpression(), nullptr);
+    EXPECT_EQ(item.asStatement(), nullptr);
     const ast::BlockItem& asConst = item;
     EXPECT_EQ(asConst.asDeclaration(), raw);
     EXPECT_EQ(asConst.asExpression(), nullptr);
 }
 
-TEST(BlockItem, fromNodeClassifiesExpression) {
+TEST(BlockItem, holdsExpression) {
     auto expression = std::make_unique<ast::IdentifierExpression>("x", ctx());
     auto* raw = expression.get();
-    ast::BlockItem item = ast::BlockItem::fromNode(std::move(expression));
+    ast::BlockItem item { std::move(expression) };
     EXPECT_EQ(item.asExpression(), raw);
     EXPECT_EQ(item.asDeclaration(), nullptr);
+    EXPECT_EQ(item.asStatement(), nullptr);
     const ast::BlockItem& asConst = item;
     EXPECT_EQ(asConst.asExpression(), raw);
     EXPECT_EQ(asConst.asDeclaration(), nullptr);
 }
 
-TEST(BlockItem, fromNodeClassifiesOtherStatement) {
+TEST(BlockItem, holdsStatement) {
     auto statement = std::make_unique<ast::VoidReturnStatement>();
-    ast::BlockItem item = ast::BlockItem::fromNode(std::move(statement));
+    auto* raw = statement.get();
+    ast::BlockItem item { std::move(statement) };
     EXPECT_EQ(item.asDeclaration(), nullptr);
     EXPECT_EQ(item.asExpression(), nullptr);
+    EXPECT_EQ(item.asStatement(), raw);
+    const ast::BlockItem& asConst = item;
+    EXPECT_EQ(asConst.asStatement(), raw);
 }
 
 TEST(BlockItem, blockHoldsMixedItemsInOrder) {
@@ -58,8 +64,8 @@ TEST(BlockItem, blockHoldsMixedItemsInOrder) {
 
     std::vector<ast::BlockItem> items;
     items.push_back(ast::BlockItem { std::move(declaration) });
-    items.push_back(ast::BlockItem::fromNode(std::make_unique<ast::VoidReturnStatement>()));
-    items.push_back(ast::BlockItem::fromNode(std::move(expression)));
+    items.push_back(ast::BlockItem { std::make_unique<ast::VoidReturnStatement>() });
+    items.push_back(ast::BlockItem { std::move(expression) });
     ast::Block block { std::move(items) };
 
     ASSERT_EQ(block.getItems().size(), 3u);

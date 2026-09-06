@@ -5,10 +5,6 @@ namespace ast {
 
 class AbstractSyntaxTreeVisitor;
 class Block;
-class Declaration;
-class Expression;
-class FunctionDefinition;
-class Statement;
 
 // For local queries; SA/CG walks stay on the visitor.
 enum class NodeKind {
@@ -46,16 +42,7 @@ public:
     virtual void accept(AbstractSyntaxTreeVisitor& visitor) = 0;
     virtual NodeKind nodeKind() const = 0;
 
-    const Expression* asExpression() const;
-    Expression* asExpression();
-    const Declaration* asDeclaration() const;
-    Declaration* asDeclaration();
-    const FunctionDefinition* asFunctionDefinition() const;
-    FunctionDefinition* asFunctionDefinition();
-    const Block* asBlock() const;
     Block* asBlock();
-    const Statement* asStatement() const;
-    Statement* asStatement();
 
     // Visit this node's children directly; for a non-container node that is just the node itself.
     virtual void visitChildren(AbstractSyntaxTreeVisitor& visitor) { accept(visitor); }

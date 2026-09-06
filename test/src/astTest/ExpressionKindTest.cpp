@@ -128,7 +128,6 @@ TEST(ExpressionKind, typedAccessors) {
     EXPECT_EQ(identifier.asInitList(), nullptr);
     EXPECT_EQ(identifier.asStringLiteral(), nullptr);
     const ast::Expression& identifierAsExpr = identifier;
-    EXPECT_EQ(identifierAsExpr.asIdentifier(), &identifier);
     EXPECT_EQ(identifierAsExpr.asConstant(), nullptr);
 
     ast::ConstantExpression constant { ast::Constant("1", type::signedInteger(), ctx()) };
@@ -138,7 +137,6 @@ TEST(ExpressionKind, typedAccessors) {
     EXPECT_EQ(constant.asStringLiteral(), nullptr);
     const ast::Expression& constantAsExpr = constant;
     EXPECT_EQ(constantAsExpr.asConstant(), &constant);
-    EXPECT_EQ(constantAsExpr.asIdentifier(), nullptr);
 
     ast::InitializerListExpression list { std::vector<ast::InitializerElement> { } };
     EXPECT_EQ(list.asInitList(), &list);
