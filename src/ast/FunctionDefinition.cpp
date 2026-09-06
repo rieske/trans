@@ -10,7 +10,7 @@ namespace ast {
 FunctionDefinition::FunctionDefinition(
         DeclarationSpecifiers returnType,
         std::unique_ptr<Declarator> declarator,
-        std::unique_ptr<AbstractSyntaxTreeNode> body)
+        std::unique_ptr<Block> body)
 :
         returnType { returnType },
         declarator { std::move(declarator) },

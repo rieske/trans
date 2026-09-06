@@ -1,5 +1,6 @@
 #include "AbstractSyntaxTreeBuilderContext.h"
 
+#include "Block.h"
 #include "util/Diagnostic.h"
 
 #include <utility>
@@ -133,6 +134,16 @@ std::unique_ptr<AbstractSyntaxTreeNode> AbstractSyntaxTreeBuilderContext::popSta
     auto statement = std::move(statementStack.top());
     statementStack.pop();
     return statement;
+}
+
+std::unique_ptr<Block> AbstractSyntaxTreeBuilderContext::popBlock() {
+    auto node = popStatement();
+    auto* block = node ? node->asBlock() : nullptr;
+    if (!block) {
+        return nullptr;
+    }
+    node.release();
+    return std::unique_ptr<Block> { block };
 }
 
 void AbstractSyntaxTreeBuilderContext::pushDirectDeclarator(std::unique_ptr<DirectDeclarator> declarator) {
