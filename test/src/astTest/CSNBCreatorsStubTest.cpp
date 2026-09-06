@@ -101,7 +101,6 @@ TEST(BuilderContext, popBlockReturnsBlock) {
     context.pushStatement(std::make_unique<ast::Block>());
     auto block = context.popBlock();
     ASSERT_NE(block, nullptr);
-    EXPECT_EQ(block->nodeKind(), ast::NodeKind::Block);
 }
 
 TEST(BuilderContext, popBlockRejectsNonBlockStatement) {

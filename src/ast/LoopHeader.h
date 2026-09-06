@@ -13,7 +13,6 @@ namespace ast {
 
 class LoopHeader: public AbstractSyntaxTreeNode {
 public:
-    NodeKind nodeKind() const override { return NodeKind::LoopHeader; }
 
     void setLoopEntry(symbols::AnnotationStore& store, symbols::LabelEntry loopEntry);
     symbols::LabelEntry* getLoopEntry(symbols::AnnotationStore& store) const;

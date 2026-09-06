@@ -11,6 +11,7 @@
 namespace ast {
 
 class AbstractSyntaxTreeVisitor;
+class Block;
 
 class BlockItem {
 public:
@@ -25,6 +26,7 @@ public:
 
     std::unique_ptr<Expression> takeExpression();
     std::unique_ptr<Statement> takeStatement();
+    std::unique_ptr<Block> takeBlock();
 
     void accept(AbstractSyntaxTreeVisitor& visitor) const;
 

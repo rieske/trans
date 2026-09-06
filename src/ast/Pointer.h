@@ -14,7 +14,6 @@ public:
     ~Pointer() = default;
 
     void accept(AbstractSyntaxTreeVisitor& visitor) override;
-    NodeKind nodeKind() const override { return NodeKind::Pointer; }
 
     std::vector<type::Qualifier> getQualifiers() const;
 

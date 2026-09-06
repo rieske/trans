@@ -159,13 +159,7 @@ std::unique_ptr<Statement> AbstractSyntaxTreeBuilderContext::popAsStatement() {
 }
 
 std::unique_ptr<Block> AbstractSyntaxTreeBuilderContext::popBlock() {
-    auto statement = popStatement().takeStatement();
-    auto* block = statement ? statement->asBlock() : nullptr;
-    if (!block) {
-        return nullptr;
-    }
-    statement.release();
-    return std::unique_ptr<Block> { block };
+    return popStatement().takeBlock();
 }
 
 void AbstractSyntaxTreeBuilderContext::pushDirectDeclarator(std::unique_ptr<DirectDeclarator> declarator) {

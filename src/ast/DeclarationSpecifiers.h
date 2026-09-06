@@ -19,7 +19,6 @@ public:
     static DeclarationSpecifiers none();
 
     void accept(AbstractSyntaxTreeVisitor& visitor) override;
-    NodeKind nodeKind() const override { return NodeKind::DeclarationSpecifiers; }
     void resolveTypeof(AbstractSyntaxTreeVisitor& visitor);
     bool resolveTypeofAtParseTime(const ParseEnvironment& environment);
     bool needsSemanticResolve() const;

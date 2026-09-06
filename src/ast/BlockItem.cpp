@@ -1,6 +1,7 @@
 #include "BlockItem.h"
 
 #include "AbstractSyntaxTreeVisitor.h"
+#include "Block.h"
 
 namespace ast {
 
@@ -54,6 +55,16 @@ std::unique_ptr<Statement> BlockItem::takeStatement() {
         return std::move(*held);
     }
     return nullptr;
+}
+
+std::unique_ptr<Block> BlockItem::takeBlock() {
+    auto statement = takeStatement();
+    auto* block = statement ? statement->asBlock() : nullptr;
+    if (!block) {
+        return nullptr;
+    }
+    statement.release();
+    return std::unique_ptr<Block> { block };
 }
 
 void BlockItem::accept(AbstractSyntaxTreeVisitor& visitor) const {

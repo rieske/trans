@@ -18,7 +18,6 @@ public:
     virtual ~FunctionDefinition() = default;
 
     void accept(AbstractSyntaxTreeVisitor& visitor) override;
-    NodeKind nodeKind() const override { return NodeKind::FunctionDefinition; }
     void visitReturnType(AbstractSyntaxTreeVisitor& visitor);
     void visitDeclarator(AbstractSyntaxTreeVisitor& visitor);
     void visitBody(AbstractSyntaxTreeVisitor& visitor);
