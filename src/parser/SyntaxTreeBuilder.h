@@ -18,7 +18,7 @@ class SyntaxTreeBuilder {
 public:
     virtual ~SyntaxTreeBuilder();
 
-    virtual void makeTerminalNode(std::string type, std::string value, const translation_unit::Context& context) = 0;
+    virtual void makeTerminalNode(std::string value, const translation_unit::Context& context) = 0;
     virtual void makeNonterminalNode(const Production& production) = 0;
 
     virtual ParseExtensions* parseExtensions() { return nullptr; }

@@ -66,7 +66,7 @@ TEST(CSNBCreators, productGrammarRegistersKnownProductions) {
 
     EXPECT_NO_THROW(builder.updateContext(*unitPostfix, context));
 
-    context.pushTerminal({ "int", "int", { "t.c", 1 } });
+    context.pushTerminal({ "int", { "t.c", 1 } });
     builder.updateContext(*intType, context);
     EXPECT_TRUE(context.hasTypeSpecifier());
 

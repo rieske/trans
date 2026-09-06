@@ -9,12 +9,10 @@ namespace ast {
 
 class TerminalSymbol {
 public:
-	TerminalSymbol(std::string type, std::string value, const translation_unit::Context& context);
-	TerminalSymbol(const TerminalSymbol& that);
+	TerminalSymbol(std::string value, const translation_unit::Context& context);
 
-	const std::string type;
-	const std::string value;
-	const translation_unit::Context context;
+	std::string value;
+	translation_unit::Context context;
 };
 
 } // namespace ast

@@ -51,8 +51,8 @@ void AbstractSyntaxTreeBuilder::makeNonterminalNode(const parser::Production& pr
 	syntaxNodeBuilder.updateContext(production, treeBuilderContext);
 }
 
-void AbstractSyntaxTreeBuilder::makeTerminalNode(std::string type, std::string value, const translation_unit::Context& context) {
-	treeBuilderContext.pushTerminal( { type, value, context });
+void AbstractSyntaxTreeBuilder::makeTerminalNode(std::string value, const translation_unit::Context& context) {
+	treeBuilderContext.pushTerminal( { std::move(value), context });
 }
 
 parser::ParseExtensions* AbstractSyntaxTreeBuilder::parseExtensions() {

@@ -4,21 +4,21 @@ namespace semantic_analyzer {
 
 void SemanticAnalysisVisitor::visit(ast::JumpStatement& statement) {
     if (loopStack.empty()) {
-        semanticError("`" + statement.jumpKeyword.type + "` statement not in loop or switch",
+        semanticError("`" + statement.jumpKeyword.value + "` statement not in loop or switch",
                 statement.jumpKeyword.context);
         return;
     }
     const auto& loop = loopStack.back();
-    if (statement.jumpKeyword.type == "break") {
+    if (statement.jumpKeyword.value == "break") {
         statement.setJumpTo(annotations(), *loop.exit);
-    } else if (statement.jumpKeyword.type == "continue") {
+    } else if (statement.jumpKeyword.value == "continue") {
         if (!loop.cont) {
             semanticError("`continue` statement not in loop", statement.jumpKeyword.context);
             return;
         }
         statement.setJumpTo(annotations(), *loop.cont);
     } else {
-        semanticError("unsupported jump statement `" + statement.jumpKeyword.type + "`", statement.jumpKeyword.context);
+        semanticError("unsupported jump statement `" + statement.jumpKeyword.value + "`", statement.jumpKeyword.context);
     }
 }
 

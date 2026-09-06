@@ -26,7 +26,7 @@ translation_unit::Context ctx() {
 }
 
 TerminalSymbol id(const std::string& name) {
-    return { "id", name, ctx() };
+    return { name, ctx() };
 }
 
 DeclarationSpecifiers intSpecs() {

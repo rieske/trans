@@ -31,7 +31,7 @@ void applyShift(std::vector<parse_state>& stack, parse_state next, TokenStream& 
         SyntaxTreeBuilder& syntaxTreeBuilder) {
     stack.push_back(next);
     const scanner::Token& token = tokenStream.getCurrentToken();
-    syntaxTreeBuilder.makeTerminalNode(std::string { token.id }, std::string { token.lexeme }, token.context);
+    syntaxTreeBuilder.makeTerminalNode(std::string { token.lexeme }, token.context);
     tokenStream.nextToken();
 }
 

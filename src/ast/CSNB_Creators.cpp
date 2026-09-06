@@ -218,7 +218,7 @@ void arrayDeclaratorQualified(AbstractSyntaxTreeBuilderContext& context) {
 namespace {
 
 std::unique_ptr<Identifier> anonymousIdentifier() {
-    return std::make_unique<Identifier>(TerminalSymbol { "id", "", translation_unit::Context { "", 0 } });
+    return std::make_unique<Identifier>(TerminalSymbol { "", translation_unit::Context { "", 0 } });
 }
 
 void withAnonymousDirectDeclarator(AbstractSyntaxTreeBuilderContext& context,
@@ -386,10 +386,10 @@ void enumerationConstant(AbstractSyntaxTreeBuilderContext& context) {
 
 void identifierExpression(AbstractSyntaxTreeBuilderContext& context) {
     auto identifier = context.popTerminal();
-    auto expr = std::make_unique<IdentifierExpression>(identifier.value, identifier.context);
-    // Fold parse-time enumerators so evaluateConstant works without process globals.
     type::IntegerConstant ice;
-    if (context.environment().lookupEnumConstant(identifier.value, ice)) {
+    const bool folded = context.environment().lookupEnumConstant(identifier.value, ice);
+    auto expr = std::make_unique<IdentifierExpression>(std::move(identifier.value), identifier.context);
+    if (folded) {
         expr->setFoldedConstant(std::move(ice));
     }
     context.pushExpression(std::move(expr));
@@ -401,7 +401,7 @@ void constantExpression(AbstractSyntaxTreeBuilderContext& context) {
 
 void stringLiteralExpression(AbstractSyntaxTreeBuilderContext& context) {
     auto literal = context.popTerminal();
-    context.pushExpression(std::make_unique<StringLiteralExpression>(literal.value, literal.context));
+    context.pushExpression(std::make_unique<StringLiteralExpression>(std::move(literal.value), literal.context));
 }
 
 void arrayAccess(AbstractSyntaxTreeBuilderContext& context) {
@@ -441,7 +441,7 @@ void pointeeMemberAccess(AbstractSyntaxTreeBuilderContext& context) {
 }
 
 void postfixIncrementDecrement(AbstractSyntaxTreeBuilderContext& context) {
-    context.pushExpression(std::make_unique<PostfixExpression>(context.popExpression(), context.popTerminal().type));
+    context.pushExpression(std::make_unique<PostfixExpression>(context.popExpression(), context.popTerminal().value));
 }
 
 void prefixIncrementDecrement(AbstractSyntaxTreeBuilderContext& context) {

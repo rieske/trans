@@ -33,7 +33,7 @@ public:
             scanner::LexicalSession& session, bool gnuExtensions);
     virtual ~AbstractSyntaxTreeBuilder();
 
-    void makeTerminalNode(std::string type, std::string value, const translation_unit::Context& context) override;
+    void makeTerminalNode(std::string value, const translation_unit::Context& context) override;
     void makeNonterminalNode(const parser::Production& production) override;
     parser::ParseExtensions* parseExtensions() override;
     void setSink(diag::Sink* sink) override;

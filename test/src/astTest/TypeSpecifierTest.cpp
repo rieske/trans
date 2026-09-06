@@ -23,7 +23,7 @@ namespace {
 using namespace ast;
 
 std::unique_ptr<Declarator> unnamedPointerDeclarator() {
-    TerminalSymbol id { "id", "", { "t", 1 } };
+    TerminalSymbol id { "", { "t", 1 } };
     std::vector<Pointer> stars;
     stars.emplace_back();
     return std::make_unique<Declarator>(std::make_unique<Identifier>(id), std::move(stars));
@@ -65,7 +65,7 @@ TEST(TypeSpecifier, unfixedArrayBoundLivesOnType) {
     TypeSpecifier ts { type::signedInteger(), "int" };
     VlaExpressionTable table;
     auto array = std::make_unique<ArrayDeclarator>(
-            std::make_unique<Identifier>(TerminalSymbol { "id", "", ctx }),
+            std::make_unique<Identifier>(TerminalSymbol { "", ctx }),
             std::make_unique<IdentifierExpression>("n", ctx),
             &table);
     Expression* bound = array->subscriptExpression.get();
@@ -79,7 +79,7 @@ TEST(TypeSpecifier, unfixedArrayBoundLivesOnType) {
 TEST(ArrayDeclarator, unfixedBoundRequiresTable) {
     translation_unit::Context ctx { "t", 1 };
     EXPECT_THROW((ArrayDeclarator {
-            std::make_unique<Identifier>(TerminalSymbol { "id", "", ctx }),
+            std::make_unique<Identifier>(TerminalSymbol { "", ctx }),
             std::make_unique<IdentifierExpression>("n", ctx) }), std::logic_error);
 }
 
@@ -87,7 +87,7 @@ TEST(ArrayDeclarator, getFundamentalTypeReusesBoundIdentity) {
     translation_unit::Context ctx { "t", 1 };
     VlaExpressionTable table;
     Declarator declarator { std::make_unique<ArrayDeclarator>(
-            std::make_unique<Identifier>(TerminalSymbol { "id", "a", ctx }),
+            std::make_unique<Identifier>(TerminalSymbol { "a", ctx }),
             std::make_unique<IdentifierExpression>("n", ctx),
             &table) };
     auto first = declarator.getFundamentalType(type::signedInteger());
@@ -100,7 +100,7 @@ TEST(ArrayDeclarator, getFundamentalTypeReusesBoundIdentity) {
 TEST(ArrayDeclarator, iceBoundDoesNotNeedTable) {
     translation_unit::Context ctx { "t", 1 };
     Declarator declarator { std::make_unique<ArrayDeclarator>(
-            std::make_unique<Identifier>(TerminalSymbol { "id", "a", ctx }),
+            std::make_unique<Identifier>(TerminalSymbol { "a", ctx }),
             std::make_unique<ConstantExpression>(
                     Constant { "3", type::signedInteger(), ctx })) };
     auto type = declarator.getFundamentalType(type::signedInteger());
@@ -111,7 +111,7 @@ TEST(ArrayDeclarator, iceBoundDoesNotNeedTable) {
 TEST(ArrayDeclarator, missingSubscriptIsIncomplete) {
     translation_unit::Context ctx { "t", 1 };
     Declarator declarator { std::make_unique<ArrayDeclarator>(
-            std::make_unique<Identifier>(TerminalSymbol { "id", "a", ctx }),
+            std::make_unique<Identifier>(TerminalSymbol { "a", ctx }),
             nullptr) };
     auto type = declarator.getFundamentalType(type::signedInteger());
     EXPECT_TRUE(type.isIncompleteArray());
@@ -120,7 +120,7 @@ TEST(ArrayDeclarator, missingSubscriptIsIncomplete) {
 TEST(ArrayDeclarator, negativeIceIsZeroLengthShell) {
     translation_unit::Context ctx { "t", 1 };
     Declarator declarator { std::make_unique<ArrayDeclarator>(
-            std::make_unique<Identifier>(TerminalSymbol { "id", "a", ctx }),
+            std::make_unique<Identifier>(TerminalSymbol { "a", ctx }),
             std::make_unique<UnaryExpression>(
                     "-",
                     std::make_unique<ConstantExpression>(

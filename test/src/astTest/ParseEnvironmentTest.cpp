@@ -34,7 +34,7 @@ using namespace scanner;
 namespace {
 
 std::unique_ptr<Declarator> namedDeclarator(const std::string& name) {
-    TerminalSymbol id { "id", name, { "t", 1 } };
+    TerminalSymbol id { name, { "t", 1 } };
     return std::make_unique<Declarator>(std::make_unique<Identifier>(id));
 }
 
@@ -616,7 +616,7 @@ TEST(ParseEnvironment, parameterArrayDecaysToPointer) {
     FormalArgument arg {
             DeclarationSpecifiers { TypeSpecifier { type::signedInteger(), "int" } },
             std::make_unique<Declarator>(std::make_unique<ArrayDeclarator>(
-                    std::make_unique<Identifier>(TerminalSymbol { "id", "a", ctx }),
+                    std::make_unique<Identifier>(TerminalSymbol { "a", ctx }),
                     nullptr)) };
     EXPECT_TRUE(arg.getType().isPointer());
     env.maybeDefineParameter(arg);
@@ -633,7 +633,7 @@ TEST(ParseEnvironment, parameterIncompleteArrayIsSkipped) {
     FormalArgument arg {
             DeclarationSpecifiers { TypeSpecifier { type::voidType(), "void" } },
             std::make_unique<Declarator>(std::make_unique<ArrayDeclarator>(
-                    std::make_unique<Identifier>(TerminalSymbol { "id", "a", ctx }),
+                    std::make_unique<Identifier>(TerminalSymbol { "a", ctx }),
                     std::make_unique<ConstantExpression>(
                             Constant { "3", type::signedInteger(), ctx }))) };
     EXPECT_THROW(arg.getType(), std::invalid_argument);
@@ -647,7 +647,7 @@ TEST(ParseEnvironment, tryDefineObjectDefinesFunction) {
     DeclarationSpecifiers specs { TypeSpecifier { type::signedInteger(), "int" } };
     auto declarator = std::make_unique<Declarator>(
             std::make_unique<FunctionDeclarator>(std::make_unique<Identifier>(
-                    TerminalSymbol { "id", "cb", { "t", 1 } })));
+                    TerminalSymbol { "cb", { "t", 1 } })));
     env.tryDefineObject(specs, *declarator);
     auto t = env.lookupObject("cb");
     ASSERT_TRUE(t.has_value());
@@ -665,12 +665,12 @@ TEST(ParseEnvironment, tryDefineObjectSkipsIncompleteParam) {
     args.push_back(FormalArgument {
             DeclarationSpecifiers { TypeSpecifier { type::voidType(), "void" } },
             std::make_unique<Declarator>(std::make_unique<ArrayDeclarator>(
-                    std::make_unique<Identifier>(TerminalSymbol { "id", "a", ctx }),
+                    std::make_unique<Identifier>(TerminalSymbol { "a", ctx }),
                     std::make_unique<ConstantExpression>(
                             Constant { "3", type::signedInteger(), ctx }))) });
     DeclarationSpecifiers specs { TypeSpecifier { type::signedInteger(), "int" } };
     auto declarator = std::make_unique<Declarator>(std::make_unique<FunctionDeclarator>(
-            std::make_unique<Identifier>(TerminalSymbol { "id", "f", ctx }), std::move(args)));
+            std::make_unique<Identifier>(TerminalSymbol { "f", ctx }), std::move(args)));
     EXPECT_NO_THROW(env.tryDefineObject(specs, *declarator));
     EXPECT_FALSE(env.lookupObject("f").has_value());
 }
@@ -683,7 +683,7 @@ TEST(ParseEnvironment, tryDefineObjectSkipsPendingTypeof) {
     ASSERT_TRUE(specs.needsSemanticResolve());
     auto declarator = std::make_unique<Declarator>(
             std::make_unique<FunctionDeclarator>(std::make_unique<Identifier>(
-                    TerminalSymbol { "id", "cb", { "t", 1 } })));
+                    TerminalSymbol { "cb", { "t", 1 } })));
     env.tryDefineObject(specs, *declarator);
     EXPECT_FALSE(env.lookupObject("cb").has_value());
 }
@@ -696,14 +696,14 @@ TEST(ParseEnvironment, registerInitializedDeclarationSkipsIncompleteParam) {
     args.push_back(FormalArgument {
             DeclarationSpecifiers { TypeSpecifier { type::voidType(), "void" } },
             std::make_unique<Declarator>(std::make_unique<ArrayDeclarator>(
-                    std::make_unique<Identifier>(TerminalSymbol { "id", "a", ctx }),
+                    std::make_unique<Identifier>(TerminalSymbol { "a", ctx }),
                     std::make_unique<ConstantExpression>(
                             Constant { "3", type::signedInteger(), ctx }))) });
     DeclarationSpecifiers specs { TypeSpecifier { type::signedInteger(), "int" } };
     std::vector<std::unique_ptr<InitializedDeclarator>> decls;
     decls.push_back(std::make_unique<InitializedDeclarator>(std::make_unique<Declarator>(
             std::make_unique<FunctionDeclarator>(
-                    std::make_unique<Identifier>(TerminalSymbol { "id", "f", ctx }), std::move(args)))));
+                    std::make_unique<Identifier>(TerminalSymbol { "f", ctx }), std::move(args)))));
     EXPECT_NO_THROW(env.registerInitializedDeclaration(specs, decls));
     EXPECT_FALSE(env.lookupObject("f").has_value());
 }
