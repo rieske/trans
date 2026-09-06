@@ -874,4 +874,269 @@ TEST(IrPasses, runIrPasses_atO1CopyPropagatesThenDropsDeadCopy) {
             "ENDPROC f\n"));
 }
 
+TEST(IrPasses, foldConstants_zeroCompareKnownZeroBecomesGoto) {
+    IntermediateRepresentation ir;
+    IrN n { ir.strings };
+    ir.procedures.push_back(makeProc(ir.strings, "f", {
+            ir::assignConstant(n("0"), n("t0")),
+            ir::zeroCompare(n("t0")),
+            ir::jump(n("end"), JumpCondition::IF_EQUAL),
+            ir::inc(n("x")),
+            ir::label(n("end")),
+            ir::voidReturn(),
+    }, ints(ir.strings, { "t0", "x" })));
+
+    foldConstants(ir.procedures.front(), ir.strings);
+
+    EXPECT_THAT(toString(ir), StrEq(
+            "PROC f\n"
+            "\tt0 := 0\n"
+            "\tGOTO end\n"
+            "\tINC x\n"
+            "end:\n"
+            "\tRETURN\n"
+            "ENDPROC f\n"));
+}
+
+TEST(IrPasses, foldConstants_zeroCompareKnownNonzeroDropsJump) {
+    IntermediateRepresentation ir;
+    IrN n { ir.strings };
+    ir.procedures.push_back(makeProc(ir.strings, "f", {
+            ir::assignConstant(n("1"), n("t0")),
+            ir::zeroCompare(n("t0")),
+            ir::jump(n("end"), JumpCondition::IF_EQUAL),
+            ir::inc(n("x")),
+            ir::label(n("end")),
+            ir::voidReturn(),
+    }, ints(ir.strings, { "t0", "x" })));
+
+    foldConstants(ir.procedures.front(), ir.strings);
+
+    EXPECT_THAT(toString(ir), StrEq(
+            "PROC f\n"
+            "\tt0 := 1\n"
+            "\tINC x\n"
+            "end:\n"
+            "\tRETURN\n"
+            "ENDPROC f\n"));
+}
+
+TEST(IrPasses, foldConstants_valueCompareSignedBelowTaken) {
+    IntermediateRepresentation ir;
+    IrN n { ir.strings };
+    ir.procedures.push_back(makeProc(ir.strings, "f", {
+            ir::assignConstant(n("1"), n("t1")),
+            ir::assignConstant(n("2"), n("t2")),
+            ir::valueCompare(n("t1"), n("t2"), true),
+            ir::jump(n("end"), JumpCondition::IF_BELOW, true),
+            ir::inc(n("x")),
+            ir::label(n("end")),
+            ir::voidReturn(),
+    }, ints(ir.strings, { "t1", "t2", "x" })));
+
+    foldConstants(ir.procedures.front(), ir.strings);
+
+    EXPECT_THAT(toString(ir), StrEq(
+            "PROC f\n"
+            "\tt1 := 1\n"
+            "\tt2 := 2\n"
+            "\tGOTO end\n"
+            "\tINC x\n"
+            "end:\n"
+            "\tRETURN\n"
+            "ENDPROC f\n"));
+}
+
+TEST(IrPasses, foldConstants_valueCompareUnsignedDoesNotUseSignedOrder) {
+    IntermediateRepresentation ir;
+    IrN n { ir.strings };
+    ir.procedures.push_back(makeProc(ir.strings, "f", {
+            ir::assignConstant(n("0xffffffff"), n("t1")),
+            ir::assignConstant(n("0"), n("t2")),
+            ir::valueCompare(n("t1"), n("t2"), false),
+            ir::jump(n("end"), JumpCondition::IF_BELOW, false),
+            ir::inc(n("x")),
+            ir::label(n("end")),
+            ir::voidReturn(),
+    }, ints(ir.strings, { "t1", "t2", "x" })));
+
+    foldConstants(ir.procedures.front(), ir.strings);
+
+    EXPECT_THAT(toString(ir), StrEq(
+            "PROC f\n"
+            "\tt1 := 0xffffffff\n"
+            "\tt2 := 0\n"
+            "\tINC x\n"
+            "end:\n"
+            "\tRETURN\n"
+            "ENDPROC f\n"));
+}
+
+TEST(IrPasses, foldConstants_skipsUnknownZeroCompare) {
+    IntermediateRepresentation ir;
+    IrN n { ir.strings };
+    ir.procedures.push_back(makeProc(ir.strings, "f", {
+            ir::zeroCompare(n("x")),
+            ir::jump(n("end"), JumpCondition::IF_EQUAL),
+            ir::inc(n("y")),
+            ir::label(n("end")),
+            ir::voidReturn(),
+    }, ints(ir.strings, { "x", "y" })));
+
+    foldConstants(ir.procedures.front(), ir.strings);
+
+    EXPECT_THAT(toString(ir), StrEq(
+            "PROC f\n"
+            "\tCMP x, 0\n"
+            "\tJE end\n"
+            "\tINC y\n"
+            "end:\n"
+            "\tRETURN\n"
+            "ENDPROC f\n"));
+}
+
+TEST(IrPasses, foldConstants_skipsCompareWhenNotAdjacentToJump) {
+    IntermediateRepresentation ir;
+    IrN n { ir.strings };
+    ir.procedures.push_back(makeProc(ir.strings, "f", {
+            ir::assignConstant(n("0"), n("t0")),
+            ir::zeroCompare(n("t0")),
+            ir::inc(n("x")),
+            ir::jump(n("end"), JumpCondition::IF_EQUAL),
+            ir::label(n("end")),
+            ir::voidReturn(),
+    }, ints(ir.strings, { "t0", "x" })));
+
+    foldConstants(ir.procedures.front(), ir.strings);
+
+    EXPECT_THAT(toString(ir), StrEq(
+            "PROC f\n"
+            "\tt0 := 0\n"
+            "\tCMP t0, 0\n"
+            "\tINC x\n"
+            "\tJE end\n"
+            "end:\n"
+            "\tRETURN\n"
+            "ENDPROC f\n"));
+}
+
+TEST(IrPasses, foldConstants_keepsKnownAcrossSinglePredFallthroughLabel) {
+    IntermediateRepresentation ir;
+    IrN n { ir.strings };
+    ir.procedures.push_back(makeProc(ir.strings, "f", {
+            ir::assignConstant(n("0"), n("t0")),
+            ir::label(n("L")),
+            ir::zeroCompare(n("t0")),
+            ir::jump(n("end"), JumpCondition::IF_EQUAL),
+            ir::inc(n("x")),
+            ir::label(n("end")),
+            ir::voidReturn(),
+    }, ints(ir.strings, { "t0", "x" })));
+
+    foldConstants(ir.procedures.front(), ir.strings);
+
+    EXPECT_THAT(toString(ir), StrEq(
+            "PROC f\n"
+            "\tt0 := 0\n"
+            "L:\n"
+            "\tGOTO end\n"
+            "\tINC x\n"
+            "end:\n"
+            "\tRETURN\n"
+            "ENDPROC f\n"));
+}
+
+TEST(IrPasses, foldConstants_clearsKnownAtJoinLabel) {
+    IntermediateRepresentation ir;
+    IrN n { ir.strings };
+    ir.procedures.push_back(makeProc(ir.strings, "f", {
+            ir::assignConstant(n("0"), n("t0")),
+            ir::zeroCompare(n("x")),
+            ir::jump(n("L"), JumpCondition::IF_EQUAL),
+            ir::assignConstant(n("1"), n("t0")),
+            ir::label(n("L")),
+            ir::zeroCompare(n("t0")),
+            ir::jump(n("end"), JumpCondition::IF_EQUAL),
+            ir::inc(n("y")),
+            ir::label(n("end")),
+            ir::voidReturn(),
+    }, ints(ir.strings, { "t0", "x", "y" })));
+
+    foldConstants(ir.procedures.front(), ir.strings);
+
+    EXPECT_THAT(toString(ir), HasSubstr("L:\n\tCMP t0, 0\n\tJE end\n"));
+}
+
+TEST(IrPasses, runIrPasses_atO1FoldsIfZeroDropsDeadArm) {
+    IntermediateRepresentation ir;
+    IrN n { ir.strings };
+    ProcedureFrame frame = exprTemps(ir.strings, { "t0" });
+    frame.locals.push_back(integral(ir.strings, "x"));
+    ir.procedures.push_back(makeProc(ir.strings, "f", {
+            ir::assignConstant(n("0"), n("t0")),
+            ir::zeroCompare(n("t0")),
+            ir::jump(n("end"), JumpCondition::IF_EQUAL),
+            ir::inc(n("x")),
+            ir::label(n("end")),
+            ir::voidReturn(),
+    }, std::move(frame)));
+
+    ir = runIrPasses(std::move(ir), 1);
+
+    EXPECT_THAT(toString(ir), StrEq(
+            "PROC f\n"
+            "end:\n"
+            "\tRETURN\n"
+            "ENDPROC f\n"));
+}
+
+TEST(IrPasses, runIrPasses_atO0KeepsIfZero) {
+    IntermediateRepresentation ir;
+    IrN n { ir.strings };
+    ir.procedures.push_back(makeProc(ir.strings, "f", {
+            ir::assignConstant(n("0"), n("t0")),
+            ir::zeroCompare(n("t0")),
+            ir::jump(n("end"), JumpCondition::IF_EQUAL),
+            ir::inc(n("x")),
+            ir::label(n("end")),
+            ir::voidReturn(),
+    }, ints(ir.strings, { "t0", "x" })));
+
+    ir = runIrPasses(std::move(ir), 0);
+
+    EXPECT_THAT(toString(ir), HasSubstr("CMP t0, 0"));
+    EXPECT_THAT(toString(ir), HasSubstr("JE end"));
+    EXPECT_THAT(toString(ir), HasSubstr("INC x"));
+}
+
+TEST(IrPasses, runIrPasses_atO1FoldsConstRelIf) {
+    IntermediateRepresentation ir;
+    IrN n { ir.strings };
+    ProcedureFrame frame = exprTemps(ir.strings, { "t1", "t2", "r" });
+    frame.locals.push_back(integral(ir.strings, "x"));
+    ir.procedures.push_back(makeProc(ir.strings, "f", {
+            ir::assignConstant(n("1"), n("t1")),
+            ir::assignConstant(n("2"), n("t2")),
+            ir::valueCompare(n("t1"), n("t2"), true),
+            ir::jump(n("truthy"), JumpCondition::IF_BELOW, true),
+            ir::assignConstant(n("0"), n("r")),
+            ir::jump(n("join")),
+            ir::label(n("truthy")),
+            ir::assignConstant(n("1"), n("r")),
+            ir::label(n("join")),
+            ir::zeroCompare(n("r")),
+            ir::jump(n("end"), JumpCondition::IF_EQUAL),
+            ir::inc(n("x")),
+            ir::label(n("end")),
+            ir::voidReturn(),
+    }, std::move(frame)));
+
+    ir = runIrPasses(std::move(ir), 1);
+
+    EXPECT_THAT(toString(ir), HasSubstr("INC x"));
+    EXPECT_THAT(toString(ir), Not(HasSubstr("CMP")));
+    EXPECT_THAT(toString(ir), Not(HasSubstr("JE")));
+    EXPECT_THAT(toString(ir), Not(HasSubstr("JB")));
+}
+
 } // namespace

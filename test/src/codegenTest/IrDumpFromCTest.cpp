@@ -103,4 +103,27 @@ TEST(IrDumpFromC, dumpsAreStableAcrossCalls) {
     EXPECT_EQ(compileToIr(src), compileToIr(src));
 }
 
+TEST(IrDumpFromC, ifZeroDropsDeadArmAtO1) {
+    const char* src = "int f(void) { if (0) return 1; return 0; }\n";
+    EXPECT_THAT(compileToIr(src, 0), HasSubstr("JE"));
+    EXPECT_THAT(compileToIr(src, 0), HasSubstr(":= 1"));
+    EXPECT_THAT(compileToIr(src, 1), Not(HasSubstr("JE")));
+    EXPECT_THAT(compileToIr(src, 1), Not(HasSubstr(":= 1")));
+    EXPECT_THAT(compileToIr(src, 1), HasSubstr(":= 0"));
+}
+
+TEST(IrDumpFromC, ifOneDropsDeadArmAtO1) {
+    const char* src = "int f(void) { if (1) return 1; return 0; }\n";
+    EXPECT_THAT(compileToIr(src, 1), Not(HasSubstr("JE")));
+    EXPECT_THAT(compileToIr(src, 1), Not(HasSubstr(":= 0")));
+    EXPECT_THAT(compileToIr(src, 1), HasSubstr(":= 1"));
+}
+
+TEST(IrDumpFromC, ifConstRelDropsDeadArmAtO1) {
+    const char* src = "int f(void) { if (1 < 2) return 1; return 0; }\n";
+    EXPECT_THAT(compileToIr(src, 1), Not(HasSubstr("CMP")));
+    EXPECT_THAT(compileToIr(src, 1), Not(HasSubstr(":= 0")));
+    EXPECT_THAT(compileToIr(src, 1), HasSubstr(":= 1"));
+}
+
 } // namespace
