@@ -97,8 +97,8 @@ TEST(SemanticAnalyzer, functionDesignatorKeepsVariadic) {
 
     auto designator = std::make_unique<IdentifierExpression>("f", ctx());
     auto* used = designator.get();
-    std::vector<std::unique_ptr<AbstractSyntaxTreeNode>> bodyItems;
-    bodyItems.push_back(std::move(designator));
+    std::vector<BlockItem> bodyItems;
+    bodyItems.push_back(BlockItem::fromNode(std::move(designator)));
 
     std::vector<std::unique_ptr<AbstractSyntaxTreeNode>> translationUnit;
     translationUnit.push_back(std::make_unique<FunctionDefinition>(

@@ -44,7 +44,7 @@ std::unique_ptr<ast::IdentifierExpression> idExpr(const char* name = "x") {
 }
 
 std::unique_ptr<ast::Block> emptyBlock() {
-    return std::make_unique<ast::Block>(std::vector<std::unique_ptr<ast::AbstractSyntaxTreeNode>> { });
+    return std::make_unique<ast::Block>();
 }
 
 std::unique_ptr<ast::VoidReturnStatement> emptyStmt() {
@@ -139,7 +139,7 @@ TEST(NodeKind, typedAccessors) {
     EXPECT_EQ(declarationAsNode.asDeclaration(), &declaration);
     EXPECT_EQ(declarationAsNode.asExpression(), nullptr);
 
-    ast::Block block { std::vector<std::unique_ptr<ast::AbstractSyntaxTreeNode>> { } };
+    ast::Block block;
     EXPECT_EQ(block.asBlock(), &block);
     EXPECT_EQ(block.asExpression(), nullptr);
     EXPECT_EQ(block.asDeclaration(), nullptr);

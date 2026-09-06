@@ -4,7 +4,7 @@
 
 namespace ast {
 
-Block::Block(std::vector<std::unique_ptr<AbstractSyntaxTreeNode>> items) :
+Block::Block(std::vector<BlockItem> items) :
         items { std::move(items) }
 {
 }
@@ -15,7 +15,7 @@ void Block::accept(AbstractSyntaxTreeVisitor& visitor) {
 
 void Block::visitChildren(AbstractSyntaxTreeVisitor& visitor) {
     for (const auto& item : items) {
-        item->accept(visitor);
+        item.accept(visitor);
     }
 }
 
