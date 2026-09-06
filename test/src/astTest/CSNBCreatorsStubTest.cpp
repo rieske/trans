@@ -2,9 +2,11 @@
 #include "gmock/gmock.h"
 
 #include "ast/AbstractSyntaxTreeBuilderContext.h"
+#include "ast/Block.h"
 #include "ast/ContextualSyntaxNodeBuilder.h"
 #include "ast/CSNB_Internal.h"
 #include "ast/TerminalSymbol.h"
+#include "ast/VoidReturnStatement.h"
 #include "parser/BNFFileReader.h"
 #include "scanner/LexicalSession.h"
 #include "util/Diagnostic.h"
@@ -91,6 +93,22 @@ TEST(CSNBCreators, doNothingIsNoOp) {
     scanner::LexicalSession session;
     ast::AbstractSyntaxTreeBuilderContext context{session};
     EXPECT_NO_THROW(ast::doNothing(context));
+}
+
+TEST(BuilderContext, popBlockReturnsBlock) {
+    scanner::LexicalSession session;
+    ast::AbstractSyntaxTreeBuilderContext context { session };
+    context.pushStatement(std::make_unique<ast::Block>());
+    auto block = context.popBlock();
+    ASSERT_NE(block, nullptr);
+    EXPECT_EQ(block->nodeKind(), ast::NodeKind::Block);
+}
+
+TEST(BuilderContext, popBlockRejectsNonBlockStatement) {
+    scanner::LexicalSession session;
+    ast::AbstractSyntaxTreeBuilderContext context { session };
+    context.pushStatement(std::make_unique<ast::VoidReturnStatement>());
+    EXPECT_EQ(context.popBlock(), nullptr);
 }
 
 } // namespace

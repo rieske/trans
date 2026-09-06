@@ -200,7 +200,7 @@ std::unique_ptr<Block> GnuExtensions::parseCompoundBlock(parser::TokenStream& ou
             *compound, scanner::Token::END, true)) {
         return nullptr;
     }
-    return nested.takeCompoundBlock();
+    return nested.popBlock();
 }
 
 std::unique_ptr<Expression> GnuExtensions::parseAssignmentExpression(parser::TokenStream& outer,

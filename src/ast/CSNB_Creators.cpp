@@ -958,20 +958,28 @@ void emptyStatement(AbstractSyntaxTreeBuilderContext& context) {
 void functionDefinition(AbstractSyntaxTreeBuilderContext& context) {
     auto declarationSpecifiers = context.popDeclarationSpecifiers();
     auto declarator = context.popDeclarator();
-    auto statement = context.popStatement();
+    auto body = context.popBlock();
+    if (!body) {
+        context.error(declarator->getContext(), "function definition body is not a compound statement");
+        return;
+    }
     declarationSpecifiers.resolveTypeofAtParseTime(context.environment());
     context.environment().tryDefineObject(declarationSpecifiers, *declarator);
     context.pushStatement(std::make_unique<FunctionDefinition>(
-            std::move(declarationSpecifiers), std::move(declarator), std::move(statement)));
+            std::move(declarationSpecifiers), std::move(declarator), std::move(body)));
 }
 
 void defaultReturnTypeFunctionDefinition(AbstractSyntaxTreeBuilderContext& context) {
     DeclarationSpecifiers defaultReturnTypeSpecifiers { TypeSpecifier { type::signedInteger(), "int" } };
     auto declarator = context.popDeclarator();
-    auto statement = context.popStatement();
+    auto body = context.popBlock();
+    if (!body) {
+        context.error(declarator->getContext(), "function definition body is not a compound statement");
+        return;
+    }
     context.environment().tryDefineObject(defaultReturnTypeSpecifiers, *declarator);
     context.pushStatement(std::make_unique<FunctionDefinition>(
-            defaultReturnTypeSpecifiers, std::move(declarator), std::move(statement)));
+            defaultReturnTypeSpecifiers, std::move(declarator), std::move(body)));
 }
 
 void externalFunctionDefinition(AbstractSyntaxTreeBuilderContext& context) {

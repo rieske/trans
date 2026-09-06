@@ -5,6 +5,7 @@
 #include <string>
 #include <vector>
 
+#include "ast/Block.h"
 #include "ast/DeclarationSpecifiers.h"
 #include "ast/Declarator.h"
 
@@ -12,7 +13,8 @@ namespace ast {
 
 class FunctionDefinition: public AbstractSyntaxTreeNode {
 public:
-    FunctionDefinition(DeclarationSpecifiers returnType, std::unique_ptr<Declarator> declarator, std::unique_ptr<AbstractSyntaxTreeNode> body);
+    FunctionDefinition(DeclarationSpecifiers returnType, std::unique_ptr<Declarator> declarator,
+            std::unique_ptr<Block> body);
     virtual ~FunctionDefinition() = default;
 
     void accept(AbstractSyntaxTreeVisitor& visitor) override;
@@ -33,7 +35,7 @@ public:
 private:
     DeclarationSpecifiers returnType;
     std::unique_ptr<Declarator> declarator;
-    std::unique_ptr<AbstractSyntaxTreeNode> body;
+    std::unique_ptr<Block> body;
 };
 
 } // namespace ast
