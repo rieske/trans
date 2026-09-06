@@ -15,6 +15,7 @@ using Cfg = std::vector<BasicBlock>;
 
 Cfg buildCfg(const std::vector<Instruction>& body);
 std::vector<Instruction> flattenCfg(const Cfg& cfg);
+Cfg threadJumps(Cfg cfg);
 Cfg eliminateUnreachable(Cfg cfg);
 Cfg eliminateJumpToNext(Cfg cfg);
 

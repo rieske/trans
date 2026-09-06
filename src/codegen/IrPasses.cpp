@@ -351,6 +351,7 @@ IntermediateRepresentation applyCfgPasses(IntermediateRepresentation ir, int opt
     for (auto& procedure : ir.procedures) {
         Cfg cfg = buildCfg(procedure.body);
         if (optLevel >= 1) {
+            cfg = threadJumps(std::move(cfg));
             cfg = eliminateUnreachable(std::move(cfg));
         }
         procedure.body = flattenCfg(eliminateJumpToNext(std::move(cfg)));

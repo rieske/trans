@@ -1,6 +1,8 @@
 #include "Cfg.h"
 
 #include <stdexcept>
+#include <unordered_map>
+#include <unordered_set>
 
 namespace codegen {
 
@@ -87,6 +89,51 @@ std::vector<Instruction> flattenCfg(const Cfg& cfg) {
         body.insert(body.end(), block.insts.begin(), block.insts.end());
     }
     return body;
+}
+
+Cfg threadJumps(Cfg cfg) {
+    std::unordered_map<int, int> trampoline;
+    for (const auto& block : cfg) {
+        if (block.label == kNoSymbol || block.insts.size() != 1) {
+            continue;
+        }
+        const Instruction& inst = block.insts.front();
+        if (inst.op == Op::Jump && inst.cond == JumpCondition::UNCONDITIONAL
+                && inst.arg0 != kNoSymbol) {
+            trampoline[block.label] = inst.arg0;
+        }
+    }
+    if (trampoline.empty()) {
+        return cfg;
+    }
+
+    auto finalTarget = [&](int label) {
+        std::unordered_set<int> seen;
+        int target = label;
+        while (true) {
+            const auto it = trampoline.find(target);
+            if (it == trampoline.end()) {
+                return target;
+            }
+            if (!seen.insert(target).second) {
+                return label;
+            }
+            target = it->second;
+        }
+    };
+
+    for (auto& block : cfg) {
+        for (auto& inst : block.insts) {
+            if (inst.op != Op::Jump) {
+                continue;
+            }
+            const int dest = finalTarget(inst.arg0);
+            if (dest != inst.arg0) {
+                inst.arg0 = dest;
+            }
+        }
+    }
+    return cfg;
 }
 
 Cfg eliminateUnreachable(Cfg cfg) {
