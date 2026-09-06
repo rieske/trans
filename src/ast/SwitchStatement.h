@@ -7,17 +7,17 @@
 #include "symbols/AnnotationStore.h"
 #include "symbols/LabelEntry.h"
 #include "symbols/ValueEntry.h"
-#include "ast/AbstractSyntaxTreeNode.h"
 #include "ast/Expression.h"
+#include "ast/Statement.h"
 
 namespace ast {
 
 class CaseLabel;
 class DefaultLabel;
 
-class SwitchStatement: public AbstractSyntaxTreeNode {
+class SwitchStatement: public Statement {
 public:
-    SwitchStatement(std::unique_ptr<Expression> expression, std::unique_ptr<AbstractSyntaxTreeNode> body);
+    SwitchStatement(std::unique_ptr<Expression> expression, std::unique_ptr<Statement> body);
     virtual ~SwitchStatement() = default;
 
     void accept(AbstractSyntaxTreeVisitor& visitor) override;
@@ -36,7 +36,7 @@ public:
     DefaultLabel* getDefaultLabel() const;
 
     const std::unique_ptr<Expression> expression;
-    const std::unique_ptr<AbstractSyntaxTreeNode> body;
+    const std::unique_ptr<Statement> body;
 
 private:
     std::vector<CaseLabel*> cases;

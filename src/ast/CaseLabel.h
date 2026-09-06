@@ -5,14 +5,14 @@
 
 #include "symbols/AnnotationStore.h"
 #include "symbols/LabelEntry.h"
-#include "ast/AbstractSyntaxTreeNode.h"
 #include "ast/Expression.h"
+#include "ast/Statement.h"
 
 namespace ast {
 
-class CaseLabel: public AbstractSyntaxTreeNode {
+class CaseLabel: public Statement {
 public:
-    CaseLabel(std::unique_ptr<Expression> caseExpression, std::unique_ptr<AbstractSyntaxTreeNode> statement);
+    CaseLabel(std::unique_ptr<Expression> caseExpression, std::unique_ptr<Statement> statement);
     virtual ~CaseLabel() = default;
 
     void accept(AbstractSyntaxTreeVisitor& visitor) override;
@@ -25,7 +25,7 @@ public:
     long getCaseValue() const;
 
     const std::unique_ptr<Expression> caseExpression;
-    const std::unique_ptr<AbstractSyntaxTreeNode> statement;
+    const std::unique_ptr<Statement> statement;
 
 private:
     long caseValue { 0 };

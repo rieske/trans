@@ -30,6 +30,8 @@
 #include "ast/TypeNameExpression.h"
 #include "ast/CompoundLiteral.h"
 #include "ast/GenericSelection.h"
+#include "ast/ExpressionStatement.h"
+#include "ast/NullStatement.h"
 #include "ast/StatementExpression.h"
 #include "ast/UnaryExpression.h"
 #include "ast/WhileLoopHeader.h"
@@ -93,6 +95,8 @@ public:
     virtual void visit(DefaultLabel& statement) = 0;
     virtual void visit(ReturnStatement& statement) = 0;
     virtual void visit(VoidReturnStatement& statement) = 0;
+    virtual void visit(ExpressionStatement& statement) = 0;
+    virtual void visit(NullStatement& statement) = 0;
     virtual void visit(IfStatement& statement) = 0;
     virtual void visit(IfElseStatement& statement) = 0;
     virtual void visit(LoopStatement& statement) = 0;

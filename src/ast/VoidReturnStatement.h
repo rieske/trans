@@ -1,11 +1,11 @@
 #ifndef VOID_RETURNSTATEMENT_H_
 #define VOID_RETURNSTATEMENT_H_
 
-#include "ast/AbstractSyntaxTreeNode.h"
+#include "ast/Statement.h"
 
 namespace ast {
 
-class VoidReturnStatement: public AbstractSyntaxTreeNode {
+class VoidReturnStatement: public Statement {
 public:
     VoidReturnStatement() = default;
     virtual ~VoidReturnStatement() = default;

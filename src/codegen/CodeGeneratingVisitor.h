@@ -70,6 +70,8 @@ public:
     void visit(ast::DefaultLabel& statement) override;
     void visit(ast::ReturnStatement& statement) override;
     void visit(ast::VoidReturnStatement& statement) override;
+    void visit(ast::ExpressionStatement& statement) override;
+    void visit(ast::NullStatement& statement) override;
     void visit(ast::IfStatement& statement) override;
     void visit(ast::IfElseStatement& statement) override;
     void visit(ast::LoopStatement& statement) override;

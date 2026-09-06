@@ -26,6 +26,7 @@ add_library(ast
         DoubleOperandExpression.cpp
         Expression.cpp
         ExpressionList.cpp
+        ExpressionStatement.cpp
         ForLoopHeader.cpp
         FormalArgument.cpp
         FunctionCall.cpp
@@ -47,6 +48,7 @@ add_library(ast
         LoopHeader.cpp
         MemberAccess.cpp
         InitializerListExpression.cpp
+        NullStatement.cpp
         LoopStatement.cpp
         ParenthesizedDeclarator.cpp
         Pointer.cpp
@@ -97,6 +99,7 @@ add_library(ast
         DoubleOperandExpression.h
         Expression.h
         ExpressionList.h
+        ExpressionStatement.h
         ForLoopHeader.h
         FormalArgument.h
         FunctionCall.h
@@ -119,6 +122,8 @@ add_library(ast
         LoopHeader.h
         MemberAccess.h
         InitializerListExpression.h
+        NullStatement.h
+        Statement.h
         LoopStatement.h
         ParenthesizedDeclarator.h
         Pointer.h

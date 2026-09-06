@@ -6,7 +6,7 @@
 
 namespace ast {
 
-SwitchStatement::SwitchStatement(std::unique_ptr<Expression> expression, std::unique_ptr<AbstractSyntaxTreeNode> body) :
+SwitchStatement::SwitchStatement(std::unique_ptr<Expression> expression, std::unique_ptr<Statement> body) :
         expression { std::move(expression) },
         body { std::move(body) } {
 }

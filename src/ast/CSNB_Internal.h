@@ -36,6 +36,7 @@
 #include "LogicalAndExpression.h"
 #include "LogicalOrExpression.h"
 #include "LoopStatement.h"
+#include "NullStatement.h"
 #include "ParenthesizedDeclarator.h"
 #include "PostfixExpression.h"
 #include "PrefixExpression.h"

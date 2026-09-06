@@ -4,7 +4,7 @@
 #include <memory>
 #include <string>
 
-#include "ast/AbstractSyntaxTreeNode.h"
+#include "ast/Statement.h"
 #include "ast/TerminalSymbol.h"
 #include "symbols/AnnotationStore.h"
 #include "symbols/LabelEntry.h"
@@ -12,9 +12,9 @@
 namespace ast {
 
 // C statement label: id : statement
-class LabeledStatement: public AbstractSyntaxTreeNode {
+class LabeledStatement: public Statement {
 public:
-    LabeledStatement(TerminalSymbol labelName, std::unique_ptr<AbstractSyntaxTreeNode> statement);
+    LabeledStatement(TerminalSymbol labelName, std::unique_ptr<Statement> statement);
 
     void accept(AbstractSyntaxTreeVisitor& visitor) override;
     NodeKind nodeKind() const override { return NodeKind::LabeledStatement; }
@@ -25,7 +25,7 @@ public:
     const std::string& getLabelName() const;
 
     TerminalSymbol name;
-    const std::unique_ptr<AbstractSyntaxTreeNode> statement;
+    const std::unique_ptr<Statement> statement;
 
 };
 

@@ -3,12 +3,12 @@
 
 #include <memory>
 
-#include "ast/AbstractSyntaxTreeNode.h"
 #include "ast/Expression.h"
+#include "ast/Statement.h"
 
 namespace ast {
 
-class ReturnStatement: public AbstractSyntaxTreeNode {
+class ReturnStatement: public Statement {
 public:
     ReturnStatement(std::unique_ptr<Expression> returnExpression);
     virtual ~ReturnStatement() = default;

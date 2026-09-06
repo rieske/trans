@@ -3,14 +3,14 @@
 
 #include <string>
 
-#include "ast/AbstractSyntaxTreeNode.h"
+#include "ast/Statement.h"
 #include "ast/TerminalSymbol.h"
 #include "symbols/AnnotationStore.h"
 #include "symbols/LabelEntry.h"
 
 namespace ast {
 
-class GotoStatement: public AbstractSyntaxTreeNode {
+class GotoStatement: public Statement {
 public:
     GotoStatement(TerminalSymbol gotoKeyword, TerminalSymbol labelName);
 

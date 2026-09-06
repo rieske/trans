@@ -7,6 +7,7 @@ class AbstractSyntaxTreeVisitor;
 class Block;
 class Declaration;
 class Expression;
+class Statement;
 
 // For local queries; SA/CG walks stay on the visitor.
 enum class NodeKind {
@@ -25,6 +26,8 @@ enum class NodeKind {
     GotoStatement,
     ReturnStatement,
     VoidReturnStatement,
+    ExpressionStatement,
+    NullStatement,
     DeclarationSpecifiers,
     Declarator,
     DirectDeclarator,
@@ -48,6 +51,8 @@ public:
     Declaration* asDeclaration();
     const Block* asBlock() const;
     Block* asBlock();
+    const Statement* asStatement() const;
+    Statement* asStatement();
 
     // Visit this node's children directly; for a non-container node that is just the node itself.
     virtual void visitChildren(AbstractSyntaxTreeVisitor& visitor) { accept(visitor); }

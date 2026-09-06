@@ -20,6 +20,7 @@ add_executable(astTest
     astTest/NodeKindTest.cpp
     astTest/TerminalSymbolTest.cpp
     astTest/BlockItemTest.cpp
+    astTest/StatementTest.cpp
         astTest/TypeSpecifierTest.cpp
         )
 target_link_libraries(astTest PRIVATE semantic_analyzer GTest::gmock_main ast translation_unit testUtil)

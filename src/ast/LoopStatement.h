@@ -3,21 +3,21 @@
 
 #include <memory>
 
-#include "ast/AbstractSyntaxTreeNode.h"
 #include "ast/LoopHeader.h"
+#include "ast/Statement.h"
 
 namespace ast {
 
-class LoopStatement: public AbstractSyntaxTreeNode {
+class LoopStatement: public Statement {
 public:
-    LoopStatement(std::unique_ptr<LoopHeader> header, std::unique_ptr<AbstractSyntaxTreeNode> body);
+    LoopStatement(std::unique_ptr<LoopHeader> header, std::unique_ptr<Statement> body);
     virtual ~LoopStatement();
 
     void accept(AbstractSyntaxTreeVisitor& visitor) override;
     NodeKind nodeKind() const override { return NodeKind::LoopStatement; }
 
     const std::unique_ptr<LoopHeader> header;
-    const std::unique_ptr<AbstractSyntaxTreeNode> body;
+    const std::unique_ptr<Statement> body;
 };
 
 } // namespace ast
