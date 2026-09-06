@@ -929,7 +929,7 @@ void addToActualArgumentsList(AbstractSyntaxTreeBuilderContext& context) {
 void emptyCompound(AbstractSyntaxTreeBuilderContext& context) {
     context.popTerminal();
     context.popTerminal();
-    context.pushStatement(std::make_unique<Block>(std::vector<std::unique_ptr<AbstractSyntaxTreeNode>> {}));
+    context.pushStatement(std::make_unique<Block>());
 }
 
 void blockItemListCompound(AbstractSyntaxTreeBuilderContext& context) {
@@ -952,7 +952,7 @@ void emptyStatement(AbstractSyntaxTreeBuilderContext& context) {
     context.popTerminal();
     // Null statement `;` still occupies a statement slot so parents (if/while/for)
     // can pop a body without under-flowing the AST statement stack.
-    context.pushStatement(std::make_unique<Block>(std::vector<std::unique_ptr<AbstractSyntaxTreeNode>> {}));
+    context.pushStatement(std::make_unique<Block>());
 }
 
 void functionDefinition(AbstractSyntaxTreeBuilderContext& context) {

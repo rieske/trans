@@ -105,8 +105,7 @@ std::unique_ptr<ast::Expression> makeLeaf(ast::ExprKind kind) {
     }
     case ast::ExprKind::StatementExpression:
         return std::make_unique<ast::StatementExpression>(ctx(),
-                std::make_unique<ast::Block>(
-                        std::vector<std::unique_ptr<ast::AbstractSyntaxTreeNode>> { }));
+                std::make_unique<ast::Block>());
     }
     return nullptr;
 }

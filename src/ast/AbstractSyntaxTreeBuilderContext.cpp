@@ -250,19 +250,19 @@ std::unique_ptr<Declaration> AbstractSyntaxTreeBuilderContext::popDeclaration() 
 }
 
 void AbstractSyntaxTreeBuilderContext::newStatementList(std::unique_ptr<AbstractSyntaxTreeNode> statement) {
-    std::vector<std::unique_ptr<AbstractSyntaxTreeNode>> statements;
-    statements.push_back(std::move(statement));
-    statementLists.push(std::move(statements));
+    std::vector<BlockItem> items;
+    items.push_back(BlockItem::fromNode(std::move(statement)));
+    statementLists.push(std::move(items));
 }
 
 void AbstractSyntaxTreeBuilderContext::addToStatementList(std::unique_ptr<AbstractSyntaxTreeNode> statement) {
-    statementLists.top().push_back(std::move(statement));
+    statementLists.top().push_back(BlockItem::fromNode(std::move(statement)));
 }
 
-std::vector<std::unique_ptr<AbstractSyntaxTreeNode>> AbstractSyntaxTreeBuilderContext::popStatementList() {
-    auto statements = std::move(statementLists.top());
+std::vector<BlockItem> AbstractSyntaxTreeBuilderContext::popStatementList() {
+    auto items = std::move(statementLists.top());
     statementLists.pop();
-    return statements;
+    return items;
 }
 
 void AbstractSyntaxTreeBuilderContext::pushExternalDeclaration(std::unique_ptr<AbstractSyntaxTreeNode> externalDeclaration) {

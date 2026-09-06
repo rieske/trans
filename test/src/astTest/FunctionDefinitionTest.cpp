@@ -34,7 +34,7 @@ DeclarationSpecifiers intSpecs() {
 }
 
 std::unique_ptr<Block> emptyBody() {
-    return std::make_unique<Block>(std::vector<std::unique_ptr<AbstractSyntaxTreeNode>> {});
+    return std::make_unique<Block>();
 }
 
 FormalArgument namedIntParam(const std::string& name) {

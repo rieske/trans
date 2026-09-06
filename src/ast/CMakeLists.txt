@@ -11,6 +11,7 @@ add_library(ast
         AssignmentExpression.cpp
         BitwiseExpression.cpp
         Block.cpp
+        BlockItem.cpp
         ComparisonExpression.cpp
         ConditionalExpression.cpp
         Constant.cpp
@@ -82,6 +83,7 @@ add_library(ast
         BinaryOpExpression.h
         BitwiseExpression.h
         Block.h
+        BlockItem.h
         ComparisonExpression.h
         ConditionalExpression.h
         Constant.h

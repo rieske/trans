@@ -1,10 +1,10 @@
 #ifndef _BLOCK_NODE_H_
 #define _BLOCK_NODE_H_
 
-#include <memory>
 #include <vector>
 
 #include "AbstractSyntaxTreeNode.h"
+#include "BlockItem.h"
 
 namespace ast {
 
@@ -12,19 +12,19 @@ namespace ast {
 // (C99 allows interleaving via <block_item_list>).
 class Block: public AbstractSyntaxTreeNode {
 public:
-    explicit Block(std::vector<std::unique_ptr<AbstractSyntaxTreeNode>> items);
+    Block() = default;
+    explicit Block(std::vector<BlockItem> items);
     virtual ~Block() = default;
 
     void accept(AbstractSyntaxTreeVisitor& visitor) override;
     NodeKind nodeKind() const override { return NodeKind::Block; }
     void visitChildren(AbstractSyntaxTreeVisitor& visitor) override;
 
-    const std::vector<std::unique_ptr<AbstractSyntaxTreeNode>>& getItems() const {
-        return items;
-    }
+    const std::vector<BlockItem>& getItems() const { return items; }
+    std::vector<BlockItem>& getItems() { return items; }
 
 private:
-    std::vector<std::unique_ptr<AbstractSyntaxTreeNode>> items;
+    std::vector<BlockItem> items;
 };
 
 } // namespace ast

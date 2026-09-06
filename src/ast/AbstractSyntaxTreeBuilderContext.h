@@ -17,6 +17,7 @@
 #include "StorageSpecifier.h"
 #include "TerminalSymbol.h"
 #include "TypeSpecifier.h"
+#include "BlockItem.h"
 #include "Declaration.h"
 #include "InitializedDeclarator.h"
 #include "InitializerListExpression.h"
@@ -111,7 +112,7 @@ public:
 
     void newStatementList(std::unique_ptr<AbstractSyntaxTreeNode> statement);
     void addToStatementList(std::unique_ptr<AbstractSyntaxTreeNode> statement);
-    std::vector<std::unique_ptr<AbstractSyntaxTreeNode>> popStatementList();
+    std::vector<BlockItem> popStatementList();
 
     void pushExternalDeclaration(std::unique_ptr<AbstractSyntaxTreeNode> externalDeclaration);
     std::unique_ptr<AbstractSyntaxTreeNode> popExternalDeclaration();
@@ -169,7 +170,7 @@ private:
     std::stack<std::pair<FormalArguments, bool>> argumentsDeclarations;
     std::stack<std::unique_ptr<Declaration>> declarations;
     std::stack<std::vector<std::unique_ptr<Declaration>>> declarationLists;
-    std::stack<std::vector<std::unique_ptr<AbstractSyntaxTreeNode>>> statementLists;
+    std::stack<std::vector<BlockItem>> statementLists;
     std::stack<std::unique_ptr<AbstractSyntaxTreeNode>> externalDeclarations;
     std::vector<std::unique_ptr<AbstractSyntaxTreeNode>> translationUnit;
 
