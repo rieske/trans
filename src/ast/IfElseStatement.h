@@ -3,17 +3,17 @@
 
 #include <memory>
 
-#include "ast/AbstractSyntaxTreeNode.h"
 #include "ast/Expression.h"
+#include "ast/Statement.h"
 #include "symbols/AnnotationStore.h"
 #include "symbols/LabelEntry.h"
 
 namespace ast {
 
-class IfElseStatement: public AbstractSyntaxTreeNode {
+class IfElseStatement: public Statement {
 public:
-    IfElseStatement(std::unique_ptr<Expression> testExpression, std::unique_ptr<AbstractSyntaxTreeNode> truthyBody,
-            std::unique_ptr<AbstractSyntaxTreeNode> falsyBody);
+    IfElseStatement(std::unique_ptr<Expression> testExpression, std::unique_ptr<Statement> truthyBody,
+            std::unique_ptr<Statement> falsyBody);
     virtual ~IfElseStatement();
 
     void accept(AbstractSyntaxTreeVisitor& visitor) override;
@@ -25,8 +25,8 @@ public:
     void setExitLabel(symbols::AnnotationStore& store, symbols::LabelEntry exitLabel);
 
     const std::unique_ptr<Expression> testExpression;
-    const std::unique_ptr<AbstractSyntaxTreeNode> truthyBody;
-    const std::unique_ptr<AbstractSyntaxTreeNode> falsyBody;
+    const std::unique_ptr<Statement> truthyBody;
+    const std::unique_ptr<Statement> falsyBody;
 
 };
 

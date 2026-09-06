@@ -5,7 +5,7 @@
 namespace ast {
 
 IfElseStatement::IfElseStatement(std::unique_ptr<Expression> testExpression,
-        std::unique_ptr<AbstractSyntaxTreeNode> truthyBody, std::unique_ptr<AbstractSyntaxTreeNode> falsyBody) :
+        std::unique_ptr<Statement> truthyBody, std::unique_ptr<Statement> falsyBody) :
         testExpression { std::move(testExpression) },
         truthyBody { std::move(truthyBody) },
         falsyBody { std::move(falsyBody) }

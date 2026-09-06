@@ -4,7 +4,7 @@
 
 namespace ast {
 
-CaseLabel::CaseLabel(std::unique_ptr<Expression> caseExpression, std::unique_ptr<AbstractSyntaxTreeNode> statement) :
+CaseLabel::CaseLabel(std::unique_ptr<Expression> caseExpression, std::unique_ptr<Statement> statement) :
         caseExpression { std::move(caseExpression) },
         statement { std::move(statement) } {
 }

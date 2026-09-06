@@ -3,16 +3,16 @@
 
 #include <memory>
 
-#include "ast/AbstractSyntaxTreeNode.h"
 #include "ast/Expression.h"
+#include "ast/Statement.h"
 #include "symbols/AnnotationStore.h"
 #include "symbols/LabelEntry.h"
 
 namespace ast {
 
-class IfStatement: public AbstractSyntaxTreeNode {
+class IfStatement: public Statement {
 public:
-    IfStatement(std::unique_ptr<Expression> testExpression, std::unique_ptr<AbstractSyntaxTreeNode> body);
+    IfStatement(std::unique_ptr<Expression> testExpression, std::unique_ptr<Statement> body);
     virtual ~IfStatement();
 
     void accept(AbstractSyntaxTreeVisitor& visitor) override;
@@ -22,7 +22,7 @@ public:
     symbols::LabelEntry* getFalsyLabel(symbols::AnnotationStore& store) const;
 
     const std::unique_ptr<Expression> testExpression;
-    const std::unique_ptr<AbstractSyntaxTreeNode> body;
+    const std::unique_ptr<Statement> body;
 
 };
 

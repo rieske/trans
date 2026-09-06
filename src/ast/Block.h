@@ -3,14 +3,14 @@
 
 #include <vector>
 
-#include "AbstractSyntaxTreeNode.h"
 #include "BlockItem.h"
+#include "Statement.h"
 
 namespace ast {
 
 // Compound statement body. Items are declarations and/or statements in source order
 // (C99 allows interleaving via <block_item_list>).
-class Block: public AbstractSyntaxTreeNode {
+class Block: public Statement {
 public:
     Block() = default;
     explicit Block(std::vector<BlockItem> items);

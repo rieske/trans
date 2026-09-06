@@ -3,6 +3,7 @@
 #include "Block.h"
 #include "Declaration.h"
 #include "Expression.h"
+#include "Statement.h"
 
 namespace ast {
 
@@ -34,6 +35,43 @@ const Block* AbstractSyntaxTreeNode::asBlock() const {
 Block* AbstractSyntaxTreeNode::asBlock() {
     return const_cast<Block*>(
             static_cast<const AbstractSyntaxTreeNode*>(this)->asBlock());
+}
+
+const Statement* AbstractSyntaxTreeNode::asStatement() const {
+    switch (nodeKind()) {
+    case NodeKind::Block:
+    case NodeKind::IfStatement:
+    case NodeKind::IfElseStatement:
+    case NodeKind::LoopStatement:
+    case NodeKind::SwitchStatement:
+    case NodeKind::LabeledStatement:
+    case NodeKind::CaseLabel:
+    case NodeKind::DefaultLabel:
+    case NodeKind::JumpStatement:
+    case NodeKind::GotoStatement:
+    case NodeKind::ReturnStatement:
+    case NodeKind::VoidReturnStatement:
+    case NodeKind::ExpressionStatement:
+    case NodeKind::NullStatement:
+        return static_cast<const Statement*>(this);
+    case NodeKind::Expression:
+    case NodeKind::Declaration:
+    case NodeKind::FunctionDefinition:
+    case NodeKind::DeclarationSpecifiers:
+    case NodeKind::Declarator:
+    case NodeKind::DirectDeclarator:
+    case NodeKind::Pointer:
+    case NodeKind::FormalArgument:
+    case NodeKind::InitializedDeclarator:
+    case NodeKind::LoopHeader:
+        return nullptr;
+    }
+    return nullptr;
+}
+
+Statement* AbstractSyntaxTreeNode::asStatement() {
+    return const_cast<Statement*>(
+            static_cast<const AbstractSyntaxTreeNode*>(this)->asStatement());
 }
 
 } // namespace ast

@@ -4,7 +4,7 @@
 
 namespace ast {
 
-LoopStatement::LoopStatement(std::unique_ptr<LoopHeader> header, std::unique_ptr<AbstractSyntaxTreeNode> body) :
+LoopStatement::LoopStatement(std::unique_ptr<LoopHeader> header, std::unique_ptr<Statement> body) :
         header { std::move(header) },
         body { std::move(body) } {
 }

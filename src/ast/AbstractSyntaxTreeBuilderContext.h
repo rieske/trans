@@ -32,6 +32,7 @@ class Sink;
 namespace ast {
 
 class Block;
+class Statement;
 
 class AbstractSyntaxTreeBuilderContext {
 public:
@@ -81,6 +82,7 @@ public:
 
     void pushStatement(std::unique_ptr<AbstractSyntaxTreeNode> statement);
     std::unique_ptr<AbstractSyntaxTreeNode> popStatement();
+    std::unique_ptr<Statement> popAsStatement();
     std::unique_ptr<Block> popBlock();
 
     void pushDirectDeclarator(std::unique_ptr<DirectDeclarator> declarator);

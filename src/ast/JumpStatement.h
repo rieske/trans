@@ -1,14 +1,14 @@
 #ifndef _JMP_STMT_NODE_H_
 #define _JMP_STMT_NODE_H_
 
-#include "ast/AbstractSyntaxTreeNode.h"
+#include "ast/Statement.h"
 #include "ast/TerminalSymbol.h"
 #include "symbols/AnnotationStore.h"
 #include "symbols/LabelEntry.h"
 
 namespace ast {
 
-class JumpStatement: public AbstractSyntaxTreeNode {
+class JumpStatement: public Statement {
 public:
 	JumpStatement(TerminalSymbol jumpKeyword);
 

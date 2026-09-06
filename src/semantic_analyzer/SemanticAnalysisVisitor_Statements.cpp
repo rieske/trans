@@ -135,6 +135,14 @@ void SemanticAnalysisVisitor::visit(ast::ReturnStatement& statement) {
 void SemanticAnalysisVisitor::visit(ast::VoidReturnStatement& statement) {
 }
 
+void SemanticAnalysisVisitor::visit(ast::ExpressionStatement& statement) {
+    statement.expression->accept(*this);
+}
+
+void SemanticAnalysisVisitor::visit(ast::NullStatement& statement) {
+    (void)statement;
+}
+
 void SemanticAnalysisVisitor::visit(ast::IfStatement& statement) {
     statement.testExpression->accept(*this);
     if (statement.testExpression->hasResultSymbol(annotations())) {

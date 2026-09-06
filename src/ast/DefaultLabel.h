@@ -5,14 +5,14 @@
 
 #include "symbols/AnnotationStore.h"
 #include "symbols/LabelEntry.h"
-#include "ast/AbstractSyntaxTreeNode.h"
+#include "ast/Statement.h"
 #include "ast/TerminalSymbol.h"
 
 namespace ast {
 
-class DefaultLabel: public AbstractSyntaxTreeNode {
+class DefaultLabel: public Statement {
 public:
-    DefaultLabel(TerminalSymbol defaultKeyword, std::unique_ptr<AbstractSyntaxTreeNode> statement);
+    DefaultLabel(TerminalSymbol defaultKeyword, std::unique_ptr<Statement> statement);
     virtual ~DefaultLabel() = default;
 
     void accept(AbstractSyntaxTreeVisitor& visitor) override;
@@ -22,7 +22,7 @@ public:
     symbols::LabelEntry* getLabel(symbols::AnnotationStore& store) const;
 
     const TerminalSymbol defaultKeyword;
-    const std::unique_ptr<AbstractSyntaxTreeNode> statement;
+    const std::unique_ptr<Statement> statement;
 
 };
 

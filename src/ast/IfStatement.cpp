@@ -4,7 +4,7 @@
 
 namespace ast {
 
-IfStatement::IfStatement(std::unique_ptr<Expression> testExpression, std::unique_ptr<AbstractSyntaxTreeNode> body) :
+IfStatement::IfStatement(std::unique_ptr<Expression> testExpression, std::unique_ptr<Statement> body) :
         testExpression { std::move(testExpression) },
         body { std::move(body) }
 {

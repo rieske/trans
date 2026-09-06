@@ -438,7 +438,7 @@ ContextualSyntaxNodeBuilder::ContextualSyntaxNodeBuilder(const parser::Grammar& 
             }
             auto loopHeader = std::make_unique<ForLoopHeader>(
                     std::move(initialization), std::move(clause), std::move(increment), declarationScoped);
-            auto body = context.popStatement();
+            auto body = context.popAsStatement();
             context.pushStatement(std::make_unique<LoopStatement>(std::move(loopHeader), std::move(body)));
         };
     };

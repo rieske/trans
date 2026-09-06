@@ -4,7 +4,7 @@
 
 namespace ast {
 
-LabeledStatement::LabeledStatement(TerminalSymbol labelName, std::unique_ptr<AbstractSyntaxTreeNode> statement) :
+LabeledStatement::LabeledStatement(TerminalSymbol labelName, std::unique_ptr<Statement> statement) :
         name { labelName },
         statement { std::move(statement) } {
 }
