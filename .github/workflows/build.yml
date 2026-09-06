@@ -41,7 +41,7 @@ jobs:
             ccache-${{ runner.os }}-debug-cov-v1-
 
       - name: Configure
-        run: make configure
+        run: make configure COVERAGE=ON
 
       - name: Build
         run: make
@@ -50,7 +50,7 @@ jobs:
         if: always()
         run: ccache -s
 
-      # Serial ctest: functionalTest shards share .gcda and race under ctest -j.
+      # Serial: one process writes .gcda for lcov / Coveralls.
       - name: Test
         run: make test JOBS=1
 

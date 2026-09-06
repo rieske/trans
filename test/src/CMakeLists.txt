@@ -276,6 +276,7 @@ foreach(dialect intel att)
       add_test(NAME ${test_name} COMMAND functionalTest)
       set_tests_properties(${test_name} PROPERTIES
         LABELS "functional;${dialect}_O${opt}"
+        TIMEOUT 120
         ENVIRONMENT "TRANS_ASM_DIALECT=${dialect};TRANS_OPT_LEVEL=${opt};GTEST_TOTAL_SHARDS=${FUNCTIONAL_TEST_SHARDS};GTEST_SHARD_INDEX=${shard}"
       )
     endforeach()

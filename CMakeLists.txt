@@ -107,31 +107,41 @@ file(READ "${INFO_FILE}" contents)
 string(REPLACE "SF:${PREFIX}" "SF:" contents "${contents}")
 file(WRITE "${INFO_FILE}" "${contents}")
 ]=])
-add_custom_target(coverage-report
-  COMMAND ${CMAKE_COMMAND} -E make_directory ${CMAKE_BINARY_DIR}/coverage
-  COMMAND lcov
-          --ignore-errors empty,mismatch,gcov
-          --rc geninfo_unexecuted_blocks=1
-          --no-external
-          -c
-          -d ${CMAKE_SOURCE_DIR}/src
-          -d ${CMAKE_BINARY_DIR}/src
-          -o ${CMAKE_BINARY_DIR}/coverage/lcov.info
-  COMMAND ${CMAKE_COMMAND}
-          -DINFO_FILE=${CMAKE_BINARY_DIR}/coverage/lcov.info
-          -DPREFIX=${CMAKE_SOURCE_DIR}/
-          -P ${CMAKE_BINARY_DIR}/RelativizeLcov.cmake
-  WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
-  COMMENT "Produce coverage/lcov.info from existing gcov data"
-)
-add_custom_target(coverage
-  # Serial ctest: parallel functionalTest shards race on shared .gcda files.
-  COMMAND ${CMAKE_CTEST_COMMAND} --output-on-failure -j1
-  COMMAND ${CMAKE_COMMAND} --build ${CMAKE_BINARY_DIR} --target coverage-report
-  WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
-  COMMENT "Run tests (serial for gcov) and produce coverage/lcov.info"
-  DEPENDS trans
-)
+if(TRANS_ENABLE_COVERAGE)
+  add_custom_target(coverage-report
+    COMMAND ${CMAKE_COMMAND} -E make_directory ${CMAKE_BINARY_DIR}/coverage
+    COMMAND lcov
+            --ignore-errors empty,mismatch,gcov
+            --rc geninfo_unexecuted_blocks=1
+            --no-external
+            -c
+            -d ${CMAKE_SOURCE_DIR}/src
+            -d ${CMAKE_BINARY_DIR}/src
+            -o ${CMAKE_BINARY_DIR}/coverage/lcov.info
+    COMMAND ${CMAKE_COMMAND}
+            -DINFO_FILE=${CMAKE_BINARY_DIR}/coverage/lcov.info
+            -DPREFIX=${CMAKE_SOURCE_DIR}/
+            -P ${CMAKE_BINARY_DIR}/RelativizeLcov.cmake
+    WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
+    COMMENT "Produce coverage/lcov.info from existing gcov data"
+  )
+  add_custom_target(coverage
+    COMMAND ${CMAKE_CTEST_COMMAND} --output-on-failure -j1
+    COMMAND ${CMAKE_COMMAND} --build ${CMAKE_BINARY_DIR} --target coverage-report
+    WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
+    COMMENT "Run tests (serial for gcov) and produce coverage/lcov.info"
+    DEPENDS trans
+  )
+else()
+  add_custom_target(coverage-report
+    COMMAND ${CMAKE_COMMAND} -E echo "coverage-report needs TRANS_ENABLE_COVERAGE=ON"
+    COMMAND ${CMAKE_COMMAND} -E false
+  )
+  add_custom_target(coverage
+    COMMAND ${CMAKE_COMMAND} -E echo "coverage needs TRANS_ENABLE_COVERAGE=ON"
+    COMMAND ${CMAKE_COMMAND} -E false
+  )
+endif()
 set_property(DIRECTORY APPEND PROPERTY ADDITIONAL_MAKE_CLEAN_FILES coverage)
 
 add_custom_target(scrub

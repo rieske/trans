@@ -29,7 +29,7 @@
     {
       "name": "coverage",
       "displayName": "Debug + coverage",
-      "description": "Debug with gcov; matches make configure (BUILD_TYPE=Debug)",
+      "description": "Debug with gcov; matches make configure COVERAGE=ON (CI / Coveralls)",
       "binaryDir": "${sourceDir}/build",
       "cacheVariables": {
         "CMAKE_BUILD_TYPE": "Debug",
