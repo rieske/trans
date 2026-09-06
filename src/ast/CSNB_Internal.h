@@ -129,7 +129,6 @@ void enumerationConstant(AbstractSyntaxTreeBuilderContext& context);
 void expressionList(AbstractSyntaxTreeBuilderContext& context);
 void expressionStatement(AbstractSyntaxTreeBuilderContext& context);
 void externalDeclaration(AbstractSyntaxTreeBuilderContext& context);
-void externalFunctionDefinition(AbstractSyntaxTreeBuilderContext& context);
 void floatConstant(AbstractSyntaxTreeBuilderContext& context);
 void floatType(AbstractSyntaxTreeBuilderContext& context);
 void functionSpecifier(AbstractSyntaxTreeBuilderContext& context);

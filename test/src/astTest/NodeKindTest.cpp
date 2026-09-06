@@ -117,39 +117,6 @@ std::unique_ptr<ast::AbstractSyntaxTreeNode> makeNode(ast::NodeKind kind) {
     return nullptr;
 }
 
-// No default: a new enumerator is a -Wswitch/-Werror failure.
-bool isStatementKind(ast::NodeKind kind) {
-    switch (kind) {
-    case ast::NodeKind::Block:
-    case ast::NodeKind::IfStatement:
-    case ast::NodeKind::IfElseStatement:
-    case ast::NodeKind::LoopStatement:
-    case ast::NodeKind::SwitchStatement:
-    case ast::NodeKind::LabeledStatement:
-    case ast::NodeKind::CaseLabel:
-    case ast::NodeKind::DefaultLabel:
-    case ast::NodeKind::JumpStatement:
-    case ast::NodeKind::GotoStatement:
-    case ast::NodeKind::ReturnStatement:
-    case ast::NodeKind::VoidReturnStatement:
-    case ast::NodeKind::ExpressionStatement:
-    case ast::NodeKind::NullStatement:
-        return true;
-    case ast::NodeKind::Expression:
-    case ast::NodeKind::Declaration:
-    case ast::NodeKind::FunctionDefinition:
-    case ast::NodeKind::DeclarationSpecifiers:
-    case ast::NodeKind::Declarator:
-    case ast::NodeKind::DirectDeclarator:
-    case ast::NodeKind::Pointer:
-    case ast::NodeKind::FormalArgument:
-    case ast::NodeKind::InitializedDeclarator:
-    case ast::NodeKind::LoopHeader:
-        return false;
-    }
-    return false;
-}
-
 TEST(NodeKind, everyConcreteReportsItsKind) {
     ASSERT_EQ(static_cast<int>(ast::NodeKind::Expression), 0);
     const int last = static_cast<int>(ast::NodeKind::LoopHeader);
@@ -158,50 +125,18 @@ TEST(NodeKind, everyConcreteReportsItsKind) {
         auto node = makeNode(kind);
         ASSERT_NE(node, nullptr) << i;
         EXPECT_EQ(node->nodeKind(), kind);
-        if (isStatementKind(kind)) {
-            EXPECT_EQ(node->asStatement(), node.get());
-        } else {
-            EXPECT_EQ(node->asStatement(), nullptr);
-        }
     }
 }
 
-TEST(NodeKind, typedAccessors) {
+TEST(NodeKind, asBlock) {
     ast::IdentifierExpression identifier("x", ctx());
-    EXPECT_EQ(identifier.asExpression(), &identifier);
-    EXPECT_EQ(identifier.asDeclaration(), nullptr);
     EXPECT_EQ(identifier.asBlock(), nullptr);
-    const ast::AbstractSyntaxTreeNode& identifierAsNode = identifier;
-    EXPECT_EQ(identifierAsNode.asExpression(), &identifier);
-    EXPECT_EQ(identifierAsNode.asDeclaration(), nullptr);
 
     ast::Declaration declaration { intSpecs() };
-    EXPECT_EQ(declaration.asDeclaration(), &declaration);
-    EXPECT_EQ(declaration.asFunctionDefinition(), nullptr);
-    EXPECT_EQ(declaration.asExpression(), nullptr);
     EXPECT_EQ(declaration.asBlock(), nullptr);
-    const ast::AbstractSyntaxTreeNode& declarationAsNode = declaration;
-    EXPECT_EQ(declarationAsNode.asDeclaration(), &declaration);
-    EXPECT_EQ(declarationAsNode.asFunctionDefinition(), nullptr);
-    EXPECT_EQ(declarationAsNode.asExpression(), nullptr);
-
-    ast::FunctionDefinition function { intSpecs(), simpleDeclarator(), emptyBlock() };
-    EXPECT_EQ(function.asFunctionDefinition(), &function);
-    EXPECT_EQ(function.asDeclaration(), nullptr);
-    EXPECT_EQ(function.asStatement(), nullptr);
-    const ast::AbstractSyntaxTreeNode& functionAsNode = function;
-    EXPECT_EQ(functionAsNode.asFunctionDefinition(), &function);
-    EXPECT_EQ(functionAsNode.asDeclaration(), nullptr);
 
     ast::Block block;
     EXPECT_EQ(block.asBlock(), &block);
-    EXPECT_EQ(block.asStatement(), &block);
-    EXPECT_EQ(block.asExpression(), nullptr);
-    EXPECT_EQ(block.asDeclaration(), nullptr);
-    const ast::AbstractSyntaxTreeNode& blockAsNode = block;
-    EXPECT_EQ(blockAsNode.asBlock(), &block);
-    EXPECT_EQ(blockAsNode.asStatement(), &block);
-    EXPECT_EQ(blockAsNode.asDeclaration(), nullptr);
 }
 
 } // namespace

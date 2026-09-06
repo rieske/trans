@@ -84,7 +84,7 @@ TEST(SemanticAnalyzer, missingSessionIsInternalError) {
     visitor.setGnuExtensions(false);
     visitor.setAnnotationStore(tree->annotations());
     visitor.setVlaExpressions(tree->vlaExpressions());
-    EXPECT_THROW(tree->begin()->accept(visitor), std::logic_error);
+    EXPECT_THROW(tree->accept(visitor), std::logic_error);
 }
 
 TEST(SemanticAnalyzer, functionDesignatorKeepsVariadic) {
@@ -99,7 +99,7 @@ TEST(SemanticAnalyzer, functionDesignatorKeepsVariadic) {
     auto designator = std::make_unique<IdentifierExpression>("f", ctx());
     auto* used = designator.get();
     std::vector<BlockItem> bodyItems;
-    bodyItems.push_back(BlockItem::fromNode(std::move(designator)));
+    bodyItems.push_back(BlockItem { std::move(designator) });
 
     std::vector<ExternalDeclaration> translationUnit;
     translationUnit.push_back(ExternalDeclaration { std::make_unique<FunctionDefinition>(

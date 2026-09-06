@@ -963,8 +963,8 @@ void functionDefinition(AbstractSyntaxTreeBuilderContext& context) {
     }
     declarationSpecifiers.resolveTypeofAtParseTime(context.environment());
     context.environment().tryDefineObject(declarationSpecifiers, *declarator);
-    context.pushStatement(std::make_unique<FunctionDefinition>(
-            std::move(declarationSpecifiers), std::move(declarator), std::move(body)));
+    context.pushExternalDeclaration(ExternalDeclaration { std::make_unique<FunctionDefinition>(
+            std::move(declarationSpecifiers), std::move(declarator), std::move(body)) });
 }
 
 void defaultReturnTypeFunctionDefinition(AbstractSyntaxTreeBuilderContext& context) {
@@ -976,12 +976,8 @@ void defaultReturnTypeFunctionDefinition(AbstractSyntaxTreeBuilderContext& conte
         return;
     }
     context.environment().tryDefineObject(defaultReturnTypeSpecifiers, *declarator);
-    context.pushStatement(std::make_unique<FunctionDefinition>(
-            defaultReturnTypeSpecifiers, std::move(declarator), std::move(body)));
-}
-
-void externalFunctionDefinition(AbstractSyntaxTreeBuilderContext& context) {
-    context.pushExternalDeclaration(ExternalDeclaration::fromNode(context.popStatement()));
+    context.pushExternalDeclaration(ExternalDeclaration { std::make_unique<FunctionDefinition>(
+            defaultReturnTypeSpecifiers, std::move(declarator), std::move(body)) });
 }
 
 void externalDeclaration(AbstractSyntaxTreeBuilderContext& context) {

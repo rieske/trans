@@ -397,7 +397,7 @@ ContextualSyntaxNodeBuilder::ContextualSyntaxNodeBuilder(const parser::Grammar& 
     bind(s_function_definition, { s_declarator, s_decl_list, s_compound_stat }, notImplementedYet("K&R style function definitions"));
 
     int s_external_decl = grammar.symbolId("<external_decl>");
-    bind(s_external_decl, { s_function_definition }, externalFunctionDefinition);
+    bind(s_external_decl, { s_function_definition }, doNothing);
     bind(s_external_decl, { s_decl }, externalDeclaration);
 
     int s_translation_unit = grammar.symbolId("<translation_unit>");

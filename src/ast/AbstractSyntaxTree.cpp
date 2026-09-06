@@ -13,13 +13,5 @@ void AbstractSyntaxTree::accept(ast::AbstractSyntaxTreeVisitor& visitor) const {
     }
 }
 
-auto AbstractSyntaxTree::begin() const -> decltype(translationUnit.begin()) {
-    return translationUnit.begin();
-}
-
-auto AbstractSyntaxTree::end() const -> decltype(translationUnit.end()) {
-    return translationUnit.end();
-}
-
 } // namespace ast
 

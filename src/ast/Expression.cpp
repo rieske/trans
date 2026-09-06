@@ -10,24 +10,14 @@
 
 namespace ast {
 
-const IdentifierExpression* Expression::asIdentifier() const {
-    return exprKind() == ExprKind::Identifier
-            ? static_cast<const IdentifierExpression*>(this) : nullptr;
-}
-
 IdentifierExpression* Expression::asIdentifier() {
-    return const_cast<IdentifierExpression*>(
-            static_cast<const Expression*>(this)->asIdentifier());
+    return exprKind() == ExprKind::Identifier
+            ? static_cast<IdentifierExpression*>(this) : nullptr;
 }
 
 const ConstantExpression* Expression::asConstant() const {
     return exprKind() == ExprKind::Constant
             ? static_cast<const ConstantExpression*>(this) : nullptr;
-}
-
-ConstantExpression* Expression::asConstant() {
-    return const_cast<ConstantExpression*>(
-            static_cast<const Expression*>(this)->asConstant());
 }
 
 const InitializerListExpression* Expression::asInitList() const {

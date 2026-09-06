@@ -42,7 +42,6 @@ public:
     virtual ~AbstractSyntaxTreeBuilderContext() = default;
 
     ParseEnvironment& environment() { return environment_; }
-    const ParseEnvironment& environment() const { return environment_; }
 
     void setSink(diag::Sink* sink);
     diag::Sink& sink() const;
@@ -81,8 +80,10 @@ public:
     void pointerToPointer(Pointer pointer);
     std::vector<Pointer> popPointers();
 
-    void pushStatement(std::unique_ptr<AbstractSyntaxTreeNode> statement);
-    std::unique_ptr<AbstractSyntaxTreeNode> popStatement();
+    void pushStatement(std::unique_ptr<Statement> statement);
+    void pushStatement(std::unique_ptr<Expression> expression);
+    void pushStatement(std::unique_ptr<Declaration> declaration);
+    BlockItem popStatement();
     std::unique_ptr<Statement> popAsStatement();
     std::unique_ptr<Block> popBlock();
 
@@ -116,8 +117,8 @@ public:
     void pushDeclaration(std::unique_ptr<Declaration> declaration);
     std::unique_ptr<Declaration> popDeclaration();
 
-    void newStatementList(std::unique_ptr<AbstractSyntaxTreeNode> statement);
-    void addToStatementList(std::unique_ptr<AbstractSyntaxTreeNode> statement);
+    void newStatementList(BlockItem item);
+    void addToStatementList(BlockItem item);
     std::vector<BlockItem> popStatementList();
 
     void pushExternalDeclaration(ExternalDeclaration externalDeclaration);
@@ -166,7 +167,7 @@ private:
     std::stack<std::unique_ptr<Expression>> expressionStack;
     std::stack<std::vector<std::unique_ptr<Expression>>>actualArgumentLists;
     std::stack<std::vector<Pointer>> pointerStack;
-    std::stack<std::unique_ptr<AbstractSyntaxTreeNode>> statementStack;
+    std::stack<BlockItem> statementStack;
     std::stack<std::unique_ptr<DirectDeclarator>> directDeclarators;
     std::stack<std::unique_ptr<Declarator>> declarators;
     std::stack<std::unique_ptr<InitializedDeclarator>> initializedDeclarators;
