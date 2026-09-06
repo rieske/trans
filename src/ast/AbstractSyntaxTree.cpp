@@ -2,14 +2,14 @@
 
 namespace ast {
 
-AbstractSyntaxTree::AbstractSyntaxTree(std::vector<std::unique_ptr<AbstractSyntaxTreeNode> > translationUnit) :
+AbstractSyntaxTree::AbstractSyntaxTree(std::vector<ExternalDeclaration> translationUnit) :
         translationUnit { std::move(translationUnit) }
 {
 }
 
 void AbstractSyntaxTree::accept(ast::AbstractSyntaxTreeVisitor& visitor) const {
     for (const auto& translationElement : translationUnit) {
-        translationElement->accept(visitor);
+        translationElement.accept(visitor);
     }
 }
 

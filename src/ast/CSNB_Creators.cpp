@@ -981,11 +981,11 @@ void defaultReturnTypeFunctionDefinition(AbstractSyntaxTreeBuilderContext& conte
 }
 
 void externalFunctionDefinition(AbstractSyntaxTreeBuilderContext& context) {
-    context.pushExternalDeclaration(context.popStatement());
+    context.pushExternalDeclaration(ExternalDeclaration::fromNode(context.popStatement()));
 }
 
 void externalDeclaration(AbstractSyntaxTreeBuilderContext& context) {
-    context.pushExternalDeclaration(context.popDeclaration());
+    context.pushExternalDeclaration(ExternalDeclaration { context.popDeclaration() });
 }
 
 void translationUnit(AbstractSyntaxTreeBuilderContext& context) {

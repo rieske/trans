@@ -3,6 +3,7 @@
 #include "ast/AbstractSyntaxTree.h"
 #include "ast/Block.h"
 #include "ast/Declaration.h"
+#include "ast/ExternalDeclaration.h"
 #include "ast/DeclarationSpecifiers.h"
 #include "ast/Declarator.h"
 #include "ast/FormalArgument.h"
@@ -43,10 +44,10 @@ std::unique_ptr<AbstractSyntaxTree> fileScopeInt(const std::string& name) {
     declarators.push_back(std::make_unique<InitializedDeclarator>(
             std::make_unique<Declarator>(std::make_unique<Identifier>(id))));
 
-    std::vector<std::unique_ptr<AbstractSyntaxTreeNode>> translationUnit;
-    translationUnit.push_back(std::make_unique<Declaration>(
+    std::vector<ExternalDeclaration> translationUnit;
+    translationUnit.push_back(ExternalDeclaration { std::make_unique<Declaration>(
             DeclarationSpecifiers { TypeSpecifier { type::signedInteger(), "int" } },
-            std::move(declarators)));
+            std::move(declarators)) });
     auto tree = std::make_unique<AbstractSyntaxTree>(std::move(translationUnit));
     tree->setVlaExpressions(std::make_shared<VlaExpressionTable>());
     return tree;
@@ -83,7 +84,7 @@ TEST(SemanticAnalyzer, missingSessionIsInternalError) {
     visitor.setGnuExtensions(false);
     visitor.setAnnotationStore(tree->annotations());
     visitor.setVlaExpressions(tree->vlaExpressions());
-    EXPECT_THROW((*tree->begin())->accept(visitor), std::logic_error);
+    EXPECT_THROW(tree->begin()->accept(visitor), std::logic_error);
 }
 
 TEST(SemanticAnalyzer, functionDesignatorKeepsVariadic) {
@@ -100,11 +101,11 @@ TEST(SemanticAnalyzer, functionDesignatorKeepsVariadic) {
     std::vector<BlockItem> bodyItems;
     bodyItems.push_back(BlockItem::fromNode(std::move(designator)));
 
-    std::vector<std::unique_ptr<AbstractSyntaxTreeNode>> translationUnit;
-    translationUnit.push_back(std::make_unique<FunctionDefinition>(
+    std::vector<ExternalDeclaration> translationUnit;
+    translationUnit.push_back(ExternalDeclaration { std::make_unique<FunctionDefinition>(
             intSpecs(),
             std::make_unique<Declarator>(std::move(fn)),
-            std::make_unique<Block>(std::move(bodyItems))));
+            std::make_unique<Block>(std::move(bodyItems))) });
     auto tree = std::make_unique<AbstractSyntaxTree>(std::move(translationUnit));
     tree->setVlaExpressions(std::make_shared<VlaExpressionTable>());
 

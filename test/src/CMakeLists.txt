@@ -20,6 +20,7 @@ add_executable(astTest
     astTest/NodeKindTest.cpp
     astTest/TerminalSymbolTest.cpp
     astTest/BlockItemTest.cpp
+    astTest/ExternalDeclarationTest.cpp
     astTest/StatementTest.cpp
         astTest/TypeSpecifierTest.cpp
         )

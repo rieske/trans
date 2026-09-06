@@ -19,6 +19,7 @@
 #include "TypeSpecifier.h"
 #include "BlockItem.h"
 #include "Declaration.h"
+#include "ExternalDeclaration.h"
 #include "InitializedDeclarator.h"
 #include "InitializerListExpression.h"
 #include "Declarator.h"
@@ -119,11 +120,11 @@ public:
     void addToStatementList(std::unique_ptr<AbstractSyntaxTreeNode> statement);
     std::vector<BlockItem> popStatementList();
 
-    void pushExternalDeclaration(std::unique_ptr<AbstractSyntaxTreeNode> externalDeclaration);
-    std::unique_ptr<AbstractSyntaxTreeNode> popExternalDeclaration();
+    void pushExternalDeclaration(ExternalDeclaration externalDeclaration);
+    ExternalDeclaration popExternalDeclaration();
 
-    void addToTranslationUnit(std::unique_ptr<AbstractSyntaxTreeNode> externalDeclaration);
-    std::vector<std::unique_ptr<AbstractSyntaxTreeNode>> popTranslationUnit();
+    void addToTranslationUnit(ExternalDeclaration externalDeclaration);
+    std::vector<ExternalDeclaration> popTranslationUnit();
 
     // Struct definition support (member list frames + tag registry).
     void pushIsUnion(bool isUnion);
@@ -176,8 +177,8 @@ private:
     std::stack<std::unique_ptr<Declaration>> declarations;
     std::stack<std::vector<std::unique_ptr<Declaration>>> declarationLists;
     std::stack<std::vector<BlockItem>> statementLists;
-    std::stack<std::unique_ptr<AbstractSyntaxTreeNode>> externalDeclarations;
-    std::vector<std::unique_ptr<AbstractSyntaxTreeNode>> translationUnit;
+    std::stack<ExternalDeclaration> externalDeclarations;
+    std::vector<ExternalDeclaration> translationUnit;
 
     std::stack<bool> isUnionStack;
     std::stack<std::vector<type::MemberSpec>> structMemberLists;

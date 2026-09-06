@@ -7,6 +7,7 @@ class AbstractSyntaxTreeVisitor;
 class Block;
 class Declaration;
 class Expression;
+class FunctionDefinition;
 class Statement;
 
 // For local queries; SA/CG walks stay on the visitor.
@@ -49,6 +50,8 @@ public:
     Expression* asExpression();
     const Declaration* asDeclaration() const;
     Declaration* asDeclaration();
+    const FunctionDefinition* asFunctionDefinition() const;
+    FunctionDefinition* asFunctionDefinition();
     const Block* asBlock() const;
     Block* asBlock();
     const Statement* asStatement() const;

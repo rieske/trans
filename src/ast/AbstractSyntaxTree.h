@@ -4,7 +4,7 @@
 #include <memory>
 #include <vector>
 
-#include "ast/AbstractSyntaxTreeNode.h"
+#include "ast/ExternalDeclaration.h"
 #include "ast/VlaExpressionTable.h"
 #include "symbols/AnnotationStore.h"
 
@@ -12,12 +12,12 @@ namespace ast {
 
 class AbstractSyntaxTree {
 private:
-    std::vector<std::unique_ptr<AbstractSyntaxTreeNode>> translationUnit;
+    std::vector<ExternalDeclaration> translationUnit;
     symbols::AnnotationStore annotations_;
     std::shared_ptr<VlaExpressionTable> vlaExpressions_;
 
 public:
-    AbstractSyntaxTree(std::vector<std::unique_ptr<AbstractSyntaxTreeNode>> translationUnit);
+    AbstractSyntaxTree(std::vector<ExternalDeclaration> translationUnit);
 
     auto begin() const -> decltype(translationUnit.begin());
     auto end() const -> decltype(translationUnit.end());
