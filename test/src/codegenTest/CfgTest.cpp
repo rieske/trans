@@ -151,6 +151,112 @@ TEST(Cfg, eliminateJumpToNextChainsThroughEmptyBlocks) {
             "ENDPROC f\n"));
 }
 
+TEST(Cfg, eliminateJumpToNextLeavesNonAdjacentTrampoline) {
+    IntermediateRepresentation names;
+    IrN n { names.strings };
+    const Cfg cfg = eliminateJumpToNext(buildCfg({
+            ir::jump(n("A")),
+            ir::inc(n("x")),
+            ir::jump(n("end")),
+            ir::label(n("A")),
+            ir::jump(n("B")),
+            ir::label(n("B")),
+            ir::inc(n("y")),
+            ir::label(n("end")),
+            ir::voidReturn(),
+    }));
+
+    EXPECT_THAT(dumpBody(names.strings, flattenCfg(cfg)), HasSubstr("GOTO A"));
+    EXPECT_THAT(dumpBody(names.strings, flattenCfg(cfg)), HasSubstr("A:"));
+}
+
+TEST(Cfg, threadJumps_retargetsNonAdjacentUncond) {
+    IntermediateRepresentation names;
+    IrN n { names.strings };
+    const Cfg cfg = threadJumps(buildCfg({
+            ir::jump(n("A")),
+            ir::inc(n("x")),
+            ir::jump(n("end")),
+            ir::label(n("A")),
+            ir::jump(n("B")),
+            ir::label(n("B")),
+            ir::inc(n("y")),
+            ir::label(n("end")),
+            ir::voidReturn(),
+    }));
+
+    EXPECT_THAT(dumpBody(names.strings, flattenCfg(cfg)), StrEq(
+            "PROC f\n"
+            "\tGOTO B\n"
+            "\tINC x\n"
+            "\tGOTO end\n"
+            "A:\n"
+            "\tGOTO B\n"
+            "B:\n"
+            "\tINC y\n"
+            "end:\n"
+            "\tRETURN\n"
+            "ENDPROC f\n"));
+}
+
+TEST(Cfg, threadJumps_retargetsConditional) {
+    IntermediateRepresentation names;
+    IrN n { names.strings };
+    const Cfg cfg = threadJumps(buildCfg({
+            ir::zeroCompare(n("x")),
+            ir::jump(n("A"), JumpCondition::IF_EQUAL),
+            ir::inc(n("y")),
+            ir::jump(n("end")),
+            ir::label(n("A")),
+            ir::jump(n("B")),
+            ir::label(n("B")),
+            ir::inc(n("z")),
+            ir::label(n("end")),
+            ir::voidReturn(),
+    }));
+
+    EXPECT_THAT(dumpBody(names.strings, flattenCfg(cfg)), HasSubstr("JE B"));
+    EXPECT_THAT(dumpBody(names.strings, flattenCfg(cfg)), Not(HasSubstr("JE A")));
+}
+
+TEST(Cfg, threadJumps_resolvesChain) {
+    IntermediateRepresentation names;
+    IrN n { names.strings };
+    const Cfg cfg = threadJumps(buildCfg({
+            ir::jump(n("A")),
+            ir::inc(n("x")),
+            ir::jump(n("end")),
+            ir::label(n("A")),
+            ir::jump(n("B")),
+            ir::label(n("B")),
+            ir::jump(n("C")),
+            ir::label(n("C")),
+            ir::inc(n("y")),
+            ir::label(n("end")),
+            ir::voidReturn(),
+    }));
+
+    EXPECT_THAT(dumpBody(names.strings, flattenCfg(cfg)), HasSubstr("GOTO C"));
+    EXPECT_THAT(dumpBody(names.strings, flattenCfg(cfg)), Not(HasSubstr("GOTO A")));
+    EXPECT_THAT(dumpBody(names.strings, flattenCfg(cfg)), Not(HasSubstr("GOTO B")));
+}
+
+TEST(Cfg, threadJumps_doesNotFollowCycle) {
+    IntermediateRepresentation names;
+    IrN n { names.strings };
+    const Cfg cfg = threadJumps(buildCfg({
+            ir::jump(n("A"), JumpCondition::IF_EQUAL),
+            ir::voidReturn(),
+            ir::label(n("A")),
+            ir::jump(n("B")),
+            ir::label(n("B")),
+            ir::jump(n("A")),
+    }));
+
+    EXPECT_THAT(dumpBody(names.strings, flattenCfg(cfg)), HasSubstr("JE A"));
+    EXPECT_THAT(dumpBody(names.strings, flattenCfg(cfg)), HasSubstr("GOTO B"));
+}
+
 TEST(Cfg, flattenKeepsJumpToNext) {
     IntermediateRepresentation names;
     IrN n { names.strings };

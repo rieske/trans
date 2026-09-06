@@ -172,6 +172,59 @@ TEST(IrPasses, applyCfgPasses_atO0KeepsLabeledDeadBlock) {
             "ENDPROC f\n"));
 }
 
+TEST(IrPasses, applyCfgPasses_atO0DoesNotThreadJumps) {
+    IntermediateRepresentation ir;
+    IrN n { ir.strings };
+    ir.procedures.push_back(makeProc(ir.strings, "f", {
+            ir::zeroCompare(n("x")),
+            ir::jump(n("A"), JumpCondition::IF_EQUAL),
+            ir::inc(n("y")),
+            ir::jump(n("end")),
+            ir::label(n("A")),
+            ir::jump(n("B")),
+            ir::label(n("B")),
+            ir::inc(n("z")),
+            ir::label(n("end")),
+            ir::voidReturn(),
+    }));
+
+    ir = applyCfgPasses(std::move(ir), 0);
+
+    EXPECT_THAT(toString(ir), HasSubstr("JE A"));
+    EXPECT_THAT(toString(ir), HasSubstr("A:"));
+}
+
+TEST(IrPasses, applyCfgPasses_atO1ThreadsAndDropsTrampoline) {
+    IntermediateRepresentation ir;
+    IrN n { ir.strings };
+    ir.procedures.push_back(makeProc(ir.strings, "f", {
+            ir::zeroCompare(n("x")),
+            ir::jump(n("A"), JumpCondition::IF_EQUAL),
+            ir::inc(n("y")),
+            ir::jump(n("end")),
+            ir::label(n("A")),
+            ir::jump(n("B")),
+            ir::label(n("B")),
+            ir::inc(n("z")),
+            ir::label(n("end")),
+            ir::voidReturn(),
+    }));
+
+    ir = applyCfgPasses(std::move(ir), 1);
+
+    EXPECT_THAT(toString(ir), StrEq(
+            "PROC f\n"
+            "\tCMP x, 0\n"
+            "\tJE B\n"
+            "\tINC y\n"
+            "\tGOTO end\n"
+            "B:\n"
+            "\tINC z\n"
+            "end:\n"
+            "\tRETURN\n"
+            "ENDPROC f\n"));
+}
+
 TEST(IrPasses, applyCfgPasses_atO1DropsLabeledDeadBlock) {
     IntermediateRepresentation ir;
     IrN n { ir.strings };
