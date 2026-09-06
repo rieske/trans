@@ -49,11 +49,11 @@ make test         # build and run tests (ctest -j by default)
 make test ARGS='-R parser -V'   # filter / verbose ctest
 make test ARGS='-L functional'  # functional shards only (Intel and AT&T)
 make test JOBS=1  # serial ctest
-make coverage     # serial tests + build/coverage/lcov.info (needs lcov; Debug enables gcov by default)
+make coverage     # serial tests + lcov (needs a COVERAGE=ON tree)
 make help         # list targets
 ```
 
-Functional tests run as gtest **shards** (default 8, both dialects) so `make test` / `ctest -j` can parallelize them. New `TEST()` cases need no CMake changes. Parallelism for day-to-day runs is owned by the root Makefile (`JOBS`); `make coverage` always runs ctest serial so gcov `.gcda` files stay consistent. To change shard count, reconfigure:
+Functional tests run as gtest **shards** (default 8, both dialects) so `make test` / `ctest -j` can parallelize them. New `TEST()` cases need no CMake changes. Parallelism for day-to-day runs is owned by the root Makefile (`JOBS`). Gcov is off unless you pass `COVERAGE=ON` (CI does this for Coveralls). Do not mix a coverage-instrumented `trans` with `ctest -j`: shards race on shared `.gcda` files. To change shard count, reconfigure:
 
 ```shell
 cmake -S . -B build -DFUNCTIONAL_TEST_SHARDS=16
@@ -62,22 +62,22 @@ cmake -S . -B build -DFUNCTIONAL_TEST_SHARDS=16
 Equivalent CMake commands (no root Makefile):
 
 ```shell
-cmake -S . -B build -DCMAKE_BUILD_TYPE=Debug -DTRANS_ENABLE_COVERAGE=ON
+cmake -S . -B build -DCMAKE_BUILD_TYPE=Debug
 cmake --build build -j$(nproc)
-cd build && ctest --output-on-failure -j$(nproc)   # day-to-day
-cd build && ctest --output-on-failure -j1            # before lcov / coverage
+cd build && ctest --output-on-failure -j$(nproc)
 ```
 
 Or with presets (`CMakePresets.json`):
 
 ```shell
-cmake --preset coverage    # Debug + gcov (same knobs as make configure)
-cmake --build --preset coverage
-ctest --preset coverage
-# also: default (Release), debug, ci (coverage + serial tests)
+cmake --preset debug       # Debug, no gcov
+cmake --preset coverage    # Debug + gcov (CI / Coveralls)
+cmake --build --preset debug
+ctest --preset debug
+# also: default (Release), ci (coverage + serial tests)
 ```
 
-`TRANS_ENABLE_COVERAGE` is an explicit option (not tied to the Debug config name). The root `Makefile` turns it on automatically when `BUILD_TYPE=Debug` (override with `make COVERAGE=OFF configure`).
+`TRANS_ENABLE_COVERAGE` is opt-in (`make configure COVERAGE=ON` or `--preset coverage`). Day-to-day Debug builds are uninstrumented.
 
 ## History
 I started this project in my third year at the University as an assignment for Translation Methods course in Autumn of 2008.

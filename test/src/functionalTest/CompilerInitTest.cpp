@@ -8,6 +8,13 @@
 
 namespace {
 
+TEST(FunctionalHarness, sourceAndExecutablePathsIncludeMatrixTag) {
+    SourceProgram program{"int main(void) { return 0; }\n"};
+    EXPECT_THAT(program.getSourceFilePath(), HasSubstr(functionalTestMatrixTag()));
+    EXPECT_THAT(program.getExecutableFilePath(), HasSubstr(functionalTestMatrixTag()));
+    EXPECT_THAT(program.getExecutableFilePath(), EndsWith(".out"));
+}
+
 TEST(Compiler, reportsMissingSourceFile) {
     std::string sourceFile = "nonexistentSourceFileName";
     std::vector<std::string> arguments {"trans", "--resources=../../../", sourceFile};

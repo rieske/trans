@@ -7,8 +7,8 @@ BUILD_DIR  ?= build
 BUILD_TYPE ?= Debug
 # Parallelism for the inner build (outer `make -j` only parallelizes this Makefile).
 JOBS       ?= $(shell nproc 2>/dev/null || sysctl -n hw.ncpu 2>/dev/null || echo 4)
-# Match historical Debug+gcov behaviour; override with COVERAGE=ON|OFF.
-COVERAGE   ?= $(if $(filter Debug,$(BUILD_TYPE)),ON,OFF)
+# Gcov is CI/Coveralls only. Day-to-day make test is uninstrumented.
+COVERAGE   ?= OFF
 # ccache: auto-detect on PATH; CCACHE=OFF to disable; CCACHE=/path/to/ccache to force.
 # Command-line CCACHE=OFF cannot be cleared without override; treat it as a sentinel.
 ifeq ($(origin CCACHE), undefined)
@@ -46,8 +46,7 @@ build: $(BUILD_DIR)/CMakeCache.txt
 test: build
 	cd $(BUILD_DIR) && ctest --output-on-failure -j$(JOBS) $(ARGS)
 
-# lcov only — assumes tests already ran serially (CI: make test JOBS=1).
-# Parallel ctest races gcov counters when functionalTest is sharded.
+# lcov only — assumes a COVERAGE=ON tree and tests already ran (CI: JOBS=1).
 coverage-report: $(BUILD_DIR)/CMakeCache.txt
 	cmake --build $(BUILD_DIR) --target coverage-report
 
@@ -75,7 +74,7 @@ help:
 	@echo "  make test ARGS='-L functional'  # functional shards only"
 	@echo "  make test JOBS=1               # serial ctest"
 	@echo "  make BUILD_TYPE=Release configure"
-	@echo "  make COVERAGE=OFF configure    # Debug without gcov"
+	@echo "  make COVERAGE=ON configure     # gcov for Coveralls/CI"
 	@echo "  make CCACHE=OFF configure      # disable ccache even if installed"
 	@echo "  cmake -S . -B build -DFUNCTIONAL_TEST_SHARDS=16  # more functional shards"
-	@echo "  cmake --preset coverage        # same knobs as make configure (see CMakePresets.json)"
+	@echo "  cmake --preset coverage        # Debug + gcov (see CMakePresets.json)"
