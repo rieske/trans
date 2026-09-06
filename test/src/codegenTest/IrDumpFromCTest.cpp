@@ -55,8 +55,7 @@ TEST(IrDumpFromC, vlaSizeofIsUseTimeProduct) {
             "\t$t0 := L$loc1_n\n"
             "\t__t0 := 4\n"
             "\t$t0 := $t0 * __t0\n"
-            "\t$t1 := $t0\n"
-            "\tRETURN $t1\n"
+            "\tRETURN $t0\n"
             "ENDPROC vlasz\n"));
 }
 

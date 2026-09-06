@@ -275,6 +275,150 @@ void foldConstants(Procedure& procedure, IrStringTable& strings) {
 
 namespace {
 
+void rewriteValueUse(int& id, const std::unordered_map<int, int>& copy) {
+    const auto it = copy.find(id);
+    if (it != copy.end()) {
+        id = it->second;
+    }
+}
+
+void rewriteValueUses(Instruction& inst, const std::unordered_map<int, int>& copy) {
+    switch (inst.op) {
+    case Op::Add:
+    case Op::Sub:
+    case Op::Mul:
+    case Op::Div:
+    case Op::Mod:
+    case Op::And:
+    case Op::Or:
+    case Op::Xor:
+    case Op::Shl:
+    case Op::Shr:
+    case Op::ValueCompare:
+    case Op::PointerOffset:
+    case Op::PointerDiff:
+    case Op::Dereference:
+    case Op::VaStart:
+    case Op::VaCopy:
+        rewriteValueUse(inst.arg0, copy);
+        rewriteValueUse(inst.arg1, copy);
+        return;
+    case Op::Assign:
+    case Op::UnaryMinus:
+    case Op::UnaryNot:
+    case Op::CopyPart:
+    case Op::Widen:
+    case Op::Bswap:
+    case Op::Ctz:
+    case Op::Alloca:
+    case Op::ZeroCompare:
+    case Op::Argument:
+    case Op::Return:
+    case Op::VaArg:
+        rewriteValueUse(inst.arg0, copy);
+        return;
+    case Op::LvalueAssign:
+        rewriteValueUse(inst.arg0, copy);
+        rewriteValueUse(inst.result, copy);
+        return;
+    case Op::IndexAddress:
+        if (!symbols::addressBaseUsesLea(inst.baseMode)) {
+            rewriteValueUse(inst.arg0, copy);
+        }
+        rewriteValueUse(inst.arg1, copy);
+        return;
+    case Op::FieldAddress:
+        if (!symbols::addressBaseUsesLea(inst.baseMode)) {
+            rewriteValueUse(inst.arg0, copy);
+        }
+        return;
+    case Op::Call:
+        if (inst.callIndirect) {
+            rewriteValueUse(inst.arg0, copy);
+        }
+        rewriteValueUse(inst.memoryReturnDest, copy);
+        return;
+    case Op::AddressOf:
+    case Op::Inc:
+    case Op::Dec:
+    case Op::AssignConstant:
+    case Op::AssignLabelAddress:
+    case Op::FunctionAddress:
+    case Op::Jump:
+    case Op::Label:
+    case Op::VoidReturn:
+    case Op::VaEnd:
+    case Op::Retrieve:
+        return;
+    }
+}
+
+void killCopy(std::unordered_map<int, int>& copy, int id) {
+    copy.erase(id);
+    for (auto it = copy.begin(); it != copy.end(); ) {
+        if (it->second == id) {
+            it = copy.erase(it);
+        } else {
+            ++it;
+        }
+    }
+}
+
+bool isEligibleCopy(const Instruction& inst, const Procedure& procedure,
+        const std::unordered_set<int>& addressTaken) {
+    if (inst.op != Op::Assign) {
+        return false;
+    }
+    if (addressTaken.count(inst.arg0) != 0 || addressTaken.count(inst.result) != 0) {
+        return false;
+    }
+    const Value* src = findValue(procedure, inst.arg0);
+    const Value* dest = findValue(procedure, inst.result);
+    return src && dest && src->isExpressionTemp() && dest->isExpressionTemp()
+            && src->getType() == dest->getType()
+            && src->getSizeInBytes() == dest->getSizeInBytes()
+            && src->getClassification().gprExtend == dest->getClassification().gprExtend;
+}
+
+} // namespace
+
+void copyPropagate(Procedure& procedure) {
+    std::unordered_set<int> addressTaken;
+    for (const auto& inst : procedure.body) {
+        SymbolRefs refs;
+        collectSymbolRefs(inst, refs);
+        if (refs.addressOfBase != kNoSymbol) {
+            addressTaken.insert(refs.addressOfBase);
+        }
+    }
+
+    std::unordered_map<int, int> copy;
+    for (auto& inst : procedure.body) {
+        if (inst.op == Op::Label) {
+            copy.clear();
+            continue;
+        }
+        rewriteValueUses(inst, copy);
+        if (inst.op == Op::Call) {
+            copy.clear();
+            continue;
+        }
+        if (isEligibleCopy(inst, procedure, addressTaken)) {
+            killCopy(copy, inst.result);
+            const auto src = copy.find(inst.arg0);
+            copy[inst.result] = src == copy.end() ? inst.arg0 : src->second;
+            continue;
+        }
+        SymbolRefs refs;
+        collectSymbolRefs(inst, refs);
+        for (int def : refs.defs) {
+            killCopy(copy, def);
+        }
+    }
+}
+
+namespace {
+
 bool isDeadAssignable(Op op) {
     switch (op) {
     case Op::AssignConstant:
@@ -365,6 +509,7 @@ IntermediateRepresentation runIrPasses(IntermediateRepresentation ir, int optLev
     if (optLevel >= 1) {
         for (auto& procedure : ir.procedures) {
             foldConstants(procedure, ir.strings);
+            copyPropagate(procedure);
             eliminateDeadTemps(procedure);
         }
     }
