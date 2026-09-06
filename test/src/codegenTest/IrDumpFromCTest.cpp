@@ -31,11 +31,10 @@ TEST(IrDumpFromC, ifElse) {
 TEST(IrDumpFromC, call) {
     EXPECT_THAT(compileToIr("int g(int x); int f(int x) { return g(x); }\n"), StrEq(
             "PROC f\n"
-            "\t$t0 := &g (function)\n"
             "\tPARAM L$loc1_x\n"
             "\tCALL g\n"
-            "\tRETRIEVE $t1\n"
-            "\tRETURN $t1\n"
+            "\tRETRIEVE $t0\n"
+            "\tRETURN $t0\n"
             "ENDPROC f\n"));
 }
 
@@ -124,6 +123,12 @@ TEST(IrDumpFromC, ifConstRelDropsDeadArmAtO1) {
     EXPECT_THAT(compileToIr(src, 1), Not(HasSubstr("CMP")));
     EXPECT_THAT(compileToIr(src, 1), Not(HasSubstr(":= 0")));
     EXPECT_THAT(compileToIr(src, 1), HasSubstr(":= 1"));
+}
+
+TEST(IrDumpFromC, unusedIntegerAddDropsAtO1) {
+    const char* src = "int f(int x) { x + 1; return 0; }\n";
+    EXPECT_THAT(compileToIr(src, 0), HasSubstr("+"));
+    EXPECT_THAT(compileToIr(src, 1), Not(HasSubstr("+")));
 }
 
 } // namespace

@@ -572,9 +572,27 @@ bool isDeadAssignable(Op op) {
     switch (op) {
     case Op::AssignConstant:
     case Op::Assign:
+    case Op::AssignLabelAddress:
+    case Op::FunctionAddress:
     case Op::UnaryMinus:
     case Op::UnaryNot:
     case Op::Widen:
+    case Op::CopyPart:
+    case Op::Bswap:
+    case Op::Ctz:
+    case Op::Alloca:
+    case Op::Add:
+    case Op::Sub:
+    case Op::Mul:
+    case Op::Div:
+    case Op::Mod:
+    case Op::And:
+    case Op::Or:
+    case Op::Xor:
+    case Op::Shl:
+    case Op::Shr:
+    case Op::PointerOffset:
+    case Op::PointerDiff:
         return true;
     default:
         return false;

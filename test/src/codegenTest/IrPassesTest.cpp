@@ -642,6 +642,81 @@ TEST(IrPasses, eliminateDeadTemps_keepsAddressTaken) {
     EXPECT_THAT(toString(ir), HasSubstr("t0 := 1"));
 }
 
+TEST(IrPasses, eliminateDeadTemps_dropsUnusedAdd) {
+    IntermediateRepresentation ir;
+    IrN n { ir.strings };
+    ir.procedures.push_back(makeProc(ir.strings, "f", {
+            ir::assignConstant(n("1"), n("t1")),
+            ir::add(n("x"), n("t1"), n("t2")),
+            ir::ret(n("x")),
+    }, exprTemps(ir.strings, { "t1", "t2", "x" })));
+
+    eliminateDeadTemps(ir.procedures.front());
+
+    EXPECT_THAT(toString(ir), StrEq(
+            "PROC f\n"
+            "\tRETURN x\n"
+            "ENDPROC f\n"));
+}
+
+TEST(IrPasses, eliminateDeadTemps_dropsUnusedPointerOffset) {
+    IntermediateRepresentation ir;
+    IrN n { ir.strings };
+    ir.procedures.push_back(makeProc(ir.strings, "f", {
+            ir::assignConstant(n("1"), n("i")),
+            ir::pointerOffset(n("p"), n("i"), 4, n("q"), false),
+            ir::ret(n("p")),
+    }, exprTemps(ir.strings, { "i", "p", "q" }, 8)));
+
+    eliminateDeadTemps(ir.procedures.front());
+
+    EXPECT_THAT(toString(ir), StrEq(
+            "PROC f\n"
+            "\tRETURN p\n"
+            "ENDPROC f\n"));
+}
+
+TEST(IrPasses, eliminateDeadTemps_keepsInc) {
+    IntermediateRepresentation ir;
+    IrN n { ir.strings };
+    ir.procedures.push_back(makeProc(ir.strings, "f", {
+            ir::inc(n("x")),
+            ir::voidReturn(),
+    }, exprTemps(ir.strings, { "x" })));
+
+    eliminateDeadTemps(ir.procedures.front());
+
+    EXPECT_THAT(toString(ir), HasSubstr("INC x"));
+}
+
+TEST(IrPasses, eliminateDeadTemps_keepsStore) {
+    IntermediateRepresentation ir;
+    IrN n { ir.strings };
+    ir.procedures.push_back(makeProc(ir.strings, "f", {
+            ir::assignConstant(n("1"), n("t")),
+            ir::lvalueAssign(n("t"), n("p")),
+            ir::voidReturn(),
+    }, exprTemps(ir.strings, { "t", "p" })));
+
+    eliminateDeadTemps(ir.procedures.front());
+
+    EXPECT_THAT(toString(ir), HasSubstr("t := 1"));
+    EXPECT_THAT(toString(ir), HasSubstr("*p := t"));
+}
+
+TEST(IrPasses, eliminateDeadTemps_keepsCall) {
+    IntermediateRepresentation ir;
+    IrN n { ir.strings };
+    ir.procedures.push_back(makeProc(ir.strings, "f", {
+            ir::call(n("g")),
+            ir::voidReturn(),
+    }));
+
+    eliminateDeadTemps(ir.procedures.front());
+
+    EXPECT_THAT(toString(ir), HasSubstr("CALL g"));
+}
+
 TEST(IrPasses, applyCfgPasses_doesNotDropDeadTemps) {
     IntermediateRepresentation ir;
     IrN n { ir.strings };
