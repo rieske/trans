@@ -435,4 +435,38 @@ TEST(Compiler, enumUnsignedIntUnderlyingSizeofAndValue) {
     program.runAndExpect("4 2147483648 2147483648");
 }
 
+TEST(Compiler, enumeratorBlockScopeObjectRedeclIsError) {
+    SourceProgram program{R"prg(
+        int main() {
+            enum E { K };
+            int K;
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.assertCompilationErrors("redefinition of enumerator");
+}
+
+TEST(Compiler, enumeratorAfterBlockScopeObjectIsError) {
+    SourceProgram program{R"prg(
+        int main() {
+            int K;
+            enum E { K };
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.assertCompilationErrors("redefinition of enumerator");
+}
+
+TEST(Compiler, enumeratorRedefinedAsFunctionDefinitionIsError) {
+    SourceProgram program{R"prg(
+        enum { A = 1 };
+        int A(void) { return 0; }
+        int main() { return 0; }
+    )prg"};
+    program.compile();
+    program.assertCompilationErrors("redefinition of enumerator");
+}
+
 } // namespace

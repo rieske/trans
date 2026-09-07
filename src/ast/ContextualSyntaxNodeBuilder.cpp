@@ -469,11 +469,9 @@ ContextualSyntaxNodeBuilder::ContextualSyntaxNodeBuilder(const parser::Grammar& 
     int s_id_for_enum = grammar.symbolId("id");
     bind(s_enumerator, { s_id_for_enum }, [](AbstractSyntaxTreeBuilderContext& context) {
         auto id = context.popTerminal();
-        if (context.environment().session().enums.containsInCurrentScope(id.value)) {
+        if (!context.environment().addEnumerator(id.value)) {
             context.error(id.context, "redefinition of enumerator `" + id.value + "`");
-            return;
         }
-        context.environment().addEnumerator(id.value);
     });
     bind(s_enumerator, { s_id_for_enum, grammar.symbolId("="), s_conditional_exp }, [](AbstractSyntaxTreeBuilderContext& context) {
                 auto expr = context.popExpression();
@@ -485,11 +483,9 @@ ContextualSyntaxNodeBuilder::ContextualSyntaxNodeBuilder(const parser::Grammar& 
                             "enumerator initializer is not a constant expression: " + id.value);
                     return;
                 }
-                if (context.environment().session().enums.containsInCurrentScope(id.value)) {
+                if (!context.environment().addEnumerator(id.value, std::move(ice))) {
                     context.error(id.context, "redefinition of enumerator `" + id.value + "`");
-                    return;
                 }
-                context.environment().addEnumerator(id.value, std::move(ice));
             });
     bind(s_enumerator_list, { s_enumerator }, doNothing);
     bind(s_enumerator_list, { s_enumerator_list, s_comma, s_enumerator }, [](AbstractSyntaxTreeBuilderContext& context) { context.popTerminal(); });

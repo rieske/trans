@@ -225,4 +225,64 @@ TEST(Compiler, incompleteExternWithInitializerIsError) {
     program.assertCompilationErrors("incomplete type");
 }
 
+TEST(Compiler, repeatedLocalExternIsOk) {
+    SourceProgram program{R"prg(int printf(const char *, ...);
+        int v = 7;
+        int main(void) {
+            extern int v;
+            extern int v;
+            printf("%d", v);
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("7");
+}
+
+TEST(Compiler, localExternArrayUsesCompleteFileScopeType) {
+    SourceProgram program{R"prg(int printf(const char *, ...);
+        int a[] = { 1, 2, 3 };
+        int f(void) {
+            extern int a[];
+            return (int)sizeof(a);
+        }
+        int main(void) {
+            printf("%d", f());
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("12");
+}
+
+TEST(Compiler, localExternArrayCompletionDoesNotLeakToFileScope) {
+    SourceProgram program{R"prg(
+        extern int a[];
+        int f(void) {
+            extern int a[10];
+            return (int)sizeof(a);
+        }
+        int g(void) {
+            return (int)sizeof(a);
+        }
+        int main(void) {
+            return f() + g();
+        }
+    )prg"};
+    program.compile();
+    program.assertCompilationErrors("incomplete");
+}
+
+TEST(Compiler, localExternWithInitializerIsError) {
+    SourceProgram program{R"prg(
+        int w = 3;
+        int main(void) {
+            extern int w = 9;
+            return w;
+        }
+    )prg"};
+    program.compile();
+    program.assertCompilationErrors("has both `extern` and initializer");
+}
+
 } // namespace

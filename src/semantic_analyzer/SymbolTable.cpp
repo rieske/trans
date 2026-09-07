@@ -67,32 +67,34 @@ bool SymbolTable::insertSymbol(std::string name, const type::Type& type, transla
     if (storage == symbols::Storage::Static) {
         objectName = "L$st" + std::to_string(scopeId) + "_" + name;
     } else if (storage == symbols::Storage::Extern) {
-        objectName = name;
-        if (bindBlockScopeExtern(name, type, context) != ObjectBind::Bound) {
-            return false;
-        }
+        return bindBlockScopeExtern(name, type, context);
     }
     return fn.values.insertSymbol(
             { scopeId, name }, type, context, storage, std::move(objectName), name);
 }
 
-ObjectBind SymbolTable::bindBlockScopeExtern(const std::string& name, const type::Type& type,
+bool SymbolTable::bindBlockScopeExtern(const std::string& name, const type::Type& type,
         translation_unit::Context context) {
+    std::optional<type::Type> visible = type;
     if (const symbols::ValueEntry* existing = globalScope.find({ 0, name })) {
         if (existing->getType().isFunction()) {
-            return ObjectBind::TypeConflict;
+            return false;
         }
-        const auto merged = existing->getType().composite(type);
-        if (!merged) {
-            return ObjectBind::TypeConflict;
+        visible = existing->getType().composite(type);
+        if (!visible) {
+            return false;
         }
-        if (!merged->sameQualifiedType(existing->getType())) {
-            globalScope.refineType({ 0, name }, *merged);
-        }
-        return ObjectBind::Bound;
+    } else {
+        globalScope.insertSymbol({ 0, name }, type, context, symbols::Storage::Extern, name, name);
     }
-    globalScope.insertSymbol({ 0, name }, type, context, symbols::Storage::Extern, name, name);
-    return ObjectBind::Bound;
+    auto& fn = openFunction();
+    const unsigned scopeId = currentScopeId();
+    if (const symbols::ValueEntry* declared = fn.values.find({ scopeId, name })) {
+        // Repeating extern names the same object again, so it is not a new binding.
+        return declared->isExtern() && declared->getType().compatibleWith(*visible);
+    }
+    return fn.values.insertSymbol(
+            { scopeId, name }, *visible, context, symbols::Storage::Extern, name, name);
 }
 
 std::string SymbolTable::newConstant(const std::string& value) {

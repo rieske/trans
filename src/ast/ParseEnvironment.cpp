@@ -157,6 +157,10 @@ void ParseEnvironment::tryDefineObject(const DeclarationSpecifiers& specs, Decla
     }
 }
 
+bool ParseEnvironment::enumeratorInCurrentScope(const std::string& name) const {
+    return session_.enums.containsInCurrentScope(name);
+}
+
 bool ParseEnvironment::addEnumerator(std::string name) {
     if (!enumBody_) {
         return addEnumerator(std::move(name), type::fromLiteralBits(0, type::signedInteger()));
@@ -165,7 +169,8 @@ bool ParseEnvironment::addEnumerator(std::string name) {
 }
 
 bool ParseEnvironment::addEnumerator(std::string name, type::IntegerConstant value) {
-    if (session_.enums.containsInCurrentScope(name)) {
+    if (session_.enums.containsInCurrentScope(name)
+            || session_.types.containsInCurrentScope(name)) {
         return false;
     }
     session_.enums.add(name, value);

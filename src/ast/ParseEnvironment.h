@@ -55,6 +55,7 @@ public:
     void tryDefineObject(const DeclarationSpecifiers& specs, Declarator& declarator);
     void maybeRegisterParameterShadow(const std::string& name);
 
+    bool enumeratorInCurrentScope(const std::string& name) const;
     bool addEnumerator(std::string name);
     bool addEnumerator(std::string name, type::IntegerConstant value);
     bool lookupEnumConstant(const std::string& name, type::IntegerConstant& value) const;
