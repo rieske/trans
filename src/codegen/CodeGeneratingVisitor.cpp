@@ -94,14 +94,22 @@ void CodeGeneratingVisitor::emitConvert(int source, int dest,
     emit(ir::assign(source, dest));
 }
 
-void CodeGeneratingVisitor::emitIntegerMulDiv(char op, int left,
+void CodeGeneratingVisitor::emitIntegerMulDiv(type::ArithmeticOp op, int left,
         int right, int result, const type::Type& resultType) {
     if (type::isIntegral(resultType) && type::object_abi::valueWords(resultType.getSize()) > 1) {
         const char* helper = "__multi3";
-        if (op == '/') {
+        switch (op) {
+        case type::ArithmeticOp::Mul:
+            break;
+        case type::ArithmeticOp::Div:
             helper = type::valueIsSigned(resultType) ? "__divti3" : "__udivti3";
-        } else if (op == '%') {
+            break;
+        case type::ArithmeticOp::Mod:
             helper = type::valueIsSigned(resultType) ? "__modti3" : "__umodti3";
+            break;
+        case type::ArithmeticOp::Add:
+        case type::ArithmeticOp::Sub:
+            throw std::logic_error("emitIntegerMulDiv: additive op");
         }
         emit(ir::argument(left));
         emit(ir::argument(right));
@@ -109,12 +117,19 @@ void CodeGeneratingVisitor::emitIntegerMulDiv(char op, int left,
         emit(ir::retrieve(result));
         return;
     }
-    if (op == '*') {
+    switch (op) {
+    case type::ArithmeticOp::Mul:
         emit(ir::mul(left, right, result));
-    } else if (op == '/') {
+        break;
+    case type::ArithmeticOp::Div:
         emit(ir::div(left, right, result, type::valueIsSigned(resultType)));
-    } else {
+        break;
+    case type::ArithmeticOp::Mod:
         emit(ir::mod(left, right, result, type::valueIsSigned(resultType)));
+        break;
+    case type::ArithmeticOp::Add:
+    case type::ArithmeticOp::Sub:
+        throw std::logic_error("emitIntegerMulDiv: additive op");
     }
 }
 
@@ -442,7 +457,8 @@ void CodeGeneratingVisitor::emitIncDec(int name, const type::Type& valueType, bo
     if (valueType.isPointer()) {
         const int one = addScratchValue(type::signedInteger());
         emit(ir::assignConstant(id("1"), one));
-        emitAdditive(increment ? '+' : '-', valueType, type::signedInteger(), name, one, name);
+        emitAdditive(increment ? type::ArithmeticOp::Add : type::ArithmeticOp::Sub,
+                valueType, type::signedInteger(), name, one, name);
         return;
     }
     if (increment) {
@@ -462,7 +478,7 @@ void CodeGeneratingVisitor::visit(ast::PostfixExpression& expression) {
     emit(ir::assign(resultSymbolName, preOperationSymbol));
 
     emitIncDec(resultSymbolName, expression.getResultSymbol(store_)->getType(),
-            expression.lexeme() == "++");
+            expression.op() == type::IncDec::Inc);
 
     // Dereference (and similar) lvalues: value lives in a temp; store new value through the pointer.
     if (expression.operandLvalueSymbol(store_)) {
@@ -477,7 +493,7 @@ void CodeGeneratingVisitor::visit(ast::PrefixExpression& expression) {
 
     const int resultSymbolName = id(*expression.getResultSymbol(store_));
     emitIncDec(resultSymbolName, expression.getResultSymbol(store_)->getType(),
-            expression.lexeme() == "++");
+            expression.op() == type::IncDec::Inc);
 
     if (expression.operandLvalueSymbol(store_)) {
         emitLvalueStore(*expression.getOperandExpression(), resultSymbolName);
@@ -485,7 +501,7 @@ void CodeGeneratingVisitor::visit(ast::PrefixExpression& expression) {
 }
 
 void CodeGeneratingVisitor::visit(ast::UnaryExpression& expression) {
-    if (expression.lexeme() == "sizeof") {
+    if (expression.op() == type::UnaryOp::Sizeof) {
         if (const auto* bytes = expression.sizeofValue(store_)) {
             emit(ir::assignConstant(
                     id(std::to_string(*bytes)),
@@ -499,8 +515,8 @@ void CodeGeneratingVisitor::visit(ast::UnaryExpression& expression) {
 
     expression.visitOperand(*this);
 
-    switch (expression.lexeme().front()) {
-    case '&':
+    switch (expression.op()) {
+    case type::UnaryOp::Addr:
         // &function designator: SA reuses the designator temp (already emitted FunctionAddress).
         if (expression.getOperandExpression()->holdsFunctionDesignator()) {
             break;
@@ -512,7 +528,7 @@ void CodeGeneratingVisitor::visit(ast::UnaryExpression& expression) {
                     id(*expression.getResultSymbol(store_)));
         }
         break;
-    case '*':
+    case type::UnaryOp::Deref:
         if (expression.operandSymbol(store_)->getType().isPointer()) {
             // *fp for pointer-to-function: SA keeps the pointer value (no memory load).
             if (type::isPointerToBareFunction(expression.operandSymbol(store_)->getType())) {
@@ -549,20 +565,20 @@ void CodeGeneratingVisitor::visit(ast::UnaryExpression& expression) {
                     id(*expression.getLvalueSymbol(store_)), id(*expression.getResultSymbol(store_))));
         }
         break;
-    case '+':
+    case type::UnaryOp::Plus:
         emit(ir::assign(
                 convertedResult(*expression.getOperandExpression()),
                 id(*expression.getResultSymbol(store_))));
         break;
-    case '-':
+    case type::UnaryOp::Minus:
         emit(ir::unaryMinus(convertedResult(*expression.getOperandExpression()),
                 id(*expression.getResultSymbol(store_))));
         break;
-    case '~':
+    case type::UnaryOp::BitNot:
         emit(ir::unaryNot(convertedResult(*expression.getOperandExpression()),
                 id(*expression.getResultSymbol(store_))));
         break;
-    case '!':
+    case type::UnaryOp::LogicalNot:
         emit(ir::zeroCompare(id(*expression.operandSymbol(store_))));
         emit(ir::jump(id(*expression.getTruthyLabel(store_)), JumpCondition::IF_EQUAL));
         emit(ir::assignConstant(id("0"), id(*expression.getResultSymbol(store_))));
@@ -571,8 +587,8 @@ void CodeGeneratingVisitor::visit(ast::UnaryExpression& expression) {
         emit(ir::assignConstant(id("1"), id(*expression.getResultSymbol(store_))));
         emit(ir::label(id(*expression.getFalsyLabel(store_))));
         break;
-    default:
-        throw std::runtime_error { "Unidentified unary operator: " + expression.lexeme() };
+    case type::UnaryOp::Sizeof:
+        break;
     }
 }
 
@@ -631,23 +647,25 @@ void CodeGeneratingVisitor::visit(ast::ArithmeticExpression& expression) {
     }
     const type::Type leftType = leftSym->getType();
     const type::Type rightType = rightSym->getType();
-    const char op = expression.lexeme().front();
+    const type::ArithmeticOp op = expression.op();
     const int leftName = convertedResult(*expression.getLeftOperand());
     const int rightName = convertedResult(*expression.getRightOperand());
     const int resultName = id(*resultSym);
 
-    if (op == '+' || op == '-') {
+    switch (op) {
+    case type::ArithmeticOp::Add:
+    case type::ArithmeticOp::Sub:
         emitAdditive(op, leftType, rightType, leftName, rightName, resultName);
         return;
-    }
-    if (op == '*' || op == '/' || op == '%') {
+    case type::ArithmeticOp::Mul:
+    case type::ArithmeticOp::Div:
+    case type::ArithmeticOp::Mod:
         emitMulDiv(op, leftName, rightName, resultName, resultSym->getType());
         return;
     }
-    throw std::runtime_error { "unidentified arithmetic operator: " + expression.lexeme() };
 }
 
-void CodeGeneratingVisitor::emitAdditive(char op, const type::Type& leftType, const type::Type& rightType,
+void CodeGeneratingVisitor::emitAdditive(type::ArithmeticOp op, const type::Type& leftType, const type::Type& rightType,
         int leftName, int rightName, int resultName) {
     const type::PointerArithmeticInfo ptrArith = type::classifyPointerArithmetic(leftType, rightType, op);
     switch (ptrArith.form) {
@@ -672,7 +690,7 @@ void CodeGeneratingVisitor::emitAdditive(char op, const type::Type& leftType, co
             emitSizeofProduct(pointee, size);
             const int bytes = addScratchValue(type::signedInteger());
             emit(ir::pointerDiff(leftName, rightName, 1, bytes));
-            emitIntegerMulDiv('/', bytes, size, resultName, type::signedInteger());
+            emitIntegerMulDiv(type::ArithmeticOp::Div, bytes, size, resultName, type::signedInteger());
             return;
         }
         emit(ir::pointerDiff(leftName, rightName, ptrArith.strideBytes, resultName));
@@ -681,15 +699,18 @@ void CodeGeneratingVisitor::emitAdditive(char op, const type::Type& leftType, co
     case type::PointerArithmeticForm::Invalid:
         throw std::logic_error("pointer arithmetic Invalid should not reach codegen");
     }
-    if (op == '+') {
+    switch (op) {
+    case type::ArithmeticOp::Add:
         emit(ir::add(leftName, rightName, resultName));
         return;
-    }
-    if (op == '-') {
+    case type::ArithmeticOp::Sub:
         emit(ir::sub(leftName, rightName, resultName));
         return;
+    case type::ArithmeticOp::Mul:
+    case type::ArithmeticOp::Div:
+    case type::ArithmeticOp::Mod:
+        throw std::logic_error("emitAdditive: mul/div op");
     }
-    throw std::runtime_error { "unidentified additive operator" };
 }
 
 void CodeGeneratingVisitor::visit(ast::ShiftExpression& expression) {
@@ -699,16 +720,14 @@ void CodeGeneratingVisitor::visit(ast::ShiftExpression& expression) {
     const int leftName = convertedResult(*expression.getLeftOperand());
     const int rightName = convertedResult(*expression.getRightOperand());
     const int resultName = id(*expression.getResultSymbol(store_));
-    switch (expression.lexeme().front()) {
-    case '<':   // <<
+    switch (expression.op()) {
+    case type::ShiftOp::Shl:
         emit(ir::shl(leftName, rightName, resultName));
         break;
-    case '>':   // >>
+    case type::ShiftOp::Shr:
         emit(ir::shr(leftName, rightName, resultName,
                 type::valueIsSigned(expression.getResultSymbol(store_)->getType())));
         break;
-    default:
-        throw std::runtime_error { "unidentified shift operator!" };
     }
 }
 
@@ -726,20 +745,25 @@ void CodeGeneratingVisitor::visit(ast::ComparisonExpression& expression) {
             signedRel));
 
     const int truthyLabel = id(*expression.getTruthyLabel(store_));
-    if (expression.lexeme() == ">") {
+    switch (expression.op()) {
+    case type::ComparisonOp::Gt:
         emit(ir::jump(truthyLabel, JumpCondition::IF_ABOVE, signedRel));
-    } else if (expression.lexeme() == "<") {
+        break;
+    case type::ComparisonOp::Lt:
         emit(ir::jump(truthyLabel, JumpCondition::IF_BELOW, signedRel));
-    } else if (expression.lexeme() == "<=") {
+        break;
+    case type::ComparisonOp::Le:
         emit(ir::jump(truthyLabel, JumpCondition::IF_BELOW_OR_EQUAL, signedRel));
-    } else if (expression.lexeme() == ">=") {
+        break;
+    case type::ComparisonOp::Ge:
         emit(ir::jump(truthyLabel, JumpCondition::IF_ABOVE_OR_EQUAL, signedRel));
-    } else if (expression.lexeme() == "==") {
+        break;
+    case type::ComparisonOp::Eq:
         emit(ir::jump(truthyLabel, JumpCondition::IF_EQUAL));
-    } else if (expression.lexeme() == "!=") {
+        break;
+    case type::ComparisonOp::Ne:
         emit(ir::jump(truthyLabel, JumpCondition::IF_NOT_EQUAL));
-    } else {
-        throw std::runtime_error { "unidentified ml_op operator!\n" };
+        break;
     }
 
     emit(ir::assignConstant(id("0"), id(*expression.getResultSymbol(store_))));
@@ -756,18 +780,16 @@ void CodeGeneratingVisitor::visit(ast::BitwiseExpression& expression) {
     const int leftName = convertedResult(*expression.getLeftOperand());
     const int rightName = convertedResult(*expression.getRightOperand());
     const int resultName = id(*expression.getResultSymbol(store_));
-    switch (expression.lexeme().front()) {
-    case '&':
+    switch (expression.op()) {
+    case type::BitwiseOp::BitAnd:
         emit(ir::andOp(leftName, rightName, resultName));
         break;
-    case '|':
+    case type::BitwiseOp::BitOr:
         emit(ir::orOp(leftName, rightName, resultName));
         break;
-    case '^':
+    case type::BitwiseOp::BitXor:
         emit(ir::xorOp(leftName, rightName, resultName));
         break;
-    default:
-        throw std::runtime_error { "no semantic actions defined for bitwise operator: " + expression.lexeme() };
     }
 }
 
@@ -827,33 +849,47 @@ void CodeGeneratingVisitor::visit(ast::AssignmentExpression& expression) {
     expression.visitLeftOperand(*this);
     expression.visitRightOperand(*this);
 
-    const auto& op = expression.lexeme();
+    const type::AssignOp op = expression.op();
     const int resultName = id(*expression.getResultSymbol(store_));
     const int rightName = convertedResult(*expression.getRightOperand());
-    if (op == "+=" || op == "-=") {
+    switch (op) {
+    case type::AssignOp::AddAssign:
+    case type::AssignOp::SubAssign: {
         const type::Type leftType = expression.getResultSymbol(store_)->getType();
         const type::Type rightType = expression.rightOperandSymbol(store_)->getType();
-        emitAdditive(op.front(), leftType, rightType,
-                resultName, rightName, resultName);
+        emitAdditive(op == type::AssignOp::AddAssign ? type::ArithmeticOp::Add : type::ArithmeticOp::Sub,
+                leftType, rightType, resultName, rightName, resultName);
+        break;
     }
-    else if (op == "*="
-            || op == "/="
-            || op == "%=") {
-        emitMulDiv(op.front(), resultName, rightName, resultName,
+    case type::AssignOp::MulAssign:
+        emitMulDiv(type::ArithmeticOp::Mul, resultName, rightName, resultName,
                 expression.getResultSymbol(store_)->getType());
-    }
-    else if (op == "&=")
+        break;
+    case type::AssignOp::DivAssign:
+        emitMulDiv(type::ArithmeticOp::Div, resultName, rightName, resultName,
+                expression.getResultSymbol(store_)->getType());
+        break;
+    case type::AssignOp::ModAssign:
+        emitMulDiv(type::ArithmeticOp::Mod, resultName, rightName, resultName,
+                expression.getResultSymbol(store_)->getType());
+        break;
+    case type::AssignOp::AndAssign:
         emit(ir::andOp(resultName, rightName, resultName));
-    else if (op == "^=")
+        break;
+    case type::AssignOp::XorAssign:
         emit(ir::xorOp(resultName, rightName, resultName));
-    else if (op == "|=")
+        break;
+    case type::AssignOp::OrAssign:
         emit(ir::orOp(resultName, rightName, resultName));
-    else if (op == "<<=") {
+        break;
+    case type::AssignOp::ShlAssign:
         emit(ir::shl(resultName, rightName, resultName));
-    } else if (op == ">>=") {
+        break;
+    case type::AssignOp::ShrAssign:
         emit(ir::shr(resultName, rightName, resultName,
                 type::valueIsSigned(expression.getResultSymbol(store_)->getType())));
-    } else if (op == "=") {
+        break;
+    case type::AssignOp::Assign:
         if (expression.leftOperandLvalueSymbol(store_)) {
             emit(ir::assign(rightName, resultName));
             emitLvalueStore(*expression.getLeftOperand(), resultName);
@@ -861,8 +897,6 @@ void CodeGeneratingVisitor::visit(ast::AssignmentExpression& expression) {
             emit(ir::assign(rightName, resultName));
         }
         return;
-    } else {
-        throw std::runtime_error { "unidentified assignment operator: " + op };
     }
 
     if (expression.leftOperandLvalueSymbol(store_)) {

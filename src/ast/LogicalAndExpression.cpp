@@ -2,6 +2,7 @@
 
 #include "AbstractSyntaxTreeVisitor.h"
 #include "types/IntegerConstant.h"
+#include "types/Operator.h"
 
 namespace ast {
 
@@ -14,7 +15,7 @@ void LogicalAndExpression::accept(AbstractSyntaxTreeVisitor& visitor) {
 }
 
 bool LogicalAndExpression::evaluateConstant(type::IntegerConstant& value) const {
-    return foldOperands(value, "&&");
+    return foldOperands(value, type::BinaryOp::LogAnd);
 }
 
 } // namespace ast

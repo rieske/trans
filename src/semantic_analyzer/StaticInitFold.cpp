@@ -112,15 +112,15 @@ std::optional<symbols::StaticAddress> foldIndexDesignator(
 
 std::optional<symbols::StaticAddress> foldPointerArithmetic(
         const ast::ArithmeticExpression& arith, const symbols::AnnotationStore& store) {
-    const std::string opLex = arith.lexeme();
-    if (opLex != "+" && opLex != "-") {
+    const type::ArithmeticOp opLex = arith.op();
+    if (opLex != type::ArithmeticOp::Add && opLex != type::ArithmeticOp::Sub) {
         return std::nullopt;
     }
     const ast::Expression& left = *arith.getLeftOperand();
     const ast::Expression& right = *arith.getRightOperand();
     const type::PointerArithmeticInfo info = type::classifyPointerArithmetic(
             type::afterLvalueConversion(left.valueType(store)),
-            type::afterLvalueConversion(right.valueType(store)), opLex.front());
+            type::afterLvalueConversion(right.valueType(store)), opLex);
     if (info.form != type::PointerArithmeticForm::PtrPlusInt
             && info.form != type::PointerArithmeticForm::IntPlusPtr
             && info.form != type::PointerArithmeticForm::PtrMinusInt) {
@@ -158,7 +158,7 @@ std::optional<symbols::StaticAddress> foldDesignatorAddress(
         return foldIndexDesignator(static_cast<const ast::ArrayAccess&>(expr), store);
     case ast::ExprKind::Unary: {
         const auto& unary = static_cast<const ast::UnaryExpression&>(expr);
-        if (unary.lexeme() == "*" && unary.getOperandExpression()) {
+        if (unary.op() == type::UnaryOp::Deref && unary.getOperandExpression()) {
             return foldAddress(*unary.getOperandExpression(), store);
         }
         break;
@@ -194,7 +194,7 @@ std::optional<symbols::StaticAddress> foldAddress(
     }
     case ast::ExprKind::Unary: {
         const auto& unary = static_cast<const ast::UnaryExpression&>(expr);
-        if (unary.lexeme() == "&" && unary.getOperandExpression()) {
+        if (unary.op() == type::UnaryOp::Addr && unary.getOperandExpression()) {
             return foldDesignatorAddress(*unary.getOperandExpression(), store);
         }
         break;
@@ -230,8 +230,8 @@ std::optional<symbols::StaticInitValue> foldFloating(
         return std::nullopt;
     }
     const auto& unary = static_cast<const ast::UnaryExpression&>(expr);
-    const std::string op = unary.lexeme();
-    if (op != "+" && op != "-") {
+    const type::UnaryOp op = unary.op();
+    if (op != type::UnaryOp::Plus && op != type::UnaryOp::Minus) {
         return std::nullopt;
     }
     auto operand = foldStaticInit(*unary.getOperandExpression(), store);
@@ -239,7 +239,7 @@ std::optional<symbols::StaticInitValue> foldFloating(
         return std::nullopt;
     }
     if (auto* fp = std::get_if<symbols::StaticFloat>(&*operand)) {
-        if (op == "-") {
+        if (op == type::UnaryOp::Minus) {
             util::FloatingBits bits { fp->bits, fp->bitsHi, fp->sizeBytes };
             util::negateFloating(bits);
             fp->bits = bits.bits;
@@ -248,8 +248,8 @@ std::optional<symbols::StaticInitValue> foldFloating(
         return *operand;
     }
     if (auto* integer = std::get_if<symbols::StaticInteger>(&*operand)) {
-        if (op == "-") {
-            auto negated = type::foldUnary("-", integer->value);
+        if (op == type::UnaryOp::Minus) {
+            auto negated = type::foldUnary(type::UnaryOp::Minus, integer->value);
             if (!negated) {
                 return std::nullopt;
             }

@@ -7,9 +7,9 @@
 namespace ast {
 
 AssignmentExpression::AssignmentExpression(std::unique_ptr<Expression> leftHandSide,
-        std::string lexeme,
+        type::AssignOp op,
         std::unique_ptr<Expression> rightHandSide) :
-        BinaryOpExpression(std::move(leftHandSide), std::move(lexeme), std::move(rightHandSide))
+        BinaryOpExpression(std::move(leftHandSide), op, std::move(rightHandSide))
 {
 }
 

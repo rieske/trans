@@ -2,17 +2,17 @@
 #define _U_EXPR_NODE_H_
 
 #include <memory>
-#include <string>
 
 #include "symbols/AnnotationStore.h"
 #include "symbols/LabelEntry.h"
 #include "ast/UnaryOpExpression.h"
+#include "types/Operator.h"
 
 namespace ast {
 
-class UnaryExpression: public UnaryOpExpression {
+class UnaryExpression: public UnaryOpExpression<type::UnaryOp> {
 public:
-    UnaryExpression(std::string lexeme, std::unique_ptr<Expression> castExpression);
+    UnaryExpression(type::UnaryOp op, std::unique_ptr<Expression> castExpression);
 
     void accept(AbstractSyntaxTreeVisitor& visitor) override;
     ExprKind exprKind() const override { return ExprKind::Unary; }

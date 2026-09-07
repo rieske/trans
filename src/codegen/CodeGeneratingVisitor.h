@@ -9,6 +9,7 @@
 #include "ast/AbstractSyntaxTreeVisitor.h"
 #include "symbols/AnnotationStore.h"
 #include "symbols/LabelEntry.h"
+#include "types/Operator.h"
 #include "types/Type.h"
 
 namespace ast {
@@ -111,11 +112,11 @@ private:
     int convertedResult(ast::Expression& expression);
     void emitStructFieldInits(int object,
             const std::vector<symbols::StructFieldInit>& fieldStores);
-    void emitAdditive(char op, const type::Type& leftType, const type::Type& rightType,
+    void emitAdditive(type::ArithmeticOp op, const type::Type& leftType, const type::Type& rightType,
             int left, int right, int result);
-    void emitMulDiv(char op, int left, int right, int result, const type::Type& resultType);
-    void emitIntegerMulDiv(char op, int left, int right, int result, const type::Type& resultType);
-    void emitComplexMulDiv(char op, int left, int right, int result, const type::Type& resultType);
+    void emitMulDiv(type::ArithmeticOp op, int left, int right, int result, const type::Type& resultType);
+    void emitIntegerMulDiv(type::ArithmeticOp op, int left, int right, int result, const type::Type& resultType);
+    void emitComplexMulDiv(type::ArithmeticOp op, int left, int right, int result, const type::Type& resultType);
     int addScratchValue(const type::Type& scratchType);
     void emitSizeofProduct(const type::Type& measured, int result);
     struct ScaledIndex {

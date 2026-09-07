@@ -209,25 +209,25 @@ TEST(TypeQuery, classifyPointerArithmeticForms) {
     type::Type i = type::signedInteger();
     type::Type pi = type::pointer(i);
 
-    auto none = type::classifyPointerArithmetic(i, i, '+');
+    auto none = type::classifyPointerArithmetic(i, i, type::ArithmeticOp::Add);
     EXPECT_EQ(none.form, type::PointerArithmeticForm::None);
 
-    auto ppi = type::classifyPointerArithmetic(pi, i, '+');
+    auto ppi = type::classifyPointerArithmetic(pi, i, type::ArithmeticOp::Add);
     EXPECT_EQ(ppi.form, type::PointerArithmeticForm::PtrPlusInt);
     EXPECT_TRUE(ppi.resultType.isPointer());
     EXPECT_EQ(ppi.strideBytes, 4);
 
-    auto ipp = type::classifyPointerArithmetic(i, pi, '+');
+    auto ipp = type::classifyPointerArithmetic(i, pi, type::ArithmeticOp::Add);
     EXPECT_EQ(ipp.form, type::PointerArithmeticForm::IntPlusPtr);
 
-    auto pmi = type::classifyPointerArithmetic(pi, i, '-');
+    auto pmi = type::classifyPointerArithmetic(pi, i, type::ArithmeticOp::Sub);
     EXPECT_EQ(pmi.form, type::PointerArithmeticForm::PtrMinusInt);
 
-    auto pmp = type::classifyPointerArithmetic(pi, pi, '-');
+    auto pmp = type::classifyPointerArithmetic(pi, pi, type::ArithmeticOp::Sub);
     EXPECT_EQ(pmp.form, type::PointerArithmeticForm::PtrMinusPtr);
     EXPECT_TRUE(pmp.resultType.isPrimitive());
 
-    auto inv = type::classifyPointerArithmetic(pi, pi, '+');
+    auto inv = type::classifyPointerArithmetic(pi, pi, type::ArithmeticOp::Add);
     EXPECT_EQ(inv.form, type::PointerArithmeticForm::Invalid);
 }
 
@@ -259,28 +259,28 @@ TEST(TypeQuery, arithmeticExpressionResultForms) {
     type::Type pi = type::pointer(i);
     type::Type arr = type::array(i, 4);
 
-    auto ptrPlus = type::arithmeticExpressionResult(pi, i, '+');
+    auto ptrPlus = type::arithmeticExpressionResult(pi, i, type::ArithmeticOp::Add);
     ASSERT_TRUE(ptrPlus.has_value());
     EXPECT_TRUE(ptrPlus->equivalentTo(pi));
 
-    auto arrPlus = type::arithmeticExpressionResult(arr, i, '+');
+    auto arrPlus = type::arithmeticExpressionResult(arr, i, type::ArithmeticOp::Add);
     ASSERT_TRUE(arrPlus.has_value());
     EXPECT_TRUE(arrPlus->equivalentTo(pi));
 
-    auto ptrDiff = type::arithmeticExpressionResult(pi, pi, '-');
+    auto ptrDiff = type::arithmeticExpressionResult(pi, pi, type::ArithmeticOp::Sub);
     ASSERT_TRUE(ptrDiff.has_value());
     EXPECT_TRUE(ptrDiff->equivalentTo(i));
 
-    auto uac = type::arithmeticExpressionResult(c, c, '+');
+    auto uac = type::arithmeticExpressionResult(c, c, type::ArithmeticOp::Add);
     ASSERT_TRUE(uac.has_value());
     EXPECT_TRUE(uac->equivalentTo(i));
 
-    auto mul = type::arithmeticExpressionResult(i, i, '*');
+    auto mul = type::arithmeticExpressionResult(i, i, type::ArithmeticOp::Mul);
     ASSERT_TRUE(mul.has_value());
     EXPECT_TRUE(mul->equivalentTo(i));
 
-    EXPECT_FALSE(type::arithmeticExpressionResult(pi, pi, '+').has_value());
-    EXPECT_FALSE(type::arithmeticExpressionResult(pi, i, '*').has_value());
+    EXPECT_FALSE(type::arithmeticExpressionResult(pi, pi, type::ArithmeticOp::Add).has_value());
+    EXPECT_FALSE(type::arithmeticExpressionResult(pi, i, type::ArithmeticOp::Mul).has_value());
 }
 
 TEST(TypeQuery, arraySubscriptInfoDualFallbackToValuePointer) {
@@ -452,27 +452,27 @@ TEST(TypeQuery, needsBoolConvert) {
 }
 
 TEST(TypeQuery, assignmentConvertTargetPromotesShiftCount) {
-    EXPECT_TRUE(type::assignmentConvertTarget("=", type::signedInt128(), type::signedInteger())
+    EXPECT_TRUE(type::assignmentConvertTarget(type::AssignOp::Assign, type::signedInt128(), type::signedInteger())
             .equivalentTo(type::signedInt128()));
-    EXPECT_TRUE(type::assignmentConvertTarget("+=", type::signedInt128(), type::signedInteger())
+    EXPECT_TRUE(type::assignmentConvertTarget(type::AssignOp::AddAssign, type::signedInt128(), type::signedInteger())
             .equivalentTo(type::signedInt128()));
-    EXPECT_TRUE(type::assignmentConvertTarget("&=", type::signedLong(), type::signedCharacter())
+    EXPECT_TRUE(type::assignmentConvertTarget(type::AssignOp::AndAssign, type::signedLong(), type::signedCharacter())
             .equivalentTo(type::signedLong()));
-    EXPECT_TRUE(type::assignmentConvertTarget("<<=", type::signedInt128(), type::signedCharacter())
+    EXPECT_TRUE(type::assignmentConvertTarget(type::AssignOp::ShlAssign, type::signedInt128(), type::signedCharacter())
             .equivalentTo(type::signedInteger()));
-    EXPECT_TRUE(type::assignmentConvertTarget(">>=", type::signedLong(), type::unsignedCharacter())
+    EXPECT_TRUE(type::assignmentConvertTarget(type::AssignOp::ShrAssign, type::signedLong(), type::unsignedCharacter())
             .equivalentTo(type::signedInteger()));
-    EXPECT_TRUE(type::assignmentConvertTarget("<<=", type::signedLong(), type::signedInteger())
+    EXPECT_TRUE(type::assignmentConvertTarget(type::AssignOp::ShlAssign, type::signedLong(), type::signedInteger())
             .equivalentTo(type::signedInteger()));
 }
 
 TEST(TypeQuery, assignmentConvertTargetPointerPlusEqualKeepsInteger) {
     type::Type pi = type::pointer(type::signedInteger());
-    EXPECT_TRUE(type::assignmentConvertTarget("+=", pi, type::signedInteger())
+    EXPECT_TRUE(type::assignmentConvertTarget(type::AssignOp::AddAssign, pi, type::signedInteger())
             .equivalentTo(type::signedInteger()));
-    EXPECT_TRUE(type::assignmentConvertTarget("-=", pi, type::signedCharacter())
+    EXPECT_TRUE(type::assignmentConvertTarget(type::AssignOp::SubAssign, pi, type::signedCharacter())
             .equivalentTo(type::signedInteger()));
-    EXPECT_TRUE(type::assignmentConvertTarget("=", pi, type::signedInteger())
+    EXPECT_TRUE(type::assignmentConvertTarget(type::AssignOp::Assign, pi, type::signedInteger())
             .equivalentTo(pi));
 }
 

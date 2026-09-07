@@ -5,6 +5,7 @@
 #include <optional>
 #include <string>
 
+#include "Operator.h"
 #include "Type.h"
 
 namespace type {
@@ -43,34 +44,35 @@ struct PointerArithmeticInfo {
     int strideBytes { 1 };
 };
 
-// Classify `left op right` for op in {+, -}. Result type is the pointer type or int (ptrdiff).
-inline PointerArithmeticInfo classifyPointerArithmetic(const Type& left, const Type& right, char op) {
+// Classify `left op right` for Add/Sub. Result type is the pointer type or int (ptrdiff).
+inline PointerArithmeticInfo classifyPointerArithmetic(const Type& left, const Type& right,
+        ArithmeticOp op) {
     PointerArithmeticInfo info;
-    if (op != '+' && op != '-') {
+    if (op != ArithmeticOp::Add && op != ArithmeticOp::Sub) {
         return info;
     }
     if (!left.isPointer() && !right.isPointer()) {
         return info;
     }
-    if (op == '+' && left.isPointer() && isIntegralScalar(right)) {
+    if (op == ArithmeticOp::Add && left.isPointer() && isIntegralScalar(right)) {
         info.form = PointerArithmeticForm::PtrPlusInt;
         info.resultType = left;
         info.strideBytes = pointerElementStride(left);
         return info;
     }
-    if (op == '+' && isIntegralScalar(left) && right.isPointer()) {
+    if (op == ArithmeticOp::Add && isIntegralScalar(left) && right.isPointer()) {
         info.form = PointerArithmeticForm::IntPlusPtr;
         info.resultType = right;
         info.strideBytes = pointerElementStride(right);
         return info;
     }
-    if (op == '-' && left.isPointer() && isIntegralScalar(right)) {
+    if (op == ArithmeticOp::Sub && left.isPointer() && isIntegralScalar(right)) {
         info.form = PointerArithmeticForm::PtrMinusInt;
         info.resultType = left;
         info.strideBytes = pointerElementStride(left);
         return info;
     }
-    if (op == '-' && left.isPointer() && right.isPointer()) {
+    if (op == ArithmeticOp::Sub && left.isPointer() && right.isPointer()) {
         info.form = PointerArithmeticForm::PtrMinusPtr;
         info.resultType = signedInteger();
         info.strideBytes = pointerElementStride(left);
@@ -313,11 +315,12 @@ inline Type defaultArgPromote(const Type& t) {
 
 // Assignment RHS convert dest. <<= >>=: integer-promote the count, not the LHS type.
 // Pointer +=/-=: the integer stays an integer (C 6.5.16.2); do not convert it to the pointer type.
-inline Type assignmentConvertTarget(const std::string& op, const Type& dest, const Type& source) {
-    if (op == "<<=" || op == ">>=") {
+inline Type assignmentConvertTarget(AssignOp op, const Type& dest, const Type& source) {
+    if (op == AssignOp::ShlAssign || op == AssignOp::ShrAssign) {
         return integerPromote(source);
     }
-    if ((op == "+=" || op == "-=") && dest.isPointer() && isIntegralScalar(source)) {
+    if ((op == AssignOp::AddAssign || op == AssignOp::SubAssign)
+            && dest.isPointer() && isIntegralScalar(source)) {
         return integerPromote(source);
     }
     return dest;
@@ -382,7 +385,7 @@ inline Type usualArithmeticResult(const Type& left, const Type& right) {
 // Pointer forms use classifyPointerArithmetic; pure arithmetic uses UAC.
 // nullopt: invalid pointer arithmetic or non-arithmetic operands.
 inline std::optional<Type> arithmeticExpressionResult(const Type& leftRaw, const Type& rightRaw,
-        char op) {
+        ArithmeticOp op) {
     const Type left = afterLvalueConversion(leftRaw);
     const Type right = afterLvalueConversion(rightRaw);
     const PointerArithmeticInfo ptrArith = classifyPointerArithmetic(left, right, op);

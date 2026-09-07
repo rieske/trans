@@ -15,22 +15,23 @@ int CodeGeneratingVisitor::addScratchValue(const type::Type& scratchType) {
 
 namespace {
 
-const char* complexLibgcc(char op, const type::Type& real) {
+const char* complexLibgcc(type::ArithmeticOp op, const type::Type& real) {
+    const bool div = op == type::ArithmeticOp::Div;
     if (type::isLongDouble(real)) {
-        return op == '/' ? "__divxc3" : "__mulxc3";
+        return div ? "__divxc3" : "__mulxc3";
     }
     if (type::isDouble(real)) {
-        return op == '/' ? "__divdc3" : "__muldc3";
+        return div ? "__divdc3" : "__muldc3";
     }
     if (type::isFloat(real)) {
-        return op == '/' ? "__divsc3" : "__mulsc3";
+        return div ? "__divsc3" : "__mulsc3";
     }
     throw std::logic_error { "complexLibgcc: corresponding real is not float, double, or long double" };
 }
 
 } // namespace
 
-void CodeGeneratingVisitor::emitComplexMulDiv(char op, int left,
+void CodeGeneratingVisitor::emitComplexMulDiv(type::ArithmeticOp op, int left,
         int right, int result, const type::Type& resultType) {
     const type::Type real = type::correspondingReal(resultType);
     const char* helper = complexLibgcc(op, real);
@@ -50,7 +51,7 @@ void CodeGeneratingVisitor::emitComplexMulDiv(char op, int left,
     emit(ir::retrieve(result));
 }
 
-void CodeGeneratingVisitor::emitMulDiv(char op, int left,
+void CodeGeneratingVisitor::emitMulDiv(type::ArithmeticOp op, int left,
         int right, int result, const type::Type& resultType) {
     if (type::isComplex(resultType)) {
         emitComplexMulDiv(op, left, right, result, resultType);

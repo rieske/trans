@@ -86,6 +86,7 @@ add_executable(typesTest
     typesTest/FunctionTest.cpp
     typesTest/TypeQueryTest.cpp
     typesTest/IntegerConstantTest.cpp
+    typesTest/OperatorTest.cpp
     typesTest/ObjectAbiTest.cpp
     typesTest/SysVClassifyTest.cpp
     )

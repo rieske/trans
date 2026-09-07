@@ -150,29 +150,29 @@ IntegerConstant nextEnumerator(const IntegerConstant& value) {
     return fromLiteralBits(bits, enumUnderlyingType(v, v));
 }
 
-std::optional<IntegerConstant> foldUnary(const std::string& op, IntegerConstant operand) {
-    if (op == "!") {
+std::optional<IntegerConstant> foldUnary(UnaryOp op, IntegerConstant operand) {
+    if (op == UnaryOp::LogicalNot) {
         return canonicalize(isZero(operand), signedInteger());
     }
     if (!isIntegral(operand.type)) {
         return std::nullopt;
     }
     operand = convert(operand, integerPromote(operand.type));
-    if (op == "+") {
+    switch (op) {
+    case UnaryOp::Plus:
         return operand;
-    }
-    if (op == "-") {
+    case UnaryOp::Minus:
         return canonicalize(static_cast<Bits>(-signedValue(operand)), operand.type);
-    }
-    if (op == "~") {
+    case UnaryOp::BitNot:
         return canonicalize(~operand.bits, operand.type);
+    default:
+        return std::nullopt;
     }
-    return std::nullopt;
 }
 
-std::optional<IntegerConstant> foldBinary(const std::string& op, IntegerConstant left,
+std::optional<IntegerConstant> foldBinary(BinaryOp op, IntegerConstant left,
         IntegerConstant right) {
-    if (op == "<<" || op == ">>") {
+    if (op == BinaryOp::Shl || op == BinaryOp::Shr) {
         if (!isIntegral(left.type) || !isIntegral(right.type)) {
             return std::nullopt;
         }
@@ -184,7 +184,7 @@ std::optional<IntegerConstant> foldBinary(const std::string& op, IntegerConstant
             return std::nullopt;
         }
         const int count = static_cast<int>(asUnsigned(right));
-        if (op == "<<") {
+        if (op == BinaryOp::Shl) {
             return canonicalize(left.bits << count, left.type);
         }
         if (signedIntegral(left.type)) {
@@ -192,10 +192,10 @@ std::optional<IntegerConstant> foldBinary(const std::string& op, IntegerConstant
         }
         return canonicalize(asUnsigned(left) >> count, left.type);
     }
-    if (op == "&&") {
+    if (op == BinaryOp::LogAnd) {
         return canonicalize(!isZero(left) && !isZero(right), signedInteger());
     }
-    if (op == "||") {
+    if (op == BinaryOp::LogOr) {
         return canonicalize(!isZero(left) || !isZero(right), signedInteger());
     }
     if (!isIntegral(left.type) || !isIntegral(right.type)) {
@@ -208,52 +208,80 @@ std::optional<IntegerConstant> foldBinary(const std::string& op, IntegerConstant
 
     auto cmp = [&](bool signedLess, bool unsignedLess, bool eq) -> IntegerConstant {
         bool result = false;
-        if (op == "<") {
+        switch (op) {
+        case BinaryOp::Lt:
             result = uns ? unsignedLess : signedLess;
-        } else if (op == ">") {
+            break;
+        case BinaryOp::Gt:
             result = uns ? !unsignedLess && !eq : !signedLess && !eq;
-        } else if (op == "<=") {
+            break;
+        case BinaryOp::Le:
             result = uns ? unsignedLess || eq : signedLess || eq;
-        } else if (op == ">=") {
+            break;
+        case BinaryOp::Ge:
             result = uns ? !unsignedLess : !signedLess;
-        } else if (op == "==") {
+            break;
+        case BinaryOp::Eq:
             result = eq;
-        } else if (op == "!=") {
+            break;
+        case BinaryOp::Ne:
             result = !eq;
+            break;
+        default:
+            break;
         }
         return canonicalize(result, signedInteger());
     };
 
-    if (op == "<" || op == ">" || op == "<=" || op == ">=" || op == "==" || op == "!=") {
+    switch (op) {
+    case BinaryOp::Lt:
+    case BinaryOp::Gt:
+    case BinaryOp::Le:
+    case BinaryOp::Ge:
+    case BinaryOp::Eq:
+    case BinaryOp::Ne: {
         const bool eq = asUnsigned(left) == asUnsigned(right);
         return cmp(signedValue(left) < signedValue(right), asUnsigned(left) < asUnsigned(right), eq);
     }
+    default:
+        break;
+    }
 
     Bits result = 0;
-    if (op == "+") {
+    switch (op) {
+    case BinaryOp::Add:
         result = left.bits + right.bits;
-    } else if (op == "-") {
+        break;
+    case BinaryOp::Sub:
         result = left.bits - right.bits;
-    } else if (op == "*") {
+        break;
+    case BinaryOp::Mul:
         result = left.bits * right.bits;
-    } else if (op == "/" || op == "%") {
+        break;
+    case BinaryOp::Div:
+    case BinaryOp::Mod:
         if (isZero(right)) {
             return std::nullopt;
         }
         if (uns) {
-            result = op == "/" ? asUnsigned(left) / asUnsigned(right)
-                               : asUnsigned(left) % asUnsigned(right);
+            result = op == BinaryOp::Div ? asUnsigned(left) / asUnsigned(right)
+                                         : asUnsigned(left) % asUnsigned(right);
         } else {
-            result = op == "/" ? static_cast<Bits>(signedValue(left) / signedValue(right))
-                               : static_cast<Bits>(signedValue(left) % signedValue(right));
+            result = op == BinaryOp::Div
+                    ? static_cast<Bits>(signedValue(left) / signedValue(right))
+                    : static_cast<Bits>(signedValue(left) % signedValue(right));
         }
-    } else if (op == "&") {
+        break;
+    case BinaryOp::BitAnd:
         result = left.bits & right.bits;
-    } else if (op == "|") {
+        break;
+    case BinaryOp::BitOr:
         result = left.bits | right.bits;
-    } else if (op == "^") {
+        break;
+    case BinaryOp::BitXor:
         result = left.bits ^ right.bits;
-    } else {
+        break;
+    default:
         return std::nullopt;
     }
     return canonicalize(result, common);

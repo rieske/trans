@@ -7,8 +7,8 @@
 
 namespace ast {
 
-UnaryExpression::UnaryExpression(std::string lexeme, std::unique_ptr<Expression> castExpression) :
-        UnaryOpExpression(std::move(castExpression), std::move(lexeme))
+UnaryExpression::UnaryExpression(type::UnaryOp op, std::unique_ptr<Expression> castExpression) :
+        UnaryOpExpression(std::move(castExpression), op)
 {
 }
 
@@ -21,41 +21,42 @@ std::optional<type::Type> UnaryExpression::typeAtParseTime(const ParseEnvironmen
     if (!inner) {
         return std::nullopt;
     }
-    const std::string op = lexeme();
-    if (op == "*") {
+    switch (op()) {
+    case type::UnaryOp::Deref:
         return type::afterLvalueConversion(*inner).indexElement();
-    }
-    if (op == "&") {
+    case type::UnaryOp::Addr:
         return type::pointer(*inner);
-    }
-    if (op == "sizeof") {
+    case type::UnaryOp::Sizeof:
         return type::signedInteger();
-    }
-    const type::Type converted = type::afterLvalueConversion(*inner);
-    if (op == "!") {
+    case type::UnaryOp::LogicalNot: {
+        const type::Type converted = type::afterLvalueConversion(*inner);
         if (!type::isProductScalar(converted) && !type::isBareFunction(*inner)) {
             return std::nullopt;
         }
         return type::signedInteger();
     }
-    if (op == "~") {
+    case type::UnaryOp::BitNot: {
+        const type::Type converted = type::afterLvalueConversion(*inner);
         if (!type::isIntegral(converted)) {
             return std::nullopt;
         }
         return type::integerPromote(converted);
     }
-    if (op == "+" || op == "-") {
+    case type::UnaryOp::Plus:
+    case type::UnaryOp::Minus: {
+        const type::Type converted = type::afterLvalueConversion(*inner);
         if (!type::isArithmeticType(converted)) {
             return std::nullopt;
         }
         return type::integerPromote(converted);
+    }
     }
     return std::nullopt;
 }
 
 bool UnaryExpression::isLval() const {
     // Only dereference yields an lvalue; +a, -a, !a, &a are rvalues.
-    return lexeme() == "*";
+    return op() == type::UnaryOp::Deref;
 }
 
 void UnaryExpression::setSizeofValue(symbols::AnnotationStore& store, int bytes) {
@@ -67,7 +68,7 @@ const int* UnaryExpression::sizeofValue(const symbols::AnnotationStore& store) c
 }
 
 bool UnaryExpression::evaluateConstant(type::IntegerConstant& value) const {
-    if (lexeme() == "sizeof") {
+    if (op() == type::UnaryOp::Sizeof) {
         if (!_operand || !_operand->hasExpressionType()) {
             return false;
         }
@@ -82,7 +83,7 @@ bool UnaryExpression::evaluateConstant(type::IntegerConstant& value) const {
     if (!_operand->evaluateConstant(operand)) {
         return false;
     }
-    auto folded = type::foldUnary(lexeme(), operand);
+    auto folded = type::foldUnary(op(), operand);
     if (!folded) {
         return false;
     }

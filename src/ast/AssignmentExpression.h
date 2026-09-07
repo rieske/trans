@@ -2,15 +2,15 @@
 #define _A_EXPR_NODE_H_
 
 #include <memory>
-#include <string>
 
 #include "BinaryOpExpression.h"
+#include "types/Operator.h"
 
 namespace ast {
 
-class AssignmentExpression: public BinaryOpExpression {
+class AssignmentExpression: public BinaryOpExpression<type::AssignOp> {
 public:
-    AssignmentExpression(std::unique_ptr<Expression> leftHandSide, std::string lexeme,
+    AssignmentExpression(std::unique_ptr<Expression> leftHandSide, type::AssignOp op,
             std::unique_ptr<Expression> rightHandSide);
 
     void accept(AbstractSyntaxTreeVisitor& visitor) override;

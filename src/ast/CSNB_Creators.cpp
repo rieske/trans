@@ -1,6 +1,7 @@
 #include "CSNB_Internal.h"
 
 #include "types/IntegerConstant.h"
+#include "types/Operator.h"
 #include "types/TypeQuery.h"
 #include "util/FloatingLiteral.h"
 #include "util/IntegerLiteral.h"
@@ -441,21 +442,21 @@ void pointeeMemberAccess(AbstractSyntaxTreeBuilderContext& context) {
 }
 
 void postfixIncrementDecrement(AbstractSyntaxTreeBuilderContext& context) {
-    context.pushExpression(std::make_unique<PostfixExpression>(context.popExpression(), context.popTerminal().value));
+    context.pushExpression(std::make_unique<PostfixExpression>(context.popExpression(), type::requireOp(type::incDecFromLexeme(context.popTerminal().value))));
 }
 
 void prefixIncrementDecrement(AbstractSyntaxTreeBuilderContext& context) {
-    context.pushExpression(std::make_unique<PrefixExpression>(context.popTerminal().value, context.popExpression()));
+    context.pushExpression(std::make_unique<PrefixExpression>(type::requireOp(type::incDecFromLexeme(context.popTerminal().value)), context.popExpression()));
 }
 
 void unaryExpression(AbstractSyntaxTreeBuilderContext& context) {
-    context.pushExpression(std::make_unique<UnaryExpression>(context.popTerminal().value, context.popExpression()));
+    context.pushExpression(std::make_unique<UnaryExpression>(type::requireOp(type::unaryOpFromLexeme(context.popTerminal().value)), context.popExpression()));
 }
 
 void sizeofExpression(AbstractSyntaxTreeBuilderContext& context) {
     context.popTerminal(); // sizeof
     context.pushExpression(std::make_unique<UnaryExpression>(
-            "sizeof", context.popExpression()));
+            type::UnaryOp::Sizeof, context.popExpression()));
 }
 
 void typeofTypeName(AbstractSyntaxTreeBuilderContext& context) {
@@ -552,7 +553,7 @@ void sizeofTypeExpression(AbstractSyntaxTreeBuilderContext& context) {
         return;
     }
     context.pushExpression(std::make_unique<UnaryExpression>(
-            "sizeof",
+            type::UnaryOp::Sizeof,
             std::make_unique<TypeNameExpression>(std::move(typeSpec), sizeofKw.context)));
 }
 
@@ -604,29 +605,29 @@ void compoundLiteralTrailingComma(AbstractSyntaxTreeBuilderContext& context) {
 void arithmeticExpression(AbstractSyntaxTreeBuilderContext& context) {
     auto rightHandSide = context.popExpression();
     auto leftHandSide = context.popExpression();
-    auto arithmeticOperator = context.popTerminal().value;
-    context.pushExpression(std::make_unique<ArithmeticExpression>(std::move(leftHandSide), std::move(arithmeticOperator), std::move(rightHandSide)));
+    auto arithmeticOperator = type::requireOp(type::arithmeticOpFromLexeme(context.popTerminal().value));
+    context.pushExpression(std::make_unique<ArithmeticExpression>(std::move(leftHandSide), arithmeticOperator, std::move(rightHandSide)));
 }
 
 void shiftExpression(AbstractSyntaxTreeBuilderContext& context) {
     auto additionExpression = context.popExpression();
     auto shiftExpression = context.popExpression();
-    auto shiftOperator = context.popTerminal().value;
-    context.pushExpression(std::make_unique<ShiftExpression>(std::move(shiftExpression), std::move(shiftOperator), std::move(additionExpression)));
+    auto shiftOperator = type::requireOp(type::shiftOpFromLexeme(context.popTerminal().value));
+    context.pushExpression(std::make_unique<ShiftExpression>(std::move(shiftExpression), shiftOperator, std::move(additionExpression)));
 }
 
 void relationalExpression(AbstractSyntaxTreeBuilderContext& context) {
     auto rightHandSide = context.popExpression();
     auto leftHandSide = context.popExpression();
-    auto comparisonOperator = context.popTerminal().value;
-    context.pushExpression(std::make_unique<ComparisonExpression>(std::move(leftHandSide), std::move(comparisonOperator), std::move(rightHandSide)));
+    auto comparisonOperator = type::requireOp(type::comparisonOpFromLexeme(context.popTerminal().value));
+    context.pushExpression(std::make_unique<ComparisonExpression>(std::move(leftHandSide), comparisonOperator, std::move(rightHandSide)));
 }
 
 void bitwiseExpression(AbstractSyntaxTreeBuilderContext& context) {
     auto rightHandSide = context.popExpression();
     auto leftHandSide = context.popExpression();
-    auto bitwiseOperator = context.popTerminal().value;
-    context.pushExpression(std::make_unique<BitwiseExpression>(std::move(leftHandSide), std::move(bitwiseOperator), std::move(rightHandSide)));
+    auto bitwiseOperator = type::requireOp(type::bitwiseOpFromLexeme(context.popTerminal().value));
+    context.pushExpression(std::make_unique<BitwiseExpression>(std::move(leftHandSide), bitwiseOperator, std::move(rightHandSide)));
 }
 
 void logicalAndExpression(AbstractSyntaxTreeBuilderContext& context) {
@@ -658,9 +659,9 @@ void conditionalExpression(AbstractSyntaxTreeBuilderContext& context) {
 void assignmentExpression(AbstractSyntaxTreeBuilderContext& context) {
     auto rightHandSide = context.popExpression();
     auto leftHandSide = context.popExpression();
-    auto assignmentOperator = context.popTerminal().value;
+    auto assignmentOperator = type::requireOp(type::assignOpFromLexeme(context.popTerminal().value));
     context.pushExpression(
-            std::make_unique<AssignmentExpression>(std::move(leftHandSide), std::move(assignmentOperator), std::move(rightHandSide)));
+            std::make_unique<AssignmentExpression>(std::move(leftHandSide), assignmentOperator, std::move(rightHandSide)));
 }
 
 void braceInitializer(AbstractSyntaxTreeBuilderContext& context) {

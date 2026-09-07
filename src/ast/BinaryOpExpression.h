@@ -2,27 +2,27 @@
 #define BINARYOPEXPRESSION_H_
 
 #include <memory>
-#include <string>
 #include <utility>
 
 #include "ast/DoubleOperandExpression.h"
 
 namespace ast {
 
+template<typename Op>
 class BinaryOpExpression: public DoubleOperandExpression {
 public:
-    BinaryOpExpression(std::unique_ptr<Expression> leftOperand, std::string lexeme,
+    BinaryOpExpression(std::unique_ptr<Expression> leftOperand, Op op,
             std::unique_ptr<Expression> rightOperand) :
             DoubleOperandExpression(std::move(leftOperand), std::move(rightOperand)),
-            lexeme_ { std::move(lexeme) } {
+            op_ { op } {
     }
 
-    const std::string& lexeme() const {
-        return lexeme_;
+    Op op() const {
+        return op_;
     }
 
 private:
-    std::string lexeme_;
+    Op op_;
 };
 
 } // namespace ast

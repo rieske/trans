@@ -6,9 +6,9 @@
 
 namespace ast {
 
-ArithmeticExpression::ArithmeticExpression(std::unique_ptr<Expression> leftHandSide, std::string lexeme,
+ArithmeticExpression::ArithmeticExpression(std::unique_ptr<Expression> leftHandSide, type::ArithmeticOp op,
         std::unique_ptr<Expression> rightHandSide) :
-        BinaryOpExpression(std::move(leftHandSide), std::move(lexeme), std::move(rightHandSide)) {
+        BinaryOpExpression(std::move(leftHandSide), op, std::move(rightHandSide)) {
 }
 
 void ArithmeticExpression::accept(AbstractSyntaxTreeVisitor& visitor) {
@@ -21,7 +21,7 @@ std::optional<type::Type> ArithmeticExpression::typeAtParseTime(const ParseEnvir
     if (!left || !right) {
         return std::nullopt;
     }
-    return type::arithmeticExpressionResult(*left, *right, lexeme().front());
+    return type::arithmeticExpressionResult(*left, *right, op());
 }
 
 } // namespace ast

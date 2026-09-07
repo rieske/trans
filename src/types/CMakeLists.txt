@@ -6,6 +6,8 @@ add_library(types
         TypeQuery.h
         IntegerConstant.h
         IntegerConstant.cpp
+        Operator.h
+        Operator.cpp
         ObjectAbi.h
         ObjectAbiType.h
         SysVClass.h
