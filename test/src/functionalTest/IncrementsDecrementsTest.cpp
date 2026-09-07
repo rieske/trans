@@ -2,6 +2,34 @@
 
 namespace {
 
+TEST(Compiler, postfixDoesNotClobberASimilarlyNamedLocal) {
+    SourceProgram program{R"prg(int printf(const char *, ...);
+        int x = 1;
+        int main(void) {
+            int x_pre = 5;
+            x++;
+            printf("%d %d", x_pre, x);
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("5 2");
+}
+
+TEST(Compiler, postfixInAFileScopeInitializerLeavesTheNamespaceAlone) {
+    SourceProgram program{R"prg(int printf(const char *, ...);
+        int y = 1;
+        int g = sizeof(y++);
+        int y_pre;
+        int main(void) {
+            printf("%d %d", g, y_pre);
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("4 0");
+}
+
 TEST(Compiler, increments) {
     SourceProgram program{R"prg(int printf(const char *, ...);
 int scanf(const char *, ...);

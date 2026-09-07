@@ -184,9 +184,7 @@ void SemanticAnalysisVisitor::visit(ast::PostfixExpression& expression) {
     auto operandSymbol = *expression.operandSymbol(annotations());
     expression.setResultSymbol(annotations(), operandSymbol);
 
-    auto preOperationSymbolName = operandSymbol.getName() + "_pre";
-    symbolTable.insertSymbol(preOperationSymbolName, operandSymbol.getType(), operandSymbol.getContext());
-    expression.setPreOperationSymbol(annotations(), symbolTable.lookup(preOperationSymbolName));
+    expression.setPreOperationSymbol(annotations(), symbolTable.createTemporarySymbol(operandSymbol.getType()));
 
     checkIncrementOperand(*this, expression.isLval(), expression.operandType(), expression.getContext());
 }
