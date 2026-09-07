@@ -130,7 +130,17 @@ int Driver::run(int argc, char **argv) const {
 
     int exitCode = 0;
     std::vector<std::string> outputs;
+    // Loading the front end is a configuration failure, not a failure of any one input.
+    // Constructed exactly when the switch below has a case that uses it.
     std::unique_ptr<Compiler> compiler;
+    if (anyKind(inputs, util::InputKind::Source) || anyKind(inputs, util::InputKind::Preprocessed)) {
+        try {
+            compiler = std::make_unique<Compiler>(configuration);
+        } catch (std::exception& exception) {
+            err << "Error: " << exception.what() << "\n";
+            return 1;
+        }
+    }
     for (const ClassifiedInput& input : inputs) {
         try {
             switch (input.kind) {
@@ -142,9 +152,6 @@ int Driver::run(int argc, char **argv) const {
                 break;
             case util::InputKind::Source:
             case util::InputKind::Preprocessed:
-                if (!compiler) {
-                    compiler = std::make_unique<Compiler>(configuration);
-                }
                 if (auto object = compiler->compile(input.path)) {
                     outputs.push_back(*object);
                 } else {
@@ -153,7 +160,7 @@ int Driver::run(int argc, char **argv) const {
                 break;
             }
         } catch (std::exception& exception) {
-            err << "Error: " << exception.what() << "\n";
+            err << "Error: " << input.path << ": " << exception.what() << "\n";
             exitCode = 1;
         } catch (...) {
             err << "Uncaught exception while compiling " << input.path << "\n";

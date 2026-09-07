@@ -98,10 +98,14 @@ void SemanticAnalysisVisitor::visit(ast::Declaration& declaration) {
 
     const auto& declSpecs = declaration.getDeclarationSpecifiers();
     if (declSpecs.isTypedef()) {
-        // Type alias only: visit declarators; skip runtime symbol and initializers
-        // (invalid `typedef int x = 1;` is not diagnosed on this path).
+        // Type alias only: no runtime symbol, so there is nothing for an initializer to
+        // initialize.
         for (const auto& declarator : declaration.getDeclarators()) {
             declarator->visitDeclarator(*this);
+            if (declarator->hasInitializer()) {
+                semanticError("typedef `" + declarator->getName() + "` is initialized",
+                        declarator->getContext());
+            }
             checkObjectArrayBounds(*declarator, !symbolTable.isAtFileScope());
         }
         return;

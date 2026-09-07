@@ -330,6 +330,10 @@ std::optional<PendingCompare> pendingFromCompare(const Instruction& inst, std::s
 
 } // namespace
 
+// Escapes are collected during the walk, not up front as in copyPropagate and
+// eliminateDeadTemps. Sound because facts only flow forward: a symbol cannot be aliased
+// before its AddressOf is reached, and `known` is dropped at any label not entered solely
+// by fallthrough, so nothing survives a back edge into a later AddressOf.
 bool foldConstants(Procedure& procedure, IrStringTable& strings) {
     const auto preds = labelPredCounts(procedure.body);
     std::unordered_map<int, unsigned long long> known;

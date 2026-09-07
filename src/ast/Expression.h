@@ -118,7 +118,7 @@ public:
     }
 
     bool hasResultSymbol(const symbols::AnnotationStore& store) const;
-    // Required Result after successful SA — asserts if missing (same contract as AnnotationStore::result).
+    // Required Result after successful SA - throws if missing (same contract as AnnotationStore::result).
     // Probe with hasResultSymbol before calling when the expression may have failed analysis.
     symbols::ValueEntry* getResultSymbol(symbols::AnnotationStore& store) const;
 

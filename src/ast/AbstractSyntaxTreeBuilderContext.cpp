@@ -6,9 +6,35 @@
 #include "Statement.h"
 #include "util/Diagnostic.h"
 
+#include <stdexcept>
 #include <utility>
 
 namespace ast {
+
+namespace {
+
+// Reached when a creator pops what its production never pushed, which means grammar.bnf
+// and a CSNB creator disagree. A logic_error, not a user diagnostic.
+[[noreturn]] void underflow(const char* what) {
+    throw std::logic_error { std::string { "internal compiler error: parse stack underflow: " } + what };
+}
+
+template<typename Stack>
+typename Stack::value_type& topOf(Stack& stack, const char* what) {
+    if (stack.empty()) {
+        underflow(what);
+    }
+    return stack.top();
+}
+
+template<typename Stack>
+typename Stack::value_type popFrom(Stack& stack, const char* what) {
+    auto value = std::move(topOf(stack, what));
+    stack.pop();
+    return value;
+}
+
+} // namespace
 
 void AbstractSyntaxTreeBuilderContext::setSink(diag::Sink* sink) {
     sink_ = sink;
@@ -40,9 +66,7 @@ void AbstractSyntaxTreeBuilderContext::pushTerminal(TerminalSymbol terminal) {
 }
 
 TerminalSymbol AbstractSyntaxTreeBuilderContext::popTerminal() {
-    TerminalSymbol terminal = std::move(terminalSymbols.top());
-    terminalSymbols.pop();
-    return terminal;
+    return popFrom(terminalSymbols, "terminal");
 }
 
 void AbstractSyntaxTreeBuilderContext::pushTypeSpecifier(TypeSpecifier typeSpecifier) {
@@ -54,9 +78,7 @@ bool AbstractSyntaxTreeBuilderContext::hasTypeSpecifier() const {
 }
 
 TypeSpecifier AbstractSyntaxTreeBuilderContext::popTypeSpecifier() {
-    auto typeSpecifier = typeSpecifiers.top();
-    typeSpecifiers.pop();
-    return typeSpecifier;
+    return popFrom(typeSpecifiers, "type specifier");
 }
 
 void AbstractSyntaxTreeBuilderContext::pushStorageSpecifier(StorageSpecifier storageSpecifier) {
@@ -64,9 +86,7 @@ void AbstractSyntaxTreeBuilderContext::pushStorageSpecifier(StorageSpecifier sto
 }
 
 StorageSpecifier AbstractSyntaxTreeBuilderContext::popStorageSpecifier() {
-    auto storageSpecifier = storageSpecifiers.top();
-    storageSpecifiers.pop();
-    return storageSpecifier;
+    return popFrom(storageSpecifiers, "storage specifier");
 }
 
 void AbstractSyntaxTreeBuilderContext::pushTypeQualifier(type::Qualifier typeQualifier) {
@@ -74,9 +94,7 @@ void AbstractSyntaxTreeBuilderContext::pushTypeQualifier(type::Qualifier typeQua
 }
 
 type::Qualifier AbstractSyntaxTreeBuilderContext::popTypeQualifier() {
-    auto typeQualifier = typeQualifiers.top();
-    typeQualifiers.pop();
-    return typeQualifier;
+    return popFrom(typeQualifiers, "type qualifier");
 }
 
 void AbstractSyntaxTreeBuilderContext::pushConstant(Constant constant) {
@@ -84,9 +102,7 @@ void AbstractSyntaxTreeBuilderContext::pushConstant(Constant constant) {
 }
 
 Constant AbstractSyntaxTreeBuilderContext::popConstant() {
-    auto constant = constants.top();
-    constants.pop();
-    return constant;
+    return popFrom(constants, "constant");
 }
 
 void AbstractSyntaxTreeBuilderContext::pushExpression(std::unique_ptr<Expression> expression) {
@@ -94,9 +110,7 @@ void AbstractSyntaxTreeBuilderContext::pushExpression(std::unique_ptr<Expression
 }
 
 std::unique_ptr<Expression> AbstractSyntaxTreeBuilderContext::popExpression() {
-    auto expression = std::move(expressionStack.top());
-    expressionStack.pop();
-    return expression;
+    return popFrom(expressionStack, "expression");
 }
 
 void AbstractSyntaxTreeBuilderContext::newActualArgumentsList(std::unique_ptr<Expression> argument) {
@@ -106,13 +120,11 @@ void AbstractSyntaxTreeBuilderContext::newActualArgumentsList(std::unique_ptr<Ex
 }
 
 void AbstractSyntaxTreeBuilderContext::addToActualArgumentsList(std::unique_ptr<Expression> argument) {
-    actualArgumentLists.top().push_back(std::move(argument));
+    topOf(actualArgumentLists, "actual argument list").push_back(std::move(argument));
 }
 
 std::vector<std::unique_ptr<Expression>> AbstractSyntaxTreeBuilderContext::popActualArgumentsList() {
-    auto arguments = std::move(actualArgumentLists.top());
-    actualArgumentLists.pop();
-    return arguments;
+    return popFrom(actualArgumentLists, "actual argument list");
 }
 
 void AbstractSyntaxTreeBuilderContext::newPointer(Pointer pointer) {
@@ -120,13 +132,11 @@ void AbstractSyntaxTreeBuilderContext::newPointer(Pointer pointer) {
 }
 
 void AbstractSyntaxTreeBuilderContext::pointerToPointer(Pointer pointer) {
-    pointerStack.top().push_back(pointer);
+    topOf(pointerStack, "pointer").push_back(pointer);
 }
 
 std::vector<Pointer> AbstractSyntaxTreeBuilderContext::popPointers() {
-    auto pointers = pointerStack.top();
-    pointerStack.pop();
-    return pointers;
+    return popFrom(pointerStack, "pointer");
 }
 
 void AbstractSyntaxTreeBuilderContext::pushStatement(std::unique_ptr<Statement> statement) {
@@ -142,9 +152,7 @@ void AbstractSyntaxTreeBuilderContext::pushStatement(std::unique_ptr<Declaration
 }
 
 BlockItem AbstractSyntaxTreeBuilderContext::popStatement() {
-    auto item = std::move(statementStack.top());
-    statementStack.pop();
-    return item;
+    return popFrom(statementStack, "statement");
 }
 
 std::unique_ptr<Statement> AbstractSyntaxTreeBuilderContext::popAsStatement() {
@@ -167,9 +175,7 @@ void AbstractSyntaxTreeBuilderContext::pushDirectDeclarator(std::unique_ptr<Dire
 }
 
 std::unique_ptr<DirectDeclarator> AbstractSyntaxTreeBuilderContext::popDirectDeclarator() {
-    auto declarator = std::move(directDeclarators.top());
-    directDeclarators.pop();
-    return declarator;
+    return popFrom(directDeclarators, "direct declarator");
 }
 
 void AbstractSyntaxTreeBuilderContext::pushDeclarator(std::unique_ptr<Declarator> declarator) {
@@ -177,9 +183,7 @@ void AbstractSyntaxTreeBuilderContext::pushDeclarator(std::unique_ptr<Declarator
 }
 
 std::unique_ptr<Declarator> AbstractSyntaxTreeBuilderContext::popDeclarator() {
-    auto declarator = std::move(declarators.top());
-    declarators.pop();
-    return declarator;
+    return popFrom(declarators, "declarator");
 }
 
 void AbstractSyntaxTreeBuilderContext::pushInitializedDeclarator(std::unique_ptr<InitializedDeclarator> initializedDeclarator) {
@@ -187,9 +191,7 @@ void AbstractSyntaxTreeBuilderContext::pushInitializedDeclarator(std::unique_ptr
 }
 
 std::unique_ptr<InitializedDeclarator> AbstractSyntaxTreeBuilderContext::popInitializedDeclarator() {
-    auto initializedDeclarator = std::move(initializedDeclarators.top());
-    initializedDeclarators.pop();
-    return initializedDeclarator;
+    return popFrom(initializedDeclarators, "initialized declarator");
 }
 
 void AbstractSyntaxTreeBuilderContext::pushInitializedDeclarators(std::vector<std::unique_ptr<InitializedDeclarator> > declarators) {
@@ -197,9 +199,7 @@ void AbstractSyntaxTreeBuilderContext::pushInitializedDeclarators(std::vector<st
 }
 
 std::vector<std::unique_ptr<InitializedDeclarator> > AbstractSyntaxTreeBuilderContext::popInitializedDeclarators() {
-    auto declarators = std::move(initializedDeclaratorLists.top());
-    initializedDeclaratorLists.pop();
-    return declarators;
+    return popFrom(initializedDeclaratorLists, "initialized declarator list");
 }
 
 void AbstractSyntaxTreeBuilderContext::pushDeclarationList(std::vector<std::unique_ptr<Declaration>> declarationList) {
@@ -207,9 +207,7 @@ void AbstractSyntaxTreeBuilderContext::pushDeclarationList(std::vector<std::uniq
 }
 
 std::vector<std::unique_ptr<Declaration>> AbstractSyntaxTreeBuilderContext::popDeclarationList() {
-    auto declarationList = std::move(declarationLists.top());
-    declarationLists.pop();
-    return declarationList;
+    return popFrom(declarationLists, "declaration list");
 }
 
 void AbstractSyntaxTreeBuilderContext::pushFormalArgument(FormalArgument formalArgument) {
@@ -217,9 +215,7 @@ void AbstractSyntaxTreeBuilderContext::pushFormalArgument(FormalArgument formalA
 }
 
 FormalArgument AbstractSyntaxTreeBuilderContext::popFormalArgument() {
-    auto parameter = std::move(formalArguments.top());
-    formalArguments.pop();
-    return parameter;
+    return popFrom(formalArguments, "formal argument");
 }
 
 void AbstractSyntaxTreeBuilderContext::pushFormalArguments(FormalArguments formalArguments) {
@@ -227,9 +223,7 @@ void AbstractSyntaxTreeBuilderContext::pushFormalArguments(FormalArguments forma
 }
 
 FormalArguments AbstractSyntaxTreeBuilderContext::popFormalArguments() {
-    auto formalArguments = std::move(formalArgumentLists.top());
-    formalArgumentLists.pop();
-    return formalArguments;
+    return popFrom(formalArgumentLists, "formal argument list");
 }
 
 void AbstractSyntaxTreeBuilderContext::pushArgumentsDeclaration(std::pair<FormalArguments, bool> argumentsDeclaration) {
@@ -237,9 +231,7 @@ void AbstractSyntaxTreeBuilderContext::pushArgumentsDeclaration(std::pair<Formal
 }
 
 std::pair<FormalArguments, bool> AbstractSyntaxTreeBuilderContext::popArgumentsDeclaration() {
-    auto argumentsDeclaration = std::move(argumentsDeclarations.top());
-    argumentsDeclarations.pop();
-    return argumentsDeclaration;
+    return popFrom(argumentsDeclarations, "arguments declaration");
 }
 
 void AbstractSyntaxTreeBuilderContext::pushDeclarationSpecifiers(DeclarationSpecifiers declarationSpecifiers) {
@@ -247,9 +239,7 @@ void AbstractSyntaxTreeBuilderContext::pushDeclarationSpecifiers(DeclarationSpec
 }
 
 DeclarationSpecifiers AbstractSyntaxTreeBuilderContext::popDeclarationSpecifiers() {
-    auto declarationSpecifiers = std::move(declarationSpecifiersStack.top());
-    declarationSpecifiersStack.pop();
-    return declarationSpecifiers;
+    return popFrom(declarationSpecifiersStack, "declaration specifiers");
 }
 
 void AbstractSyntaxTreeBuilderContext::pushDeclaration(std::unique_ptr<Declaration> declaration) {
@@ -261,19 +251,15 @@ void AbstractSyntaxTreeBuilderContext::newTypeQualifierList(type::Qualifier qual
 }
 
 void AbstractSyntaxTreeBuilderContext::addToTypeQualifierList(type::Qualifier qualifier) {
-    typeQualifierLists.top().push_back(qualifier);
+    topOf(typeQualifierLists, "type qualifier list").push_back(qualifier);
 }
 
 std::vector<type::Qualifier> AbstractSyntaxTreeBuilderContext::popTypeQualifierList() {
-    auto qualifiers = typeQualifierLists.top();
-    typeQualifierLists.pop();
-    return qualifiers;
+    return popFrom(typeQualifierLists, "type qualifier list");
 }
 
 std::unique_ptr<Declaration> AbstractSyntaxTreeBuilderContext::popDeclaration() {
-    auto declaration = std::move(declarations.top());
-    declarations.pop();
-    return declaration;
+    return popFrom(declarations, "declaration");
 }
 
 void AbstractSyntaxTreeBuilderContext::newStatementList(BlockItem item) {
@@ -283,13 +269,11 @@ void AbstractSyntaxTreeBuilderContext::newStatementList(BlockItem item) {
 }
 
 void AbstractSyntaxTreeBuilderContext::addToStatementList(BlockItem item) {
-    statementLists.top().push_back(std::move(item));
+    topOf(statementLists, "statement list").push_back(std::move(item));
 }
 
 std::vector<BlockItem> AbstractSyntaxTreeBuilderContext::popStatementList() {
-    auto items = std::move(statementLists.top());
-    statementLists.pop();
-    return items;
+    return popFrom(statementLists, "statement list");
 }
 
 void AbstractSyntaxTreeBuilderContext::pushExternalDeclaration(ExternalDeclaration externalDeclaration) {
@@ -297,9 +281,7 @@ void AbstractSyntaxTreeBuilderContext::pushExternalDeclaration(ExternalDeclarati
 }
 
 ExternalDeclaration AbstractSyntaxTreeBuilderContext::popExternalDeclaration() {
-    auto externalDeclaration = std::move(externalDeclarations.top());
-    externalDeclarations.pop();
-    return externalDeclaration;
+    return popFrom(externalDeclarations, "external declaration");
 }
 
 void AbstractSyntaxTreeBuilderContext::addToTranslationUnit(ExternalDeclaration externalDeclaration) {
@@ -315,9 +297,7 @@ void AbstractSyntaxTreeBuilderContext::pushIsUnion(bool isUnion) {
 }
 
 bool AbstractSyntaxTreeBuilderContext::popIsUnion() {
-    bool v = isUnionStack.top();
-    isUnionStack.pop();
-    return v;
+    return popFrom(isUnionStack, "struct or union");
 }
 
 void AbstractSyntaxTreeBuilderContext::newStructMemberList() {
@@ -326,32 +306,33 @@ void AbstractSyntaxTreeBuilderContext::newStructMemberList() {
 
 void AbstractSyntaxTreeBuilderContext::addStructMember(std::string name, type::Type memberType,
         std::optional<int> bitWidth) {
-    structMemberLists.top().push_back(
+    topOf(structMemberLists, "struct member list").push_back(
             type::MemberSpec { std::move(name), std::move(memberType), bitWidth });
 }
 
 std::vector<type::MemberSpec> AbstractSyntaxTreeBuilderContext::popStructMemberList() {
-    auto members = std::move(structMemberLists.top());
-    structMemberLists.pop();
-    return members;
+    return popFrom(structMemberLists, "struct member list");
+}
+
+void AbstractSyntaxTreeBuilderContext::newStructDeclaratorList() {
+    structDeclaratorLists.push({});
 }
 
 void AbstractSyntaxTreeBuilderContext::addStructDeclarator(std::unique_ptr<Declarator> declarator,
         std::optional<int> bitWidth) {
-    if (structDeclaratorLists.empty()) {
-        structDeclaratorLists.push({});
-    }
-    structDeclaratorLists.top().emplace_back(std::move(declarator), bitWidth);
+    topOf(structDeclaratorLists, "struct declarator list").emplace_back(std::move(declarator), bitWidth);
 }
 
 std::vector<std::pair<std::unique_ptr<Declarator>, std::optional<int>>>
-AbstractSyntaxTreeBuilderContext::popStructDeclarators() {
-    if (structDeclaratorLists.empty()) {
-        return {};
+AbstractSyntaxTreeBuilderContext::takeStructDeclarators() {
+    return std::exchange(topOf(structDeclaratorLists, "struct declarator list"), {});
+}
+
+void AbstractSyntaxTreeBuilderContext::popStructDeclaratorList() {
+    if (!popFrom(structDeclaratorLists, "struct declarator list").empty()) {
+        throw std::logic_error {
+                "internal compiler error: struct declarator list closed with undrained declarators" };
     }
-    auto declarators = std::move(structDeclaratorLists.top());
-    structDeclaratorLists.pop();
-    return declarators;
 }
 
 void AbstractSyntaxTreeBuilderContext::pushGenericAssociation(GenericAssociation association) {
@@ -359,9 +340,7 @@ void AbstractSyntaxTreeBuilderContext::pushGenericAssociation(GenericAssociation
 }
 
 GenericAssociation AbstractSyntaxTreeBuilderContext::popGenericAssociation() {
-    auto association = std::move(genericAssociations.top());
-    genericAssociations.pop();
-    return association;
+    return popFrom(genericAssociations, "generic association");
 }
 
 void AbstractSyntaxTreeBuilderContext::newGenericAssocList(GenericAssociation association) {
@@ -371,13 +350,11 @@ void AbstractSyntaxTreeBuilderContext::newGenericAssocList(GenericAssociation as
 }
 
 void AbstractSyntaxTreeBuilderContext::addGenericAssociation(GenericAssociation association) {
-    genericAssocLists.top().push_back(std::move(association));
+    topOf(genericAssocLists, "generic association list").push_back(std::move(association));
 }
 
 std::vector<GenericAssociation> AbstractSyntaxTreeBuilderContext::popGenericAssocList() {
-    auto associations = std::move(genericAssocLists.top());
-    genericAssocLists.pop();
-    return associations;
+    return popFrom(genericAssocLists, "generic association list");
 }
 
 void AbstractSyntaxTreeBuilderContext::newInitializerList() {

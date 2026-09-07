@@ -350,6 +350,26 @@ TEST(IrPasses, foldConstants_tracksAssignOfKnownConstant) {
             "ENDPROC f\n"));
 }
 
+// Fails if foldConstants is changed to collect escapes over the whole body up front, the way
+// copyPropagate and eliminateDeadTemps do: x would be escaped from instruction 0, fold lost.
+
+TEST(IrPasses, foldConstants_foldsBeforeAddressIsTakenLater) {
+    IntermediateRepresentation ir;
+    IrN n { ir.strings };
+    ir.procedures.push_back(makeProc(ir.strings, "f", {
+            ir::assignConstant(n("5"), n("x")),
+            ir::assignConstant(n("1"), n("t1")),
+            ir::add(n("x"), n("t1"), n("t2")),
+            ir::addressOf(n("x"), n("p")),
+            ir::ret(n("t2")),
+    }, ints(ir.strings, { "x", "t1", "t2", "p" }, 8)));
+
+    foldConstants(ir.procedures.front(), ir.strings);
+
+    // x is still 5 where t2 is computed; the later &x cannot reach backwards.
+    EXPECT_THAT(toString(ir), HasSubstr("\tt2 := 6\n"));
+}
+
 TEST(IrPasses, foldConstants_skipsMixedWithNonConst) {
     IntermediateRepresentation ir;
     IrN n { ir.strings };

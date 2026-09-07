@@ -2,6 +2,43 @@
 
 namespace {
 
+// The declarator list is scoped to the struct body, so a struct defined inside a member
+// declaration cannot consume the declarators the enclosing struct_decl has collected.
+
+TEST(Compiler, nestedStructAfterCommaKeepsAllOuterMembers) {
+    SourceProgram program{R"prg(int printf(const char *, ...);
+        struct S { int a, b[sizeof(struct T { int q; })], c; };
+
+        int main(void) {
+            struct S s;
+            s.a = 1;
+            s.b[3] = 2;
+            s.c = 3;
+            printf("%d %d %d %d %d", (int)sizeof(struct T), (int)sizeof(struct S),
+                    s.a, s.b[3], s.c);
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("4 24 1 2 3");
+}
+
+// Separate member declarations leave nothing in flight when the inner struct is parsed.
+TEST(Compiler, nestedStructInSeparateMemberDeclaration) {
+    SourceProgram program{R"prg(int printf(const char *, ...);
+        struct S { int a; int b[sizeof(struct T { int q; })]; };
+
+        int main(void) {
+            struct S s;
+            s.a = 5;
+            printf("%d %d", (int)sizeof(struct S), s.a);
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("20 5");
+}
+
 TEST(Compiler, structMemberReadWrite) {
     SourceProgram program{R"prg(int printf(const char *, ...);
 int scanf(const char *, ...);

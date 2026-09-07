@@ -19,6 +19,7 @@ add_executable(astTest
     astTest/ExpressionKindTest.cpp
     astTest/TerminalSymbolTest.cpp
     astTest/BlockItemTest.cpp
+    astTest/BuilderContextUnderflowTest.cpp
     astTest/ExternalDeclarationTest.cpp
     astTest/ForInitTest.cpp
     astTest/StatementTest.cpp

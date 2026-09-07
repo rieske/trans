@@ -18,6 +18,11 @@ namespace {
 using namespace parser;
 using testing::Eq;
 
+Grammar expressionGrammar() {
+    BNFFileReader reader;
+    return reader.readGrammar(getTestResourcePath("grammars/expression_grammar.bnf"));
+}
+
 TEST(Grammar, mapsTerminalBitsAndIds) {
     BNFFileReader reader;
     Grammar grammar = reader.readGrammar(getTestResourcePath("grammars/expression_grammar.bnf"));
@@ -40,6 +45,27 @@ TEST(Grammar, terminalBitThrowsForNonTerminalAndOutOfRange) {
             break;
         }
     }
+}
+
+TEST(Grammar, getSymbolByIdThrowsForUnknownId) {
+    const Grammar grammar = expressionGrammar();
+    const int terminal = grammar.getTerminalIDs().front();
+    EXPECT_THAT(grammar.symbolId(grammar.getSymbolById(terminal)), Eq(terminal));
+    EXPECT_THROW(grammar.getSymbolById(10000), std::out_of_range);
+}
+
+TEST(Grammar, strIsTotalSoDiagnosticsCannotFail) {
+    // reportError composes a syntax diagnostic from these; a lost id must not throw
+    // away the message it was building.
+    EXPECT_THAT(expressionGrammar().str(10000), Eq("<symbol 10000>"));
+}
+
+TEST(Grammar, rejectsGrammarWithNoNonterminals) {
+    std::map<std::string, int> symbolIDs { { "a", 1 } };
+    std::vector<int> terminals { 1 };
+    std::vector<int> nonterminals {};
+    std::vector<Production> rules {};
+    EXPECT_THROW(Grammar(symbolIDs, terminals, nonterminals, rules), std::out_of_range);
 }
 
 TEST(Grammar, skipsDuplicateTerminalIdsWhenBuildingBitMap) {
