@@ -5,12 +5,11 @@
 namespace ast {
 
 ReturnStatement::ReturnStatement(std::unique_ptr<Expression> returnExpression) :
-		returnExpression { std::move(returnExpression) } {
+        returnExpression { std::move(returnExpression) } {
 }
 
 void ReturnStatement::accept(AbstractSyntaxTreeVisitor& visitor) {
-	visitor.visit(*this);
+    visitor.visit(*this);
 }
 
 } // namespace ast
-

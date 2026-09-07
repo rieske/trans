@@ -2,7 +2,6 @@
 #define _LOOP_HDR_NODE_H_
 
 #include <memory>
-#include <string>
 
 #include "ast/AbstractSyntaxTreeNode.h"
 #include "ast/Expression.h"
@@ -28,8 +27,6 @@ public:
     virtual bool bodyBeforeTest() const { return false; }
     // while (and for without increment): continue → entry. do-while: continue → test.
     virtual bool continueTargetsEntry() const { return !increment; }
-
-    static const std::string ID;
 
     const std::unique_ptr<Expression> increment;
 

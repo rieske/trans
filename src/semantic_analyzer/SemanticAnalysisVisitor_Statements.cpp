@@ -115,6 +115,9 @@ void SemanticAnalysisVisitor::visit(ast::LabeledStatement& statement) {
 }
 
 void SemanticAnalysisVisitor::visit(ast::ReturnStatement& statement) {
+    if (!statement.returnExpression) {
+        return;
+    }
     statement.returnExpression->accept(*this);
     if (!statement.returnExpression->hasResultSymbol(annotations())) {
         return;
@@ -132,9 +135,6 @@ void SemanticAnalysisVisitor::visit(ast::ReturnStatement& statement) {
     maybeSetConversion(retExpr, *currentReturnType, symbolTable, annotations());
 }
 
-void SemanticAnalysisVisitor::visit(ast::VoidReturnStatement& statement) {
-}
-
 void SemanticAnalysisVisitor::visit(ast::ExpressionStatement& statement) {
     statement.expression->accept(*this);
 }
@@ -150,21 +150,11 @@ void SemanticAnalysisVisitor::visit(ast::IfStatement& statement) {
                 statement.testExpression->getContext());
     }
     statement.body->accept(*this);
-
-    statement.setFalsyLabel(annotations(), symbolTable.newLabel());
-}
-
-void SemanticAnalysisVisitor::visit(ast::IfElseStatement& statement) {
-    statement.testExpression->accept(*this);
-    if (statement.testExpression->hasResultSymbol(annotations())) {
-        rejectFunctionValue(statement.testExpression->getResultSymbol(annotations())->getType(),
-                statement.testExpression->getContext());
+    if (statement.elseBody) {
+        statement.elseBody->accept(*this);
+        statement.setExitLabel(annotations(), symbolTable.newLabel());
     }
-    statement.truthyBody->accept(*this);
-    statement.falsyBody->accept(*this);
-
     statement.setFalsyLabel(annotations(), symbolTable.newLabel());
-    statement.setExitLabel(annotations(), symbolTable.newLabel());
 }
 
 void SemanticAnalysisVisitor::visit(ast::LoopStatement& loop) {

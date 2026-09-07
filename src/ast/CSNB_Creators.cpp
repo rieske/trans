@@ -853,7 +853,8 @@ void ifElseStatement(AbstractSyntaxTreeBuilderContext& context) {
     context.popTerminal();
     auto falsyStatement = context.popAsStatement();
     auto truthyStatement = context.popAsStatement();
-    context.pushStatement(std::make_unique<IfElseStatement>(context.popExpression(), std::move(truthyStatement), std::move(falsyStatement)));
+    context.pushStatement(std::make_unique<IfStatement>(
+            context.popExpression(), std::move(truthyStatement), std::move(falsyStatement)));
 }
 
 void whileLoopStatement(AbstractSyntaxTreeBuilderContext& context) {
@@ -931,7 +932,7 @@ void returnExpressionStatement(AbstractSyntaxTreeBuilderContext& context) {
 void returnVoidStatement(AbstractSyntaxTreeBuilderContext& context) {
     context.popTerminal();
     context.popTerminal();
-    context.pushStatement(std::make_unique<VoidReturnStatement>());
+    context.pushStatement(std::make_unique<ReturnStatement>());
 }
 
 void createActualArgumentsList(AbstractSyntaxTreeBuilderContext& context) {

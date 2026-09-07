@@ -4,7 +4,7 @@
 #include "ast/AbstractSyntaxTreeBuilderContext.h"
 #include "ast/Block.h"
 #include "ast/IdentifierExpression.h"
-#include "ast/VoidReturnStatement.h"
+#include "ast/ReturnStatement.h"
 #include "scanner/LexicalSession.h"
 #include "types/Type.h"
 
@@ -76,7 +76,7 @@ TEST(BuilderContext, addToListOnEmptyStackThrowsNamingTheStack) {
     EXPECT_UNDERFLOW(context.pointerToPointer(ast::Pointer {}), "pointer");
     EXPECT_UNDERFLOW(context.addToTypeQualifierList(type::Qualifier::CONST), "type qualifier list");
     EXPECT_UNDERFLOW(
-            context.addToStatementList(ast::BlockItem { std::make_unique<ast::VoidReturnStatement>() }),
+            context.addToStatementList(ast::BlockItem { std::make_unique<ast::ReturnStatement>() }),
             "statement list");
     EXPECT_UNDERFLOW(context.addStructMember("m", type::signedInteger()), "struct member list");
     EXPECT_UNDERFLOW(context.addStructDeclarator(nullptr), "struct declarator list");
