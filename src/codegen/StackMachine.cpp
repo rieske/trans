@@ -1,4 +1,5 @@
 #include "StackMachine.h"
+#include "codegen/InternalError.h"
 
 #include "SysVCallConv.h"
 #include "types/ObjectAbi.h"
@@ -771,9 +772,9 @@ Address StackMachine::spillSlotAddress(const Value& symbol) const {
 }
 
 void StackMachine::registerFrameHome(int id, Address address) {
-    [[maybe_unused]] const bool inserted =
-            frameHomes.emplace(id, std::move(address)).second;
-    assert(inserted && "duplicate frame home registration");
+    if (!frameHomes.emplace(id, std::move(address)).second) {
+        internalError("duplicate frame home registration");
+    }
 }
 
 bool StackMachine::residesInMemory(const Value& symbol) const {
@@ -810,7 +811,9 @@ MemoryOperand StackMachine::memoryOperand(const Value& symbol) const {
 
 MemoryOperand StackMachine::memoryOperandAt(const Value& symbol, int byteOffset) const {
     Address home = addressOf(symbol);
-    assert(!home.isGlobal() && "memoryOperandAt is frame-only; use loadX87At/storeX87At for globals");
+    if (home.isGlobal()) {
+        internalError("memoryOperandAt is frame-only; use loadX87At/storeX87At for globals");
+    }
     return MemoryOperand::at(
             home.frameBase() == FrameBase::BasePointer
                     ? registers->getBasePointer() : registers->getStackPointer(),

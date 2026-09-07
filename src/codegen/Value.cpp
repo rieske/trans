@@ -1,6 +1,6 @@
 #include "Value.h"
+#include "codegen/InternalError.h"
 
-#include <cassert>
 #include <stdexcept>
 
 namespace codegen {
@@ -52,7 +52,7 @@ void Value::removeRegister(Register* reg) {
 }
 
 Register& Value::getAssignedRegister() const {
-    assert(assignedRegister != nullptr);
+    require(assignedRegister, "assigned register");
     return *assignedRegister;
 }
 

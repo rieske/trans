@@ -122,6 +122,7 @@ add_executable(codegenTest
         codegenTest/IrPassesTest.cpp
         codegenTest/IrStringTableTest.cpp
         codegenTest/SymbolRefsTest.cpp
+        codegenTest/InternalErrorTest.cpp
         codegenTest/UnimplementedArrayCodegenTest.cpp
         codegenTest/CompileToIr.cpp
         codegenTest/CompileToIr.h
