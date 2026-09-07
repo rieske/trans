@@ -4,6 +4,22 @@
 
 namespace {
 
+TEST(Compiler, readAfterStoreThroughAliasingPointer) {
+    SourceProgram program{R"prg(int printf(const char *, ...);
+        int main(void) {
+            int x = 5, s = 0;
+            int *p = &x;
+            s += x;
+            *p = 9;
+            s += x;
+            printf("%d %d", s, x);
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("14 9");
+}
+
 TEST(Compiler, addAfterStoreThroughPointerUsesMemory) {
     SourceProgram program{R"prg(int printf(const char *, ...);
         int main() {
