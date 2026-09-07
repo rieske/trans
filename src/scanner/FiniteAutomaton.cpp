@@ -1,6 +1,8 @@
 #include "FiniteAutomaton.h"
 #include "LexicalSession.h"
 
+#include <utility>
+
 namespace scanner {
 
 FiniteAutomaton::FiniteAutomaton(
@@ -28,11 +30,11 @@ void FiniteAutomaton::updateState(char inputSymbol) {
             }
         }
         if (!accumulatedToken.empty()) {
-            accumulatedLexeme = accumulator;
+            accumulatedLexeme = std::move(accumulator);
         } else {
             accumulatedLexeme.clear();
+            accumulator.clear();
         }
-        accumulator.clear();
         currentState = startState->nextStateForCharacter(inputSymbol);
     } else {
         accumulatedToken.clear();
@@ -59,6 +61,14 @@ const std::string& FiniteAutomaton::getAccumulatedLexeme() const {
 
 const std::string& FiniteAutomaton::getAccumulatedToken() const {
     return accumulatedToken;
+}
+
+std::string FiniteAutomaton::takeAccumulatedLexeme() {
+    return std::move(accumulatedLexeme);
+}
+
+std::string FiniteAutomaton::takeAccumulatedToken() {
+    return std::move(accumulatedToken);
 }
 
 bool FiniteAutomaton::isTypedefName(const std::string& name) const {

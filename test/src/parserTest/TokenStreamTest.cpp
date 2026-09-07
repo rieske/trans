@@ -35,6 +35,13 @@ TEST(Token, defaultSymbolIdIsUnset) {
     ASSERT_EQ(token.id, "id");
 }
 
+TEST(Token, emptyIdBecomesEndMarker) {
+    const Token token { "", "", { "f", 1 } };
+    ASSERT_EQ(token.id, Token::END);
+    ASSERT_TRUE(token.lexeme.empty());
+    ASSERT_EQ(token.symbolId, -1);
+}
+
 TEST(Token, isAValueType) {
     const Token token { "id", "x", { "f", 1 }, 7 };
     const Token copy { token };
@@ -487,6 +494,25 @@ TEST(TokenStream, taggedEnumBracesDoNotEnterOrLeaveBlock) {
     session.enums.add("A", type::fromHostLong(1));
     ts.nextToken();
     EXPECT_TRUE(session.isEnumerator("A"));
+}
+
+TEST(TokenStream, consumeMovesCurrentAndAdvances) {
+    const Grammar grammar = streamGrammar();
+    std::vector<scanner::Token> tokens {
+            { "id", "variable", { "f", 1 } },
+            { "+", "+", { "f", 1 } },
+    };
+    int i = 0;
+    scanner::LexicalSession session;
+    TokenStream ts { [&]() { return tokens[i++]; }, session, grammar };
+
+    ASSERT_EQ(ts.getCurrentToken().id, "id");
+    const Token taken = ts.consume();
+    EXPECT_EQ(taken.id, "id");
+    EXPECT_EQ(taken.lexeme, "variable");
+    EXPECT_EQ(taken.symbolId, *grammar.trySymbolId("id"));
+    EXPECT_EQ(ts.getCurrentToken().id, "+");
+    EXPECT_EQ(ts.getCurrentToken().lexeme, "+");
 }
 
 TEST(TokenStream, stampsCurrentTokenFromGrammar) {
