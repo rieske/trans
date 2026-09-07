@@ -27,7 +27,10 @@ Token Scanner::nextToken() {
     } catch (const std::runtime_error& error) {
         throw LexError { tokenStart, error.what() };
     }
-    return { automaton->getAccumulatedToken(), automaton->getAccumulatedLexeme(), tokenStart };
+    return Token {
+            automaton->takeAccumulatedToken(),
+            automaton->takeAccumulatedLexeme(),
+            tokenStart };
 }
 
 } // namespace scanner

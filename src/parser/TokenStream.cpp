@@ -7,6 +7,7 @@
 #include <stdexcept>
 #include <string>
 #include <string_view>
+#include <utility>
 
 namespace parser {
 
@@ -92,7 +93,8 @@ TokenStream::TokenStream(std::function<scanner::Token()> scan, scanner::LexicalS
     current_ { scanner::Token::END, scanner::Token::END, translation_unit::Context { "", 0 } }
 {
     indexRoles();
-    current_ = classifyAndStamp(this->scan());
+    current_ = this->scan();
+    classifyAndStamp(current_);
     classifiedRevision_ = session.names.revision();
 }
 
@@ -136,8 +138,7 @@ void TokenStream::setIdContext(LexIdContext context) {
     refreshCurrent();
 }
 
-scanner::Token TokenStream::classifyAndStamp(const scanner::Token& token) const {
-    scanner::Token out = token;
+void TokenStream::classifyAndStamp(scanner::Token& token) const {
     if (token.id == "id" || token.id == "typedef_name") {
         if (session_.names.isIdentifierShadow(token.lexeme)
                 || !session_.isTypedef(token.lexeme)
@@ -145,37 +146,37 @@ scanner::Token TokenStream::classifyAndStamp(const scanner::Token& token) const 
             if (idId_ < 0) {
                 throw std::logic_error { "TokenStream: not a grammar terminal: id" };
             }
-            out.id = "id";
-            out.symbolId = idId_;
+            token.id = "id";
+            token.symbolId = idId_;
         } else {
             if (typedefNameId_ < 0) {
                 throw std::logic_error { "TokenStream: not a grammar terminal: typedef_name" };
             }
-            out.id = "typedef_name";
-            out.symbolId = typedefNameId_;
+            token.id = "typedef_name";
+            token.symbolId = typedefNameId_;
         }
-        return out;
+        return;
     }
     const auto symbolId = grammar_.trySymbolId(token.id);
     if (!symbolId) {
-        throw std::logic_error { "TokenStream: not a grammar terminal: " + std::string { token.id } };
+        throw std::logic_error { "TokenStream: not a grammar terminal: " + token.id };
     }
-    out.symbolId = *symbolId;
-    return out;
+    token.symbolId = *symbolId;
 }
 
 void TokenStream::refreshCurrent() const {
-    current_ = classifyAndStamp(current_);
+    classifyAndStamp(current_);
     classifiedRevision_ = session_.names.revision();
 }
 
 void TokenStream::installNext() {
     if (lookahead_) {
-        current_ = classifyAndStamp(*lookahead_);
+        current_ = std::move(*lookahead_);
         lookahead_.reset();
     } else {
-        current_ = classifyAndStamp(scan());
+        current_ = scan();
     }
+    classifyAndStamp(current_);
     classifiedRevision_ = session_.names.revision();
 }
 
@@ -193,16 +194,21 @@ const scanner::Token& TokenStream::peek() {
     return *lookahead_;
 }
 
+scanner::Token TokenStream::takeCurrent() {
+    (void)getCurrentToken();
+    return std::move(current_);
+}
+
 scanner::Token TokenStream::takeRaw() {
-    scanner::Token taken = getCurrentToken();
+    scanner::Token taken = takeCurrent();
     installNext();
     return taken;
 }
 
-const scanner::Token& TokenStream::nextToken() {
-    const scanner::Token consumed = getCurrentToken();
-    advanceIdContext(consumed);
-    switch (specifier_.consume(consumed.id)) {
+scanner::Token TokenStream::consume() {
+    scanner::Token taken = takeCurrent();
+    advanceIdContext(taken);
+    switch (specifier_.consume(taken.id)) {
     case SpecifierLookahead::Op::OpenBlock:
         session_.openBrace(scanner::BraceFrame::Block);
         break;
@@ -222,6 +228,11 @@ const scanner::Token& TokenStream::nextToken() {
         break;
     }
     installNext();
+    return taken;
+}
+
+const scanner::Token& TokenStream::nextToken() {
+    consume();
     return getCurrentToken();
 }
 

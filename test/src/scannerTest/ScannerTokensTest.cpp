@@ -33,6 +33,21 @@ std::vector<Token> scanAll(const std::string &path) {
     return out;
 }
 
+TEST(ScannerTokens, takenTokenLexemeSurvivesLaterScan) {
+    auto path = writeTempSource("scan_keep_lexeme", "alpha beta gamma\n");
+    LexFileScannerReader reader;
+    LexicalSession session;
+    Scanner scanner { path, reader.fromConfiguration(getResourcePath("configuration/scanner.lex")), session };
+    Token first = scanner.nextToken();
+    Token second = scanner.nextToken();
+    Token third = scanner.nextToken();
+    EXPECT_EQ(first.id, "id");
+    EXPECT_EQ(first.lexeme, "alpha");
+    EXPECT_EQ(second.lexeme, "beta");
+    EXPECT_EQ(third.lexeme, "gamma");
+    EXPECT_EQ(first.lexeme, "alpha");
+}
+
 TEST(ScannerTokens, keywordsAreDistinctFromIdentifiers) {
     auto path = writeTempSource("scan_kw", "const volatile static extern typedef sizeof struct union enum "
                                            "short long signed unsigned double do switch case default goto "

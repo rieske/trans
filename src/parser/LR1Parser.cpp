@@ -1,6 +1,7 @@
 #include "LR1Parser.h"
 
 #include <string>
+#include <utility>
 #include <vector>
 
 #include "ParseExtensions.h"
@@ -30,9 +31,8 @@ constexpr const char* kTypeSpecFirstProbe = "int";
 void applyShift(std::vector<parse_state>& stack, parse_state next, TokenStream& tokenStream,
         SyntaxTreeBuilder& syntaxTreeBuilder) {
     stack.push_back(next);
-    const scanner::Token& token = tokenStream.getCurrentToken();
-    syntaxTreeBuilder.makeTerminalNode(std::string { token.lexeme }, token.context);
-    tokenStream.nextToken();
+    scanner::Token token = tokenStream.consume();
+    syntaxTreeBuilder.makeTerminalNode(std::move(token.lexeme), token.context);
 }
 
 bool applyReduce(std::vector<parse_state>& stack, const Production& production,

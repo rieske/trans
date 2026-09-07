@@ -31,15 +31,18 @@ public:
     const scanner::Token& peek();
     // Advance without session or id-context effects. Returns the current token.
     scanner::Token takeRaw();
+    // Move out the current token, apply id-context and specifier effects, install next.
+    scanner::Token consume();
 
     void setIdContext(LexIdContext context);
 
 private:
     void indexRoles();
     void advanceIdContext(const scanner::Token& token);
-    scanner::Token classifyAndStamp(const scanner::Token& token) const;
+    void classifyAndStamp(scanner::Token& token) const;
     void refreshCurrent() const;
     void installNext();
+    scanner::Token takeCurrent();
 
     std::function<scanner::Token()> scan;
     scanner::LexicalSession& session_;

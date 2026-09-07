@@ -24,6 +24,8 @@ public:
     bool isAtFinalState() const;
     const std::string& getAccumulatedLexeme() const;
     const std::string& getAccumulatedToken() const;
+    std::string takeAccumulatedLexeme();
+    std::string takeAccumulatedToken();
 
     void setSession(LexicalSession* session) { session_ = session; }
 
