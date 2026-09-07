@@ -950,7 +950,7 @@ void CodeGeneratingVisitor::visit(ast::FunctionDefinition& function) {
     procedure.name = id(frame->symbol.getName());
     procedure.frame.locals = std::move(values);
     procedure.frame.arguments = std::move(arguments);
-    const bool variadic = frame->symbol.getType().isVariadic();
+    const bool variadic = frame->symbol.isVariadic();
     procedure.memoryReturn = type::object_abi::typeNeedsMemoryReturn(
             frame->symbol.returnType());
     procedure.variadic = variadic;

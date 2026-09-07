@@ -16,8 +16,7 @@ void setFunctionDesignator(ast::IdentifierExpression& identifier, SymbolTable& s
     const std::string& name = identifier.getIdentifier();
     assert(symbolTable.hasFunction(name));
     auto functionEntry = symbolTable.findFunction(name);
-    type::Type fnType = type::function(functionEntry.returnType(), functionEntry.arguments(),
-            functionEntry.getType().isVariadic());
+    type::Type fnType = functionEntry.getType();
     auto addr = symbolTable.createTemporarySymbol(type::pointer(fnType));
     identifier.setFunctionDesignatorResult(store, addr, fnType);
     symbols::FunctionDesignatorPlan plan;
@@ -49,7 +48,7 @@ std::optional<Callee> resolveCallee(ast::FunctionCall& functionCall, SymbolTable
             auto entry = symbolTable.findFunction(*d->functionName);
             return Callee {
                 symbols::DirectCallPlan { *d->functionName },
-                entry.getType(),
+                entry.getType().getFunction(),
             };
         }
     }

@@ -33,9 +33,9 @@ public:
     // Unnamed static-duration object. Always a TU data home.
     symbols::ValueEntry createUnnamedStaticObject(type::Type type, translation_unit::Context context);
     // One file-scope ValueEntry: full Function type and Static storage if internal.
-    symbols::FunctionEntry insertFunction(std::string name, type::Function functionType, translation_unit::Context line,
+    symbols::FunctionEntry insertFunction(std::string name, type::Type functionType, translation_unit::Context line,
             bool internalLinkage = false);
-    symbols::FunctionEntry updateFunction(std::string name, type::Function functionType, translation_unit::Context line);
+    symbols::FunctionEntry updateFunction(std::string name, type::Type functionType, translation_unit::Context line);
     symbols::FunctionEntry findFunction(std::string name) const;
     bool isFunctionDefined(const std::string& name) const;
     void markFunctionDefined(const std::string& name);

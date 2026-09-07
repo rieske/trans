@@ -48,27 +48,6 @@ void visitVariableBounds(const type::Type& t, ast::AbstractSyntaxTreeVisitor& vi
 void finalizeRecordDefinition(type::Type& record, SemanticAnalysisVisitor& visitor);
 void finalizeSpecifierType(ast::TypeSpecifier& spec, SemanticAnalysisVisitor& visitor);
 
-// Prototype / definition compatibility (return + arity + arg types + variadic).
-inline bool functionTypesCompatible(const type::Function& existing, const type::Function& incoming) {
-    if (!existing.getReturnType().equivalentTo(incoming.getReturnType())) {
-        return false;
-    }
-    if (existing.isVariadic() != incoming.isVariadic()) {
-        return false;
-    }
-    const auto existingArgs = existing.getArguments();
-    const auto newArgs = incoming.getArguments();
-    if (existingArgs.size() != newArgs.size()) {
-        return false;
-    }
-    for (std::size_t i = 0; i < existingArgs.size(); ++i) {
-        if (!existingArgs[i].equivalentTo(newArgs[i])) {
-            return false;
-        }
-    }
-    return true;
-}
-
 inline bool staticFollowsNonStatic(bool existingInternal, bool incomingInternal) {
     return !existingInternal && incomingInternal;
 }

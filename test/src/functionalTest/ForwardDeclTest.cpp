@@ -122,6 +122,39 @@ int scanf(const char *, ...);
 }
 
 
+TEST(Compiler, compatiblePrototypePointerToIncompleteArray) {
+    SourceProgram program{R"prg(int printf(const char *, ...);
+        int take(int (*p)[]);
+        int take(int (*p)[4]) {
+            return (*p)[0] + (*p)[3];
+        }
+        int main() {
+            int a[4];
+            a[0] = 1;
+            a[3] = 4;
+            printf("%d", take(&a));
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("5");
+}
+
+TEST(Compiler, compatiblePrototypeDropsTopLevelParamConst) {
+    SourceProgram program{R"prg(int printf(const char *, ...);
+        int f(const int x);
+        int f(int x) {
+            return x + 1;
+        }
+        int main() {
+            printf("%d", f(3));
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("4");
+}
+
 TEST(Compiler, incompatiblePrototypeDefinitionIsError) {
     SourceProgram program{R"prg(
         int f(int x);

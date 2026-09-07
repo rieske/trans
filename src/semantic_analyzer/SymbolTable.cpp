@@ -46,11 +46,6 @@ const symbols::ValueEntry* fileScopeFunction(const ValueScope& scope, const std:
     return entry;
 }
 
-type::Type storedFunctionType(const type::Function& functionType) {
-    return type::function(
-            functionType.getReturnType(), functionType.getArguments(), functionType.isVariadic());
-}
-
 } // namespace
 
 bool SymbolTable::insertSymbol(std::string name, const type::Type& type, translation_unit::Context context,
@@ -122,18 +117,18 @@ void SymbolTable::insertFunctionArgument(std::string name, type::Type type, tran
     openFunction().values.insertFunctionArgument(objectName, type, context, std::move(source));
 }
 
-symbols::FunctionEntry SymbolTable::insertFunction(std::string name, type::Function functionType, translation_unit::Context context,
+symbols::FunctionEntry SymbolTable::insertFunction(std::string name, type::Type functionType, translation_unit::Context context,
         bool internalLinkage) {
     const symbols::Storage storage =
             internalLinkage ? symbols::Storage::Static : symbols::Storage::Global;
-    globalScope.insertSymbol({ 0, name }, storedFunctionType(functionType), context, storage,
+    globalScope.insertSymbol({ 0, name }, std::move(functionType), context, storage,
             name, name);
     return findFunction(name);
 }
 
-symbols::FunctionEntry SymbolTable::updateFunction(std::string name, type::Function functionType, translation_unit::Context context) {
+symbols::FunctionEntry SymbolTable::updateFunction(std::string name, type::Type functionType, translation_unit::Context context) {
     const SymbolKey key { 0, name };
-    globalScope.refineType(key, storedFunctionType(functionType));
+    globalScope.refineType(key, std::move(functionType));
     globalScope.setContext(key, std::move(context));
     return findFunction(name);
 }

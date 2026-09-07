@@ -18,7 +18,7 @@ using symbols::ValueEntry;
 
 void startIntFunction(SymbolTable& table, const char* name = "f") {
     translation_unit::Context ctx { "t.c", 1 };
-    table.insertFunction(name, type::function(type::signedInteger(), {}).getFunction(), ctx);
+    table.insertFunction(name, type::function(type::signedInteger(), {}), ctx);
     table.startFunction(name, {});
 }
 
@@ -41,7 +41,7 @@ TEST(SymbolTable, abstractArgumentNamesPreserveArity) {
     SymbolTable table;
     translation_unit::Context ctx { "test", 1 };
     auto functionType = type::function(type::signedInteger(), { type::signedInteger(), type::signedInteger() });
-    table.insertFunction("add", functionType.getFunction(), ctx);
+    table.insertFunction("add", functionType, ctx);
 
     table.startFunction("add", { "", "" });
 
@@ -111,7 +111,7 @@ TEST(SymbolTable, staticLocalInitDoesNotClobberSameNamedGlobal) {
     table.insertSymbol("g", type::signedInteger(), ctx, symbols::Storage::Global);
     table.setStaticInit("g", symbols::asDataWords(symbols::StaticInteger { 1 }));
 
-    table.insertFunction("f", type::function(type::signedInteger(), {}).getFunction(), ctx);
+    table.insertFunction("f", type::function(type::signedInteger(), {}), ctx);
     table.startFunction("f", {});
     table.insertSymbol("g", type::signedInteger(), ctx, symbols::Storage::Static);
     table.setStaticInit("g", symbols::asDataWords(symbols::StaticInteger { 2 }));
@@ -154,7 +154,7 @@ TEST(SymbolTable, localExternDoesNotDuplicateFileScopeDataHome) {
     translation_unit::Context ctx { "t.c", 1 };
     table.insertSymbol("g", type::signedInteger(), ctx, symbols::Storage::Global);
 
-    table.insertFunction("f", type::function(type::signedInteger(), {}).getFunction(), ctx);
+    table.insertFunction("f", type::function(type::signedInteger(), {}), ctx);
     table.startFunction("f", {});
     table.insertSymbol("g", type::signedInteger(), ctx, symbols::Storage::Extern);
     table.endFunction();
@@ -170,7 +170,7 @@ TEST(SymbolTable, localExternDoesNotDuplicateFileScopeDataHome) {
 TEST(SymbolTable, localExternCreatesFileScopeHomeWhenMissing) {
     SymbolTable table;
     translation_unit::Context ctx { "t.c", 1 };
-    table.insertFunction("f", type::function(type::signedInteger(), {}).getFunction(), ctx);
+    table.insertFunction("f", type::function(type::signedInteger(), {}), ctx);
     table.startFunction("f", {});
     table.insertSymbol("g", type::signedInteger(), ctx, symbols::Storage::Extern);
     table.endFunction();
@@ -185,7 +185,7 @@ TEST(SymbolTable, localExternCreatesFileScopeHomeWhenMissing) {
 TEST(SymbolTable, fileScopeDefinitionPromotesEarlierLocalExtern) {
     SymbolTable table;
     translation_unit::Context ctx { "t.c", 1 };
-    table.insertFunction("f", type::function(type::signedInteger(), {}).getFunction(), ctx);
+    table.insertFunction("f", type::function(type::signedInteger(), {}), ctx);
     table.startFunction("f", {});
     table.insertSymbol("g", type::signedInteger(), ctx, symbols::Storage::Extern);
     table.endFunction();
@@ -203,7 +203,7 @@ TEST(SymbolTable, fileScopeDefinitionPromotesEarlierLocalExtern) {
 TEST(SymbolTable, localExternsOfSameNameShareOneDataHome) {
     SymbolTable table;
     translation_unit::Context ctx { "t.c", 1 };
-    const auto fnType = type::function(type::signedInteger(), {}).getFunction();
+    const auto fnType = type::function(type::signedInteger(), {});
     table.insertFunction("f", fnType, ctx);
     table.startFunction("f", {});
     table.insertSymbol("g", type::signedInteger(), ctx, symbols::Storage::Extern);
@@ -226,7 +226,7 @@ TEST(SymbolTable, localExternTypeConflictDoesNotInsert) {
     translation_unit::Context ctx { "t.c", 1 };
     table.insertSymbol("g", type::signedInteger(), ctx, symbols::Storage::Global);
 
-    table.insertFunction("f", type::function(type::signedInteger(), {}).getFunction(), ctx);
+    table.insertFunction("f", type::function(type::signedInteger(), {}), ctx);
     table.startFunction("f", {});
     EXPECT_FALSE(table.insertSymbol("g", type::pointer(type::signedInteger()), ctx,
             symbols::Storage::Extern));
@@ -240,8 +240,8 @@ TEST(SymbolTable, localExternTypeConflictDoesNotInsert) {
 TEST(SymbolTable, localExternConflictsWithFileScopeFunction) {
     SymbolTable table;
     translation_unit::Context ctx { "t.c", 1 };
-    table.insertFunction("g", type::function(type::voidType(), {}).getFunction(), ctx);
-    table.insertFunction("f", type::function(type::signedInteger(), {}).getFunction(), ctx);
+    table.insertFunction("g", type::function(type::voidType(), {}), ctx);
+    table.insertFunction("f", type::function(type::signedInteger(), {}), ctx);
     table.startFunction("f", {});
     EXPECT_FALSE(table.insertSymbol("g", type::signedInteger(), ctx, symbols::Storage::Extern));
     table.endFunction();
@@ -303,7 +303,7 @@ TEST(SymbolTable, parameterObjectNameIsLloc) {
     translation_unit::Context ctx { "t.c", 1 };
     const auto functionType = type::function(
             type::signedInteger(), { type::signedInteger(), type::signedInteger() });
-    table.insertFunction("add", functionType.getFunction(), ctx);
+    table.insertFunction("add", functionType, ctx);
     table.startFunction("add", { "lhs", "rhs" });
 
     const auto arguments = table.getCurrentScopeArguments();
@@ -320,7 +320,7 @@ TEST(SymbolTable, parameterRedeclAtFunctionScopeIsRejected) {
     SymbolTable table;
     translation_unit::Context ctx { "t.c", 1 };
     const auto functionType = type::function(type::signedInteger(), { type::signedInteger() });
-    table.insertFunction("f", functionType.getFunction(), ctx);
+    table.insertFunction("f", functionType, ctx);
     table.startFunction("f", { "x" });
 
     EXPECT_FALSE(table.insertSymbol("x", type::signedInteger(), ctx));
@@ -333,7 +333,7 @@ TEST(SymbolTable, nestedBlockShadowsParameter) {
     SymbolTable table;
     translation_unit::Context ctx { "t.c", 1 };
     const auto functionType = type::function(type::signedInteger(), { type::signedInteger() });
-    table.insertFunction("f", functionType.getFunction(), ctx);
+    table.insertFunction("f", functionType, ctx);
     table.startFunction("f", { "x" });
 
     table.enterBlockScope();
@@ -392,7 +392,7 @@ TEST(SymbolTable, findSeesFileScopeObject) {
 TEST(SymbolTable, findSeesFunctionName) {
     SymbolTable table;
     translation_unit::Context ctx { "t.c", 1 };
-    table.insertFunction("f", type::function(type::signedInteger(), {}).getFunction(), ctx);
+    table.insertFunction("f", type::function(type::signedInteger(), {}), ctx);
 
     EXPECT_FALSE(table.hasGlobalVariable("f"));
     const ValueEntry* found = table.find("f");
@@ -405,7 +405,7 @@ TEST(SymbolTable, findSeesLocalAndArgument) {
     SymbolTable table;
     translation_unit::Context ctx { "t.c", 1 };
     const auto functionType = type::function(type::signedInteger(), { type::signedInteger() });
-    table.insertFunction("f", functionType.getFunction(), ctx);
+    table.insertFunction("f", functionType, ctx);
     table.startFunction("f", { "x" });
     ASSERT_TRUE(table.insertSymbol("y", type::signedInteger(), ctx));
 
@@ -447,7 +447,7 @@ TEST(SymbolTable, unnamedStaticInitFromInsideFunctionUpdatesTuHome) {
     translation_unit::Context ctx { "t.c", 1 };
     const ValueEntry home = table.createUnnamedStaticObject(type::signedInteger(), ctx);
 
-    table.insertFunction("f", type::function(type::signedInteger(), {}).getFunction(), ctx);
+    table.insertFunction("f", type::function(type::signedInteger(), {}), ctx);
     table.startFunction("f", {});
     table.setStaticInit(home.getName(), symbols::asDataWords(symbols::StaticInteger { 9 }));
     table.endFunction();
@@ -464,7 +464,7 @@ TEST(SymbolTable, insertFunctionValueHasVariadicAndInternalLinkage) {
     SymbolTable table;
     translation_unit::Context ctx { "t.c", 1 };
     const auto fn = type::function(
-            type::signedInteger(), { type::signedInteger() }, true).getFunction();
+            type::signedInteger(), { type::signedInteger() }, true);
     table.insertFunction("log", fn, ctx, true);
 
     EXPECT_TRUE(table.hasFunction("log"));
@@ -478,7 +478,7 @@ TEST(SymbolTable, insertFunctionValueHasVariadicAndInternalLinkage) {
 
     const auto entry = table.findFunction("log");
     EXPECT_THAT(entry.getName(), Eq("log"));
-    EXPECT_TRUE(entry.getType().isVariadic());
+    EXPECT_TRUE(entry.isVariadic());
     EXPECT_TRUE(entry.hasInternalLinkage());
     EXPECT_FALSE(table.isFunctionDefined("log"));
 }
@@ -487,8 +487,8 @@ TEST(SymbolTable, updateFunctionRefinesTheSameValueAndKeepsLinkage) {
     SymbolTable table;
     translation_unit::Context proto { "t.c", 1 };
     translation_unit::Context def { "t.c", 9 };
-    table.insertFunction("f", type::function(type::voidType(), {}).getFunction(), proto, true);
-    table.updateFunction("f", type::function(type::signedInteger(), {}).getFunction(), def);
+    table.insertFunction("f", type::function(type::voidType(), {}), proto, true);
+    table.updateFunction("f", type::function(type::signedInteger(), {}), def);
 
     const ValueEntry* found = table.find("f");
     ASSERT_NE(found, nullptr);
@@ -497,7 +497,7 @@ TEST(SymbolTable, updateFunctionRefinesTheSameValueAndKeepsLinkage) {
     EXPECT_TRUE(found->isStatic());
 
     const auto entry = table.findFunction("f");
-    EXPECT_TRUE(entry.getType().getReturnType().isPrimitive());
+    EXPECT_TRUE(entry.returnType().isPrimitive());
     EXPECT_TRUE(entry.hasInternalLinkage());
     EXPECT_THAT(entry.getContext().getOffset(), Eq(9u));
 }
@@ -506,7 +506,7 @@ TEST(SymbolTable, functionParameterIsPointerNotHasFunction) {
     SymbolTable table;
     translation_unit::Context ctx { "t.c", 1 };
     const auto cb = type::function(type::voidType(), {});
-    const auto fn = type::function(type::signedInteger(), { type::pointer(cb) }).getFunction();
+    const auto fn = type::function(type::signedInteger(), { type::pointer(cb) });
     table.insertFunction("apply", fn, ctx);
     table.startFunction("apply", { "cb" });
 
@@ -521,7 +521,7 @@ TEST(SymbolTable, functionParameterIsPointerNotHasFunction) {
 TEST(SymbolTable, markFunctionDefinedIsOnTheRecord) {
     SymbolTable table;
     translation_unit::Context ctx { "t.c", 1 };
-    table.insertFunction("f", type::function(type::signedInteger(), {}).getFunction(), ctx);
+    table.insertFunction("f", type::function(type::signedInteger(), {}), ctx);
     EXPECT_FALSE(table.isFunctionDefined("f"));
     table.markFunctionDefined("f");
     EXPECT_TRUE(table.isFunctionDefined("f"));
