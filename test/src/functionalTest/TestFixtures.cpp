@@ -11,6 +11,7 @@
 #include "gtest/gtest.h"
 
 #include <cstdlib>
+#include <filesystem>
 #include <fstream>
 #include <iterator>
 #include <sstream>
@@ -111,7 +112,7 @@ void Program::addCompilerArg(std::string arg) {
 }
 
 int Program::compileOnce(bool verbose) {
-    std::vector<std::string> arguments{"trans", "--resources=../../../"};
+    std::vector<std::string> arguments{"trans", "--resources=" + getResourcesBaseDir()};
     const auto matrixFlags = functionalTestFlags();
     arguments.insert(arguments.end(), matrixFlags.begin(), matrixFlags.end());
     arguments.insert(arguments.end(), extraCompilerArgs.begin(), extraCompilerArgs.end());
@@ -255,11 +256,25 @@ SourceProgram::SourceProgram(std::string sourceCode, std::vector<std::string> ex
     for (auto& arg : extraArgs) {
         addCompilerArg(std::move(arg));
     }
-    if (mkdir(programDirectory.c_str(), 0777) == -1 && errno != 17) {
-        throw std::runtime_error("Could not create directory " + programDirectory + ": " + std::to_string(errno) + ":" + strerror(errno));
-    }
+    ensureDirectory(programDirectory);
 
     std::ofstream programFile{getSourceFilePath()};
     programFile << sourceCode;
     programFile.close();
+}
+
+SourceProgram::~SourceProgram() {
+    if (::testing::Test::HasFailure()) {
+        return;
+    }
+    // The driver appends (.c.o, .c.out) for some artifacts and replaces the extension
+    // (.s, .i) for others, so match the stem rather than the file name.
+    const std::filesystem::path source { getSourceFilePath() };
+    const std::string stem = source.stem().string() + ".";
+    std::error_code ec;
+    for (const auto& entry : std::filesystem::directory_iterator { programDirectory, ec }) {
+        if (entry.path().filename().string().rfind(stem, 0) == 0) {
+            std::filesystem::remove(entry.path(), ec);
+        }
+    }
 }

@@ -8,6 +8,7 @@
 
 #include "ResourceHelpers.h"
 #include "DriverHarness.h"
+#include "driver/ResourcesLocation.h"
 #include "util/Process.h"
 #include "util/SourcePath.h"
 
@@ -157,6 +158,9 @@ TEST(Driver, findsResourcesWhenCwdHasNone) {
     {
         std::ofstream out { sourcePath };
         out << kTrivialMain;
+    }
+    if (resourcesBaseFromExecutableDir(trans.parent_path()).empty()) {
+        GTEST_SKIP() << "build tree is outside the source tree; resources need --resources";
     }
     const auto previous = std::filesystem::current_path();
     std::filesystem::current_path(dir);

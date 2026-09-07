@@ -8,26 +8,22 @@
 #include <utility>
 
 std::string getResourcesBaseDir() {
-    return "../../../";
+    return TRANS_SOURCE_ROOT;
 }
 
 std::string getResourcePath(std::string resource) {
-    return "../../../resources/" + resource;
+    return getResourcesBaseDir() + "resources/" + resource;
 }
 
 std::string getTestResourcePath(std::string resource) {
-    return "../../../test/" + resource;
+    return getResourcesBaseDir() + "test/" + resource;
 }
-
-namespace {
 
 void ensureDirectory(const std::string& dir) {
     if (mkdir(dir.c_str(), 0777) == -1 && errno != EEXIST) {
         throw std::runtime_error("Could not create " + dir);
     }
 }
-
-} // namespace
 
 std::string writeTempSource(const std::string& name, const std::string& contents) {
     const std::string dir = getTestResourcePath("programs/tmp/");

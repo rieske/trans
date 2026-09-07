@@ -147,7 +147,9 @@ set_property(DIRECTORY APPEND PROPERTY ADDITIONAL_MAKE_CLEAN_FILES coverage)
 add_custom_target(scrub
   COMMAND ${CMAKE_COMMAND} --build ${CMAKE_BINARY_DIR} --target clean
   COMMAND ${CMAKE_COMMAND} -E rm -rf ${CMAKE_BINARY_DIR}/coverage
-  COMMAND find ${CMAKE_BINARY_DIR} -type f \\( -name "*.gcda" -o -name "*.gcno" \\) -delete
+  COMMAND find ${CMAKE_BINARY_DIR} -type f -name "*.gcda" -delete
+  COMMAND find ${CMAKE_BINARY_DIR} -type f -name "*.gcno" -delete
+  COMMAND ${CMAKE_COMMAND} -E rm -rf ${CMAKE_SOURCE_DIR}/test/programs/tmp
   WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
   COMMENT "Clean build outputs and gcov artifacts"
 )
