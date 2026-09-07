@@ -1,5 +1,7 @@
 #include "TestFixtures.h"
 
+#include "ResourceHelpers.h"
+
 #include "driver/ConfigurationParser.h"
 #include "util/LogManager.h"
 
@@ -17,7 +19,7 @@ TEST(FunctionalHarness, sourceAndExecutablePathsIncludeMatrixTag) {
 
 TEST(Compiler, reportsMissingSourceFile) {
     std::string sourceFile = "nonexistentSourceFileName";
-    std::vector<std::string> arguments {"trans", "--resources=../../../", sourceFile};
+    std::vector<std::string> arguments {"trans", "--resources=" + getResourcesBaseDir(), sourceFile};
     std::vector<char*> argv;
     for (const auto& arg : arguments) {
         argv.push_back((char*)arg.data());

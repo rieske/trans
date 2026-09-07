@@ -7,6 +7,7 @@ std::string getResourcesBaseDir();
 std::string getResourcePath(std::string resource);
 std::string getTestResourcePath(std::string resource);
 
+void ensureDirectory(const std::string& dir);
 std::string writeTempSource(const std::string& name, const std::string& contents);
 
 class ScopedTempFile {

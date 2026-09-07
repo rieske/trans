@@ -4,6 +4,7 @@ target_include_directories(testUtil PUBLIC
 )
 # Warnings/coverage for test helpers; include path stays test-local (not trans_src).
 target_link_libraries(testUtil PUBLIC trans_common)
+target_compile_definitions(testUtil PRIVATE "TRANS_SOURCE_ROOT=\"${CMAKE_SOURCE_DIR}/\"")
 if(TRANS_ENABLE_COVERAGE)
   target_link_libraries(testUtil PUBLIC trans_coverage)
 endif()

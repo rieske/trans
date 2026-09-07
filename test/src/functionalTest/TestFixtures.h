@@ -57,6 +57,9 @@ class Program {
 class SourceProgram : public Program {
   public:
     explicit SourceProgram(std::string sourceCode, std::vector<std::string> extraCompilerArgs = {});
+    // Removes this case's source and every artifact the compiler derived from it, unless
+    // the test failed - a red test keeps its .s and .i to look at.
+    ~SourceProgram() override;
 
   private:
     const std::string programDirectory;
