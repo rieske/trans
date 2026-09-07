@@ -8,6 +8,7 @@ namespace parser {
 class GrammarBuilder {
 public:
     void defineRule(std::string nonterminal, std::vector<std::string> production);
+    bool empty() const { return nonterminalDefinitions.empty(); }
     Grammar build();
 
 private:

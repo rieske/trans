@@ -7,6 +7,7 @@
 #include <fstream>
 #include <stdexcept>
 #include <string>
+#include <unistd.h>
 
 using namespace testing;
 using namespace util;
@@ -18,6 +19,22 @@ TEST(Process, capturesStdoutOfSuccessfulCommand) {
     EXPECT_EQ(result.exitCode, 0);
     EXPECT_EQ(result.stdoutOutput, "hello\n");
     EXPECT_TRUE(result.stderrOutput.empty());
+}
+
+// pipe() hands out the lowest free descriptors, so a caller launched with 0/1/2 closed gets
+// pipe fds that the child's own redirects then clobber. Which stream is lost depends on
+// redirect order, so the fds are moved clear of stdio instead.
+TEST(Process, survivesClosedStdioDescriptors) {
+    for (int closed : { STDIN_FILENO, STDERR_FILENO }) {
+        const int saved = ::dup(closed);
+        ASSERT_GE(saved, 0);
+        ::close(closed);
+        ProcessResult result = runProcess({ "/bin/sh", "-c", "cat; echo ERR 1>&2" }, "HELLO");
+        ::dup2(saved, closed);
+        ::close(saved);
+        EXPECT_EQ(result.stdoutOutput, "HELLO") << "with fd " << closed << " closed";
+        EXPECT_EQ(result.stderrOutput, "ERR\n") << "with fd " << closed << " closed";
+    }
 }
 
 TEST(Process, emptyArgvThrows) {

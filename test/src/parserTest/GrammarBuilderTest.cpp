@@ -5,8 +5,20 @@
 
 #include "ResourceHelpers.h"
 
+#include <stdexcept>
+
 using namespace testing;
 using namespace parser;
+
+// build() cannot represent a production with no symbols: it never records one, then reads
+// it back with map::at. Rejected where the rule's name is still in hand.
+TEST(GrammarBuilder, rejectsRulesItCannotRepresent) {
+    GrammarBuilder builder;
+    EXPECT_THAT([&] { builder.defineRule("<A>", {}); },
+            ThrowsMessage<std::runtime_error>(AllOf(HasSubstr("<A>"), HasSubstr("empty production"))));
+    EXPECT_THAT([&] { builder.defineRule("", { "a" }); },
+            ThrowsMessage<std::runtime_error>(HasSubstr("no left-hand side")));
+}
 
 TEST(GrammarBuilder, buildsExpressionGrammar) {
     GrammarBuilder builder;

@@ -109,7 +109,7 @@ void ParsingTable::reportError(parse_state state, const scanner::Token& current,
         const uint32_t begin = errorOffset_[state];
         const uint32_t end = errorOffset_[state + 1];
         for (uint32_t i = begin; i < end; ++i) {
-            message << " " << grammar_->getSymbolById(errorCandidates_[i]);
+            message << " " << grammar_->str(errorCandidates_[i]);
         }
     }
     syntaxTreeBuilder.sink().error(current.context, message.str());

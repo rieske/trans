@@ -869,8 +869,36 @@ world";
             }
         )prg",
         "array brace initializers for incomplete arrays are not implemented",
+    },
+    SemanticErrorCase{
+        "typedefWithScalarInitializer",
+        R"prg(
+            typedef int a = 1;
+        )prg",
+        ":2: error: typedef `a` is initialized",
+    },
+    SemanticErrorCase{
+        "typedefWithInitializerInBlock",
+        R"prg(
+            int main(void) {
+                typedef int a = 1;
+                return 0;
+            }
+        )prg",
+        ":3: error: typedef `a` is initialized",
     }
 ), [](const testing::TestParamInfo<SemanticErrorCase> &info) { return std::string{info.param.name}; });
+
+// Needs Not(HasSubstr(...)): the catalog asserts with HasSubstr alone, so reporting every
+// declarator instead of only the initialized one would still satisfy it.
+TEST(Compiler, typedefReportsOnlyTheInitializedDeclarator) {
+    SourceProgram program{R"prg(
+        typedef int a, b = 1;
+    )prg"};
+    program.compile();
+    program.assertCompilationErrors(":2: error: typedef `b` is initialized");
+    EXPECT_THAT(program.getCompilationErrors(), Not(HasSubstr("typedef `a`")));
+}
 
 TEST(Compiler, bitFieldWidthNotConstantIsError) {
     SourceProgram program{R"prg(

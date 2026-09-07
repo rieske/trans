@@ -1,11 +1,18 @@
 #include "GrammarBuilder.h"
 
+#include <stdexcept>
 #include <vector>
 #include <algorithm>
 
 namespace parser {
 
 void GrammarBuilder::defineRule(std::string nonterminal, std::vector<std::string> production) {
+    if (nonterminal.empty()) {
+        throw std::runtime_error { "grammar rule has no left-hand side" };
+    }
+    if (production.empty()) {
+        throw std::runtime_error { "grammar rule `" + nonterminal + "` has an empty production" };
+    }
     if (!nonterminalDefinitionExists(nonterminal)) {
         defineSymbol(nonterminal);
         nonterminalDefinitions.push_back(nonterminal);

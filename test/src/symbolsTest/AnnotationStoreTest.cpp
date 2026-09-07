@@ -121,6 +121,22 @@ TEST(AnnotationStore, resultSlotRoundTrip) {
     EXPECT_EQ(cstore.value(&node, symbols::ValueSlot::Lvalue), nullptr);
 }
 
+// "Result exists after successful SA" must hold in Release too, where an assert is absent.
+TEST(AnnotationStore, resultThrowsWhenSlotIsMissing) {
+    symbols::AnnotationStore store;
+    int node = 11;
+    const symbols::AnnotationStore& cstore = store;
+
+    EXPECT_THROW(store.result(&node), std::logic_error);
+    EXPECT_THROW(cstore.result(&node), std::logic_error);
+
+    // Node present but Result slot empty is the same failure.
+    store.setLvalue(&node, symbols::ValueEntry("addr", type::signedInteger(),
+            translation_unit::Context { "t", 1 }, 0));
+    EXPECT_THROW(store.result(&node), std::logic_error);
+    EXPECT_THROW(cstore.result(&node), std::logic_error);
+}
+
 TEST(AnnotationStore, lvalueSlot) {
     symbols::AnnotationStore store;
     int node = 8;

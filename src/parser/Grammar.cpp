@@ -8,6 +8,16 @@
 
 namespace parser {
 
+namespace {
+
+const std::string* findSymbolName(const std::map<std::string, int, std::less<>>& symbols, int id) {
+    const auto it = std::find_if(symbols.begin(), symbols.end(),
+            [&](const auto& pair) { return pair.second == id; });
+    return it == symbols.end() ? nullptr : &it->first;
+}
+
+} // namespace
+
 Grammar::Grammar(std::map<std::string, int> symbolIDs,
         std::vector<int> terminals,
         std::vector<int> nonterminals,
@@ -17,7 +27,7 @@ Grammar::Grammar(std::map<std::string, int> symbolIDs,
     terminalIDs{std::move(terminals)},
     startSymbol { -1 },
     endSymbol { 0 },
-    topRule{startSymbol, {nonterminalIDs[0]}, static_cast<int>(rules.size())}
+    topRule{startSymbol, {nonterminalIDs.at(0)}, static_cast<int>(rules.size())}
 {
     int maxId = 0;
     for (const auto& entry : this->symbolIDs) {
@@ -87,10 +97,11 @@ int Grammar::getEndSymbol() const {
 }
 
 std::string Grammar::getSymbolById(int symbolId) const {
-    auto symbolIt = std::find_if(symbolIDs.begin(), symbolIDs.end(), [&](const std::pair<std::string, int>& pair) {
-        return pair.second == symbolId;
-    });
-    return symbolIt->first;
+    const std::string* name = findSymbolName(symbolIDs, symbolId);
+    if (name == nullptr) {
+        throw std::out_of_range { "no grammar symbol with id " + std::to_string(symbolId) };
+    }
+    return *name;
 }
 
 int Grammar::symbolId(std::string definition) const {
@@ -144,7 +155,8 @@ std::vector<int> Grammar::toTerminalIds(const LookaheadSet& bits) const {
 }
 
 std::string Grammar::str(int symbolId) const {
-    return getSymbolById(symbolId);
+    const std::string* name = findSymbolName(symbolIDs, symbolId);
+    return name != nullptr ? *name : "<symbol " + std::to_string(symbolId) + ">";
 }
 
 std::string Grammar::str(const Production& production) const {

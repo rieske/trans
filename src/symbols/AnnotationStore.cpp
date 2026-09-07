@@ -1,6 +1,7 @@
 #include "AnnotationStore.h"
 
-#include <cassert>
+#include <stdexcept>
+#include <utility>
 
 namespace symbols {
 
@@ -50,16 +51,17 @@ bool AnnotationStore::hasValue(NodeRef node, ValueSlot slot) const {
     return value(node, slot) != nullptr;
 }
 
-ValueEntry* AnnotationStore::result(NodeRef node) {
+// Throws, not asserts: the default build is -DNDEBUG, where an assert leaves callers a nullptr.
+const ValueEntry* AnnotationStore::result(NodeRef node) const {
     auto* r = value(node, ValueSlot::Result);
-    assert(r && "Result annotation required but missing");
+    if (r == nullptr) {
+        throw std::logic_error { "internal compiler error: Result annotation required but missing" };
+    }
     return r;
 }
 
-const ValueEntry* AnnotationStore::result(NodeRef node) const {
-    auto* r = value(node, ValueSlot::Result);
-    assert(r && "Result annotation required but missing");
-    return r;
+ValueEntry* AnnotationStore::result(NodeRef node) {
+    return const_cast<ValueEntry*>(std::as_const(*this).result(node));
 }
 
 void AnnotationStore::setLabel(NodeRef node, LabelSlot slot, LabelEntry label) {

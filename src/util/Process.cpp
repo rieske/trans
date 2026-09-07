@@ -23,6 +23,19 @@ void closeFd(int& fd) {
     }
 }
 
+// A pipe fd that lands on 0/1/2 is clobbered by the child's own redirects, and which one
+// breaks depends on redirect order. Move them clear so order cannot alias.
+void moveAboveStdio(int& fd) {
+    if (fd < 0 || fd > STDERR_FILENO) {
+        return;
+    }
+    const int moved = ::fcntl(fd, F_DUPFD, STDERR_FILENO + 1);
+    if (moved >= 0) {
+        ::close(fd);
+        fd = moved;
+    }
+}
+
 void closePipe(int pipefds[2]) {
     closeFd(pipefds[0]);
     closeFd(pipefds[1]);
@@ -30,6 +43,14 @@ void closePipe(int pipefds[2]) {
 
 [[noreturn]] void throwErrno(const char* what) {
     throw std::runtime_error(std::string(what) + ": " + std::strerror(errno));
+}
+
+void openPipe(int pipefds[2], const char* what) {
+    if (::pipe(pipefds) != 0) {
+        throwErrno(what);
+    }
+    moveAboveStdio(pipefds[0]);
+    moveAboveStdio(pipefds[1]);
 }
 
 std::string joinArgv(const std::vector<std::string>& argv) {
@@ -149,22 +170,37 @@ ProcessResult runProcess(const std::vector<std::string>& argv,
     const bool captureStdout = stdoutPath.empty();
     const bool feedStdin = !stdinData.empty();
 
+    // Built before fork: only async-signal-safe calls are legal between fork and exec,
+    // and allocating there can deadlock on the allocator lock. argv outlives the call.
+    std::vector<char*> cargv;
+    cargv.reserve(argv.size() + 1);
+    for (const auto& arg : argv) {
+        cargv.push_back(const_cast<char*>(arg.c_str()));
+    }
+    cargv.push_back(nullptr);
+
     auto cleanupPipes = [&]() {
         closePipe(stdinPipe);
         closePipe(stdoutPipe);
         closePipe(stderrPipe);
     };
 
-    if (feedStdin && ::pipe(stdinPipe) != 0) {
-        throwErrno("pipe(stdin)");
+    if (feedStdin) {
+        openPipe(stdinPipe, "pipe(stdin)");
     }
-    if (captureStdout && ::pipe(stdoutPipe) != 0) {
-        cleanupPipes();
-        throwErrno("pipe(stdout)");
+    if (captureStdout) {
+        try {
+            openPipe(stdoutPipe, "pipe(stdout)");
+        } catch (...) {
+            cleanupPipes();
+            throw;
+        }
     }
-    if (::pipe(stderrPipe) != 0) {
+    try {
+        openPipe(stderrPipe, "pipe(stderr)");
+    } catch (...) {
         cleanupPipes();
-        throwErrno("pipe(stderr)");
+        throw;
     }
 
     pid_t pid = ::fork();
@@ -174,39 +210,39 @@ ProcessResult runProcess(const std::vector<std::string>& argv,
     }
 
     if (pid == 0) {
+        // dup2 failure would run the child on the parent's streams.
+        const auto redirect = [](int from, int to) {
+            if (::dup2(from, to) < 0) {
+                _exit(126);
+            }
+        };
+
+        redirect(stderrPipe[1], STDERR_FILENO);
+
         if (feedStdin) {
-            ::dup2(stdinPipe[0], STDIN_FILENO);
+            redirect(stdinPipe[0], STDIN_FILENO);
         } else {
             int devnull = ::open("/dev/null", O_RDONLY);
             if (devnull >= 0) {
-                ::dup2(devnull, STDIN_FILENO);
+                redirect(devnull, STDIN_FILENO);
                 ::close(devnull);
             }
         }
 
         if (captureStdout) {
-            ::dup2(stdoutPipe[1], STDOUT_FILENO);
+            redirect(stdoutPipe[1], STDOUT_FILENO);
         } else {
             int outFd = ::open(stdoutPath.c_str(), O_WRONLY | O_CREAT | O_TRUNC, 0644);
             if (outFd < 0) {
                 _exit(126);
             }
-            ::dup2(outFd, STDOUT_FILENO);
+            redirect(outFd, STDOUT_FILENO);
             ::close(outFd);
         }
-
-        ::dup2(stderrPipe[1], STDERR_FILENO);
 
         closePipe(stdinPipe);
         closePipe(stdoutPipe);
         closePipe(stderrPipe);
-
-        std::vector<char*> cargv;
-        cargv.reserve(argv.size() + 1);
-        for (const auto& arg : argv) {
-            cargv.push_back(const_cast<char*>(arg.c_str()));
-        }
-        cargv.push_back(nullptr);
 
         ::execvp(cargv[0], cargv.data());
         _exit(127);

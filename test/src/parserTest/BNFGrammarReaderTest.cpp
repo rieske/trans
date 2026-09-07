@@ -6,6 +6,9 @@
 #include "gtest/gtest.h"
 #include "gmock/gmock.h"
 
+#include <fstream>
+#include <stdexcept>
+
 
 using namespace testing;
 using namespace parser;
@@ -81,4 +84,15 @@ TEST(BNFGrammarReader, readsExpressionGrammarBNF) {
 TEST(BNFGrammarReader, throwsInvalidArgumentWhenNotAbleToReadConfiguration) {
     BNFFileReader reader;
     ASSERT_THROW(reader.readGrammar("nonexistentFile.abc"), std::invalid_argument);
+}
+
+// The reader knows the path, so a file that parses cleanly but defines nothing names it.
+TEST(BNFGrammarReader, throwsNamingTheFileWhenGrammarDefinesNoProductions) {
+    ScopedTempFile emptyGrammar { getTestResourcePath("programs/tmp/empty_grammar.bnf") };
+    std::ofstream { emptyGrammar.path() };
+
+    BNFFileReader reader;
+    EXPECT_THAT([&] { reader.readGrammar(emptyGrammar.path()); },
+            ThrowsMessage<std::runtime_error>(AllOf(
+                    HasSubstr("No productions"), HasSubstr(emptyGrammar.path()))));
 }

@@ -58,6 +58,9 @@ Grammar BNFFileReader::readGrammar(const std::string bnfFileName) const {
         }
     }
 
+    if (builder.empty()) {
+        throw std::runtime_error { "No productions in grammar configuration file: " + bnfFileName };
+    }
     return builder.build();
 }
 

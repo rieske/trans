@@ -535,12 +535,14 @@ ContextualSyntaxNodeBuilder::ContextualSyntaxNodeBuilder(const parser::Grammar& 
         context.environment().session().recordPacked.begin();
         context.pushIsUnion(false);
         context.newStructMemberList();
+        context.newStructDeclaratorList();
     });
     bind(s_struct_or_union, { grammar.symbolId("union") }, [](AbstractSyntaxTreeBuilderContext& context) {
         context.popTerminal();
         context.environment().session().recordPacked.begin();
         context.pushIsUnion(true);
         context.newStructMemberList();
+        context.newStructDeclaratorList();
     });
 
     bind(s_struct_or_union_spec, { s_struct_or_union, s_identifier, s_open_brace, s_struct_decl_list, s_close_brace }, [](AbstractSyntaxTreeBuilderContext& context) {
@@ -548,6 +550,7 @@ ContextualSyntaxNodeBuilder::ContextualSyntaxNodeBuilder(const parser::Grammar& 
                 context.popTerminal(); // {
                 auto tag = context.popTerminal();
                 auto members = context.popStructMemberList();
+                context.popStructDeclaratorList();
                 bool isUnion = context.popIsUnion();
                 // Shared incomplete tag so self-referential members keep one layout identity.
                 type::Type tagType = context.environment().ensureStructTag(tag.value);
@@ -564,6 +567,7 @@ ContextualSyntaxNodeBuilder::ContextualSyntaxNodeBuilder(const parser::Grammar& 
                 const auto close = context.popTerminal(); // }
                 context.popTerminal(); // {
                 auto members = context.popStructMemberList();
+                context.popStructDeclaratorList();
                 bool isUnion = context.popIsUnion();
                 type::Type completed = type::incompleteRecord();
                 completeRecordFromSpec(context, completed, std::move(members), isUnion, close.context);
@@ -578,6 +582,7 @@ ContextualSyntaxNodeBuilder::ContextualSyntaxNodeBuilder(const parser::Grammar& 
                 auto tag = context.popTerminal();
                 context.popIsUnion(); // layout decided at definition
                 context.popStructMemberList(); // no body
+                context.popStructDeclaratorList();
                 context.environment().session().recordPacked.abandon();
                 context.pushTypeSpecifier(TypeSpecifier {
                         context.environment().ensureStructTag(tag.value), tag.value });
@@ -605,7 +610,7 @@ ContextualSyntaxNodeBuilder::ContextualSyntaxNodeBuilder(const parser::Grammar& 
 
     bind(s_struct_decl, { s_spec_qualifier_list, s_struct_declarator_list, s_semicolon }, [](AbstractSyntaxTreeBuilderContext& context) {
                 context.popTerminal(); // ;
-                auto declarators = context.popStructDeclarators();
+                auto declarators = context.takeStructDeclarators();
                 auto specs = popResolvedSpecQualifiers(context);
                 if (context.failed()) {
                     return;

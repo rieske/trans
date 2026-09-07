@@ -134,9 +134,14 @@ public:
     void addStructMember(std::string name, type::Type memberType,
             std::optional<int> bitWidth = std::nullopt);
     std::vector<type::MemberSpec> popStructMemberList();
+    // Scoped to the struct body, like the member list above: a struct defined inside a
+    // member declaration must not drain the declarators the enclosing struct_decl holds.
+    void newStructDeclaratorList();
     void addStructDeclarator(std::unique_ptr<Declarator> declarator,
             std::optional<int> bitWidth = std::nullopt);
-    std::vector<std::pair<std::unique_ptr<Declarator>, std::optional<int>>> popStructDeclarators();
+    // Drains the current body's list; the frame stays for the next struct_decl.
+    std::vector<std::pair<std::unique_ptr<Declarator>, std::optional<int>>> takeStructDeclarators();
+    void popStructDeclaratorList();
     void pushGenericAssociation(GenericAssociation association);
     GenericAssociation popGenericAssociation();
     void newGenericAssocList(GenericAssociation association);

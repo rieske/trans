@@ -39,7 +39,7 @@ public:
     void setResult(NodeRef node, ValueEntry value) {
         setValue(node, ValueSlot::Result, std::move(value));
     }
-    // Required Result after successful SA (asserts if missing). Prefer hasResult + value() for probes.
+    // Required Result after successful SA (throws if missing). Prefer hasResult + value() for probes.
     ValueEntry* result(NodeRef node);
     const ValueEntry* result(NodeRef node) const;
     bool hasResult(NodeRef node) const { return hasValue(node, ValueSlot::Result); }
