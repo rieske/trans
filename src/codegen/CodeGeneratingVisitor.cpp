@@ -1,4 +1,5 @@
 #include "CodeGeneratingVisitor.h"
+#include "codegen/InternalError.h"
 #include "ast/InitializerListExpression.h"
 
 #include <cassert>
@@ -202,7 +203,7 @@ void CodeGeneratingVisitor::visit(ast::InitializedDeclarator& declarator) {
     if (!declarator.hasInitializer()) {
         return;
     }
-    assert(holder && "InitializedDeclarator holder required after successful SA");
+    require(holder, "InitializedDeclarator holder");
     const auto& fieldStores = store_.structFieldInits(&declarator);
     if (!fieldStores.empty()) {
         emitStructFieldInits(id(*holder), fieldStores);
@@ -222,8 +223,7 @@ void CodeGeneratingVisitor::visit(ast::ArrayAccess& arrayAccess) {
     }
     const auto* indexPlan = store_.addressPlan(&arrayAccess);
     const auto* index = indexPlan ? symbols::get_if<symbols::IndexPlan>(indexPlan) : nullptr;
-    // SA always publishes IndexPlan for successful array access analysis.
-    assert(index && "IndexPlan required for array codegen");
+    require(index, "IndexPlan for array codegen");
     ast::Expression& baseExpr = symbols::pickBinaryOperand(
             *arrayAccess.getLeftOperand(), *arrayAccess.getRightOperand(), index->baseOperand);
     ast::Expression& indexExpr = symbols::pickBinaryOperand(
@@ -262,9 +262,9 @@ void CodeGeneratingVisitor::visit(ast::MemberAccess& memberAccess) {
     }
     const auto* plan = store_.addressPlan(&memberAccess);
     const auto* field = plan ? symbols::get_if<symbols::FieldPlan>(plan) : nullptr;
-    assert(field && "FieldPlan required for member access codegen");
+    require(field, "FieldPlan for member access codegen");
     const symbols::ValueEntry* baseSym = memberAccess.getBase()->addressSymbol(store_);
-    assert(baseSym && "member base symbol required after successful SA");
+    require(baseSym, "member base symbol");
     const int addrTemp = id(*memberAccess.getLvalueSymbol(store_));
     const auto baseMode = baseSym->getType().isPointer()
             ? symbols::AddressBaseMode::PointerValue
@@ -420,7 +420,7 @@ void CodeGeneratingVisitor::visit(ast::ConstantExpression& constant) {
 
 void CodeGeneratingVisitor::visit(ast::StringLiteralExpression& stringLiteral) {
     const auto* label = stringLiteral.rodataLabel(store_);
-    assert(label && stringLiteral.hasResultSymbol(store_) && "string literal needs rodata label");
+    require(label, "string literal rodata label");
     emit(ir::assignLabelAddress(id(*label), id(*stringLiteral.getResultSymbol(store_))));
 }
 
@@ -472,7 +472,7 @@ void CodeGeneratingVisitor::visit(ast::PostfixExpression& expression) {
     expression.visitOperand(*this);
 
     auto* pre = expression.getPreOperationSymbol(store_);
-    assert(pre && "Postfix PreOperation required after successful SA");
+    require(pre, "postfix PreOperation");
     const int resultSymbolName = id(*expression.getResultSymbol(store_));
     const int preOperationSymbol = id(*pre);
     emit(ir::assign(resultSymbolName, preOperationSymbol));

@@ -2,6 +2,8 @@
 
 #include "types/Operator.h"
 
+#include <stdexcept>
+
 namespace {
 
 TEST(Operator, unaryOpFromLexeme) {
@@ -167,6 +169,11 @@ TEST(Operator, spellingRoundTripsAssign) {
 TEST(Operator, requireOpReturnsParsed) {
     EXPECT_EQ(type::requireOp(type::unaryOpFromLexeme("-")), type::UnaryOp::Minus);
     EXPECT_EQ(type::requireOp(type::incDecFromLexeme("++")), type::IncDec::Inc);
+}
+
+TEST(Operator, requireOpRejectsUnparsedLexeme) {
+    EXPECT_THROW(type::requireOp(type::unaryOpFromLexeme("@")), std::logic_error);
+    EXPECT_THROW(type::requireOp(type::arithmeticOpFromLexeme("&&")), std::logic_error);
 }
 
 } // namespace

@@ -1,7 +1,8 @@
 #ifndef ADDRESS_H_
 #define ADDRESS_H_
 
-#include <cassert>
+#include "codegen/InternalError.h"
+
 #include <string>
 #include <utility>
 
@@ -36,19 +37,25 @@ public:
     bool isGlobal() const { return kind_ == Kind::Global; }
 
     FrameBase frameBase() const {
-        assert(!isGlobal() && "frameBase() is only valid for frame slots");
+        if (isGlobal()) {
+            internalError("frameBase() is only valid for frame slots");
+        }
         return frameBase_;
     }
 
     int offsetBytes() const {
-        assert(!isGlobal() && "offsetBytes() is only valid for frame slots");
+        if (isGlobal()) {
+            internalError("offsetBytes() is only valid for frame slots");
+        }
         return offsetBytes_;
     }
 
     int sizeBytes() const { return sizeBytes_; }
 
     const std::string& label() const {
-        assert(isGlobal() && "label() is only valid for global homes");
+        if (!isGlobal()) {
+            internalError("label() is only valid for global homes");
+        }
         return label_;
     }
 

@@ -1,6 +1,6 @@
 #include "CodeGeneratingVisitor.h"
+#include "codegen/InternalError.h"
 
-#include <cassert>
 #include <stdexcept>
 
 #include "Instruction.h"
@@ -9,7 +9,7 @@
 namespace codegen {
 
 int CodeGeneratingVisitor::addScratchValue(const type::Type& scratchType) {
-    assert(currentProcedure_ && "scratch Value outside of a procedure");
+    require(currentProcedure_, "enclosing procedure for a scratch value");
     return addFrameTemp(module_.strings, *currentProcedure_, scratchType);
 }
 
