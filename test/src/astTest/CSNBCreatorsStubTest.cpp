@@ -6,7 +6,7 @@
 #include "ast/ContextualSyntaxNodeBuilder.h"
 #include "ast/CSNB_Internal.h"
 #include "ast/TerminalSymbol.h"
-#include "ast/VoidReturnStatement.h"
+#include "ast/ReturnStatement.h"
 #include "parser/BNFFileReader.h"
 #include "scanner/LexicalSession.h"
 #include "util/Diagnostic.h"
@@ -106,7 +106,7 @@ TEST(BuilderContext, popBlockReturnsBlock) {
 TEST(BuilderContext, popBlockRejectsNonBlockStatement) {
     scanner::LexicalSession session;
     ast::AbstractSyntaxTreeBuilderContext context { session };
-    context.pushStatement(std::make_unique<ast::VoidReturnStatement>());
+    context.pushStatement(std::make_unique<ast::ReturnStatement>());
     EXPECT_EQ(context.popBlock(), nullptr);
 }
 

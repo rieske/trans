@@ -12,7 +12,6 @@
 #include "ast/FunctionDeclarator.h"
 #include "ast/FunctionDefinition.h"
 #include "ast/Identifier.h"
-#include "ast/IfElseStatement.h"
 #include "ast/IfStatement.h"
 #include "ast/JumpStatement.h"
 #include "ast/GotoStatement.h"
@@ -23,7 +22,6 @@
 #include "ast/LoopStatement.h"
 #include "ast/ReturnStatement.h"
 #include "ast/StringLiteralExpression.h"
-#include "ast/VoidReturnStatement.h"
 #include "ast/IdentifierExpression.h"
 #include "ast/ConstantExpression.h"
 #include "ast/TypeCast.h"
@@ -94,11 +92,9 @@ public:
     virtual void visit(CaseLabel& statement) = 0;
     virtual void visit(DefaultLabel& statement) = 0;
     virtual void visit(ReturnStatement& statement) = 0;
-    virtual void visit(VoidReturnStatement& statement) = 0;
     virtual void visit(ExpressionStatement& statement) = 0;
     virtual void visit(NullStatement& statement) = 0;
     virtual void visit(IfStatement& statement) = 0;
-    virtual void visit(IfElseStatement& statement) = 0;
     virtual void visit(LoopStatement& statement) = 0;
 
     virtual void visit(ForLoopHeader& loopHeader) = 0;

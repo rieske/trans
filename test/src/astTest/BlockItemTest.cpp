@@ -8,7 +8,7 @@
 #include "ast/DeclarationSpecifiers.h"
 #include "ast/IdentifierExpression.h"
 #include "ast/TypeSpecifier.h"
-#include "ast/VoidReturnStatement.h"
+#include "ast/ReturnStatement.h"
 #include "types/Type.h"
 
 namespace {
@@ -55,7 +55,7 @@ TEST(BlockItem, takeBlockTakesBlock) {
 }
 
 TEST(BlockItem, takeBlockRejectsNonBlock) {
-    ast::BlockItem statement { std::make_unique<ast::VoidReturnStatement>() };
+    ast::BlockItem statement { std::make_unique<ast::ReturnStatement>() };
     EXPECT_EQ(statement.takeBlock(), nullptr);
     ast::BlockItem declaration { std::make_unique<ast::Declaration>(intSpecs()) };
     EXPECT_EQ(declaration.takeBlock(), nullptr);
@@ -64,7 +64,7 @@ TEST(BlockItem, takeBlockRejectsNonBlock) {
 }
 
 TEST(BlockItem, holdsStatement) {
-    auto statement = std::make_unique<ast::VoidReturnStatement>();
+    auto statement = std::make_unique<ast::ReturnStatement>();
     auto* raw = statement.get();
     ast::BlockItem item { std::move(statement) };
     EXPECT_EQ(item.asDeclaration(), nullptr);
@@ -82,7 +82,7 @@ TEST(BlockItem, blockHoldsMixedItemsInOrder) {
 
     std::vector<ast::BlockItem> items;
     items.push_back(ast::BlockItem { std::move(declaration) });
-    items.push_back(ast::BlockItem { std::make_unique<ast::VoidReturnStatement>() });
+    items.push_back(ast::BlockItem { std::make_unique<ast::ReturnStatement>() });
     items.push_back(ast::BlockItem { std::move(expression) });
     ast::Block block { std::move(items) };
 

@@ -9,7 +9,9 @@
 #include "ast/DeclarationSpecifiers.h"
 #include "ast/ExpressionStatement.h"
 #include "ast/IdentifierExpression.h"
+#include "ast/IfStatement.h"
 #include "ast/NullStatement.h"
+#include "ast/ReturnStatement.h"
 #include "ast/TypeSpecifier.h"
 #include "scanner/LexicalSession.h"
 #include "types/Type.h"
@@ -67,6 +69,37 @@ TEST(BuilderContext, popAsStatementRejectsDeclaration) {
     ast::AbstractSyntaxTreeBuilderContext context { session };
     context.pushStatement(std::make_unique<ast::Declaration>(intSpecs()));
     EXPECT_EQ(context.popAsStatement(), nullptr);
+}
+
+TEST(IfStatement, withoutElseHasNoElseBody) {
+    ast::IfStatement statement {
+            std::make_unique<ast::IdentifierExpression>("c", ctx()),
+            std::make_unique<ast::NullStatement>() };
+    EXPECT_NE(statement.testExpression, nullptr);
+    EXPECT_NE(statement.body, nullptr);
+    EXPECT_EQ(statement.elseBody, nullptr);
+}
+
+TEST(IfStatement, withElseKeepsBothBodies) {
+    auto elseBody = std::make_unique<ast::NullStatement>();
+    auto* raw = elseBody.get();
+    ast::IfStatement statement {
+            std::make_unique<ast::IdentifierExpression>("c", ctx()),
+            std::make_unique<ast::NullStatement>(),
+            std::move(elseBody) };
+    EXPECT_EQ(statement.elseBody.get(), raw);
+}
+
+TEST(ReturnStatement, withExpressionKeepsIt) {
+    auto expression = std::make_unique<ast::IdentifierExpression>("x", ctx());
+    auto* raw = expression.get();
+    ast::ReturnStatement statement { std::move(expression) };
+    EXPECT_EQ(statement.returnExpression.get(), raw);
+}
+
+TEST(ReturnStatement, withoutExpressionIsVoid) {
+    ast::ReturnStatement statement;
+    EXPECT_EQ(statement.returnExpression, nullptr);
 }
 
 TEST(CSNBCreators, emptyStatementPushesNullStatement) {

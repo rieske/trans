@@ -62,13 +62,12 @@ void CodeGeneratingVisitor::visit(ast::LabeledStatement& statement) {
 }
 
 void CodeGeneratingVisitor::visit(ast::ReturnStatement& statement) {
+    if (!statement.returnExpression) {
+        emit(ir::voidReturn());
+        return;
+    }
     statement.returnExpression->accept(*this);
     emit(ir::ret(convertedResult(*statement.returnExpression)));
-}
-
-void CodeGeneratingVisitor::visit(ast::VoidReturnStatement& statement) {
-    (void)statement;
-    emit(ir::voidReturn());
 }
 
 void CodeGeneratingVisitor::visit(ast::ExpressionStatement& statement) {
@@ -86,22 +85,14 @@ void CodeGeneratingVisitor::visit(ast::IfStatement& statement) {
     emit(ir::jump(id(*statement.getFalsyLabel(store_)), JumpCondition::IF_EQUAL));
 
     statement.body->accept(*this);
-
+    if (statement.elseBody) {
+        emit(ir::jump(id(*statement.getExitLabel(store_))));
+        emit(ir::label(id(*statement.getFalsyLabel(store_))));
+        statement.elseBody->accept(*this);
+        emit(ir::label(id(*statement.getExitLabel(store_))));
+        return;
+    }
     emit(ir::label(id(*statement.getFalsyLabel(store_))));
-}
-
-void CodeGeneratingVisitor::visit(ast::IfElseStatement& statement) {
-    statement.testExpression->accept(*this);
-
-    emit(ir::zeroCompare(id(*statement.testExpression->getResultSymbol(store_))));
-    emit(ir::jump(id(*statement.getFalsyLabel(store_)), JumpCondition::IF_EQUAL));
-
-    statement.truthyBody->accept(*this);
-    emit(ir::jump(id(*statement.getExitLabel(store_))));
-    emit(ir::label(id(*statement.getFalsyLabel(store_))));
-
-    statement.falsyBody->accept(*this);
-    emit(ir::label(id(*statement.getExitLabel(store_))));
 }
 
 void CodeGeneratingVisitor::visit(ast::LoopStatement& loop) {

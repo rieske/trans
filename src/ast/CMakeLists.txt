@@ -38,7 +38,6 @@ add_library(ast
         GotoStatement.cpp
         Identifier.cpp
         IdentifierExpression.cpp
-        IfElseStatement.cpp
         IfStatement.cpp
         InitializedDeclarator.cpp
         JumpStatement.cpp
@@ -56,7 +55,6 @@ add_library(ast
         PostfixExpression.cpp
         PrefixExpression.cpp
         ReturnStatement.cpp
-        VoidReturnStatement.cpp
         ShiftExpression.cpp
         SingleOperandExpression.cpp
         StorageSpecifier.cpp
@@ -114,7 +112,6 @@ add_library(ast
         GotoStatement.h
         Identifier.h
         IdentifierExpression.h
-        IfElseStatement.h
         IfStatement.h
         InitializedDeclarator.h
         JumpStatement.h
@@ -133,7 +130,6 @@ add_library(ast
         PostfixExpression.h
         PrefixExpression.h
         ReturnStatement.h
-        VoidReturnStatement.h
         ShiftExpression.h
         SingleOperandExpression.h
         StorageSpecifier.h
