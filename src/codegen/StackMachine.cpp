@@ -554,6 +554,9 @@ void StackMachine::lvalueAssign(int operandName, int resultName) {
     auto& operand = resolve(operandName);
     auto& result = resolve(resultName);
 
+    // Anything cached in a register is stale after this store; write it back first.
+    spillGeneralPurposeRegisters();
+
     const int storeSize = operand.getSizeInBytes();
     if (!nativeMoveSize(storeSize)) {
         Register& ptr = residesInMemory(result) ? assignRegisterTo(result) : result.getAssignedRegister();
