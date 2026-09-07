@@ -164,6 +164,11 @@ void SemanticAnalysisVisitor::analyzeInitializedDeclarator(ast::InitializedDecla
         semanticError(ex.what(), declarator.getContext());
         typeOk = false;
     }
+    if (typeOk && type.isFunction() && declarator.hasInitializer()) {
+        semanticError("function `" + declarator.getName() + "` is initialized like a variable",
+                declarator.getContext());
+        typeOk = false;
+    }
     bool initializerVisited = false;
     if (typeOk && !rewriteCharArrayStringInitializer(declarator, type)) {
         typeOk = false;

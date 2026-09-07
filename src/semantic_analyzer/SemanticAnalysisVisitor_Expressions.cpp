@@ -325,6 +325,11 @@ void SemanticAnalysisVisitor::visit(ast::UnaryExpression& expression) {
 }
 
 void SemanticAnalysisVisitor::visit(ast::StatementExpression& expression) {
+    if (symbolTable.isAtFileScope()) {
+        semanticError("statement expression outside a function", expression.getContext());
+        expression.setType(type::voidType());
+        return;
+    }
     expression.body().accept(*this);
     auto& items = expression.body().getItems();
     if (!items.empty()) {

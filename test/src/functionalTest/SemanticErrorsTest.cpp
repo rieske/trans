@@ -886,6 +886,20 @@ world";
             }
         )prg",
         ":3: error: typedef `a` is initialized",
+    },
+    SemanticErrorCase{
+        "functionInitializedLikeVariable",
+        R"prg(
+            int f() = 1;
+        )prg",
+        ":2: error: function `f` is initialized like a variable",
+    },
+    SemanticErrorCase{
+        "statementExpressionAtFileScope",
+        R"prg(
+            int g = ({ int q; q = 3; q; });
+        )prg",
+        ":2: error: statement expression outside a function",
     }
 ), [](const testing::TestParamInfo<SemanticErrorCase> &info) { return std::string{info.param.name}; });
 
