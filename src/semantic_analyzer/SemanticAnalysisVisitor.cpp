@@ -205,7 +205,7 @@ void SemanticAnalysisVisitor::analyzeInitializedDeclarator(ast::InitializedDecla
                         declarator.getContext());
             } else if (symbolTable.hasFunction(declarator.getName())) {
                 auto existing = symbolTable.findFunction(declarator.getName());
-                if (!functionTypesCompatible(existing.getType(), type.getFunction())) {
+                if (!type.compatibleWith(existing.getType())) {
                     semanticError("function `" + declarator.getName()
                                     + "` declaration conflicts with previous one on "
                                     + to_string(existing.getContext()),
@@ -216,7 +216,7 @@ void SemanticAnalysisVisitor::analyzeInitializedDeclarator(ast::InitializedDecla
                             declarator.getContext());
                 }
             } else {
-                symbolTable.insertFunction(declarator.getName(), type.getFunction(),
+                symbolTable.insertFunction(declarator.getName(), type,
                         declarator.getContext(), specifiers.hasStorage(ast::Storage::STATIC));
             }
         } else if (symbolTable.isAtFileScope() && symbolTable.hasFunction(declarator.getName())) {
@@ -363,7 +363,7 @@ void SemanticAnalysisVisitor::visit(ast::FunctionDefinition& function) {
                     function.getDeclaratorContext());
             return;
         }
-        if (!functionTypesCompatible(existing.getType(), functionType.getFunction())) {
+        if (!functionType.compatibleWith(existing.getType())) {
             semanticError("function `" + function.getName()
                             + "` definition conflicts with previous one on "
                             + to_string(existing.getContext()),
@@ -376,10 +376,10 @@ void SemanticAnalysisVisitor::visit(ast::FunctionDefinition& function) {
                     function.getDeclaratorContext());
             return;
         }
-        symbolTable.updateFunction(function.getName(), functionType.getFunction(),
+        symbolTable.updateFunction(function.getName(), functionType,
                 function.getDeclaratorContext());
     } else {
-        symbolTable.insertFunction(function.getName(), functionType.getFunction(),
+        symbolTable.insertFunction(function.getName(), functionType,
                 function.getDeclaratorContext(),
                 function.getReturnTypeSpecifiers().hasStorage(ast::Storage::STATIC));
     }
@@ -464,14 +464,14 @@ void SemanticAnalysisVisitor::installGnuBuiltins() {
     for (const auto& builtin : ast::kGnuBswapBuiltins) {
         type::Type value = ast::gnuBswapValueType(builtin.widthBytes);
         type::Type fn = type::function(value, { value });
-        symbolTable.insertFunction(builtin.name, fn.getFunction(), ctx, false);
+        symbolTable.insertFunction(builtin.name, fn, ctx, false);
     }
     for (const auto& builtin : ast::kGnuCtzBuiltins) {
         type::Type fn = type::function(type::signedInteger(), { ast::gnuCtzArgType(builtin.widthBytes) });
-        symbolTable.insertFunction(builtin.name, fn.getFunction(), ctx, false);
+        symbolTable.insertFunction(builtin.name, fn, ctx, false);
     }
     type::Type allocaFn = type::function(type::pointer(type::voidType()), { type::unsignedLong() });
-    symbolTable.insertFunction("__builtin_alloca", allocaFn.getFunction(), ctx, false);
+    symbolTable.insertFunction("__builtin_alloca", allocaFn, ctx, false);
 }
 
 } // namespace semantic_analyzer

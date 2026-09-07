@@ -109,6 +109,20 @@ INSTANTIATE_TEST_SUITE_P(Compiler, SemanticErrorCatalog, testing::Values(
         "no match for function",
     },
     SemanticErrorCase{
+        "prototypeNestedConstPointerMismatch",
+        R"prg(
+            int f(int *p);
+            int f(const int *p) {
+                return *p;
+            }
+
+            int main() {
+                return 0;
+            }
+        )prg",
+        "definition conflicts with previous",
+    },
+    SemanticErrorCase{
         "prototypeVariadicMismatch",
         R"prg(
             int first(int n);

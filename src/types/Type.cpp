@@ -307,7 +307,13 @@ bool sameShape(const Type& a, const Type& b, bool matchQualifiers, ArrayBound bo
             return false;
         }
         for (std::size_t i = 0; i < aa.size(); ++i) {
-            if (!sameShape(aa[i], ba[i], matchQualifiers, bounds)) {
+            Type pa = aa[i];
+            Type pb = ba[i];
+            if (bounds == ArrayBound::Compatible) {
+                pa = pa.withoutTopLevelQualifiers();
+                pb = pb.withoutTopLevelQualifiers();
+            }
+            if (!sameShape(pa, pb, matchQualifiers, bounds)) {
                 return false;
             }
         }

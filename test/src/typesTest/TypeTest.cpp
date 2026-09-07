@@ -997,6 +997,34 @@ TEST(Type, compatibleWithNestedArrayAndPointerToArray) {
     EXPECT_THAT(pointer(array(i, 4)).compatibleWith(pointer(array(i, 3))), IsFalse());
 }
 
+TEST(Type, compatibleWithFunctionsFollowsC627) {
+    using namespace type;
+    auto i = signedInteger();
+    auto ci = signedInteger({ Qualifier::CONST });
+    auto v = voidType();
+
+    auto same = function(i, { i });
+    EXPECT_THAT(same.compatibleWith(function(i, { i })), IsTrue());
+    EXPECT_THAT(same.compatibleWith(function(i, { i, i })), IsFalse());
+    EXPECT_THAT(same.compatibleWith(function(v, { i })), IsFalse());
+    EXPECT_THAT(function(i, { i }, true).compatibleWith(function(i, { i })), IsFalse());
+
+    // C 6.7.6.3: top-level param cv is ignored; return cv is not.
+    EXPECT_THAT(function(v, { i }).compatibleWith(function(v, { ci })), IsTrue());
+    EXPECT_THAT(function(i).compatibleWith(function(ci)), IsFalse());
+
+    // Nested quals stay; int * and const int * are not compatible.
+    EXPECT_THAT(function(v, { pointer(i) }).compatibleWith(function(v, { pointer(ci) })), IsFalse());
+    EXPECT_THAT(function(v, { pointer(i) }).equivalentTo(function(v, { pointer(ci) })), IsTrue());
+
+    // Pointer-to-array: int (*)[] and int (*)[4] are compatible; exact sizes must match.
+    auto pInc = pointer(incompleteArray(i));
+    auto pFour = pointer(array(i, 4));
+    EXPECT_THAT(function(i, { pInc }).equivalentTo(function(i, { pFour })), IsFalse());
+    EXPECT_THAT(function(i, { pInc }).compatibleWith(function(i, { pFour })), IsTrue());
+    EXPECT_THAT(function(i, { pFour }).compatibleWith(function(i, { pointer(array(i, 3)) })), IsFalse());
+}
+
 TEST(Type, compositePrefersCompleteArrayBound) {
     using namespace type;
     auto i = signedInteger();

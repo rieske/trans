@@ -154,7 +154,7 @@ TEST(AnnotationStore, functionFrameRoundTrip) {
     int node = 10;
     translation_unit::Context ctx { "t.c", 1 };
     type::Type fnType = type::function(type::signedInteger(), { type::signedInteger() });
-    symbols::FunctionEntry symbol { "add", fnType.getFunction(), ctx };
+    symbols::FunctionEntry symbol { "add", fnType, ctx };
     symbols::ValueEntry local { "L$loc1_x", type::signedInteger(), ctx, 0 };
     symbols::ValueEntry arg { "L$loc1_a", type::signedInteger(), ctx, 0 };
     std::map<std::string, symbols::ValueEntry> locals;
@@ -202,7 +202,7 @@ TEST(AnnotationStore, clearEmptiesAll) {
     store.setLabel(&node, symbols::LabelSlot::Exit, symbols::LabelEntry { "Lx" });
     type::Type fnType = type::function(type::signedInteger(), {});
     store.setFunctionFrame(&node, symbols::FunctionFrame {
-            symbols::FunctionEntry { "f", fnType.getFunction(), ctx }, {}, {} });
+            symbols::FunctionEntry { "f", fnType, ctx }, {}, {} });
     store.setRodataLabel(&node, "L$str1");
     store.setSizeofValue(&node, 4);
     store.clear();
