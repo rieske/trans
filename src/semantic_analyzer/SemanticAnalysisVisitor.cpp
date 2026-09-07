@@ -145,18 +145,26 @@ void SemanticAnalysisVisitor::analyzeInitializedDeclarator(ast::InitializedDecla
     const type::Type baseType = specifiers.getResolvedType();
     // C: static / extern apply at file or block scope; bare file-scope is a definition
     // (or tentative definition). Pure extern (no initializer) never allocates here.
+    bool typeOk = true;
     symbols::Storage storage = symbols::Storage::Automatic;
     if (specifiers.hasStorage(ast::Storage::STATIC)) {
         storage = symbols::Storage::Static;
-    } else if (specifiers.hasStorage(ast::Storage::EXTERN) && !declarator.hasInitializer()) {
-        storage = symbols::Storage::Extern;
+    } else if (specifiers.hasStorage(ast::Storage::EXTERN)) {
+        if (!declarator.hasInitializer()) {
+            storage = symbols::Storage::Extern;
+        } else if (symbolTable.isAtFileScope()) {
+            storage = symbols::Storage::Global;
+        } else {
+            semanticError("`" + declarator.getName() + "` has both `extern` and initializer",
+                    declarator.getContext());
+            typeOk = false;
+        }
     } else if (symbolTable.isAtFileScope()) {
         storage = symbols::Storage::Global;
     }
     checkObjectArrayBounds(declarator, storage == symbols::Storage::Automatic);
 
     type::Type type { type::voidType() };
-    bool typeOk = true;
     try {
         type = declarator.getFundamentalType(baseType);
     } catch (const std::invalid_argument& ex) {

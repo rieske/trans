@@ -765,6 +765,19 @@ void addToInitializedDeclaratorList(AbstractSyntaxTreeBuilderContext& context) {
     context.pushInitializedDeclarators(std::move(initializedDeclarators));
 }
 
+namespace {
+
+// Ordinary identifiers and enumerators share a namespace, so a name declared beside an
+// enumerator of the same scope collides with it (C).
+void rejectEnumeratorRedefinition(AbstractSyntaxTreeBuilderContext& context,
+        const std::string& name, translation_unit::Context where) {
+    if (!name.empty() && context.environment().enumeratorInCurrentScope(name)) {
+        context.error(where, "redefinition of enumerator `" + name + "`");
+    }
+}
+
+} // namespace
+
 void initializedDeclaration(AbstractSyntaxTreeBuilderContext& context) {
     context.popTerminal();
     auto declarationSpecifiers = context.popDeclarationSpecifiers();
@@ -773,6 +786,9 @@ void initializedDeclaration(AbstractSyntaxTreeBuilderContext& context) {
             && declarationSpecifiers.isTypedef()) {
         context.error({ "", 0 }, "cannot determine type of typeof operand");
         return;
+    }
+    for (const auto& declarator : initializedDeclarators) {
+        rejectEnumeratorRedefinition(context, declarator->getName(), declarator->getContext());
     }
     context.environment().registerInitializedDeclaration(declarationSpecifiers, initializedDeclarators);
     context.pushDeclaration(std::make_unique<Declaration>(declarationSpecifiers, std::move(initializedDeclarators)));
@@ -963,6 +979,7 @@ void functionDefinition(AbstractSyntaxTreeBuilderContext& context) {
         return;
     }
     declarationSpecifiers.resolveTypeofAtParseTime(context.environment());
+    rejectEnumeratorRedefinition(context, declarator->getName(), declarator->getContext());
     context.environment().tryDefineObject(declarationSpecifiers, *declarator);
     context.pushExternalDeclaration(ExternalDeclaration { std::make_unique<FunctionDefinition>(
             std::move(declarationSpecifiers), std::move(declarator), std::move(body)) });
@@ -976,6 +993,7 @@ void defaultReturnTypeFunctionDefinition(AbstractSyntaxTreeBuilderContext& conte
         context.error(declarator->getContext(), "function definition body is not a compound statement");
         return;
     }
+    rejectEnumeratorRedefinition(context, declarator->getName(), declarator->getContext());
     context.environment().tryDefineObject(defaultReturnTypeSpecifiers, *declarator);
     context.pushExternalDeclaration(ExternalDeclaration { std::make_unique<FunctionDefinition>(
             defaultReturnTypeSpecifiers, std::move(declarator), std::move(body)) });

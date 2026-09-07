@@ -35,6 +35,10 @@ void ParseTypeTable::clearPending() {
     pending_.clear();
 }
 
+bool ParseTypeTable::containsInCurrentScope(std::string_view name) const {
+    return scopes_.back().contains(name);
+}
+
 void ParseTypeTable::enterScope() {
     scopes_.push_back({});
     flushPending();
