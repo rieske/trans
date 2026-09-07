@@ -18,7 +18,6 @@ public:
     Value(int id, int index, Type type, int sizeInBytes);
     Value(int id, int index, Type type, int sizeInBytes,
             type::sysv::Classification classification);
-    ~Value() = default;
 
     Value withIndex(int index) const;
 

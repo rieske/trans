@@ -6,7 +6,6 @@ SemanticAnalyzer::SemanticAnalyzer(bool gnuExtensions) {
     analyzerVisitor.setGnuExtensions(gnuExtensions);
 }
 
-SemanticAnalyzer::~SemanticAnalyzer() = default;
 
 std::map<std::string, std::string> SemanticAnalyzer::getConstants() const {
     return analyzerVisitor.getConstants();

@@ -19,7 +19,6 @@ class TypeSpecifier {
 public:
     TypeSpecifier(type::Type type, std::string name);
     explicit TypeSpecifier(std::shared_ptr<Expression> typeofOperand);
-    ~TypeSpecifier();
     TypeSpecifier(const TypeSpecifier&);
     TypeSpecifier& operator=(const TypeSpecifier&);
     TypeSpecifier(TypeSpecifier&&) noexcept;

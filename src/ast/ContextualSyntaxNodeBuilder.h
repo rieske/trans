@@ -12,7 +12,6 @@ namespace ast {
 class ContextualSyntaxNodeBuilder {
 public:
     ContextualSyntaxNodeBuilder(const parser::Grammar& grammar);
-    ~ContextualSyntaxNodeBuilder();
 
     void updateContext(const parser::Production& production, AbstractSyntaxTreeBuilderContext& context) const;
 

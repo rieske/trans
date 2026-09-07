@@ -9,10 +9,7 @@
 
 namespace diag {
 
-enum class Severity { Error, Warning };
-
 struct Diagnostic {
-    Severity severity { Severity::Error };
     translation_unit::Context where { "", 0 };
     std::string message;
 };
@@ -21,7 +18,6 @@ class Sink {
 public:
     explicit Sink(std::ostream& out);
     void error(const translation_unit::Context& where, std::string message);
-    void warn(const translation_unit::Context& where, std::string message);
     bool hasErrors() const;
     const std::vector<Diagnostic>& all() const;
     void formatTo(std::ostream& out) const;

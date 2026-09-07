@@ -18,7 +18,6 @@ namespace semantic_analyzer {
 class SemanticAnalyzer {
 public:
     explicit SemanticAnalyzer(bool gnuExtensions = true);
-    ~SemanticAnalyzer();
 
     bool analyze(ast::AbstractSyntaxTree& tree, const scanner::LexicalSession& session,
             diag::Sink& sink);
