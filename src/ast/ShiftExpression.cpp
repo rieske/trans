@@ -6,9 +6,9 @@
 
 namespace ast {
 
-ShiftExpression::ShiftExpression(std::unique_ptr<Expression> shiftExpression, std::string lexeme,
+ShiftExpression::ShiftExpression(std::unique_ptr<Expression> shiftExpression, type::ShiftOp op,
         std::unique_ptr<Expression> additionExpression) :
-        BinaryOpExpression { std::move(shiftExpression), std::move(lexeme), std::move(additionExpression) } {
+        BinaryOpExpression { std::move(shiftExpression), op, std::move(additionExpression) } {
 }
 
 void ShiftExpression::accept(AbstractSyntaxTreeVisitor& visitor) {

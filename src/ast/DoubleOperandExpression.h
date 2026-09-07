@@ -2,9 +2,9 @@
 #define DOUBLEOPERANDEXPRESSION_H_
 
 #include <memory>
-#include <string>
 
 #include "ast/Expression.h"
+#include "types/Operator.h"
 
 namespace ast {
 
@@ -31,7 +31,7 @@ public:
     translation_unit::Context getContext() const override;
 
 protected:
-    bool foldOperands(type::IntegerConstant& value, const std::string& op) const;
+    bool foldOperands(type::IntegerConstant& value, type::BinaryOp op) const;
 
     const std::unique_ptr<Expression> leftOperand;
     const std::unique_ptr<Expression> rightOperand;

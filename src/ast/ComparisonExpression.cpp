@@ -6,9 +6,9 @@
 
 namespace ast {
 
-ComparisonExpression::ComparisonExpression(std::unique_ptr<Expression> leftHandSide, std::string lexeme,
+ComparisonExpression::ComparisonExpression(std::unique_ptr<Expression> leftHandSide, type::ComparisonOp op,
         std::unique_ptr<Expression> rightHandSide) :
-        BinaryOpExpression(std::move(leftHandSide), std::move(lexeme), std::move(rightHandSide))
+        BinaryOpExpression(std::move(leftHandSide), op, std::move(rightHandSide))
 {
     setType(type::signedInteger());
 }

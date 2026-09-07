@@ -31,6 +31,7 @@
 #include "ast/TypeSpecifier.h"
 #include "ast/UnaryExpression.h"
 #include "translation_unit/Context.h"
+#include "types/Operator.h"
 #include "types/Type.h"
 
 namespace {
@@ -67,21 +68,21 @@ std::unique_ptr<ast::Expression> makeLeaf(ast::ExprKind kind) {
     case ast::ExprKind::FunctionCall:
         return std::make_unique<ast::FunctionCall>(id("f"));
     case ast::ExprKind::Prefix:
-        return std::make_unique<ast::PrefixExpression>("++", id());
+        return std::make_unique<ast::PrefixExpression>(type::IncDec::Inc, id());
     case ast::ExprKind::Postfix:
-        return std::make_unique<ast::PostfixExpression>(id(), "++");
+        return std::make_unique<ast::PostfixExpression>(id(), type::IncDec::Inc);
     case ast::ExprKind::Unary:
-        return std::make_unique<ast::UnaryExpression>("-", id());
+        return std::make_unique<ast::UnaryExpression>(type::UnaryOp::Minus, id());
     case ast::ExprKind::TypeCast:
         return std::make_unique<ast::TypeCast>(intSpec(), id());
     case ast::ExprKind::Arithmetic:
-        return std::make_unique<ast::ArithmeticExpression>(id(), "+", id());
+        return std::make_unique<ast::ArithmeticExpression>(id(), type::ArithmeticOp::Add, id());
     case ast::ExprKind::Shift:
-        return std::make_unique<ast::ShiftExpression>(id(), "<<", id());
+        return std::make_unique<ast::ShiftExpression>(id(), type::ShiftOp::Shl, id());
     case ast::ExprKind::Comparison:
-        return std::make_unique<ast::ComparisonExpression>(id(), "<", id());
+        return std::make_unique<ast::ComparisonExpression>(id(), type::ComparisonOp::Lt, id());
     case ast::ExprKind::Bitwise:
-        return std::make_unique<ast::BitwiseExpression>(id(), "&", id());
+        return std::make_unique<ast::BitwiseExpression>(id(), type::BitwiseOp::BitAnd, id());
     case ast::ExprKind::LogicalAnd:
         return std::make_unique<ast::LogicalAndExpression>(id(), id());
     case ast::ExprKind::LogicalOr:
@@ -89,7 +90,7 @@ std::unique_ptr<ast::Expression> makeLeaf(ast::ExprKind kind) {
     case ast::ExprKind::Conditional:
         return std::make_unique<ast::ConditionalExpression>(id("c"), id("t"), id("f"));
     case ast::ExprKind::Assignment:
-        return std::make_unique<ast::AssignmentExpression>(id(), "=", id());
+        return std::make_unique<ast::AssignmentExpression>(id(), type::AssignOp::Assign, id());
     case ast::ExprKind::Comma:
         return std::make_unique<ast::ExpressionList>(id(), id());
     case ast::ExprKind::TypeName:

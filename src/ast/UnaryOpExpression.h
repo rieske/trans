@@ -2,26 +2,26 @@
 #define UNARYOPEXPRESSION_H_
 
 #include <memory>
-#include <string>
 #include <utility>
 
 #include "ast/SingleOperandExpression.h"
 
 namespace ast {
 
+template<typename Op>
 class UnaryOpExpression: public SingleOperandExpression {
 public:
-    UnaryOpExpression(std::unique_ptr<Expression> operand, std::string lexeme) :
+    UnaryOpExpression(std::unique_ptr<Expression> operand, Op op) :
             SingleOperandExpression(std::move(operand)),
-            lexeme_ { std::move(lexeme) } {
+            op_ { op } {
     }
 
-    const std::string& lexeme() const {
-        return lexeme_;
+    Op op() const {
+        return op_;
     }
 
 private:
-    std::string lexeme_;
+    Op op_;
 };
 
 } // namespace ast

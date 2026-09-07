@@ -6,9 +6,9 @@
 
 namespace ast {
 
-BitwiseExpression::BitwiseExpression(std::unique_ptr<Expression> leftHandSide, std::string lexeme,
+BitwiseExpression::BitwiseExpression(std::unique_ptr<Expression> leftHandSide, type::BitwiseOp op,
         std::unique_ptr<Expression> rightHandSide) :
-        BinaryOpExpression(std::move(leftHandSide), std::move(lexeme), std::move(rightHandSide)) {
+        BinaryOpExpression(std::move(leftHandSide), op, std::move(rightHandSide)) {
 }
 
 void BitwiseExpression::accept(AbstractSyntaxTreeVisitor& visitor) {

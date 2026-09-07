@@ -4,8 +4,8 @@
 
 namespace ast {
 
-PrefixExpression::PrefixExpression(std::string lexeme, std::unique_ptr<Expression> unaryExpression) :
-        UnaryOpExpression(std::move(unaryExpression), std::move(lexeme)) {
+PrefixExpression::PrefixExpression(type::IncDec op, std::unique_ptr<Expression> unaryExpression) :
+        UnaryOpExpression(std::move(unaryExpression), op) {
 }
 
 PrefixExpression::~PrefixExpression() {

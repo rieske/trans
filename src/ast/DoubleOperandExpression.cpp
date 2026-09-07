@@ -28,7 +28,7 @@ translation_unit::Context DoubleOperandExpression::getContext() const {
     return leftOperand->getContext();
 }
 
-bool DoubleOperandExpression::foldOperands(type::IntegerConstant& value, const std::string& op) const {
+bool DoubleOperandExpression::foldOperands(type::IntegerConstant& value, type::BinaryOp op) const {
     type::IntegerConstant left;
     type::IntegerConstant right;
     if (!leftOperand->evaluateConstant(left) || !rightOperand->evaluateConstant(right)) {

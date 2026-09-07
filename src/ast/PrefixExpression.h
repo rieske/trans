@@ -2,15 +2,15 @@
 #define PREFIXEXPRESSION_H_
 
 #include <memory>
-#include <string>
 
 #include "UnaryOpExpression.h"
+#include "types/Operator.h"
 
 namespace ast {
 
-class PrefixExpression: public UnaryOpExpression {
+class PrefixExpression: public UnaryOpExpression<type::IncDec> {
 public:
-    PrefixExpression(std::string lexeme, std::unique_ptr<Expression> unaryExpression);
+    PrefixExpression(type::IncDec op, std::unique_ptr<Expression> unaryExpression);
     virtual ~PrefixExpression();
 
     void accept(AbstractSyntaxTreeVisitor& visitor) override;

@@ -12,6 +12,7 @@
 #include "ast/TypeSpecifier.h"
 #include "ast/VlaExpressionTable.h"
 #include "scanner/LexicalSession.h"
+#include "types/Operator.h"
 #include "types/Type.h"
 #include "types/TypeQuery.h"
 
@@ -122,7 +123,7 @@ TEST(ArrayDeclarator, negativeIceIsZeroLengthShell) {
     Declarator declarator { std::make_unique<ArrayDeclarator>(
             std::make_unique<Identifier>(TerminalSymbol { "a", ctx }),
             std::make_unique<UnaryExpression>(
-                    "-",
+                    type::UnaryOp::Minus,
                     std::make_unique<ConstantExpression>(
                             Constant { "1", type::signedInteger(), ctx }))) };
     auto type = declarator.getFundamentalType(type::signedInteger());

@@ -5,8 +5,8 @@
 namespace ast {
 
 PostfixExpression::PostfixExpression(std::unique_ptr<Expression> postfixExpression,
-        std::string lexeme) :
-        UnaryOpExpression { std::move(postfixExpression), std::move(lexeme) } {
+        type::IncDec op) :
+        UnaryOpExpression { std::move(postfixExpression), op } {
 }
 
 void PostfixExpression::accept(AbstractSyntaxTreeVisitor& visitor) {

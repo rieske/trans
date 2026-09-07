@@ -2,8 +2,8 @@
 #define TYPES_INTEGERCONSTANT_H_
 
 #include <optional>
-#include <string>
 
+#include "Operator.h"
 #include "Type.h"
 
 namespace type {
@@ -48,8 +48,8 @@ inline unsigned long long bitsWord(const IntegerConstant& value, int index) {
     return static_cast<unsigned long long>(value.bits >> (index * 64));
 }
 
-std::optional<IntegerConstant> foldUnary(const std::string& op, IntegerConstant operand);
-std::optional<IntegerConstant> foldBinary(const std::string& op, IntegerConstant left,
+std::optional<IntegerConstant> foldUnary(UnaryOp op, IntegerConstant operand);
+std::optional<IntegerConstant> foldBinary(BinaryOp op, IntegerConstant left,
         IntegerConstant right);
 
 } // namespace type

@@ -2,16 +2,16 @@
 #define _POSTFIX_EXPR_NODE_H_
 
 #include <memory>
-#include <string>
 
 #include "UnaryOpExpression.h"
 #include "symbols/AnnotationStore.h"
+#include "types/Operator.h"
 
 namespace ast {
 
-class PostfixExpression: public UnaryOpExpression {
+class PostfixExpression: public UnaryOpExpression<type::IncDec> {
 public:
-    PostfixExpression(std::unique_ptr<Expression> postfixExpression, std::string lexeme);
+    PostfixExpression(std::unique_ptr<Expression> postfixExpression, type::IncDec op);
 
     void accept(AbstractSyntaxTreeVisitor& visitor) override;
     ExprKind exprKind() const override { return ExprKind::Postfix; }

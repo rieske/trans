@@ -1,4 +1,5 @@
 #include "SemanticAnalysisVisitorInternal.h"
+#include "types/Operator.h"
 #include "types/TypeQuery.h"
 
 #include <vector>
@@ -10,8 +11,6 @@
 #include "ast/TypeSpecifier.h"
 #include "ast/UnaryExpression.h"
 #include "ast/VlaExpressionTable.h"
-
-#include <stdexcept>
 
 namespace semantic_analyzer {
 
@@ -203,8 +202,7 @@ void SemanticAnalysisVisitor::visit(ast::PrefixExpression& expression) {
 }
 
 void SemanticAnalysisVisitor::visit(ast::UnaryExpression& expression) {
-    const auto& lexeme = expression.lexeme();
-    if (lexeme == "sizeof") {
+    if (expression.op() == type::UnaryOp::Sizeof) {
         expression.visitOperand(*this);
         if (!expression.getOperandExpression()->hasExpressionType()) {
             expression.setResultSymbol(annotations(),
@@ -234,8 +232,8 @@ void SemanticAnalysisVisitor::visit(ast::UnaryExpression& expression) {
         return;
     }
 
-    switch (lexeme.front()) {
-    case '&': {
+    switch (expression.op()) {
+    case type::UnaryOp::Addr: {
         // &function designator: same pointer-to-function value as bare designator decay (C).
         if (expression.getOperandExpression()->holdsFunctionDesignator()) {
             expression.setResultSymbol(annotations(), *expression.operandSymbol(annotations()));
@@ -256,7 +254,7 @@ void SemanticAnalysisVisitor::visit(ast::UnaryExpression& expression) {
         expression.setResultSymbol(annotations(), symbolTable.createTemporarySymbol(type::pointer(expression.operandType())));
         break;
     }
-    case '*': {
+    case type::UnaryOp::Deref: {
         const type::Type valueType = expression.operandSymbol(annotations())->getType();
         rejectFunctionValue(valueType, expression.getContext());
         type::Type operandType = expression.operandType();
@@ -302,23 +300,23 @@ void SemanticAnalysisVisitor::visit(ast::UnaryExpression& expression) {
         semanticError("invalid type argument of ‘unary *’ :" + operandType.to_string(), expression.getContext());
         break;
     }
-    case '+':
-    case '-':
-    case '~': {
+    case type::UnaryOp::Plus:
+    case type::UnaryOp::Minus:
+    case type::UnaryOp::BitNot: {
         rejectFunctionValue(expression.operandType(), expression.getContext());
         const type::Type promoted = applyIntegerPromotion(
                 *expression.getOperandExpression(), symbolTable, annotations());
         expression.setTypeAndResult(annotations(), symbolTable.createTemporarySymbol(promoted));
         break;
     }
-    case '!':
+    case type::UnaryOp::LogicalNot:
         rejectFunctionValue(type::afterLvalueConversion(expression.operandType()), expression.getContext());
         expression.setResultSymbol(annotations(), symbolTable.createTemporarySymbol(type::signedInteger()));
         expression.setTruthyLabel(annotations(), symbolTable.newLabel());
         expression.setFalsyLabel(annotations(), symbolTable.newLabel());
         break;
-    default:
-        throw std::runtime_error { "Unidentified unary operator: " + expression.lexeme() };
+    case type::UnaryOp::Sizeof:
+        break;
     }
 }
 
@@ -467,7 +465,7 @@ void SemanticAnalysisVisitor::visit(ast::ArithmeticExpression& expression) {
     const type::Type leftValue = expression.leftOperandSymbol(annotations())->getType();
     const type::Type rightValue = expression.rightOperandSymbol(annotations())->getType();
 
-    const char op = expression.lexeme().front();
+    const type::ArithmeticOp op = expression.op();
     const type::PointerArithmeticInfo ptrArith =
             type::classifyPointerArithmetic(leftValue, rightValue, op);
     if (ptrArith.form == type::PointerArithmeticForm::Invalid) {
@@ -487,7 +485,7 @@ void SemanticAnalysisVisitor::visit(ast::ArithmeticExpression& expression) {
     const type::Type resultType = applyUsualArithmeticConversions(
             *expression.getLeftOperand(), *expression.getRightOperand(),
             symbolTable, annotations());
-    if (op == '%') {
+    if (op == type::ArithmeticOp::Mod) {
         if (type::isComplex(resultType) || type::isComplex(leftValue) || type::isComplex(rightValue)) {
             semanticError("invalid operands to % (complex type)", expression.getContext());
             return;
@@ -547,8 +545,9 @@ void SemanticAnalysisVisitor::visit(ast::ComparisonExpression& expression) {
         const type::Type uac = applyUsualArithmeticConversions(
                 *expression.getLeftOperand(), *expression.getRightOperand(),
                 symbolTable, annotations());
-        const std::string& op = expression.lexeme();
-        if (type::isComplex(uac) && op != "==" && op != "!=") {
+        if (type::isComplex(uac)
+                && expression.op() != type::ComparisonOp::Eq
+                && expression.op() != type::ComparisonOp::Ne) {
             semanticError("invalid operands to relational operator (complex type)", expression.getContext());
             return;
         }
@@ -657,7 +656,7 @@ void SemanticAnalysisVisitor::visit(ast::AssignmentExpression& expression) {
         checkAssign(left, srcType, expression.getContext(), right);
         decayArrayValue(*right, symbolTable, annotations());
         maybeSetConversion(right,
-                type::assignmentConvertTarget(expression.lexeme(), left, srcType),
+                type::assignmentConvertTarget(expression.op(), left, srcType),
                 symbolTable, annotations());
 
         expression.setTypeAndResult(annotations(), *expression.leftOperandSymbol(annotations()));
