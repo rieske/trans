@@ -22,6 +22,16 @@ void startIntFunction(SymbolTable& table, const char* name = "f") {
     table.startFunction(name, {});
 }
 
+TEST(SymbolTable, isAtFileScopeTracksFunctionScopeNotBlockScope) {
+    SymbolTable table;
+    table.enterBlockScope();
+    EXPECT_TRUE(table.isAtFileScope());
+    table.exitBlockScope();
+
+    startIntFunction(table);
+    EXPECT_FALSE(table.isAtFileScope());
+}
+
 // Empty formal names (abstract parameters) must still produce one symbol-table
 // argument slot per declared parameter. Silent drop of the second empty name
 // collapses the callee ABI while the function type arity stays correct.

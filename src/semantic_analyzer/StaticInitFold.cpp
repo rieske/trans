@@ -326,6 +326,9 @@ std::optional<symbols::StaticInitValue> convertToDest(
 std::optional<symbols::StaticInitValue> evaluateStaticInit(
         SemanticAnalysisVisitor& visitor, const ast::Expression& expr, const type::Type& dest,
         const translation_unit::Context& context) {
+    if (!expr.hasExpressionType()) {
+        return std::nullopt;
+    }
     const type::Type src = assignSourceType(expr, dest, visitor.annotations());
     if (!visitor.checkAssign(dest, src, context, &expr)) {
         return std::nullopt;

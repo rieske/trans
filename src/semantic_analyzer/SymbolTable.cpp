@@ -156,7 +156,7 @@ void SymbolTable::markFunctionDefined(const std::string& name) {
 }
 
 bool SymbolTable::isAtFileScope() const {
-    return scopeIdStack.empty();
+    return functionScopes.empty();
 }
 
 bool SymbolTable::hasGlobalVariable(const std::string& name) const {
@@ -211,7 +211,7 @@ ObjectBind SymbolTable::bindFileScopeObject(std::string name, const type::Type& 
 }
 
 const symbols::ValueEntry* SymbolTable::find(const std::string& name) const {
-    if (!functionScopes.empty()) {
+    if (!isAtFileScope()) {
         for (auto it = scopeIdStack.rbegin(); it != scopeIdStack.rend(); ++it) {
             if (const symbols::ValueEntry* entry = functionScopes.back().find({ *it, name })) {
                 return entry;
@@ -232,7 +232,7 @@ const symbols::ValueEntry& SymbolTable::lookup(const std::string& name) const {
 }
 
 symbols::ValueEntry SymbolTable::createTemporarySymbol(type::Type type) {
-    if (functionScopes.empty()) {
+    if (isAtFileScope()) {
         return globalScope.createTemporarySymbol(type);
     }
     return functionScopes.back().createTemporarySymbol(type);

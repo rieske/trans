@@ -510,6 +510,7 @@ TEST(Compiler, funcNameOutsideFunctionIsError) {
     )prg"};
     program.compile();
     program.assertCompilationErrors("__func__ used outside a function");
+    EXPECT_THAT(program.getCompilationErrors(), Not(HasSubstr("expression type is not set")));
 }
 
 TEST(Compiler, gnuStatementExprYieldsLastExpression) {
