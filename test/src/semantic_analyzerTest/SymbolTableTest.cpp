@@ -22,14 +22,15 @@ void startIntFunction(SymbolTable& table, const char* name = "f") {
     table.startFunction(name, {});
 }
 
-TEST(SymbolTable, isAtFileScopeTracksFunctionScopeNotBlockScope) {
+TEST(SymbolTable, blockScopeOutsideAFunctionIsRejected) {
     SymbolTable table;
-    table.enterBlockScope();
     EXPECT_TRUE(table.isAtFileScope());
-    table.exitBlockScope();
+    EXPECT_THROW(table.enterBlockScope(), std::logic_error);
 
     startIntFunction(table);
+    table.enterBlockScope();
     EXPECT_FALSE(table.isAtFileScope());
+    table.exitBlockScope();
 }
 
 // Empty formal names (abstract parameters) must still produce one symbol-table
@@ -278,6 +279,23 @@ TEST(SymbolTable, siblingBlocksGetDistinctLlocObjectNames) {
     const auto symbols = table.getCurrentScopeSymbols();
     EXPECT_THAT(symbols, Contains(Key("L$loc2_x")));
     EXPECT_THAT(symbols, Contains(Key("L$loc3_x")));
+}
+
+// Frame-local object names embed the scope id, so ids must stay unique across functions
+// as well as within one.
+TEST(SymbolTable, scopeIdsDoNotRepeatAcrossFunctions) {
+    SymbolTable table;
+    translation_unit::Context ctx { "t.c", 1 };
+
+    startIntFunction(table);
+    ASSERT_TRUE(table.insertSymbol("x", type::signedInteger(), ctx));
+    EXPECT_THAT(table.lookup("x").getName(), Eq("L$loc1_x"));
+    table.endFunction();
+
+    startIntFunction(table, "g");
+    ASSERT_TRUE(table.insertSymbol("x", type::signedInteger(), ctx));
+    EXPECT_THAT(table.lookup("x").getName(), Eq("L$loc2_x"));
+    table.endFunction();
 }
 
 TEST(SymbolTable, parameterObjectNameIsLloc) {

@@ -2,6 +2,7 @@
 #define _SYMBOL_TABLE_H_
 
 #include <map>
+#include <optional>
 #include <string>
 #include <vector>
 
@@ -66,14 +67,19 @@ private:
     std::map<std::string, symbols::LabelEntry> labels;
     std::map<std::string, std::string> constants;
 
-    std::vector<ValueScope> functionScopes;
+    // Block ids are monotonic across the whole unit: siblings never reuse an id.
+    struct FunctionScope {
+        ValueScope values;
+        std::vector<unsigned> blockIds;
+    };
+    // C has no nested function definitions: at most one is open.
+    std::optional<FunctionScope> currentFunction;
     ValueScope globalScope;
     std::vector<symbols::ValueEntry> functionScopeDataHomes;
-
-    // Stack of monotonic scope ids (siblings never reuse an id).
     unsigned nextScopeId { 0 };
-    std::vector<unsigned> scopeIdStack;
 
+    FunctionScope& openFunction();
+    const FunctionScope& openFunction() const;
     unsigned currentScopeId() const;
 };
 

@@ -2,6 +2,7 @@
 
 #include <cassert>
 #include <stdexcept>
+#include <utility>
 
 namespace {
 
@@ -57,8 +58,9 @@ bool SymbolTable::insertSymbol(std::string name, const type::Type& type, transla
     if (isAtFileScope()) {
         return globalScope.insertSymbol({ 0, name }, type, context, storage, name, name);
     }
+    auto& fn = openFunction();
     const unsigned scopeId = currentScopeId();
-    if (scopeId == scopeIdStack.front() && functionScopes.back().findArgumentBySource(name)) {
+    if (scopeId == fn.blockIds.front() && fn.values.findArgumentBySource(name)) {
         return false;
     }
     std::string objectName = localObjectName(scopeId, name);
@@ -70,7 +72,7 @@ bool SymbolTable::insertSymbol(std::string name, const type::Type& type, transla
             return false;
         }
     }
-    return functionScopes.back().insertSymbol(
+    return fn.values.insertSymbol(
             { scopeId, name }, type, context, storage, std::move(objectName), name);
 }
 
@@ -112,10 +114,10 @@ void SymbolTable::insertFunctionArgument(std::string name, type::Type type, tran
     // abstract formals do not collapse to a single symbol-table slot.
     std::string source = name;
     if (source.empty()) {
-        source = "__arg" + std::to_string(functionScopes.back().getArguments().size());
+        source = "__arg" + std::to_string(openFunction().values.getArguments().size());
     }
     const std::string objectName = localObjectName(currentScopeId(), source);
-    functionScopes.back().insertFunctionArgument(objectName, type, context, std::move(source));
+    openFunction().values.insertFunctionArgument(objectName, type, context, std::move(source));
 }
 
 symbols::FunctionEntry SymbolTable::insertFunction(std::string name, type::Function functionType, translation_unit::Context context,
@@ -156,7 +158,7 @@ void SymbolTable::markFunctionDefined(const std::string& name) {
 }
 
 bool SymbolTable::isAtFileScope() const {
-    return functionScopes.empty();
+    return !currentFunction;
 }
 
 bool SymbolTable::hasGlobalVariable(const std::string& name) const {
@@ -167,8 +169,8 @@ bool SymbolTable::hasGlobalVariable(const std::string& name) const {
 void SymbolTable::setStaticInit(const std::string& name, std::vector<symbols::StaticInitValue> words) {
     if (!isAtFileScope()) {
         const SymbolKey key { currentScopeId(), name };
-        if (functionScopes.back().find(key)) {
-            functionScopes.back().setStaticInit(key, std::move(words));
+        if (openFunction().values.find(key)) {
+            openFunction().values.setStaticInit(key, std::move(words));
             return;
         }
     }
@@ -212,12 +214,13 @@ ObjectBind SymbolTable::bindFileScopeObject(std::string name, const type::Type& 
 
 const symbols::ValueEntry* SymbolTable::find(const std::string& name) const {
     if (!isAtFileScope()) {
-        for (auto it = scopeIdStack.rbegin(); it != scopeIdStack.rend(); ++it) {
-            if (const symbols::ValueEntry* entry = functionScopes.back().find({ *it, name })) {
+        const auto& fn = openFunction();
+        for (auto it = fn.blockIds.rbegin(); it != fn.blockIds.rend(); ++it) {
+            if (const symbols::ValueEntry* entry = fn.values.find({ *it, name })) {
                 return entry;
             }
         }
-        if (const symbols::ValueEntry* argument = functionScopes.back().findArgumentBySource(name)) {
+        if (const symbols::ValueEntry* argument = fn.values.findArgumentBySource(name)) {
             return argument;
         }
     }
@@ -235,7 +238,7 @@ symbols::ValueEntry SymbolTable::createTemporarySymbol(type::Type type) {
     if (isAtFileScope()) {
         return globalScope.createTemporarySymbol(type);
     }
-    return functionScopes.back().createTemporarySymbol(type);
+    return openFunction().values.createTemporarySymbol(type);
 }
 
 symbols::LabelEntry SymbolTable::newLabel() {
@@ -246,9 +249,8 @@ symbols::LabelEntry SymbolTable::newLabel() {
 }
 
 void SymbolTable::startFunction(std::string name, std::vector<std::string> formalArguments) {
-    functionScopes.push_back(ValueScope { });
-    scopeIdStack.clear();
-    scopeIdStack.push_back(++nextScopeId);
+    currentFunction.emplace();
+    currentFunction->blockIds.push_back(++nextScopeId);
     auto function = findFunction(name);
     size_t i { 0 };
     for (auto& argument : function.arguments()) {
@@ -260,30 +262,40 @@ void SymbolTable::startFunction(std::string name, std::vector<std::string> forma
 }
 
 void SymbolTable::endFunction() {
-    for (const auto& entry : functionScopes.back().getSymbols()) {
+    for (const auto& entry : openFunction().values.getSymbols()) {
         if (entry.second.isStatic()) {
             functionScopeDataHomes.push_back(entry.second);
         }
     }
-    functionScopes.pop_back();
-    scopeIdStack.clear();
+    currentFunction.reset();
 }
 
 void SymbolTable::enterBlockScope() {
-    scopeIdStack.push_back(++nextScopeId);
+    openFunction().blockIds.push_back(++nextScopeId);
 }
 
 void SymbolTable::exitBlockScope() {
-    scopeIdStack.pop_back();
+    openFunction().blockIds.pop_back();
+}
+
+const SymbolTable::FunctionScope& SymbolTable::openFunction() const {
+    if (!currentFunction) {
+        throw std::logic_error { "internal compiler error: no function scope is open" };
+    }
+    return *currentFunction;
+}
+
+SymbolTable::FunctionScope& SymbolTable::openFunction() {
+    return const_cast<FunctionScope&>(std::as_const(*this).openFunction());
 }
 
 unsigned SymbolTable::currentScopeId() const {
-    return scopeIdStack.back();
+    return openFunction().blockIds.back();
 }
 
 std::map<std::string, symbols::ValueEntry> SymbolTable::getCurrentScopeSymbols() const {
     std::map<std::string, symbols::ValueEntry> symbols;
-    for (const auto& entry : functionScopes.back().getSymbols()) {
+    for (const auto& entry : openFunction().values.getSymbols()) {
         // Automatic only for frame locals (non-automatic use data homes).
         if (!entry.second.isGlobal()) {
             symbols.emplace(entry.second.getName(), entry.second);
@@ -293,7 +305,7 @@ std::map<std::string, symbols::ValueEntry> SymbolTable::getCurrentScopeSymbols()
 }
 
 std::vector<symbols::ValueEntry> SymbolTable::getCurrentScopeArguments() const {
-    return functionScopes.back().getArguments();
+    return openFunction().values.getArguments();
 }
 
 std::map<std::string, std::string> SymbolTable::getConstants() const {
