@@ -1,6 +1,6 @@
 #include "CodeGeneratingVisitor.h"
+#include "codegen/IrBuilders.h"
 
-#include "Instruction.h"
 #include "util/ImmediateFormat.h"
 #include "types/Type.h"
 

@@ -21,7 +21,7 @@ void ConstantExpression::accept(AbstractSyntaxTreeVisitor& visitor) {
 }
 
 std::optional<type::Type> ConstantExpression::typeAtParseTime(const ParseEnvironment&) const {
-    return getType();
+    return expressionType();
 }
 
 translation_unit::Context ConstantExpression::getContext() const {
@@ -39,14 +39,14 @@ bool ConstantExpression::evaluateConstant(type::IntegerConstant& value) const {
     const std::string& token = constant.getValue();
     long charValue = 0;
     if (util::decodeCharConstant(token, charValue)) {
-        value = type::convert(type::fromHostLong(charValue), getType());
+        value = type::convert(type::fromHostLong(charValue), expressionType());
         return true;
     }
     util::IntegerLiteral lit;
     if (!util::parseIntegerLiteral(token, lit)) {
         return false;
     }
-    value = type::fromLiteralBits(lit.value, getType());
+    value = type::fromLiteralBits(lit.value, expressionType());
     return true;
 }
 

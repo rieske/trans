@@ -105,7 +105,7 @@ inline type::Type assignSourceType(const ast::Expression& expr, const type::Type
     if ((expr.holdsAggregateAddress() || expr.holdsFunctionDesignator()) && dest.isPointer()) {
         return expr.getResultSymbol(store)->getType();
     }
-    return expr.getType();
+    return expr.expressionType();
 }
 
 // True when evaluateConstant yields 0 (0, (void*)0, (int)(1-1), ...).

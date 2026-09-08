@@ -130,7 +130,7 @@ bool analyzeVaBuiltin(ast::FunctionCall& functionCall, const VaBuiltinSpec& spec
     }
     store.setCallPlan(&functionCall, std::move(plan));
     if (spec.kind == VaBuiltinKind::Arg) {
-        functionCall.setResultSymbol(store,
+        functionCall.setTypeAndResult(store,
                 symbolTable.createTemporarySymbol(*functionCall.builtinTypeArgument()));
     }
     return true;
@@ -144,7 +144,7 @@ void analyzeConstantP(ast::FunctionCall& functionCall, SymbolTable& symbolTable,
                 functionCall.getContext());
         return;
     }
-    functionCall.setResultSymbol(store, symbolTable.createTemporarySymbol(type::signedInteger()));
+    functionCall.setTypeAndResult(store, symbolTable.createTemporarySymbol(type::signedInteger()));
 }
 
 } // namespace
@@ -227,7 +227,7 @@ void SemanticAnalysisVisitor::visit(ast::FunctionCall& functionCall) {
 
     auto returnType = callee.type.getReturnType();
     if (!returnType.isVoid()) {
-        functionCall.setResultSymbol(annotations(), symbolTable.createTemporarySymbol(returnType));
+        functionCall.setTypeAndResult(annotations(), symbolTable.createTemporarySymbol(returnType));
     }
 }
 
@@ -243,7 +243,7 @@ void SemanticAnalysisVisitor::visit(ast::IdentifierExpression& identifier) {
             setFunctionDesignator(identifier, symbolTable, annotations());
             return;
         }
-        identifier.setResultSymbol(annotations(), *entry);
+        identifier.setTypeAndResult(annotations(), *entry);
         return;
     }
 

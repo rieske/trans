@@ -1,6 +1,7 @@
 #ifndef CODEGEN_IR_BUILDERS_H_
 #define CODEGEN_IR_BUILDERS_H_
 
+#include "codegen/Instruction.h"
 #include "codegen/IrStringTable.h"
 #include "codegen/JumpCondition.h"
 #include "symbols/AddressPlan.h"

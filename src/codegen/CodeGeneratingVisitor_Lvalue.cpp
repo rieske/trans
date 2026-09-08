@@ -1,6 +1,6 @@
 #include "CodeGeneratingVisitor.h"
+#include "codegen/IrBuilders.h"
 
-#include "Instruction.h"
 #include "symbols/AddressPlan.h"
 
 #include "ast/Expression.h"
@@ -13,7 +13,7 @@ void CodeGeneratingVisitor::emitLvalueStore(ast::Expression& lhs, int value) {
         return;
     }
     if (const auto* bits = symbols::bitFieldOf(store_.addressPlan(&lhs))) {
-        emitBitFieldInsert(id(*lvalue), value, *bits, lhs.getType());
+        emitBitFieldInsert(id(*lvalue), value, *bits, lhs.expressionType());
         return;
     }
     emit(ir::lvalueAssign(value, id(*lvalue)));

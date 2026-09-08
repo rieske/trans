@@ -29,7 +29,7 @@ type::Type ParseEnvironment::ensureStructTag(const std::string& tag) {
             return it->second;
         }
     }
-    type::Type incomplete = type::incompleteStructure();
+    type::Type incomplete = type::incompleteRecord();
     structTags_.emplace(tag, incomplete);
     return incomplete;
 }

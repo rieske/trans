@@ -741,9 +741,9 @@ TEST(Type, pointerToArrayOfPointersToFunction) {
     EXPECT_THAT(peeledArr.getElementType().dereference().isFunction(), IsTrue());
 }
 
-TEST(Type, incompleteStructureSharedBodyCompletesInPlace) {
+TEST(Type, incompleteRecordSharedBodyCompletesInPlace) {
     using namespace type;
-    auto tag = incompleteStructure();
+    auto tag = incompleteRecord();
     ASSERT_THAT(tag.isStructure(), IsTrue());
     EXPECT_THAT(tag.isIncompleteRecord(), IsTrue());
     EXPECT_THAT(tag.getSize(), Eq(0));
@@ -795,7 +795,7 @@ TEST(Type, kindClassifiesNodesWithoutPayloadBleed) {
     EXPECT_THAT(function(voidType(), {}).kind(), Eq(TypeKind::Function));
     EXPECT_THAT(array(signedInteger(), 2).kind(), Eq(TypeKind::Array));
     EXPECT_THAT(structure({ { "x", signedInteger() } }).kind(), Eq(TypeKind::Struct));
-    EXPECT_THAT(incompleteStructure().kind(), Eq(TypeKind::Struct));
+    EXPECT_THAT(incompleteRecord().kind(), Eq(TypeKind::Struct));
 }
 
 TEST(Type, longDoubleAlignmentIsSize) {
@@ -833,7 +833,6 @@ TEST(Type, completeStructureRejectsNonRecord) {
 TEST(Type, arrayRejectsIncompleteRecordElement) {
     using namespace type;
     EXPECT_THROW(array(incompleteRecord(), 3), std::invalid_argument);
-    EXPECT_THROW(array(incompleteStructure(), 1), std::invalid_argument);
 }
 
 TEST(Type, pointerAppliesQualifiersViaConstructor) {
@@ -880,13 +879,13 @@ TEST(Type, unionLayoutAllMembersAtZero) {
 
 TEST(Type, completeStructureFailurePreservesPriorSharedLayout) {
     using namespace type;
-    auto tag = incompleteStructure();
+    auto tag = incompleteRecord();
     completeStructure(tag, { MemberSpec { "x", signedInteger() } });
     EXPECT_THAT(tag.getSize(), Eq(4));
     auto alias = tag;
     auto ptr = pointer(tag);
 
-    EXPECT_THROW(completeStructure(tag, { MemberSpec { "y", incompleteStructure() } }),
+    EXPECT_THROW(completeStructure(tag, { MemberSpec { "y", incompleteRecord() } }),
             std::invalid_argument);
 
     EXPECT_THAT(tag.getSize(), Eq(4));
@@ -908,7 +907,7 @@ TEST(Type, structureNamedPredicatesAreStructOnly) {
     EXPECT_THAT(u.isCompleteRecord(), IsTrue());
     EXPECT_THAT(u.isStructure(), IsFalse());
 
-    auto inc = incompleteStructure();
+    auto inc = incompleteRecord();
     EXPECT_THAT(inc.isStructure(), IsTrue());
     EXPECT_THAT(inc.isIncompleteRecord(), IsTrue());
 }

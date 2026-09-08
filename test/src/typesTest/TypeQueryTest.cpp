@@ -27,7 +27,7 @@ TEST(TypeQuery, bareAndPointerToFunction) {
 TEST(TypeQuery, incompleteObjectType) {
     EXPECT_TRUE(type::isIncompleteObjectType(type::voidType()));
     EXPECT_TRUE(type::isIncompleteObjectType(type::function(type::signedInteger(), {})));
-    EXPECT_TRUE(type::isIncompleteObjectType(type::incompleteStructure()));
+    EXPECT_TRUE(type::isIncompleteObjectType(type::incompleteRecord()));
     EXPECT_TRUE(type::isIncompleteObjectType(type::incompleteArray(type::signedInteger())));
     EXPECT_FALSE(type::isIncompleteObjectType(type::array(type::signedInteger(), 0)));
     EXPECT_FALSE(type::isIncompleteObjectType(type::variableArray(type::signedInteger())));
@@ -144,7 +144,7 @@ TEST(TypeQuery, productRejectsArrayAndVoidAndIncomplete) {
     EXPECT_TRUE(type::productCanAssignFrom(pi, arr));
     EXPECT_TRUE(type::productCanAssignFrom(i, arr));
     EXPECT_FALSE(type::productCanAssignFrom(type::voidType(), i));
-    EXPECT_FALSE(type::productCanAssignFrom(type::incompleteStructure(), i));
+    EXPECT_FALSE(type::productCanAssignFrom(type::incompleteRecord(), i));
 }
 
 TEST(TypeQuery, arraySubscriptInfoArrayAndPointer) {
@@ -196,7 +196,7 @@ TEST(TypeQuery, arraySubscriptInfoEmptyCompleteElementIsValid) {
 }
 
 TEST(TypeQuery, incompletePredicatesShareDefinition) {
-    type::Type inc = type::incompleteStructure();
+    type::Type inc = type::incompleteRecord();
     EXPECT_EQ(type::isIncompleteObjectType(inc), type::isIncompleteMemberOrElementType(inc));
     EXPECT_EQ(type::isIncompleteObjectType(type::voidType()),
             type::isIncompleteMemberOrElementType(type::voidType()));
@@ -315,7 +315,7 @@ TEST(TypeQuery, isSubscriptBasePointerAndArray) {
 TEST(TypeQuery, incompleteMemberOrElement) {
     EXPECT_TRUE(type::isIncompleteMemberOrElementType(type::voidType()));
     EXPECT_TRUE(type::isIncompleteMemberOrElementType(type::function(type::signedInteger(), {})));
-    EXPECT_TRUE(type::isIncompleteMemberOrElementType(type::incompleteStructure()));
+    EXPECT_TRUE(type::isIncompleteMemberOrElementType(type::incompleteRecord()));
     EXPECT_TRUE(type::isIncompleteMemberOrElementType(type::incompleteArray(type::signedInteger())));
     EXPECT_FALSE(type::isIncompleteMemberOrElementType(type::pointer(type::voidType())));
 }

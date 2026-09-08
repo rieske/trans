@@ -1,4 +1,5 @@
 #include "CodeGeneratingVisitor.h"
+#include "codegen/IrBuilders.h"
 #include "codegen/InternalError.h"
 #include "ast/InitializerListExpression.h"
 
@@ -356,14 +357,14 @@ void CodeGeneratingVisitor::visit(ast::FunctionCall& functionCall) {
                         emit(ir::argument(convertedResult(*expression)));
                     }
                     int memoryReturnDest = kNoSymbol;
-                    if (functionCall.hasResultSymbol(store_) && !functionCall.getType().isVoid()) {
-                        if (type::object_abi::typeNeedsMemoryReturn(functionCall.getType())) {
+                    if (functionCall.hasResultSymbol(store_) && !functionCall.expressionType().isVoid()) {
+                        if (type::object_abi::typeNeedsMemoryReturn(functionCall.expressionType())) {
                             memoryReturnDest = id(*functionCall.getResultSymbol(store_));
                         }
                     }
                     emit(ir::call(id(symbols::callCalleeName(*plan)), symbols::isIndirectCall(*plan),
                             memoryReturnDest));
-                    if (functionCall.hasResultSymbol(store_) && !functionCall.getType().isVoid()) {
+                    if (functionCall.hasResultSymbol(store_) && !functionCall.expressionType().isVoid()) {
                         emit(ir::retrieve(id(*functionCall.getResultSymbol(store_)),
                                 memoryReturnDest >= 0));
                     }
@@ -485,7 +486,7 @@ void CodeGeneratingVisitor::visit(ast::PostfixExpression& expression) {
         emitLvalueStore(*expression.getOperandExpression(), resultSymbolName);
     }
 
-    expression.setResultSymbol(store_, *pre);
+    expression.setTypeAndResult(store_, *pre);
 }
 
 void CodeGeneratingVisitor::visit(ast::PrefixExpression& expression) {

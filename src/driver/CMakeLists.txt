@@ -4,13 +4,7 @@ add_library(driver
         Driver.cpp
         LanguageFrontEnd.cpp
         ResourcesLocation.cpp
-        Compiler.h
-        Configuration.h
-        Configuration.cpp
-        ConfigurationParser.h
-        Driver.h
-        LanguageFrontEnd.h
-        ResourcesLocation.h)
+        Configuration.cpp)
 
 trans_target_defaults(driver)
 target_link_libraries(driver PUBLIC ast backend util semantic_analyzer)

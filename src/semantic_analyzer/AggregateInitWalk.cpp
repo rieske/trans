@@ -111,7 +111,7 @@ void placeAt(const type::FoundMember& slot, ast::Expression* value, AggregateIni
     if (slot.type.isRecord() && value) {
         // Whole nested record from a compatible expression (.needle = *want).
         // Otherwise current-object: scalar initializes the first subobject (.in = 5).
-        const type::Type src = type::afterLvalueConversion(value->getType());
+        const type::Type src = type::afterLvalueConversion(value->expressionType());
         if (type::productAssignFrom(slot.type, src)) {
             sink.placeScalar(slot, value);
             return;

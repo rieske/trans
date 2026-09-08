@@ -77,7 +77,6 @@ public:
     void setType(const type::Type& type);
     // C type of the expression (sizeof / isArray / isStructure).
     type::Type expressionType() const;
-    type::Type getType() const { return expressionType(); }
     bool hasExpressionType() const { return type.has_value(); }
 
     // Dual-type: array expressions keep the array as expression type.
@@ -112,10 +111,6 @@ public:
             const type::Type& functionType);
     // Become src's value: C type, form, result, lvalue, address plan, value category.
     void takeValueFrom(Expression& src, symbols::AnnotationStore& store);
-
-    void setResultSymbol(symbols::AnnotationStore& store, symbols::ValueEntry resultSymbol) {
-        setTypeAndResult(store, std::move(resultSymbol));
-    }
 
     bool hasResultSymbol(const symbols::AnnotationStore& store) const;
     // Required Result after successful SA - throws if missing (same contract as AnnotationStore::result).

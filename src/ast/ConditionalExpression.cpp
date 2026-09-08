@@ -84,7 +84,7 @@ bool ConditionalExpression::evaluateConstant(type::IntegerConstant& value) const
         return false;
     }
     if (hasExpressionType()) {
-        value = type::convert(value, getType());
+        value = type::convert(value, expressionType());
     }
     return true;
 }

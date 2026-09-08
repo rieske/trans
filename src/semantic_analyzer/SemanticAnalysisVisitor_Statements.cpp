@@ -124,7 +124,7 @@ void SemanticAnalysisVisitor::visit(ast::ReturnStatement& statement) {
     }
     auto* retExpr = statement.returnExpression.get();
     if (!currentReturnType) {
-        rejectFunctionValue(retExpr->getType(), retExpr->getContext());
+        rejectFunctionValue(retExpr->expressionType(), retExpr->getContext());
         return;
     }
     decayArrayToPointer(*retExpr, *currentReturnType, symbolTable, annotations());

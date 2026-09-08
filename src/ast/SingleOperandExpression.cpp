@@ -21,7 +21,7 @@ void SingleOperandExpression::visitOperand(AbstractSyntaxTreeVisitor& visitor) {
 }
 
 type::Type SingleOperandExpression::operandType() const {
-    return _operand->getType();
+    return _operand->expressionType();
 }
 
 bool SingleOperandExpression::hasOperandSymbol(const symbols::AnnotationStore& store) const {
