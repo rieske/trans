@@ -84,16 +84,18 @@ inline void decayArrayToPointer(ast::Expression& expr, const type::Type& dest,
             actual);
 }
 
-inline void decayArrayValue(ast::Expression& expr, SymbolTable& symbolTable,
+// Reports whether the value was an array, and so now holds a pointer to its first element.
+inline bool decayArrayValue(ast::Expression& expr, SymbolTable& symbolTable,
         symbols::AnnotationStore& store) {
     if (!expr.hasResultSymbol(store)) {
-        return;
+        return false;
     }
     const type::Type actual = expr.getResultSymbol(store)->getType();
     if (!actual.isArray()) {
-        return;
+        return false;
     }
     decayArrayToPointer(expr, actual.decayArray(), symbolTable, store);
+    return true;
 }
 
 // Source type for assignment/init/return into `dest`.

@@ -311,6 +311,7 @@ void SemanticAnalysisVisitor::visit(ast::UnaryExpression& expression) {
     }
     case type::UnaryOp::LogicalNot:
         rejectFunctionValue(type::afterLvalueConversion(expression.operandType()), expression.getContext());
+        decayArrayValue(*expression.getOperandExpression(), symbolTable, annotations());
         expression.setTypeAndResult(annotations(), symbolTable.createTemporarySymbol(type::signedInteger()));
         expression.setTruthyLabel(annotations(), symbolTable.newLabel());
         expression.setFalsyLabel(annotations(), symbolTable.newLabel());
@@ -329,9 +330,14 @@ void SemanticAnalysisVisitor::visit(ast::StatementExpression& expression) {
     expression.body().accept(*this);
     auto& items = expression.body().getItems();
     if (!items.empty()) {
-        if (auto* last = items.back().asExpression()) {
+        if (auto* last = expression.valueExpression()) {
             if (last->hasResultSymbol(annotations())) {
-                expression.takeValueFrom(*last, annotations());
+                if (decayArrayValue(*last, symbolTable, annotations())) {
+                    // The decay leaves the array type on the node, with a pointer result.
+                    expression.setTypeAndResult(annotations(), *last->getResultSymbol(annotations()));
+                } else {
+                    expression.takeValueFrom(*last, annotations());
+                }
                 return;
             }
         }
@@ -580,12 +586,14 @@ void SemanticAnalysisVisitor::visit(ast::BitwiseExpression& expression) {
     expression.setTypeAndResult(annotations(), symbolTable.createTemporarySymbol(resultType));
 }
 
-void SemanticAnalysisVisitor::visit(ast::LogicalAndExpression& expression) {
+void SemanticAnalysisVisitor::analyzeLogicalExpression(ast::LogicalExpression& expression) {
     expression.visitLeftOperand(*this);
     expression.visitRightOperand(*this);
     if (!expression.hasLeftOperandSymbol(annotations()) || !expression.hasRightOperandSymbol(annotations())) {
         return;
     }
+    decayArrayValue(*expression.getLeftOperand(), symbolTable, annotations());
+    decayArrayValue(*expression.getRightOperand(), symbolTable, annotations());
     checkLogicalScalarOperands(*this, expression.leftOperandType(), expression.rightOperandType(),
             expression.getContext());
 
@@ -593,17 +601,12 @@ void SemanticAnalysisVisitor::visit(ast::LogicalAndExpression& expression) {
     expression.setExitLabel(annotations(), symbolTable.newLabel());
 }
 
-void SemanticAnalysisVisitor::visit(ast::LogicalOrExpression& expression) {
-    expression.visitLeftOperand(*this);
-    expression.visitRightOperand(*this);
-    if (!expression.hasLeftOperandSymbol(annotations()) || !expression.hasRightOperandSymbol(annotations())) {
-        return;
-    }
-    checkLogicalScalarOperands(*this, expression.leftOperandType(), expression.rightOperandType(),
-            expression.getContext());
+void SemanticAnalysisVisitor::visit(ast::LogicalAndExpression& expression) {
+    analyzeLogicalExpression(expression);
+}
 
-    expression.setTypeAndResult(annotations(), symbolTable.createTemporarySymbol(type::signedInteger()));
-    expression.setExitLabel(annotations(), symbolTable.newLabel());
+void SemanticAnalysisVisitor::visit(ast::LogicalOrExpression& expression) {
+    analyzeLogicalExpression(expression);
 }
 
 void SemanticAnalysisVisitor::visit(ast::ConditionalExpression& expression) {
@@ -618,6 +621,7 @@ void SemanticAnalysisVisitor::visit(ast::ConditionalExpression& expression) {
     }
 
     rejectFunctionValue(expression.conditionSymbol(annotations())->getType(), expression.getContext());
+    decayArrayValue(*expression.getCondition(), symbolTable, annotations());
 
     auto* trueExpr = expression.getTrueExpression();
     auto* falseExpr = expression.getFalseExpression();
@@ -671,8 +675,8 @@ void SemanticAnalysisVisitor::visit(ast::ExpressionList& expression) {
     if (!expression.hasRightOperandSymbol(annotations())) {
         return;
     }
-    // Comma operator: value and type of the right operand
-    expression.setType(expression.rightOperandType());
+    // Comma operator: value and type of the right operand, which decays like any other value.
+    decayArrayValue(*expression.getRightOperand(), symbolTable, annotations());
     expression.setTypeAndResult(annotations(), *expression.rightOperandSymbol(annotations()));
 }
 

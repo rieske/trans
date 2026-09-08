@@ -3,6 +3,7 @@
 #include "AbstractSyntaxTreeVisitor.h"
 #include "ParseEnvironment.h"
 #include "types/Type.h"
+#include "types/TypeQuery.h"
 
 namespace ast {
 
@@ -15,15 +16,22 @@ void StatementExpression::accept(AbstractSyntaxTreeVisitor& visitor) {
     visitor.visit(*this);
 }
 
+Expression* StatementExpression::valueExpression() {
+    auto& items = body_->getItems();
+    return items.empty() ? nullptr : items.back().asExpression();
+}
+
+const Expression* StatementExpression::valueExpression() const {
+    const auto& items = body_->getItems();
+    return items.empty() ? nullptr : items.back().asExpression();
+}
+
 std::optional<type::Type> StatementExpression::typeAtParseTime(const ParseEnvironment& environment) const {
     ParseEnvironment inner = ParseEnvironment::nestedIn(environment);
     inner.bindBlockDeclarations(*body_);
-    const auto& items = body_->getItems();
-    if (items.empty()) {
-        return type::voidType();
-    }
-    if (const auto* last = items.back().asExpression()) {
-        return last->typeAtParseTime(inner);
+    if (const auto* last = valueExpression()) {
+        const auto type = last->typeAtParseTime(inner);
+        return type ? type::afterLvalueConversion(*type) : type;
     }
     return type::voidType();
 }

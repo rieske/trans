@@ -190,4 +190,82 @@ int scanf(const char *, ...);
     program.runAndExpect("2");
 }
 
+TEST(Compiler, commaOperatorResultDecaysToPointer) {
+    SourceProgram program{R"prg(int printf(const char *, ...);
+        int a[3];
+        int main() {
+            printf("%d %d %d", (int)sizeof((0, a)), (int)sizeof(a), (int)sizeof(typeof((0, a))));
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("8 12 8");
+}
+
+TEST(Compiler, commaOperatorResultIndexesTheArray) {
+    SourceProgram program{R"prg(int printf(const char *, ...);
+        int a[3] = { 4, 5, 6 };
+        int main() {
+            int *p = (0, a);
+            printf("%d %d", (0, a)[1], p[2]);
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("5 6");
+}
+
+TEST(Compiler, commaOperatorResultIsNotAnLvalue) {
+    SourceProgram program{R"prg(
+        int main() {
+            int x = 1;
+            int y = 2;
+            (y, x) = 5;
+            return x;
+        }
+    )prg"};
+    program.compile();
+    program.assertCompilationErrors("lvalue required");
+}
+
+TEST(Compiler, commaOperatorOverAnArrayIsNotAssignable) {
+    SourceProgram program{R"prg(
+        int a[3];
+        int b[3];
+        int main() {
+            int y = 1;
+            int *q = b;
+            (y, a) = q;
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.assertCompilationErrors("lvalue required");
+}
+
+TEST(Compiler, statementExpressionResultDecaysToPointer) {
+    SourceProgram program{R"prg(int printf(const char *, ...);
+        int a[3] = { 4, 5, 6 };
+        int main() {
+            printf("%d %d %d", (int)sizeof(({ a; })), (int)sizeof(a), ({ a; })[1]);
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("8 12 5");
+}
+
+TEST(Compiler, statementExpressionResultIsNotAnLvalue) {
+    SourceProgram program{R"prg(
+        int main() {
+            int x = 1;
+            int y = 2;
+            ({ y; x; }) = 5;
+            return x;
+        }
+    )prg"};
+    program.compile();
+    program.assertCompilationErrors("lvalue required");
+}
+
 } // namespace

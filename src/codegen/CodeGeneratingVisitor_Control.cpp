@@ -1,8 +1,8 @@
 #include "CodeGeneratingVisitor.h"
-#include "codegen/IrBuilders.h"
 
 #include <stdexcept>
 
+#include "codegen/IrBuilders.h"
 
 namespace codegen {
 
@@ -81,7 +81,7 @@ void CodeGeneratingVisitor::visit(ast::NullStatement& statement) {
 void CodeGeneratingVisitor::visit(ast::IfStatement& statement) {
     statement.testExpression->accept(*this);
 
-    emit(ir::zeroCompare(id(*statement.testExpression->getResultSymbol(store_))));
+    emit(ir::zeroCompare(convertedResult(*statement.testExpression)));
     emit(ir::jump(id(*statement.getFalsyLabel(store_)), JumpCondition::IF_EQUAL));
 
     statement.body->accept(*this);
@@ -127,7 +127,7 @@ void CodeGeneratingVisitor::visit(ast::ForLoopHeader& loopHeader) {
     emit(ir::label(id(*loopHeader.getLoopEntry(store_))));
     if (loopHeader.clause) {
         loopHeader.clause->accept(*this);
-        emit(ir::zeroCompare(id(*loopHeader.clause->getResultSymbol(store_))));
+        emit(ir::zeroCompare(convertedResult(*loopHeader.clause)));
         emit(ir::jump(id(*loopHeader.getLoopExit(store_)), JumpCondition::IF_EQUAL));
     }
 }
@@ -135,14 +135,14 @@ void CodeGeneratingVisitor::visit(ast::ForLoopHeader& loopHeader) {
 void CodeGeneratingVisitor::visit(ast::WhileLoopHeader& loopHeader) {
     emit(ir::label(id(*loopHeader.getLoopEntry(store_))));
     loopHeader.clause->accept(*this);
-    emit(ir::zeroCompare(id(*loopHeader.clause->getResultSymbol(store_))));
+    emit(ir::zeroCompare(convertedResult(*loopHeader.clause)));
     emit(ir::jump(id(*loopHeader.getLoopExit(store_)), JumpCondition::IF_EQUAL));
 }
 
 void CodeGeneratingVisitor::visit(ast::DoWhileLoopHeader& loopHeader) {
     // Invoked after the body and continue label (see visit(LoopStatement)).
     loopHeader.clause->accept(*this);
-    emit(ir::zeroCompare(id(*loopHeader.clause->getResultSymbol(store_))));
+    emit(ir::zeroCompare(convertedResult(*loopHeader.clause)));
     emit(ir::jump(id(*loopHeader.getLoopEntry(store_)), JumpCondition::IF_NOT_EQUAL));
 }
 

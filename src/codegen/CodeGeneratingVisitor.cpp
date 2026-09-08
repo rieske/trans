@@ -580,7 +580,7 @@ void CodeGeneratingVisitor::visit(ast::UnaryExpression& expression) {
                 id(*expression.getResultSymbol(store_))));
         break;
     case type::UnaryOp::LogicalNot:
-        emit(ir::zeroCompare(id(*expression.operandSymbol(store_))));
+        emit(ir::zeroCompare(convertedResult(*expression.getOperandExpression())));
         emit(ir::jump(id(*expression.getTruthyLabel(store_)), JumpCondition::IF_EQUAL));
         emit(ir::assignConstant(id("0"), id(*expression.getResultSymbol(store_))));
         emit(ir::jump(id(*expression.getFalsyLabel(store_))));
@@ -595,6 +595,11 @@ void CodeGeneratingVisitor::visit(ast::UnaryExpression& expression) {
 
 void CodeGeneratingVisitor::visit(ast::StatementExpression& expression) {
     expression.body().accept(*this);
+    // A decayed array value still needs its address emitted.
+    auto* last = expression.valueExpression();
+    if (last != nullptr && last->hasResultSymbol(store_)) {
+        convertedResult(*last);
+    }
 }
 
 void CodeGeneratingVisitor::visit(ast::GenericSelection& expression) {
@@ -798,12 +803,12 @@ void CodeGeneratingVisitor::visit(ast::LogicalAndExpression& expression) {
     expression.visitLeftOperand(*this);
 
     emit(ir::assignConstant(id("0"), id(*expression.getResultSymbol(store_))));
-    emit(ir::zeroCompare(id(*expression.leftOperandSymbol(store_))));
+    emit(ir::zeroCompare(convertedResult(*expression.getLeftOperand())));
     emit(ir::jump(id(*expression.getExitLabel(store_)), JumpCondition::IF_EQUAL));
 
     expression.visitRightOperand(*this);
 
-    emit(ir::zeroCompare(id(*expression.rightOperandSymbol(store_))));
+    emit(ir::zeroCompare(convertedResult(*expression.getRightOperand())));
     emit(ir::jump(id(*expression.getExitLabel(store_)), JumpCondition::IF_EQUAL));
     emit(ir::assignConstant(id("1"), id(*expression.getResultSymbol(store_))));
 
@@ -814,12 +819,12 @@ void CodeGeneratingVisitor::visit(ast::LogicalOrExpression& expression) {
     expression.visitLeftOperand(*this);
 
     emit(ir::assignConstant(id("1"), id(*expression.getResultSymbol(store_))));
-    emit(ir::zeroCompare(id(*expression.leftOperandSymbol(store_))));
+    emit(ir::zeroCompare(convertedResult(*expression.getLeftOperand())));
     emit(ir::jump(id(*expression.getExitLabel(store_)), JumpCondition::IF_NOT_EQUAL));
 
     expression.visitRightOperand(*this);
 
-    emit(ir::zeroCompare(id(*expression.rightOperandSymbol(store_))));
+    emit(ir::zeroCompare(convertedResult(*expression.getRightOperand())));
     emit(ir::jump(id(*expression.getExitLabel(store_)), JumpCondition::IF_NOT_EQUAL));
     emit(ir::assignConstant(id("0"), id(*expression.getResultSymbol(store_))));
 
@@ -828,7 +833,7 @@ void CodeGeneratingVisitor::visit(ast::LogicalOrExpression& expression) {
 
 void CodeGeneratingVisitor::visit(ast::ConditionalExpression& expression) {
     expression.visitCondition(*this);
-    emit(ir::zeroCompare(id(*expression.conditionSymbol(store_))));
+    emit(ir::zeroCompare(convertedResult(*expression.getCondition())));
     emit(ir::jump(id(*expression.getFalsyLabel(store_)), JumpCondition::IF_EQUAL));
 
     expression.visitTrueExpression(*this);
@@ -908,6 +913,11 @@ void CodeGeneratingVisitor::visit(ast::AssignmentExpression& expression) {
 void CodeGeneratingVisitor::visit(ast::ExpressionList& expression) {
     expression.visitLeftOperand(*this);
     expression.visitRightOperand(*this);
+    // The comma aliases the right operand's Result without its Lvalue, so a decayed array has
+    // to be materialized here: consumers such as ArrayAccess read Result without converting it.
+    if (expression.hasRightOperandSymbol(store_)) {
+        convertedResult(*expression.getRightOperand());
+    }
 }
 
 void CodeGeneratingVisitor::visit(ast::Pointer&) {
