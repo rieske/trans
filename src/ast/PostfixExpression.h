@@ -4,7 +4,6 @@
 #include <memory>
 
 #include "UnaryOpExpression.h"
-#include "symbols/AnnotationStore.h"
 #include "types/Operator.h"
 
 namespace ast {
@@ -15,9 +14,6 @@ public:
 
     void accept(AbstractSyntaxTreeVisitor& visitor) override;
     ExprKind exprKind() const override { return ExprKind::Postfix; }
-
-    void setPreOperationSymbol(symbols::AnnotationStore& store, symbols::ValueEntry resultSymbol);
-    symbols::ValueEntry* getPreOperationSymbol(symbols::AnnotationStore& store) const;
 };
 
 } // namespace ast

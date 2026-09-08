@@ -12,8 +12,6 @@ enum class ValueSlot {
     Lvalue,
     // Switch comparison temp.
     CaseTemp,
-    // Postfix ++/-- value before the side effect.
-    PreOperation,
     // Declarator object symbol (global/local storage).
     Holder,
     // Implicit convert destination (float/int width, or bool 0/1).

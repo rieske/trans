@@ -367,5 +367,31 @@ TEST(Compiler, floatIncrementThroughPointer) {
     program.runAndExpect("2");
 }
 
+TEST(Compiler, postfixThroughACommaYieldsTheOldValue) {
+    SourceProgram program{R"prg(int printf(const char *, ...);
+        int main(void) {
+            int x = 5;
+            int r = (0, x++);
+            printf("%d %d", r, x);
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("5 6");
+}
+
+TEST(Compiler, postfixThroughAStatementExpressionYieldsTheOldValue) {
+    SourceProgram program{R"prg(int printf(const char *, ...);
+        int main(void) {
+            int x = 5;
+            int r = ({ x++; });
+            printf("%d %d", r, x);
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("5 6");
+}
+
 }
 

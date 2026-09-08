@@ -179,11 +179,11 @@ void SemanticAnalysisVisitor::visit(ast::PostfixExpression& expression) {
     }
     rejectFunctionValue(expression.operandType(), expression.getContext());
 
-    expression.setType(expression.operandType());
     auto operandSymbol = *expression.operandSymbol(annotations());
-    expression.setTypeAndResult(annotations(), operandSymbol);
-
-    expression.setPreOperationSymbol(annotations(), symbolTable.createTemporarySymbol(operandSymbol.getType()));
+    // The value of `x++` is the value before the increment, so that saved copy is the node's
+    // result. Leaving the operand here makes consumers that read Result see the new value.
+    expression.setTypeAndResult(annotations(),
+            symbolTable.createTemporarySymbol(operandSymbol.getType()));
 
     checkIncrementOperand(*this, expression.isLval(), expression.operandType(), expression.getContext());
 }

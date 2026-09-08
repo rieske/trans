@@ -57,12 +57,6 @@ public:
     ValueEntry* caseTemp(NodeRef node) { return value(node, ValueSlot::CaseTemp); }
     const ValueEntry* caseTemp(NodeRef node) const { return value(node, ValueSlot::CaseTemp); }
 
-    void setPreOperation(NodeRef node, ValueEntry value) {
-        setValue(node, ValueSlot::PreOperation, std::move(value));
-    }
-    ValueEntry* preOperation(NodeRef node) { return value(node, ValueSlot::PreOperation); }
-    const ValueEntry* preOperation(NodeRef node) const { return value(node, ValueSlot::PreOperation); }
-
     void setHolder(NodeRef node, ValueEntry value) {
         setValue(node, ValueSlot::Holder, std::move(value));
     }

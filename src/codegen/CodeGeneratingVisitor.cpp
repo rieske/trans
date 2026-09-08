@@ -472,21 +472,16 @@ void CodeGeneratingVisitor::emitIncDec(int name, const type::Type& valueType, bo
 void CodeGeneratingVisitor::visit(ast::PostfixExpression& expression) {
     expression.visitOperand(*this);
 
-    auto* pre = expression.getPreOperationSymbol(store_);
-    require(pre, "postfix PreOperation");
-    const int resultSymbolName = id(*expression.getResultSymbol(store_));
-    const int preOperationSymbol = id(*pre);
-    emit(ir::assign(resultSymbolName, preOperationSymbol));
+    const symbols::ValueEntry* operand = expression.operandSymbol(store_);
+    const int operandName = id(*operand);
+    emit(ir::assign(operandName, id(*expression.getResultSymbol(store_))));
 
-    emitIncDec(resultSymbolName, expression.getResultSymbol(store_)->getType(),
-            expression.op() == type::IncDec::Inc);
+    emitIncDec(operandName, operand->getType(), expression.op() == type::IncDec::Inc);
 
     // Dereference (and similar) lvalues: value lives in a temp; store new value through the pointer.
     if (expression.operandLvalueSymbol(store_)) {
-        emitLvalueStore(*expression.getOperandExpression(), resultSymbolName);
+        emitLvalueStore(*expression.getOperandExpression(), operandName);
     }
-
-    expression.setTypeAndResult(store_, *pre);
 }
 
 void CodeGeneratingVisitor::visit(ast::PrefixExpression& expression) {
