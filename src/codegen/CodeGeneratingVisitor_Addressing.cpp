@@ -1,4 +1,5 @@
 #include "CodeGeneratingVisitor.h"
+#include "codegen/IrBuilders.h"
 
 #include <stdexcept>
 #include <string>

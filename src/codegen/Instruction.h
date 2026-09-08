@@ -130,6 +130,5 @@ std::ostream& operator<<(std::ostream& stream, const IntermediateRepresentation&
 
 } // namespace codegen
 
-#include "codegen/IrBuilders.h"
 
 #endif // CODEGEN_INSTRUCTION_H_

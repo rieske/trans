@@ -230,8 +230,6 @@ Type variableArray(const Type& elementType, std::shared_ptr<VlaBound> bound = {}
 // Pointers and aliases that share structureBodyIdentity() see the same body when
 // completeStructure/completeUnion mutates it - required for self-referential tags.
 Type incompleteRecord();
-// Compatibility alias for incompleteRecord().
-inline Type incompleteStructure() { return incompleteRecord(); }
 BitField makeBitField(const Type& declared, int width, int shift);
 
 struct FoundMember {

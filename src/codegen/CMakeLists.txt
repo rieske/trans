@@ -32,32 +32,7 @@ add_library(backend
         StackMachine_Wide.cpp
         StackMachine_X87.cpp
         Value.cpp
-        Assembly.cpp
-        Address.h
-        Amd64Registers.h
-        AssemblyGenerator.h
-        ATandTInstructionSet.h
-        Cfg.h
-        CodeGeneratingVisitor.h
-        FrameLayout.h
-        Instruction.h
-        IrBuilders.h
-        IrGenerator.h
-        IrPasses.h
-        IrStringTable.h
-        SymbolRefs.h
-        JumpCondition.h
-        InstructionSet.h
-        GlobalVariable.h
-        IntelInstructionSet.h
-        MemoryOperand.h
-        Register.h
-        RegisterSubreg.h
-        StackMachine.h
-        SysVCallConv.h
-        Value.h
-        ValueKind.h
-        Assembly.h)
+        Assembly.cpp)
 
 trans_target_defaults(backend)
 target_link_libraries(backend PUBLIC ast symbols)

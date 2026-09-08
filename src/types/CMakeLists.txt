@@ -1,21 +1,11 @@
 add_library(types
-        Type.h
         Type.cpp
         TypeLayout.cpp
         TypeQuery.cpp
-        TypeQuery.h
-        IntegerConstant.h
         IntegerConstant.cpp
-        Operator.h
         Operator.cpp
-        ObjectAbi.h
-        ObjectAbiType.h
-        SysVClass.h
-        SysVClassify.h
         SysVClassify.cpp
-        Primitive.h
         Primitive.cpp
-        Function.h
         Function.cpp
         )
 

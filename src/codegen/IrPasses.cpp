@@ -1,4 +1,5 @@
 #include "IrPasses.h"
+#include "codegen/IrBuilders.h"
 
 #include "Cfg.h"
 #include "SymbolRefs.h"

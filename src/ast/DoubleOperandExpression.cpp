@@ -51,11 +51,11 @@ void DoubleOperandExpression::visitRightOperand(AbstractSyntaxTreeVisitor& visit
 }
 
 type::Type DoubleOperandExpression::leftOperandType() const {
-    return leftOperand->getType();
+    return leftOperand->expressionType();
 }
 
 type::Type DoubleOperandExpression::rightOperandType() const {
-    return rightOperand->getType();
+    return rightOperand->expressionType();
 }
 
 bool DoubleOperandExpression::hasLeftOperandSymbol(const symbols::AnnotationStore& store) const {

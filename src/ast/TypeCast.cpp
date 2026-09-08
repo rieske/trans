@@ -46,7 +46,7 @@ bool TypeCast::evaluateConstant(type::IntegerConstant& value) const {
     if (!hasExpressionType() && !typeSpecifier.hasType()) {
         return false;
     }
-    const type::Type dest = hasExpressionType() ? getType() : typeSpecifier.getType();
+    const type::Type dest = hasExpressionType() ? expressionType() : typeSpecifier.getType();
     if (!type::isIntegral(dest) && !type::isBoolean(dest) && !dest.isPointer()) {
         return false;
     }

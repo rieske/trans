@@ -1,4 +1,5 @@
 #include "Cfg.h"
+#include "codegen/IrBuilders.h"
 
 #include <stdexcept>
 #include <unordered_map>

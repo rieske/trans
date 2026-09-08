@@ -10,19 +10,7 @@ add_library(semantic_analyzer
         SemanticAnalysisVisitor_Statements.cpp
         SemanticAnalyzer.cpp
         SymbolTable.cpp
-        ValueScope.cpp
-        AggregateDesignatorPath.h
-        AggregateInitError.h
-        AggregateInitSink.h
-        CharArrayStringInit.h
-        AggregateInitSinks.h
-        AggregateInitWalk.h
-        SemanticAnalysisVisitor.h
-        SemanticAnalysisVisitorInternal.h
-        SemanticAnalyzer.h
-        StaticInitFold.h
-        SymbolTable.h
-        ValueScope.h)
+        ValueScope.cpp)
 
 trans_target_defaults(semantic_analyzer)
 target_link_libraries(semantic_analyzer PUBLIC translation_unit types ast symbols util)

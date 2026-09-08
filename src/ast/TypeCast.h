@@ -17,7 +17,7 @@ public:
     ExprKind exprKind() const override { return ExprKind::TypeCast; }
     std::optional<type::Type> typeAtParseTime(const ParseEnvironment& environment) const override;
 
-    // Target type specifier of the cast (not Expression::getType()).
+    // Target type specifier of the cast (not Expression::expressionType()).
     const TypeSpecifier& getTypeSpecifier() const;
     TypeSpecifier& getTypeSpecifier();
     // Casts are never lvalues in C (unlike the operand).

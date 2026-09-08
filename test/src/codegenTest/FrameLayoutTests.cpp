@@ -1,4 +1,5 @@
 #include "gtest/gtest.h"
+#include "codegen/IrBuilders.h"
 
 #include <vector>
 

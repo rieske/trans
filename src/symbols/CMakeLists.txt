@@ -1,16 +1,8 @@
 add_library(symbols
         AnnotationStore.cpp
-        AnnotationStore.h
-        AnnotationTypes.h
-        AddressPlan.h
-        StaticInit.h
-        FunctionFrame.h
         FunctionEntry.cpp
-        FunctionEntry.h
         LabelEntry.cpp
-        LabelEntry.h
         ValueEntry.cpp
-        ValueEntry.h
         )
 
 trans_target_defaults(symbols)

@@ -230,7 +230,7 @@ void SemanticAnalysisVisitor::lowerLocalScalarBraceList(ast::InitializerListExpr
     if (!value->holdsAggregateAddress() || objectType.isPointer()) {
         checkAssign(objectType, src, context, value);
     }
-    list.setResultSymbol(annotations(), *value->getResultSymbol(annotations()));
+    list.setTypeAndResult(annotations(), *value->getResultSymbol(annotations()));
     maybeSetConversion(&list, objectType, symbolTable, annotations());
 }
 

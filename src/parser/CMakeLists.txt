@@ -13,25 +13,7 @@ add_library(parser_core
         CompileParsingTable.cpp
         Production.cpp
         TokenStream.cpp
-        Action.h
-        BNFFileReader.h
-        CanonicalCollection.h
-        CompileParsingTable.h
-        FirstTable.h
-        GenerationBuffers.h
-        GenerateParsingTable.h
-        HashCombine.h
-        Grammar.h
-        GrammarBuilder.h
-        LookaheadActionTable.h
-        LR1Item.h
-        LR1Parser.h
-        ParseExtensions.h
-        ParsingTable.h
-        Production.h
-        SyntaxTreeBuilder.h
-        SyntaxTreeBuilder.cpp
-        TokenStream.h)
+        SyntaxTreeBuilder.cpp)
 
 trans_target_defaults(parser_core)
 target_link_libraries(parser_core PUBLIC scanner util)

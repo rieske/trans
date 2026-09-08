@@ -121,7 +121,7 @@ void SemanticAnalysisVisitor::visit(ast::InitializerListExpression& expression) 
     // A single-element list may act as a scalar brace init { x }.
     if (expression.getElements().size() == 1 && expression.getElements().front().value
             && expression.getElements().front().value->hasResultSymbol(annotations())) {
-        expression.setResultSymbol(annotations(),
+        expression.setTypeAndResult(annotations(),
                 *expression.getElements().front().value->getResultSymbol(annotations()));
     }
 }
@@ -132,7 +132,7 @@ void SemanticAnalysisVisitor::visit(ast::MemberAccess& memberAccess) {
         return;
     }
     const bool isArrow = memberAccess.isArrow();
-    const auto record = type::memberAccessRecordType(memberAccess.getBase()->getType(), isArrow);
+    const auto record = type::memberAccessRecordType(memberAccess.getBase()->expressionType(), isArrow);
     if (!record) {
         semanticError(isArrow ? "base of '->' is not a pointer to structure or union"
                               : "request for member in non-structure or non-union type",
@@ -163,7 +163,7 @@ void SemanticAnalysisVisitor::visit(ast::MemberAccess& memberAccess) {
 }
 
 void SemanticAnalysisVisitor::visit(ast::ConstantExpression& constant) {
-    constant.setResultSymbol(annotations(), symbolTable.createTemporarySymbol(constant.getType()));
+    constant.setTypeAndResult(annotations(), symbolTable.createTemporarySymbol(constant.expressionType()));
 }
 
 void SemanticAnalysisVisitor::visit(ast::StringLiteralExpression& stringLiteral) {
@@ -181,7 +181,7 @@ void SemanticAnalysisVisitor::visit(ast::PostfixExpression& expression) {
 
     expression.setType(expression.operandType());
     auto operandSymbol = *expression.operandSymbol(annotations());
-    expression.setResultSymbol(annotations(), operandSymbol);
+    expression.setTypeAndResult(annotations(), operandSymbol);
 
     expression.setPreOperationSymbol(annotations(), symbolTable.createTemporarySymbol(operandSymbol.getType()));
 
@@ -196,7 +196,7 @@ void SemanticAnalysisVisitor::visit(ast::PrefixExpression& expression) {
     rejectFunctionValue(expression.operandType(), expression.getContext());
 
     expression.setType(expression.operandType());
-    expression.setResultSymbol(annotations(), *expression.operandSymbol(annotations()));
+    expression.setTypeAndResult(annotations(), *expression.operandSymbol(annotations()));
 
     checkIncrementOperand(*this, expression.isLval(), expression.operandType(), expression.getContext());
 }
@@ -205,13 +205,13 @@ void SemanticAnalysisVisitor::visit(ast::UnaryExpression& expression) {
     if (expression.op() == type::UnaryOp::Sizeof) {
         expression.visitOperand(*this);
         if (!expression.getOperandExpression()->hasExpressionType()) {
-            expression.setResultSymbol(annotations(),
+            expression.setTypeAndResult(annotations(),
                     symbolTable.createTemporarySymbol(type::signedInteger()));
             return;
         }
         if (symbols::bitFieldOf(annotations().addressPlan(expression.getOperandExpression()))) {
             semanticError("invalid application of sizeof to a bit-field", expression.getContext());
-            expression.setResultSymbol(annotations(),
+            expression.setTypeAndResult(annotations(),
                     symbolTable.createTemporarySymbol(type::signedInteger()));
             return;
         }
@@ -223,7 +223,7 @@ void SemanticAnalysisVisitor::visit(ast::UnaryExpression& expression) {
                     "invalid application of ‘sizeof’ to incomplete type ‘" + measured.to_string() + "’",
                     expression.getContext());
         }
-        expression.setResultSymbol(annotations(), symbolTable.createTemporarySymbol(type::signedInteger()));
+        expression.setTypeAndResult(annotations(), symbolTable.createTemporarySymbol(type::signedInteger()));
         return;
     }
 
@@ -236,7 +236,7 @@ void SemanticAnalysisVisitor::visit(ast::UnaryExpression& expression) {
     case type::UnaryOp::Addr: {
         // &function designator: same pointer-to-function value as bare designator decay (C).
         if (expression.getOperandExpression()->holdsFunctionDesignator()) {
-            expression.setResultSymbol(annotations(), *expression.operandSymbol(annotations()));
+            expression.setTypeAndResult(annotations(), *expression.operandSymbol(annotations()));
             if (const auto* d = symbols::get_if<symbols::FunctionDesignatorPlan>(
                     annotations().addressPlan(expression.getOperandExpression()))) {
                 annotations().setAddressPlan(&expression, symbols::AddressPlan { *d });
@@ -245,13 +245,13 @@ void SemanticAnalysisVisitor::visit(ast::UnaryExpression& expression) {
         }
         if (symbols::bitFieldOf(annotations().addressPlan(expression.getOperandExpression()))) {
             semanticError("cannot take address of bit-field", expression.getContext());
-            expression.setResultSymbol(annotations(),
+            expression.setTypeAndResult(annotations(),
                     symbolTable.createTemporarySymbol(type::pointer(expression.operandType())));
             break;
         }
         markAddressOnly(*expression.getOperandExpression(), annotations());
         rejectFunctionValue(expression.operandType(), expression.getContext());
-        expression.setResultSymbol(annotations(), symbolTable.createTemporarySymbol(type::pointer(expression.operandType())));
+        expression.setTypeAndResult(annotations(), symbolTable.createTemporarySymbol(type::pointer(expression.operandType())));
         break;
     }
     case type::UnaryOp::Deref: {
@@ -276,7 +276,7 @@ void SemanticAnalysisVisitor::visit(ast::UnaryExpression& expression) {
                 expression.setLvalueSymbol(annotations(), addr);
                 expression.setAggregateAddressResult(annotations(), addr, pointee);
             } else {
-                expression.setResultSymbol(annotations(), symbolTable.createTemporarySymbol(pointee));
+                expression.setTypeAndResult(annotations(), symbolTable.createTemporarySymbol(pointee));
                 expression.setLvalueSymbol(annotations(), symbolTable.createTemporarySymbol(valueType));
             }
             break;
@@ -292,7 +292,7 @@ void SemanticAnalysisVisitor::visit(ast::UnaryExpression& expression) {
             } else {
                 auto addr = symbolTable.createTemporarySymbol(type::pointer(elem));
                 expression.setLvalueSymbol(annotations(), addr);
-                expression.setResultSymbol(annotations(), symbolTable.createTemporarySymbol(elem));
+                expression.setTypeAndResult(annotations(), symbolTable.createTemporarySymbol(elem));
                 expression.setType(elem);
             }
             break;
@@ -311,7 +311,7 @@ void SemanticAnalysisVisitor::visit(ast::UnaryExpression& expression) {
     }
     case type::UnaryOp::LogicalNot:
         rejectFunctionValue(type::afterLvalueConversion(expression.operandType()), expression.getContext());
-        expression.setResultSymbol(annotations(), symbolTable.createTemporarySymbol(type::signedInteger()));
+        expression.setTypeAndResult(annotations(), symbolTable.createTemporarySymbol(type::signedInteger()));
         expression.setTruthyLabel(annotations(), symbolTable.newLabel());
         expression.setFalsyLabel(annotations(), symbolTable.newLabel());
         break;
@@ -408,7 +408,7 @@ void SemanticAnalysisVisitor::visit(ast::CompoundLiteral& expression) {
     symbols::ValueEntry home = symbolTable.isAtFileScope()
             ? symbolTable.createUnnamedStaticObject(target, expression.getContext())
             : symbolTable.createTemporarySymbol(target);
-    expression.setResultSymbol(annotations(), home);
+    expression.setTypeAndResult(annotations(), home);
     if (home.isGlobal()) {
         lowerStaticInit(home.getName(), target, &list, expression.getContext());
         return;
@@ -445,7 +445,7 @@ void SemanticAnalysisVisitor::visit(ast::TypeCast& expression) {
 
     // Operand may be an array object or a dual-type multi-dim row (value already a pointer).
     // Codegen materializes AddressOf only when the value type is still an array.
-    expression.setResultSymbol(annotations(), symbolTable.createTemporarySymbol(target));
+    expression.setTypeAndResult(annotations(), symbolTable.createTemporarySymbol(target));
 }
 
 void SemanticAnalysisVisitor::visit(ast::ArithmeticExpression& expression) {
@@ -473,7 +473,7 @@ void SemanticAnalysisVisitor::visit(ast::ArithmeticExpression& expression) {
         return;
     }
     if (ptrArith.form != type::PointerArithmeticForm::None) {
-        expression.setResultSymbol(annotations(),
+        expression.setTypeAndResult(annotations(),
                 symbolTable.createTemporarySymbol(ptrArith.resultType));
         return;
     }
@@ -495,7 +495,7 @@ void SemanticAnalysisVisitor::visit(ast::ArithmeticExpression& expression) {
             return;
         }
     }
-    expression.setResultSymbol(annotations(), symbolTable.createTemporarySymbol(resultType));
+    expression.setTypeAndResult(annotations(), symbolTable.createTemporarySymbol(resultType));
 }
 
 void SemanticAnalysisVisitor::visit(ast::ShiftExpression& expression) {
@@ -553,7 +553,7 @@ void SemanticAnalysisVisitor::visit(ast::ComparisonExpression& expression) {
         }
     }
 
-    expression.setResultSymbol(annotations(), symbolTable.createTemporarySymbol(type::signedInteger()));
+    expression.setTypeAndResult(annotations(), symbolTable.createTemporarySymbol(type::signedInteger()));
     expression.setTruthyLabel(annotations(), symbolTable.newLabel());
     expression.setFalsyLabel(annotations(), symbolTable.newLabel());
 }
@@ -577,7 +577,7 @@ void SemanticAnalysisVisitor::visit(ast::BitwiseExpression& expression) {
         return;
     }
     expression.setType(resultType);
-    expression.setResultSymbol(annotations(), symbolTable.createTemporarySymbol(resultType));
+    expression.setTypeAndResult(annotations(), symbolTable.createTemporarySymbol(resultType));
 }
 
 void SemanticAnalysisVisitor::visit(ast::LogicalAndExpression& expression) {
@@ -589,7 +589,7 @@ void SemanticAnalysisVisitor::visit(ast::LogicalAndExpression& expression) {
     checkLogicalScalarOperands(*this, expression.leftOperandType(), expression.rightOperandType(),
             expression.getContext());
 
-    expression.setResultSymbol(annotations(), symbolTable.createTemporarySymbol(type::signedInteger()));
+    expression.setTypeAndResult(annotations(), symbolTable.createTemporarySymbol(type::signedInteger()));
     expression.setExitLabel(annotations(), symbolTable.newLabel());
 }
 
@@ -602,7 +602,7 @@ void SemanticAnalysisVisitor::visit(ast::LogicalOrExpression& expression) {
     checkLogicalScalarOperands(*this, expression.leftOperandType(), expression.rightOperandType(),
             expression.getContext());
 
-    expression.setResultSymbol(annotations(), symbolTable.createTemporarySymbol(type::signedInteger()));
+    expression.setTypeAndResult(annotations(), symbolTable.createTemporarySymbol(type::signedInteger()));
     expression.setExitLabel(annotations(), symbolTable.newLabel());
 }
 
@@ -632,7 +632,7 @@ void SemanticAnalysisVisitor::visit(ast::ConditionalExpression& expression) {
     decayArrayValue(*falseExpr, symbolTable, annotations());
 
     expression.setType(*result);
-    expression.setResultSymbol(annotations(), symbolTable.createTemporarySymbol(*result));
+    expression.setTypeAndResult(annotations(), symbolTable.createTemporarySymbol(*result));
     expression.setFalsyLabel(annotations(), symbolTable.newLabel());
     expression.setExitLabel(annotations(), symbolTable.newLabel());
 }
@@ -673,7 +673,7 @@ void SemanticAnalysisVisitor::visit(ast::ExpressionList& expression) {
     }
     // Comma operator: value and type of the right operand
     expression.setType(expression.rightOperandType());
-    expression.setResultSymbol(annotations(), *expression.rightOperandSymbol(annotations()));
+    expression.setTypeAndResult(annotations(), *expression.rightOperandSymbol(annotations()));
 }
 
 } // namespace semantic_analyzer
