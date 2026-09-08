@@ -159,4 +159,28 @@ int scanf(const char *, ...);
     program.runAndExpect("0");
 }
 
+TEST(Compiler, fileScopeNestedAggregateRowsAreNotTruncated) {
+    SourceProgram program{R"prg(int printf(const char *, ...);
+        int a[2][3] = { { 1, 2, 3 }, { 4, 5, 6 } };
+        struct S { int v[3]; };
+        struct S e[2] = { { { 1, 2, 3 } }, { { 4, 5, 6 } } };
+        short f[2][5] = { { 1, 2, 3, 4, 5 }, { 6, 7, 8, 9, 10 } };
+        int main(void) {
+            for (int i = 0; i < 2; i++) {
+                for (int j = 0; j < 3; j++) {
+                    printf("%d%d ", a[i][j], e[i].v[j]);
+                }
+            }
+            for (int i = 0; i < 2; i++) {
+                for (int j = 0; j < 5; j++) {
+                    printf("%d ", f[i][j]);
+                }
+            }
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("11 22 33 44 55 66 1 2 3 4 5 6 7 8 9 10 ");
+}
+
 } // namespace

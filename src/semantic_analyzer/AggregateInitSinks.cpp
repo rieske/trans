@@ -1,5 +1,7 @@
 #include "AggregateInitSinks.h"
 
+#include <algorithm>
+
 #include "SemanticAnalysisVisitorInternal.h"
 #include "StaticInitFold.h"
 
@@ -128,23 +130,27 @@ void storeBitsAt(std::vector<symbols::StaticInitValue>& words, int offsetBytes,
     if (offsetBytes < 0 || storeSizeBytes <= 0) {
         return;
     }
-    const int wi = type::object_abi::wordIndexAt(offsetBytes);
-    if (wi < 0) {
-        return;
+    // Only a word-aligned store replaces a whole word. One that crosses a word boundary has
+    // to be split, so it leaves the bytes outside its own extent alone.
+    int offset = offsetBytes;
+    int remaining = storeSizeBytes;
+    unsigned long long rest = value;
+    while (remaining > 0) {
+        const int wi = type::object_abi::wordIndexAt(offset);
+        ensureWord(words, wi);
+        const int lane = offset % type::object_abi::MACHINE_WORD_SIZE;
+        const int chunk = std::min(remaining, type::object_abi::MACHINE_WORD_SIZE - lane);
+        const int bits = chunk * 8;
+        const unsigned long long mask = type::bitFieldMask(bits);
+        auto& word = words[static_cast<std::size_t>(wi)];
+        unsigned long long wordVal = numericBits(word);
+        wordVal &= ~(mask << (lane * 8));
+        wordVal |= (rest & mask) << (lane * 8);
+        word = symbols::StaticWord { wordVal };
+        offset += chunk;
+        remaining -= chunk;
+        rest = bits >= 64 ? 0ull : (rest >> bits);
     }
-    ensureWord(words, wi);
-    auto& word = words[static_cast<std::size_t>(wi)];
-    if (storeSizeBytes >= type::object_abi::MACHINE_WORD_SIZE) {
-        word = symbols::StaticWord { value };
-        return;
-    }
-    unsigned long long wordVal = numericBits(word);
-    const int lane = offsetBytes % type::object_abi::MACHINE_WORD_SIZE;
-    const int bits = storeSizeBytes * 8;
-    const unsigned long long mask = bits >= 64 ? ~0ull : ((1ull << bits) - 1ull);
-    wordVal &= ~(mask << (lane * 8));
-    wordVal |= (value & mask) << (lane * 8);
-    word = symbols::StaticWord { wordVal };
 }
 
 void storeAddressAt(std::vector<symbols::StaticInitValue>& words, int offsetBytes,
