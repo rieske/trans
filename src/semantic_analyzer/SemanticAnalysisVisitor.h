@@ -2,7 +2,6 @@
 #define SEMANTICANALYSISVISITOR_H_
 
 #include <map>
-#include <optional>
 #include <string>
 #include <vector>
 
@@ -159,8 +158,6 @@ private:
     std::vector<ast::GotoStatement*> pendingGotos;
 
     // Return type of the function currently under analysis (for return checkAssign).
-    std::optional<type::Type> currentReturnType;
-    std::string currentFunctionName;
 
     SymbolTable symbolTable;
     symbols::AnnotationStore* store_ { nullptr };

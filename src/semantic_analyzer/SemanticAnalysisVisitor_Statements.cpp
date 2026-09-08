@@ -123,16 +123,17 @@ void SemanticAnalysisVisitor::visit(ast::ReturnStatement& statement) {
         return;
     }
     auto* retExpr = statement.returnExpression.get();
-    if (!currentReturnType) {
+    if (symbolTable.isAtFileScope()) {
         rejectFunctionValue(retExpr->expressionType(), retExpr->getContext());
         return;
     }
-    decayArrayToPointer(*retExpr, *currentReturnType, symbolTable, annotations());
-    type::Type retVal = assignSourceType(*retExpr, *currentReturnType, annotations());
+    const type::Type returnType = symbolTable.currentFunctionEntry().returnType();
+    decayArrayToPointer(*retExpr, returnType, symbolTable, annotations());
+    type::Type retVal = assignSourceType(*retExpr, returnType, annotations());
     rejectFunctionValue(retVal, retExpr->getContext());
-    checkAssign(*currentReturnType, retVal, retExpr->getContext(), retExpr);
+    checkAssign(returnType, retVal, retExpr->getContext(), retExpr);
     // Float<->int needs SSE convert before placing the return value in rax/xmm0.
-    maybeSetConversion(retExpr, *currentReturnType, symbolTable, annotations());
+    maybeSetConversion(retExpr, returnType, symbolTable, annotations());
 }
 
 void SemanticAnalysisVisitor::visit(ast::ExpressionStatement& statement) {
