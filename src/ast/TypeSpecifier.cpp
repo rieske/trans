@@ -23,7 +23,6 @@ TypeSpecifier::TypeSpecifier(std::shared_ptr<Expression> typeofOperand) :
 {
 }
 
-TypeSpecifier::~TypeSpecifier() = default;
 TypeSpecifier::TypeSpecifier(const TypeSpecifier&) = default;
 TypeSpecifier& TypeSpecifier::operator=(const TypeSpecifier&) = default;
 TypeSpecifier::TypeSpecifier(TypeSpecifier&&) noexcept = default;

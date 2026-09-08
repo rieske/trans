@@ -24,7 +24,6 @@ enum class StopAfter {
 class Configuration {
   public:
     Configuration() = default;
-    ~Configuration() = default;
 
     void setSourceFiles(std::vector<std::string> sourceFiles);
     void setResourcesBasePath(std::string resourcesBasePath);

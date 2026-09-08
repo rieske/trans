@@ -11,7 +11,6 @@ namespace ast {
 class Pointer: public AbstractSyntaxTreeNode {
 public:
     Pointer(std::vector<type::Qualifier> qualifiers = {});
-    ~Pointer() = default;
 
     void accept(AbstractSyntaxTreeVisitor& visitor) override;
 

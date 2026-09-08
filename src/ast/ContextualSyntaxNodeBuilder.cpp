@@ -637,7 +637,6 @@ ContextualSyntaxNodeBuilder::ContextualSyntaxNodeBuilder(const parser::Grammar& 
     bind(s_struct_decl_list, { s_struct_decl_list, s_struct_decl }, doNothing);
 }
 
-ContextualSyntaxNodeBuilder::~ContextualSyntaxNodeBuilder() = default;
 
 void ContextualSyntaxNodeBuilder::bind(int lhs, std::vector<int> rhs, Creator creator) {
     for (const parser::Production& production : grammar->getProductionsOfSymbol(lhs)) {
