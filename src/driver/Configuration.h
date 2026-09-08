@@ -42,6 +42,7 @@ class Configuration {
     void setLinkerArgs(std::vector<std::string> args);
     void setPreprocessOnly();
     void setVerbose(bool verbose = true);
+    void setDumpIr(bool dumpIr = true);
     void setIgnoredFlags(std::vector<std::string> flags);
     void setOptLevel(int level);
 
@@ -63,6 +64,7 @@ class Configuration {
     const std::vector<std::string>& getPreprocessorArgs() const;
     const std::vector<std::string>& getLinkerArgs() const;
     bool isVerbose() const;
+    bool dumpsIr() const;
     const std::vector<std::string>& getIgnoredFlags() const;
     int optLevel() const;
 
@@ -81,6 +83,7 @@ class Configuration {
     std::vector<std::string> preprocessorArgs_ {};
     std::vector<std::string> linkerArgs_ {};
     bool verbose_ {false};
+    bool dumpIr_ {false};
     std::vector<std::string> ignoredFlags_ {};
     int optLevel_ { 1 };
     std::string outputPath {};

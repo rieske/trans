@@ -24,6 +24,7 @@ enum class OptionId {
     Resources,
     Log,
     Verbose,
+    DumpIr,
 };
 
 enum class ValueForm {
@@ -70,6 +71,7 @@ constexpr OptionSpec kOptions[] = {
         assignOpt("-S", ValueForm::None, OptionId::AssemblyOnly),
         assignOpt("-save-temps", ValueForm::None, OptionId::SaveTemps),
         assignOpt("-v", ValueForm::None, OptionId::Verbose),
+        assignOpt("-fdump-ir", ValueForm::None, OptionId::DumpIr),
         assignOpt("-o", ValueForm::StuckOrSeparate, OptionId::Output),
         assignOpt("-std", ValueForm::EqualsOnly, OptionId::Std),
         assignOpt("-x", ValueForm::StuckOrSeparate, OptionId::Language),
@@ -153,6 +155,7 @@ ParseResult helpResult(const std::string& executable) {
     out << " -save-temps             Keep intermediate .i and .s files\n";
     out << " -v                      Print ignored flags and compile banners\n";
     out << " -O, -O<n>               Optimization level (default: 1)\n";
+    out << " -fdump-ir               Print the intermediate representation\n";
     out << " -g*, -W*, -f*, -pipe    Accepted and ignored\n";
     out << " -MMD, -MD, -MP, -MF, -MQ, -MT  Write gcc-style header dependencies\n";
     out << " -x c                    Treat the following input as C\n";
@@ -485,6 +488,9 @@ bool applyAssignment(Configuration& configuration, const Assignment& assignment,
         return applyLogSpec(configuration, assignment.value, error);
     case OptionId::Verbose:
         configuration.setVerbose();
+        return true;
+    case OptionId::DumpIr:
+        configuration.setDumpIr();
         return true;
     }
     error = "unknown option";

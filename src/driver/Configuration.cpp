@@ -91,6 +91,10 @@ void Configuration::setVerbose(bool verbose) {
     verbose_ = verbose;
 }
 
+void Configuration::setDumpIr(bool dumpIr) {
+    dumpIr_ = dumpIr;
+}
+
 void Configuration::setIgnoredFlags(std::vector<std::string> flags) {
     ignoredFlags_ = std::move(flags);
 }
@@ -179,6 +183,10 @@ const std::vector<std::string>& Configuration::getLinkerArgs() const {
 
 bool Configuration::isVerbose() const {
     return verbose_;
+}
+
+bool Configuration::dumpsIr() const {
+    return dumpIr_;
 }
 
 const std::vector<std::string>& Configuration::getIgnoredFlags() const {

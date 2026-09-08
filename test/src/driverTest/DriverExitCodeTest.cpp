@@ -944,4 +944,16 @@ TEST(Driver, dashIFindsLocalHeader) {
     removeCompileArtifacts(sourcePath);
 }
 
+TEST(Driver, dumpIrPrintsTheIntermediateRepresentation) {
+    auto sourcePath = writeTempSource("dump_ir.c", "int add(int a, int b) { return a + b; }\n");
+    ArgvBuffer args { { sourcePath.string() }, { "-fdump-ir", "-c" } };
+    std::string errors;
+    std::string standardOutput;
+    EXPECT_EQ(runDriver(args, &errors, &standardOutput), 0) << errors;
+
+    EXPECT_THAT(standardOutput, HasSubstr("PROC add"));
+    EXPECT_THAT(standardOutput, HasSubstr("RETURN"));
+    removeCompileArtifacts(sourcePath);
+}
+
 } // namespace
