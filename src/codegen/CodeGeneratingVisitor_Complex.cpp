@@ -1,9 +1,9 @@
 #include "CodeGeneratingVisitor.h"
-#include "codegen/IrBuilders.h"
 #include "codegen/InternalError.h"
 
 #include <stdexcept>
 
+#include "codegen/IrBuilders.h"
 #include "types/TypeQuery.h"
 
 namespace codegen {

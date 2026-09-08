@@ -1,9 +1,9 @@
 #include "gtest/gtest.h"
-#include "codegen/IrBuilders.h"
 #include "gmock/gmock.h"
 
 #include "codegen/Cfg.h"
 #include "codegen/Instruction.h"
+#include "codegen/IrBuilders.h"
 
 #include <stdexcept>
 #include <string>

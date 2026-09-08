@@ -1,6 +1,6 @@
 #include "CodeGeneratingVisitor.h"
-#include "codegen/IrBuilders.h"
 
+#include "codegen/IrBuilders.h"
 #include "symbols/AddressPlan.h"
 
 #include "ast/Expression.h"

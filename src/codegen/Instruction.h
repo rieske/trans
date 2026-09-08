@@ -130,5 +130,4 @@ std::ostream& operator<<(std::ostream& stream, const IntermediateRepresentation&
 
 } // namespace codegen
 
-
 #endif // CODEGEN_INSTRUCTION_H_
