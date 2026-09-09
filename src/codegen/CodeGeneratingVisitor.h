@@ -13,6 +13,7 @@
 #include "types/Type.h"
 
 namespace ast {
+class Expression;
 class VlaExpressionTable;
 }
 

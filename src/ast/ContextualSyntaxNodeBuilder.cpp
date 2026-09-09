@@ -1,4 +1,9 @@
+#include "ContextualSyntaxNodeBuilder.h"
 #include "CSNB_Internal.h"
+
+#include "ForLoopHeader.h"
+#include "JumpStatement.h"
+#include "LoopStatement.h"
 
 #include <limits>
 #include <stdexcept>

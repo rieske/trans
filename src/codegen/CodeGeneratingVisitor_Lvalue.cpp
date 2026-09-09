@@ -1,9 +1,8 @@
 #include "CodeGeneratingVisitor.h"
+#include "ast/AstNodes.h"
 
 #include "codegen/IrBuilders.h"
 #include "symbols/AddressPlan.h"
-
-#include "ast/Expression.h"
 
 namespace codegen {
 

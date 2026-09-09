@@ -2,6 +2,7 @@
 #define SEMANTICANALYSISVISITOR_H_
 
 #include <map>
+#include <stdexcept>
 #include <string>
 #include <vector>
 
@@ -11,6 +12,9 @@
 #include "ast/AbstractSyntaxTreeVisitor.h"
 
 namespace ast {
+class Expression;
+class LogicalExpression;
+class TypeSpecifier;
 class VlaExpressionTable;
 }
 

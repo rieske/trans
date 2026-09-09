@@ -6,15 +6,11 @@
 #include <string>
 #include <utility>
 
-#include "ast/Expression.h"
+#include "ast/AstNodes.h"
 #include "translation_unit/Context.h"
 #include "types/IntegerConstant.h"
 #include "types/Type.h"
 #include "types/TypeQuery.h"
-
-namespace ast {
-class TypeSpecifier;
-}
 
 namespace semantic_analyzer {
 

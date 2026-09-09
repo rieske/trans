@@ -16,7 +16,11 @@ add_library(ast
         Constant.cpp
         ConstantExpression.cpp
         ContextualSyntaxNodeBuilder.cpp
-        CSNB_Creators.cpp
+        CSNB_Types.cpp
+        CSNB_Declarators.cpp
+        CSNB_Expressions.cpp
+        CSNB_Declarations.cpp
+        CSNB_Statements.cpp
         Declaration.cpp
         DeclarationSpecifiers.cpp
         Declarator.cpp
