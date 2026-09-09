@@ -268,4 +268,23 @@ TEST(Compiler, statementExpressionResultIsNotAnLvalue) {
     program.assertCompilationErrors("lvalue required");
 }
 
+TEST(Compiler, castsOfScalarAndDecayedOperandsStayLegal) {
+    SourceProgram program{R"prg(int printf(const char *, ...);
+        int g(void) { return 3; }
+        int a[3] = { 1, 2, 3 };
+        int main(void) {
+            struct S { int m; } s = { 9 };
+            int i = 5;
+            int *p = a;
+            double d = 2.5;
+            (void)s;
+            printf("%d %d %d %d", (char)i, (int)d, (int)(a != 0), (int)(g != 0));
+            printf(" %d", (int)(p != 0));
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("5 2 1 1 1");
+}
+
 } // namespace

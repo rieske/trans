@@ -150,10 +150,6 @@ void SemanticAnalysisVisitor::visit(ast::NullStatement& statement) {
 void SemanticAnalysisVisitor::visit(ast::IfStatement& statement) {
     statement.testExpression->accept(*this);
     requireScalarValue(*statement.testExpression);
-    if (statement.testExpression->hasResultSymbol(annotations())) {
-        rejectFunctionValue(statement.testExpression->getResultSymbol(annotations())->getType(),
-                statement.testExpression->getContext());
-    }
     statement.body->accept(*this);
     if (statement.elseBody) {
         statement.elseBody->accept(*this);

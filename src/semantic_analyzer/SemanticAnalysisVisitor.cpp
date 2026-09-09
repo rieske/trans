@@ -443,16 +443,21 @@ void SemanticAnalysisVisitor::rejectFunctionValue(const type::Type& type, const 
     }
 }
 
-// C: if, while, for, do-while, ?: and ! all take a scalar; arrays and function
+// C: a cast, && / ||, and the if / while / for / do-while / ?: / ! contexts all
+// require a scalar value.
+void SemanticAnalysisVisitor::checkScalarValue(ast::Expression& expression) {
+    // A void call carries no type at all, so an untyped operand is not a scalar either.
+    if (!expression.hasExpressionType()
+            || !type::isProductScalar(type::afterLvalueConversion(expression.expressionType()))) {
+        semanticError("used a non-scalar value where a scalar is required", expression.getContext());
+    }
+}
+
+// Same rule, for the contexts that also take the value: arrays and function
 // designators reach them as pointers.
 void SemanticAnalysisVisitor::requireScalarValue(ast::Expression& expression) {
     decayArrayValue(expression, symbolTable, annotations());
-    if (!expression.hasExpressionType()) {
-        return;
-    }
-    if (!type::isProductScalar(type::afterLvalueConversion(expression.expressionType()))) {
-        semanticError("used a non-scalar value where a scalar is required", expression.getContext());
-    }
+    checkScalarValue(expression);
 }
 
 void SemanticAnalysisVisitor::semanticError(std::string message, const translation_unit::Context& context) {

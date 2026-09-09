@@ -26,23 +26,6 @@ void checkIncrementOperand(SemanticAnalysisVisitor& visitor, bool isLval,
     }
 }
 
-// C: && / || require scalar operands; arms need not be assignment-compatible.
-void checkLogicalScalarOperands(SemanticAnalysisVisitor& visitor, const type::Type& leftRaw,
-        const type::Type& rightRaw, const translation_unit::Context& context) {
-    const type::Type left = type::afterLvalueConversion(leftRaw);
-    const type::Type right = type::afterLvalueConversion(rightRaw);
-    if (type::isProductScalar(left) && type::isProductScalar(right)) {
-        return;
-    }
-    if (type::isBareFunction(leftRaw)) {
-        visitor.semanticError("function designator used as a value is not supported", context);
-    }
-    if (type::isBareFunction(rightRaw)) {
-        visitor.semanticError("function designator used as a value is not supported", context);
-    }
-    visitor.semanticError("invalid operands to logical operator (scalar required)", context);
-}
-
 } // namespace
 
 void visitVariableBounds(const type::Type& t, ast::AbstractSyntaxTreeVisitor& visitor,
@@ -228,6 +211,9 @@ void SemanticAnalysisVisitor::visit(ast::UnaryExpression& expression) {
     }
 
     expression.visitOperand(*this);
+    if (expression.op() == type::UnaryOp::LogicalNot) {
+        requireScalarValue(*expression.getOperandExpression());
+    }
     if (!expression.hasOperandSymbol(annotations())) {
         return;
     }
@@ -312,8 +298,6 @@ void SemanticAnalysisVisitor::visit(ast::UnaryExpression& expression) {
         break;
     }
     case type::UnaryOp::LogicalNot:
-        rejectFunctionValue(type::afterLvalueConversion(expression.operandType()), expression.getContext());
-        requireScalarValue(*expression.getOperandExpression());
         expression.setTypeAndResult(annotations(), symbolTable.createTemporarySymbol(type::signedInteger()));
         expression.setTruthyLabel(annotations(), symbolTable.newLabel());
         expression.setFalsyLabel(annotations(), symbolTable.newLabel());
@@ -441,7 +425,11 @@ void SemanticAnalysisVisitor::visit(ast::TypeCast& expression) {
         expression.setType(expression.getTypeSpecifier().getType());
     }
     expression.visitOperand(*this);
-    if (!expression.hasOperandSymbol(annotations()) || !expression.getTypeSpecifier().hasType()) {
+    const bool targetKnown = expression.getTypeSpecifier().hasType();
+    if (targetKnown && !expression.getTypeSpecifier().getType().isVoid()) {
+        checkScalarValue(*expression.getOperandExpression());
+    }
+    if (!expression.hasOperandSymbol(annotations()) || !targetKnown) {
         return;
     }
 
@@ -591,13 +579,11 @@ void SemanticAnalysisVisitor::visit(ast::BitwiseExpression& expression) {
 void SemanticAnalysisVisitor::analyzeLogicalExpression(ast::LogicalExpression& expression) {
     expression.visitLeftOperand(*this);
     expression.visitRightOperand(*this);
+    requireScalarValue(*expression.getLeftOperand());
+    requireScalarValue(*expression.getRightOperand());
     if (!expression.hasLeftOperandSymbol(annotations()) || !expression.hasRightOperandSymbol(annotations())) {
         return;
     }
-    decayArrayValue(*expression.getLeftOperand(), symbolTable, annotations());
-    decayArrayValue(*expression.getRightOperand(), symbolTable, annotations());
-    checkLogicalScalarOperands(*this, expression.leftOperandType(), expression.rightOperandType(),
-            expression.getContext());
 
     expression.setTypeAndResult(annotations(), symbolTable.createTemporarySymbol(type::signedInteger()));
     expression.setExitLabel(annotations(), symbolTable.newLabel());
@@ -622,8 +608,6 @@ void SemanticAnalysisVisitor::visit(ast::ConditionalExpression& expression) {
             || !expression.getFalseExpression()->hasResultSymbol(annotations())) {
         return;
     }
-
-    rejectFunctionValue(expression.conditionSymbol(annotations())->getType(), expression.getContext());
 
     auto* trueExpr = expression.getTrueExpression();
     auto* falseExpr = expression.getFalseExpression();

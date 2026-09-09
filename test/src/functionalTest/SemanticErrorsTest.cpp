@@ -23,6 +23,116 @@ TEST_P(SemanticErrorCatalog, RejectsWithMessage) {
 
 INSTANTIATE_TEST_SUITE_P(Compiler, SemanticErrorCatalog, testing::Values(
     SemanticErrorCase{
+        "ifOnVoidCall",
+        R"prg(
+            void v(void) { }
+            int main(void) {
+                if (v()) { return 1; }
+                return 0;
+            }
+        )prg",
+        "used a non-scalar value where a scalar is required",
+    },
+    SemanticErrorCase{
+        "whileOnVoidCall",
+        R"prg(
+            void v(void) { }
+            int main(void) {
+                while (v()) { break; }
+                return 0;
+            }
+        )prg",
+        "used a non-scalar value where a scalar is required",
+    },
+    SemanticErrorCase{
+        "forOnVoidCall",
+        R"prg(
+            void v(void) { }
+            int main(void) {
+                for (; v(); ) { break; }
+                return 0;
+            }
+        )prg",
+        "used a non-scalar value where a scalar is required",
+    },
+    SemanticErrorCase{
+        "doWhileOnVoidCall",
+        R"prg(
+            void v(void) { }
+            int main(void) {
+                do { break; } while (v());
+                return 0;
+            }
+        )prg",
+        "used a non-scalar value where a scalar is required",
+    },
+    SemanticErrorCase{
+        "logicalNotOnVoidCall",
+        R"prg(
+            void v(void) { }
+            int main(void) {
+                return !v();
+                return 0;
+            }
+        )prg",
+        "used a non-scalar value where a scalar is required",
+    },
+    SemanticErrorCase{
+        "conditionalOnVoidCall",
+        R"prg(
+            void v(void) { }
+            int main(void) {
+                return v() ? 1 : 0;
+                return 0;
+            }
+        )prg",
+        "used a non-scalar value where a scalar is required",
+    },
+    SemanticErrorCase{
+        "castStructToInt",
+        R"prg(
+            struct S { int m; };
+            int main(void) {
+                struct S s = { 42 }; return (int)s;
+                return 0;
+            }
+        )prg",
+        "used a non-scalar value where a scalar is required",
+    },
+    SemanticErrorCase{
+        "castUnionToInt",
+        R"prg(
+            union U { int m; };
+            int main(void) {
+                union U u = { 42 }; return (int)u;
+                return 0;
+            }
+        )prg",
+        "used a non-scalar value where a scalar is required",
+    },
+    SemanticErrorCase{
+        "logicalAndOnStruct",
+        R"prg(
+            struct S { int m; };
+            int main(void) {
+                struct S s = { 1 }; return s && 1;
+                return 0;
+            }
+        )prg",
+        "used a non-scalar value where a scalar is required",
+    },
+    SemanticErrorCase{
+        "logicalOrOnStruct",
+        R"prg(
+            struct S { int m; };
+            int main(void) {
+                struct S s = { 1 }; return 1 || s;
+                return 0;
+            }
+        )prg",
+        "used a non-scalar value where a scalar is required",
+    },
+    SemanticErrorCase{
         "staticInitFromObjectShadowingEnumerator",
         R"prg(
             enum { A = 5 };
