@@ -114,9 +114,14 @@ std::vector<Value> packFrameValues(
         if (pinned(local)) {
             continue;
         }
-        const auto range = liveRange(live, local.id());
+        // A temp no instruction names holds nothing worth a slot.
+        const auto live_it = live.find(local.id());
+        if (live_it == live.end()) {
+            continue;
+        }
         const int words = type::object_abi::valueWords(local.getSizeInBytes());
-        intervals.push_back(Interval { std::move(local), words, range.first, range.second });
+        intervals.push_back(Interval {
+                std::move(local), words, live_it->second.first, live_it->second.second });
     }
     std::sort(intervals.begin(), intervals.end(),
             [](const Interval& a, const Interval& b) {

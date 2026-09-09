@@ -14,10 +14,6 @@ namespace ast {
 class VlaExpressionTable;
 }
 
-namespace scanner {
-struct LexicalSession;
-}
-
 namespace diag {
 class Sink;
 }
@@ -94,10 +90,8 @@ public:
     void setAnnotationStore(symbols::AnnotationStore& store) { store_ = &store; }
     void setGnuExtensions(bool enabled) { gnuExtensions_ = enabled; }
     void setVlaExpressions(ast::VlaExpressionTable* table) { vlas_ = table; }
-    void setSession(const scanner::LexicalSession* session) { session_ = session; }
     void setSink(diag::Sink* sink) { sink_ = sink; }
     const ast::VlaExpressionTable& vlaTable() const;
-    const scanner::LexicalSession& session() const;
     diag::Sink& sink() const;
     symbols::AnnotationStore& annotations() {
         if (!store_) {
@@ -118,6 +112,8 @@ public:
     bool checkOperandTypes(const type::Type& left, const type::Type& right,
             const translation_unit::Context& context);
     void semanticError(std::string message, const translation_unit::Context& context);
+    // Enumerators of an enum definition become visible in the scope holding it.
+    void declareEnumerators(const ast::TypeSpecifier& specifier);
     // Insert-before-init for one declarator; specifiers supply resolved type and storage.
     void analyzeInitializedDeclarator(ast::InitializedDeclarator& declarator,
             const ast::DeclarationSpecifiers& specifiers);
@@ -141,6 +137,8 @@ private:
     void lowerStaticAggregateInit(const std::string& name, const type::Type& objectType,
             const ast::InitializerListExpression* list, const translation_unit::Context& context);
     void rejectFunctionValue(const type::Type& type, const translation_unit::Context& context);
+    void checkScalarValue(ast::Expression& expression);
+    void requireScalarValue(ast::Expression& expression);
 
     void analyzeLogicalExpression(ast::LogicalExpression& expression);
     void checkObjectArrayBounds(ast::InitializedDeclarator& declarator, bool allowVla);
@@ -161,7 +159,6 @@ private:
     SymbolTable symbolTable;
     symbols::AnnotationStore* store_ { nullptr };
     ast::VlaExpressionTable* vlas_ { nullptr };
-    const scanner::LexicalSession* session_ { nullptr };
     diag::Sink* sink_ { nullptr };
     bool gnuExtensions_ { true };
 };

@@ -2,15 +2,16 @@
 #define AST_PARSEENVIRONMENT_H_
 
 #include <map>
+#include <memory>
 #include <optional>
 #include <string>
-
-#include <memory>
+#include <vector>
 
 #include "DeclarationSpecifiers.h"
 #include "Declarator.h"
 #include "FormalArgument.h"
 #include "InitializedDeclarator.h"
+#include "TypeSpecifier.h"
 #include "VlaExpressionTable.h"
 #include "scanner/LexicalSession.h"
 #include "types/IntegerConstant.h"
@@ -39,7 +40,7 @@ public:
 
     void defineObject(const std::string& name, type::Type type);
     std::optional<type::Type> lookupObject(const std::string& name) const;
-    // Objects, statement-expression locals, then enumerators.
+    // Innermost ordinary binding: transients, then object vs enumerator by scope.
     std::optional<type::Type> lookupValueType(const std::string& name) const;
     void defineTransient(const std::string& name, type::Type type);
     void bindBlockDeclarations(const Block& block);
@@ -59,8 +60,20 @@ public:
     bool addEnumerator(std::string name);
     bool addEnumerator(std::string name, type::IntegerConstant value);
     bool lookupEnumConstant(const std::string& name, type::IntegerConstant& value) const;
-    // Finishes the open enum body; returns the underlying type. Non-empty tag is registered.
-    type::Type endEnumDefinition(const std::string& tag = {});
+    // Innermost ordinary binding in the session tables. objectType set when an
+    // object is nearer or tied; enumerator set when an enumerator is nearer.
+    struct OrdinaryBinding {
+        std::optional<type::Type> objectType;
+        std::optional<type::IntegerConstant> enumerator;
+    };
+    OrdinaryBinding innermostOrdinary(const std::string& name) const;
+    bool lookupInnermostEnumerator(const std::string& name, type::IntegerConstant& value) const;
+    // Finishes the innermost open enum body. Non-empty tag is registered.
+    struct ClosedEnum {
+        type::Type underlying { type::signedInteger() };
+        std::vector<Enumerator> enumerators;
+    };
+    ClosedEnum endEnumDefinition(const std::string& tag = {});
     std::optional<type::Type> lookupEnumTag(const std::string& tag) const;
 
     VlaExpressionTable& vlaExpressions() { return *vlas_; }
@@ -68,12 +81,6 @@ public:
     std::shared_ptr<VlaExpressionTable> vlaExpressionsShared() const { return vlas_; }
 
 private:
-    struct EnumBody {
-        type::IntegerConstant next;
-        type::SignedBits min;
-        type::SignedBits max;
-    };
-
     scanner::LexicalSession& session_;
     const ParseEnvironment* tagParent_ { nullptr };
     bool gnuExtensions_ { true };
@@ -81,7 +88,6 @@ private:
     std::map<std::string, type::Type> transients_;
     std::map<std::string, type::Type> structTags_;
     std::map<std::string, type::Type> enumTags_;
-    std::optional<EnumBody> enumBody_;
 };
 
 } // namespace ast

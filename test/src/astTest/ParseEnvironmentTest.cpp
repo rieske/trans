@@ -102,6 +102,7 @@ TEST(ParseEnvironment, typedefAndEnumThroughSession) {
     ASSERT_TRUE(t.has_value());
     EXPECT_TRUE(session.names.hasTypedef("myint"));
 
+    session.openBrace(BraceFrame::EnumBody);
     env.addEnumerator("RED");
     env.addEnumerator("GREEN", type::fromHostLong(10));
     env.addEnumerator("BLUE");
@@ -112,8 +113,10 @@ TEST(ParseEnvironment, typedefAndEnumThroughSession) {
     EXPECT_EQ(type::toHostLong(v), 10);
     EXPECT_TRUE(env.lookupEnumConstant("BLUE", v));
     EXPECT_EQ(type::toHostLong(v), 11);
-    auto underlying = env.endEnumDefinition("Color");
-    EXPECT_TRUE(underlying.equivalentTo(type::signedInteger()));
+    auto closed = env.endEnumDefinition("Color");
+    EXPECT_TRUE(closed.underlying.equivalentTo(type::signedInteger()));
+    ASSERT_EQ(closed.enumerators.size(), 3u);
+    EXPECT_EQ(closed.enumerators[2].name, "BLUE");
     type::IntegerConstant stored;
     ASSERT_TRUE(session.enums.lookup("GREEN", stored));
     EXPECT_EQ(type::toHostLong(stored), 10);
@@ -125,10 +128,11 @@ TEST(ParseEnvironment, typedefAndEnumThroughSession) {
 TEST(ParseEnvironment, endEnumDefinitionRegistersLargeTag) {
     LexicalSession session;
     ParseEnvironment env{session};
+    session.openBrace(BraceFrame::EnumBody);
     env.addEnumerator("A", type::fromHostLong(0x100000000L));
     env.addEnumerator("B");
-    auto underlying = env.endEnumDefinition("E");
-    EXPECT_TRUE(underlying.equivalentTo(type::signedLong()));
+    auto closed = env.endEnumDefinition("E");
+    EXPECT_TRUE(closed.underlying.equivalentTo(type::signedLong()));
     auto tag = env.lookupEnumTag("E");
     ASSERT_TRUE(tag.has_value());
     EXPECT_TRUE(tag->equivalentTo(type::signedLong()));
@@ -140,15 +144,18 @@ TEST(ParseEnvironment, endEnumDefinitionRegistersLargeTag) {
 TEST(ParseEnvironment, endEnumDefinitionAnonymousDoesNotRegisterTag) {
     LexicalSession session;
     ParseEnvironment env{session};
+    session.openBrace(BraceFrame::EnumBody);
     env.addEnumerator("A", type::fromHostLong(1));
-    auto underlying = env.endEnumDefinition();
-    EXPECT_TRUE(underlying.equivalentTo(type::signedInteger()));
+    auto closed = env.endEnumDefinition();
+    EXPECT_TRUE(closed.underlying.equivalentTo(type::signedInteger()));
+    ASSERT_EQ(closed.enumerators.size(), 1u);
     EXPECT_FALSE(env.lookupEnumTag("").has_value());
 }
 
 TEST(ParseEnvironment, nestedLookupEnumTagFindsParent) {
     LexicalSession session;
     ParseEnvironment parent{session};
+    session.openBrace(BraceFrame::EnumBody);
     parent.addEnumerator("A", type::fromHostLong(0x80000000L));
     parent.endEnumDefinition("U");
     ParseEnvironment nested{session, parent};
@@ -180,6 +187,46 @@ TEST(ParseEnvironment, innerBlockMayReuseOuterEnumeratorName) {
     session.leaveBlock();
     ASSERT_TRUE(env.lookupEnumConstant("A", v));
     EXPECT_EQ(type::toHostLong(v), 1);
+}
+
+TEST(ParseEnvironment, nestedEnumBodyKeepsItsOwnEnumeratorsAndRange) {
+    using scanner::BraceFrame;
+    LexicalSession session;
+    ParseEnvironment env{session};
+    session.openBrace(BraceFrame::EnumBody);
+    ASSERT_TRUE(env.addEnumerator("A", type::fromHostLong(1)));
+    session.openBrace(BraceFrame::EnumBody);
+    ASSERT_TRUE(env.addEnumerator("C", type::fromHostLong(3)));
+    session.closeBrace();
+    auto inner = env.endEnumDefinition("F");
+    EXPECT_TRUE(inner.underlying.equivalentTo(type::signedInteger()));
+    ASSERT_EQ(inner.enumerators.size(), 1u);
+    EXPECT_EQ(inner.enumerators[0].name, "C");
+    EXPECT_EQ(type::toHostLong(inner.enumerators[0].value), 3);
+    ASSERT_TRUE(env.addEnumerator("B", type::fromHostLong(4)));
+    session.closeBrace();
+    auto outer = env.endEnumDefinition("E");
+    EXPECT_TRUE(outer.underlying.equivalentTo(type::signedInteger()));
+    ASSERT_EQ(outer.enumerators.size(), 2u);
+    EXPECT_EQ(outer.enumerators[0].name, "A");
+    EXPECT_EQ(type::toHostLong(outer.enumerators[0].value), 1);
+    EXPECT_EQ(outer.enumerators[1].name, "B");
+    EXPECT_EQ(type::toHostLong(outer.enumerators[1].value), 4);
+}
+
+TEST(ParseEnvironment, lookupValueTypePrefersTheInnerEnumeratorOverAnOuterObject) {
+    LexicalSession session;
+    ParseEnvironment env{session};
+    env.defineObject("A", type::signedLong());
+    session.enterBlock();
+    env.addEnumerator("A", type::fromLiteralBits(1, type::signedInteger()));
+    auto found = env.lookupValueType("A");
+    ASSERT_TRUE(found.has_value());
+    EXPECT_TRUE(found->equivalentTo(type::signedInteger()));
+    session.leaveBlock();
+    auto outer = env.lookupValueType("A");
+    ASSERT_TRUE(outer.has_value());
+    EXPECT_TRUE(outer->equivalentTo(type::signedLong()));
 }
 
 TEST(ParseEnvironment, registerInitializedDeclarationDefinesTypedef) {

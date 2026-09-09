@@ -1,3 +1,5 @@
+#include <algorithm>
+
 #include "DeclarationSpecifiers.h"
 
 #include "AbstractSyntaxTreeVisitor.h"
@@ -254,7 +256,13 @@ TypeSpecifier DeclarationSpecifiers::toTypeSpecifier() const {
         return typeSpecifiers.front();
     }
     std::string name = typeSpecifiers.size() == 1 ? typeSpecifiers.front().getName() : std::string {};
-    return TypeSpecifier { getResolvedType(), std::move(name) };
+    TypeSpecifier merged { getResolvedType(), std::move(name) };
+    const auto defining = std::find_if(typeSpecifiers.begin(), typeSpecifiers.end(),
+            [](const TypeSpecifier& s) { return !s.enumerators().empty(); });
+    if (defining != typeSpecifiers.end()) {
+        merged.setEnumerators(defining->enumerators());
+    }
+    return merged;
 }
 
 } // namespace ast

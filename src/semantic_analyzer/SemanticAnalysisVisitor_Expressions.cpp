@@ -26,23 +26,6 @@ void checkIncrementOperand(SemanticAnalysisVisitor& visitor, bool isLval,
     }
 }
 
-// C: && / || require scalar operands; arms need not be assignment-compatible.
-void checkLogicalScalarOperands(SemanticAnalysisVisitor& visitor, const type::Type& leftRaw,
-        const type::Type& rightRaw, const translation_unit::Context& context) {
-    const type::Type left = type::afterLvalueConversion(leftRaw);
-    const type::Type right = type::afterLvalueConversion(rightRaw);
-    if (type::isProductScalar(left) && type::isProductScalar(right)) {
-        return;
-    }
-    if (type::isBareFunction(leftRaw)) {
-        visitor.semanticError("function designator used as a value is not supported", context);
-    }
-    if (type::isBareFunction(rightRaw)) {
-        visitor.semanticError("function designator used as a value is not supported", context);
-    }
-    visitor.semanticError("invalid operands to logical operator (scalar required)", context);
-}
-
 } // namespace
 
 void visitVariableBounds(const type::Type& t, ast::AbstractSyntaxTreeVisitor& visitor,
@@ -66,7 +49,8 @@ void SemanticAnalysisVisitor::visit(ast::ArrayAccess& arrayAccess) {
     arrayAccess.visitLeftOperand(*this);
     arrayAccess.visitRightOperand(*this);
 
-    if (!arrayAccess.hasLeftOperandSymbol(annotations()) || !arrayAccess.hasRightOperandSymbol(annotations())) {
+    if (!arrayAccess.getLeftOperand()->hasAnalyzedValue(annotations())
+            || !arrayAccess.getRightOperand()->hasAnalyzedValue(annotations())) {
         return;
     }
 
@@ -79,14 +63,17 @@ void SemanticAnalysisVisitor::visit(ast::ArrayAccess& arrayAccess) {
 
     symbols::BinaryOperand baseOperand = symbols::BinaryOperand::Left;
     type::ArraySubscriptInfo sub;
+    ast::Expression* index = right;
     if (type::isSubscriptBase(leftExpr, leftValue)) {
         sub = type::arraySubscriptInfo(leftExpr, leftValue);
     } else if ((type::isIntegralScalar(leftExpr) || type::isIntegralScalar(leftValue))
             && type::isSubscriptBase(rightExpr, rightValue)) {
         baseOperand = symbols::BinaryOperand::Right;
+        index = left;
         sub = type::arraySubscriptInfo(rightExpr, rightValue);
     }
-    if (!sub.valid()) {
+    const type::Type indexType = type::afterLvalueConversion(index->valueType(annotations()));
+    if (!sub.valid() || !type::isIntegral(indexType)) {
         semanticError("invalid type for operator[]\n", arrayAccess.getContext());
         return;
     }
@@ -228,6 +215,9 @@ void SemanticAnalysisVisitor::visit(ast::UnaryExpression& expression) {
     }
 
     expression.visitOperand(*this);
+    if (expression.op() == type::UnaryOp::LogicalNot) {
+        requireScalarValue(*expression.getOperandExpression());
+    }
     if (!expression.hasOperandSymbol(annotations())) {
         return;
     }
@@ -312,8 +302,6 @@ void SemanticAnalysisVisitor::visit(ast::UnaryExpression& expression) {
         break;
     }
     case type::UnaryOp::LogicalNot:
-        rejectFunctionValue(type::afterLvalueConversion(expression.operandType()), expression.getContext());
-        decayArrayValue(*expression.getOperandExpression(), symbolTable, annotations());
         expression.setTypeAndResult(annotations(), symbolTable.createTemporarySymbol(type::signedInteger()));
         expression.setTruthyLabel(annotations(), symbolTable.newLabel());
         expression.setFalsyLabel(annotations(), symbolTable.newLabel());
@@ -441,7 +429,11 @@ void SemanticAnalysisVisitor::visit(ast::TypeCast& expression) {
         expression.setType(expression.getTypeSpecifier().getType());
     }
     expression.visitOperand(*this);
-    if (!expression.hasOperandSymbol(annotations()) || !expression.getTypeSpecifier().hasType()) {
+    const bool targetKnown = expression.getTypeSpecifier().hasType();
+    if (targetKnown && !expression.getTypeSpecifier().getType().isVoid()) {
+        checkScalarValue(*expression.getOperandExpression());
+    }
+    if (!expression.hasOperandSymbol(annotations()) || !targetKnown) {
         return;
     }
 
@@ -450,10 +442,14 @@ void SemanticAnalysisVisitor::visit(ast::TypeCast& expression) {
         semanticError("cast to array or function type ‘" + target.to_string() + "’", expression.getContext());
         return;
     }
+    if (!target.isVoid() && !type::isProductScalar(target)) {
+        semanticError("conversion to non-scalar type requested", expression.getContext());
+        return;
+    }
 
     // Operand may be an array object or a dual-type multi-dim row (value already a pointer).
     // Codegen materializes AddressOf only when the value type is still an array.
-    expression.setTypeAndResult(annotations(), symbolTable.createTemporarySymbol(target));
+    setAnalyzedType(expression, target, symbolTable, annotations());
 }
 
 void SemanticAnalysisVisitor::visit(ast::ArithmeticExpression& expression) {
@@ -591,13 +587,11 @@ void SemanticAnalysisVisitor::visit(ast::BitwiseExpression& expression) {
 void SemanticAnalysisVisitor::analyzeLogicalExpression(ast::LogicalExpression& expression) {
     expression.visitLeftOperand(*this);
     expression.visitRightOperand(*this);
+    requireScalarValue(*expression.getLeftOperand());
+    requireScalarValue(*expression.getRightOperand());
     if (!expression.hasLeftOperandSymbol(annotations()) || !expression.hasRightOperandSymbol(annotations())) {
         return;
     }
-    decayArrayValue(*expression.getLeftOperand(), symbolTable, annotations());
-    decayArrayValue(*expression.getRightOperand(), symbolTable, annotations());
-    checkLogicalScalarOperands(*this, expression.leftOperandType(), expression.rightOperandType(),
-            expression.getContext());
 
     expression.setTypeAndResult(annotations(), symbolTable.createTemporarySymbol(type::signedInteger()));
     expression.setExitLabel(annotations(), symbolTable.newLabel());
@@ -615,21 +609,18 @@ void SemanticAnalysisVisitor::visit(ast::ConditionalExpression& expression) {
     expression.visitCondition(*this);
     expression.visitTrueExpression(*this);
     expression.visitFalseExpression(*this);
+    requireScalarValue(*expression.getCondition());
 
-    if (!expression.getCondition()->hasResultSymbol(annotations())
-            || !expression.getTrueExpression()->hasResultSymbol(annotations())
-            || !expression.getFalseExpression()->hasResultSymbol(annotations())) {
+    if (!expression.getCondition()->hasResultSymbol(annotations())) {
         return;
     }
-
-    rejectFunctionValue(expression.conditionSymbol(annotations())->getType(), expression.getContext());
-    decayArrayValue(*expression.getCondition(), symbolTable, annotations());
-
     auto* trueExpr = expression.getTrueExpression();
     auto* falseExpr = expression.getFalseExpression();
-    const type::Type trueType = expression.trueSymbol(annotations())->getType();
-    const type::Type falseType = expression.falseSymbol(annotations())->getType();
-    const std::optional<type::Type> result = type::conditionalResultType(trueType, falseType);
+    if (!trueExpr->hasAnalyzedValue(annotations()) || !falseExpr->hasAnalyzedValue(annotations())) {
+        return;
+    }
+    const std::optional<type::Type> result = type::conditionalResultType(
+            trueExpr->valueType(annotations()), falseExpr->valueType(annotations()));
     if (!result) {
         semanticError("incompatible operand types in conditional expression", expression.getContext());
         return;
@@ -637,8 +628,7 @@ void SemanticAnalysisVisitor::visit(ast::ConditionalExpression& expression) {
     decayArrayValue(*trueExpr, symbolTable, annotations());
     decayArrayValue(*falseExpr, symbolTable, annotations());
 
-    expression.setType(*result);
-    expression.setTypeAndResult(annotations(), symbolTable.createTemporarySymbol(*result));
+    setAnalyzedType(expression, *result, symbolTable, annotations());
     expression.setFalsyLabel(annotations(), symbolTable.newLabel());
     expression.setExitLabel(annotations(), symbolTable.newLabel());
 }
@@ -646,7 +636,8 @@ void SemanticAnalysisVisitor::visit(ast::ConditionalExpression& expression) {
 void SemanticAnalysisVisitor::visit(ast::AssignmentExpression& expression) {
     expression.visitLeftOperand(*this);
     expression.visitRightOperand(*this);
-    if (!expression.hasLeftOperandSymbol(annotations()) || !expression.hasRightOperandSymbol(annotations())) {
+    if (!expression.hasLeftOperandSymbol(annotations())
+            || !expression.getRightOperand()->hasAnalyzedValue(annotations())) {
         return;
     }
 
@@ -674,12 +665,10 @@ void SemanticAnalysisVisitor::visit(ast::AssignmentExpression& expression) {
 void SemanticAnalysisVisitor::visit(ast::ExpressionList& expression) {
     expression.visitLeftOperand(*this);
     expression.visitRightOperand(*this);
-    if (!expression.hasRightOperandSymbol(annotations())) {
+    if (!expression.getRightOperand()->hasAnalyzedValue(annotations())) {
         return;
     }
-    // Comma operator: value and type of the right operand, which decays like any other value.
-    decayArrayValue(*expression.getRightOperand(), symbolTable, annotations());
-    expression.setTypeAndResult(annotations(), *expression.rightOperandSymbol(annotations()));
+    takeAnalyzedFrom(expression, *expression.getRightOperand(), symbolTable, annotations());
 }
 
 } // namespace semantic_analyzer

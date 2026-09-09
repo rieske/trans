@@ -625,6 +625,10 @@ void CodeGeneratingVisitor::visit(ast::TypeNameExpression&) {
 
 void CodeGeneratingVisitor::visit(ast::TypeCast& expression) {
     expression.visitOperand(*this);
+    // A cast to void evaluates the operand and discards it.
+    if (expression.isVoidValue()) {
+        return;
+    }
     auto* source = expression.operandSymbol(store_);
     auto* dest = expression.getResultSymbol(store_);
     // Only true array objects need AddressOf. Multi-dim rows already hold a decayed pointer
@@ -827,21 +831,27 @@ void CodeGeneratingVisitor::visit(ast::LogicalOrExpression& expression) {
 }
 
 void CodeGeneratingVisitor::visit(ast::ConditionalExpression& expression) {
+    // Void arms produce no value; the arms still run for their side effects.
+    const bool valueless = expression.isVoidValue();
     expression.visitCondition(*this);
     emit(ir::zeroCompare(convertedResult(*expression.getCondition())));
     emit(ir::jump(id(*expression.getFalsyLabel(store_)), JumpCondition::IF_EQUAL));
 
     expression.visitTrueExpression(*this);
-    emit(ir::assign(
-            convertedResult(*expression.getTrueExpression()),
-            id(*expression.getResultSymbol(store_))));
+    if (!valueless) {
+        emit(ir::assign(
+                convertedResult(*expression.getTrueExpression()),
+                id(*expression.getResultSymbol(store_))));
+    }
     emit(ir::jump(id(*expression.getExitLabel(store_))));
 
     emit(ir::label(id(*expression.getFalsyLabel(store_))));
     expression.visitFalseExpression(*this);
-    emit(ir::assign(
-            convertedResult(*expression.getFalseExpression()),
-            id(*expression.getResultSymbol(store_))));
+    if (!valueless) {
+        emit(ir::assign(
+                convertedResult(*expression.getFalseExpression()),
+                id(*expression.getResultSymbol(store_))));
+    }
 
     emit(ir::label(id(*expression.getExitLabel(store_))));
 }

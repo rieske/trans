@@ -120,6 +120,8 @@ struct LexicalSession {
             enterBlock();
         } else if (kind == BraceFrame::Record) {
             enterRecord();
+        } else if (kind == BraceFrame::EnumBody) {
+            enums.openBody();
         }
     }
     void closeBrace() {

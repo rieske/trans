@@ -121,6 +121,14 @@ type::Type foldConstantArrayBounds(const type::Type& t, const VlaExpressionTable
     return result.withQualifiers(quals);
 }
 
+void TypeSpecifier::setEnumerators(std::vector<Enumerator> enumerators) {
+    enumerators_ = std::move(enumerators);
+}
+
+const std::vector<Enumerator>& TypeSpecifier::enumerators() const {
+    return enumerators_;
+}
+
 void TypeSpecifier::markDefinesRecord() {
     definesRecord_ = true;
 }

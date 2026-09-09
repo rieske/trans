@@ -7,7 +7,6 @@
 #include <utility>
 
 #include "ast/Expression.h"
-#include "scanner/LexicalSession.h"
 #include "types/IntegerConstant.h"
 #include "types/Type.h"
 #include "types/TypeQuery.h"
@@ -46,6 +45,7 @@ IncompleteArrayBound incompleteArrayBoundFromInitializer(ast::Expression* init);
 void visitVariableBounds(const type::Type& t, ast::AbstractSyntaxTreeVisitor& visitor,
         const ast::VlaExpressionTable& vlas);
 void finalizeRecordDefinition(type::Type& record, SemanticAnalysisVisitor& visitor);
+void resolveSpecifierType(ast::TypeSpecifier& spec, SemanticAnalysisVisitor& visitor);
 void finalizeSpecifierType(ast::TypeSpecifier& spec, SemanticAnalysisVisitor& visitor);
 
 inline bool staticFollowsNonStatic(bool existingInternal, bool incomingInternal) {
@@ -84,6 +84,15 @@ inline void decayArrayToPointer(ast::Expression& expr, const type::Type& dest,
             actual);
 }
 
+inline void setAnalyzedType(ast::Expression& expr, const type::Type& t,
+        SymbolTable& symbolTable, symbols::AnnotationStore& store) {
+    if (t.isVoid()) {
+        expr.setType(t);
+        return;
+    }
+    expr.setTypeAndResult(store, symbolTable.createTemporarySymbol(t));
+}
+
 // Reports whether the value was an array, and so now holds a pointer to its first element.
 inline bool decayArrayValue(ast::Expression& expr, SymbolTable& symbolTable,
         symbols::AnnotationStore& store) {
@@ -96,6 +105,16 @@ inline bool decayArrayValue(ast::Expression& expr, SymbolTable& symbolTable,
     }
     decayArrayToPointer(expr, actual.decayArray(), symbolTable, store);
     return true;
+}
+
+inline void takeAnalyzedFrom(ast::Expression& dest, ast::Expression& src,
+        SymbolTable& symbolTable, symbols::AnnotationStore& store) {
+    if (src.isVoidValue()) {
+        dest.setType(type::voidType());
+        return;
+    }
+    decayArrayValue(src, symbolTable, store);
+    dest.setTypeAndResult(store, *src.getResultSymbol(store));
 }
 
 // Source type for assignment/init/return into `dest`.

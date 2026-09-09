@@ -21,6 +21,8 @@ public:
     void visitDeclarator(AbstractSyntaxTreeVisitor& visitor);
 
     type::Type getType() const;
+    DeclarationSpecifiers& getSpecifiers() { return specifiers; }
+    const DeclarationSpecifiers& getSpecifiers() const { return specifiers; }
     std::string getName() const;
     translation_unit::Context getDeclarationContext() const;
 

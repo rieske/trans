@@ -14,7 +14,6 @@
 #include "ast/InitializedDeclarator.h"
 #include "ast/TerminalSymbol.h"
 #include "ast/TypeSpecifier.h"
-#include "scanner/LexicalSession.h"
 #include "semantic_analyzer/SemanticAnalysisVisitor.h"
 #include "semantic_analyzer/SemanticAnalyzer.h"
 #include "util/Diagnostic.h"
@@ -55,36 +54,38 @@ std::unique_ptr<AbstractSyntaxTree> fileScopeInt(const std::string& name) {
 
 } // namespace
 
-TEST(SemanticAnalyzer, sessionEnumeratorConflictsWithFileScopeObject) {
-    scanner::LexicalSession session;
-    session.enums.add("E", type::fromHostLong(0));
+TEST(SemanticAnalyzer, fileScopeEnumeratorConflictsWithFileScopeObject) {
+    TypeSpecifier enumSpec { type::signedInteger(), "" };
+    enumSpec.setEnumerators({ Enumerator { "E", type::fromHostLong(0) } });
 
-    auto tree = fileScopeInt("E");
+    std::vector<std::unique_ptr<InitializedDeclarator>> objects;
+    objects.push_back(std::make_unique<InitializedDeclarator>(
+            std::make_unique<Declarator>(std::make_unique<Identifier>(
+                    TerminalSymbol { "E", { "t.c", 2 } }))));
+
+    std::vector<ExternalDeclaration> translationUnit;
+    translationUnit.push_back(ExternalDeclaration {
+            std::make_unique<Declaration>(DeclarationSpecifiers { enumSpec }) });
+    translationUnit.push_back(ExternalDeclaration { std::make_unique<Declaration>(
+            DeclarationSpecifiers { TypeSpecifier { type::signedInteger(), "int" } },
+            std::move(objects)) });
+    auto tree = std::make_unique<AbstractSyntaxTree>(std::move(translationUnit));
+    tree->setVlaExpressions(std::make_shared<VlaExpressionTable>());
+
     semantic_analyzer::SemanticAnalyzer analyzer { false };
     std::ostringstream ignored;
     diag::Sink sink(ignored);
-    EXPECT_FALSE(analyzer.analyze(*tree, session, sink));
+    EXPECT_FALSE(analyzer.analyze(*tree, sink));
     EXPECT_TRUE(sink.hasErrors());
 }
 
 TEST(SemanticAnalyzer, fileScopeObjectWithoutSessionEnumeratorIsOk) {
-    scanner::LexicalSession session;
-
     auto tree = fileScopeInt("E");
     semantic_analyzer::SemanticAnalyzer analyzer { false };
     std::ostringstream ignored;
     diag::Sink sink(ignored);
-    EXPECT_TRUE(analyzer.analyze(*tree, session, sink));
+    EXPECT_TRUE(analyzer.analyze(*tree, sink));
     EXPECT_FALSE(sink.hasErrors());
-}
-
-TEST(SemanticAnalyzer, missingSessionIsInternalError) {
-    auto tree = fileScopeInt("E");
-    semantic_analyzer::SemanticAnalysisVisitor visitor;
-    visitor.setGnuExtensions(false);
-    visitor.setAnnotationStore(tree->annotations());
-    visitor.setVlaExpressions(tree->vlaExpressions());
-    EXPECT_THROW(tree->accept(visitor), std::logic_error);
 }
 
 TEST(SemanticAnalyzer, functionDesignatorKeepsVariadic) {
@@ -109,11 +110,10 @@ TEST(SemanticAnalyzer, functionDesignatorKeepsVariadic) {
     auto tree = std::make_unique<AbstractSyntaxTree>(std::move(translationUnit));
     tree->setVlaExpressions(std::make_shared<VlaExpressionTable>());
 
-    scanner::LexicalSession session;
     semantic_analyzer::SemanticAnalyzer analyzer { false };
     std::ostringstream ignored;
     diag::Sink sink(ignored);
-    ASSERT_TRUE(analyzer.analyze(*tree, session, sink)) << ignored.str();
+    ASSERT_TRUE(analyzer.analyze(*tree, sink)) << ignored.str();
     ASSERT_TRUE(used->holdsFunctionDesignator());
     ASSERT_TRUE(used->expressionType().isFunction());
     EXPECT_TRUE(used->expressionType().getFunction().isVariadic());

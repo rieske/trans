@@ -55,11 +55,15 @@ translation_unit::Context FunctionDefinition::getDeclaratorContext() const {
 }
 
 std::vector<std::string> FunctionDefinition::definedFunctionParameterNames() const {
-    const FunctionDeclarator* fn = declarator->innermostFunctionDeclarator();
+    const FunctionDeclarator* fn = definedFunctionDeclarator();
     if (!fn) {
         throw std::logic_error { "function definition declarator is not a function" };
     }
     return fn->parameterNames();
+}
+
+const FunctionDeclarator* FunctionDefinition::definedFunctionDeclarator() const {
+    return declarator->innermostFunctionDeclarator();
 }
 
 } // namespace ast

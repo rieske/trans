@@ -11,6 +11,8 @@
 
 namespace ast {
 
+class FunctionDeclarator;
+
 class FunctionDefinition: public AbstractSyntaxTreeNode {
 public:
     FunctionDefinition(DeclarationSpecifiers returnType, std::unique_ptr<Declarator> declarator,
@@ -30,6 +32,7 @@ public:
     translation_unit::Context getDeclaratorContext() const;
     // Innermost FunctionDeclarator names. Throws if the declarator is not a function.
     std::vector<std::string> definedFunctionParameterNames() const;
+    const FunctionDeclarator* definedFunctionDeclarator() const;
 
 private:
     DeclarationSpecifiers returnType;

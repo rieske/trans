@@ -188,6 +188,24 @@ int scanf(const char *, ...);
     program.runAndExpect("0 1");
 }
 
+// One enumerator list on two members; A must be declared once, not harvested twice.
+TEST(Compiler, enumTwoStructMembersShareOneEnumeratorList) {
+    SourceProgram program{R"prg(int printf(const char *, ...);
+        struct S {
+            enum { A = 3, B = 4 } x, y;
+        };
+        int main() {
+            struct S s;
+            s.x = A;
+            s.y = B;
+            printf("%d %d %d %d", A, B, s.x, s.y);
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("3 4 3 4");
+}
+
 // Flag-style enumerators with shifts, as in wt-status.h / am.c.
 TEST(Compiler, enumBitflagsInStructMember) {
     SourceProgram program{R"prg(int printf(const char *, ...);
@@ -467,6 +485,340 @@ TEST(Compiler, enumeratorRedefinedAsFunctionDefinitionIsError) {
     )prg"};
     program.compile();
     program.assertCompilationErrors("redefinition of enumerator");
+}
+
+TEST(Compiler, blockScopeObjectShadowsFileScopeEnumerator) {
+    SourceProgram program{R"prg(int printf(const char *, ...);
+        enum { A = 5 };
+        int main() {
+            int A = 7;
+            printf("%d", A);
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("7");
+}
+
+TEST(Compiler, parameterShadowsFileScopeEnumerator) {
+    SourceProgram program{R"prg(int printf(const char *, ...);
+        enum { A = 5 };
+        int f(int A) { return A; }
+        int main() {
+            printf("%d %d", f(9), A);
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("9 5");
+}
+
+TEST(Compiler, innerEnumeratorShadowsOuterEnumerator) {
+    SourceProgram program{R"prg(int printf(const char *, ...);
+        int main() {
+            enum { A = 5 };
+            {
+                enum { A = 1 };
+                printf("%d", A);
+            }
+            printf(" %d", A);
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("1 5");
+}
+
+TEST(Compiler, blockEnumeratorShadowsFileScopeFunction) {
+    SourceProgram program{R"prg(int printf(const char *, ...);
+        int A(void) { return 0; }
+        int main() {
+            enum { A = 1 };
+            printf("%d", A);
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("1");
+}
+
+TEST(Compiler, blockEnumeratorShadowsFileScopeObject) {
+    SourceProgram program{R"prg(int printf(const char *, ...);
+        int A = 7;
+        int main() {
+            enum { A = 1 };
+            printf("%d", A);
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("1");
+}
+
+TEST(Compiler, innerEnumeratorShadowsBlockScopeObject) {
+    SourceProgram program{R"prg(int printf(const char *, ...);
+        int main() {
+            int A = 7;
+            {
+                enum { A = 1 };
+                printf("%d", A);
+            }
+            printf(" %d", A);
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("1 7");
+}
+
+TEST(Compiler, laterDeclaratorInSameDeclarationSeesTheObject) {
+    SourceProgram program{R"prg(int printf(const char *, ...);
+        enum { ERR = -1, OK = 0 };
+        int main() {
+            int ERR = 7, code = ERR;
+            printf("%d %d", ERR, code);
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("7 7");
+}
+
+TEST(Compiler, objectShadowingEnumeratorKeepsItsLvalue) {
+    SourceProgram program{R"prg(int printf(const char *, ...);
+        enum { A = 5 };
+        int main() {
+            int A = 0, *p = &A;
+            *p = 3;
+            printf("%d", A);
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("3");
+}
+
+TEST(Compiler, parameterBeforeARecordBraceStillShadowsAnEnumerator) {
+    SourceProgram program{R"prg(int printf(const char *, ...);
+        enum { A = 5 };
+        int f(int A, struct S { int m; } *s) { (void)s; return A; }
+        int main() {
+            printf("%d", f(9, 0));
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("9");
+}
+
+TEST(Compiler, prototypeParameterDoesNotHideAnEnumerator) {
+    SourceProgram program{R"prg(int printf(const char *, ...);
+        int main() {
+            enum { N = 4 };
+            int (*cb)(int N) = 0, k = N;
+            (void)cb;
+            printf("%d", k);
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("4");
+}
+
+TEST(Compiler, forInitDeclaratorDoesNotHideAnEnumerator) {
+    SourceProgram program{R"prg(int printf(const char *, ...);
+        int main() {
+            enum { A = 5 };
+            {
+                for (int A = 0; A < 3; A++) { }
+                printf("%d", A);
+            }
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("5");
+}
+
+TEST(Compiler, enumInPrototypeParameterListDoesNotShadowTheBlock) {
+    SourceProgram program{R"prg(int printf(const char *, ...);
+        int main() {
+            int P = 7;
+            {
+                void f(enum { P = 3 } e);
+                printf("%d", P);
+            }
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("7");
+}
+
+TEST(Compiler, enumeratorInASizeofTypeNameShadowsTheFileScopeOne) {
+    SourceProgram program{R"prg(int printf(const char *, ...);
+        enum { A = 9 };
+        int main() {
+            int n = (int)sizeof(enum { A = 1 });
+            (void)n;
+            printf("%d", A);
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("1");
+}
+
+TEST(Compiler, enumeratorInARecordMemberShadowsTheFileScopeOne) {
+    SourceProgram program{R"prg(int printf(const char *, ...);
+        enum { A = 9 };
+        int main() {
+            struct T { enum { A = 1 } m; };
+            printf("%d", A);
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("1");
+}
+
+TEST(Compiler, qualifiedEnumSpecifierStillDeclaresItsEnumerators) {
+    SourceProgram program{R"prg(int printf(const char *, ...);
+        int A = 55;
+        int main() {
+            (void)(const enum E2 { A = 3 })0;
+            printf("%d", A);
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("3");
+}
+
+TEST(Compiler, sizeofAndGenericUseTheShadowingEnumerator) {
+    SourceProgram program{R"prg(int printf(const char *, ...);
+        long A = 7;
+        int main() {
+            enum { A = 1 };
+            printf("%d %d", (int)sizeof A, _Generic(A, int: 4, long: 8, default: 0));
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("4 4");
+}
+
+TEST(Compiler, eachFunctionSeesItsOwnBlockEnumerator) {
+    SourceProgram program{R"prg(int printf(const char *, ...);
+        int A = 7;
+        int f(void) { enum { A = 1 }; return A; }
+        int g(void) { enum { A = 2 }; return A; }
+        int main() {
+            printf("%d %d %d", f(), g(), A);
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("1 2 7");
+}
+
+TEST(Compiler, shadowingEnumeratorWorksAsACaseLabel) {
+    SourceProgram program{R"prg(int printf(const char *, ...);
+        int A = 7;
+        int main() {
+            enum { A = 2 };
+            switch (2) { case A: printf("%d", 9); return 0; }
+            return 1;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("9");
+}
+
+TEST(Compiler, arrayBoundUsesTheObjectShadowingAnEnumerator) {
+    SourceProgram program{R"prg(int printf(const char *, ...);
+        enum { A = 5 };
+        int main() {
+            int A = 3;
+            int v[A];
+            printf("%d", (int)sizeof v);
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("12");
+}
+
+TEST(Compiler, bitFieldWidthFromAShadowedEnumeratorIsRejected) {
+    SourceProgram program{R"prg(
+        enum { A = 5 };
+        int main(void) {
+            int A = 3;
+            struct S { unsigned b : A; } s;
+            (void)s;
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.assertCompilationErrors("bit-field width is not a constant");
+}
+
+TEST(Compiler, definitionParameterEnumeratorIsVisibleInTheBody) {
+    SourceProgram program{R"prg(int printf(const char *, ...);
+        int f(enum { A = 3 } e) { (void)e; return A; }
+        int main(void) {
+            printf("%d", f(0));
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("3");
+}
+
+TEST(Compiler, nestedPrototypeEnumeratorDoesNotEnterTheDefinition) {
+    SourceProgram program{R"prg(
+        int f(void (*g)(enum { B = 3 } y)) {
+            (void)g;
+            return B;
+        }
+        int main(void) { return 0; }
+    )prg"};
+    program.compile();
+    program.assertCompilationErrors("`B` is not defined");
+}
+
+TEST(Compiler, prototypeEnumeratorDoesNotOutliveItsDeclarator) {
+    SourceProgram program{R"prg(
+        void f(enum { R = 5 } e);
+        int main(void) {
+            return R;
+        }
+    )prg"};
+    program.compile();
+    program.assertCompilationErrors("`R` is not defined");
+}
+
+TEST(Compiler, enumeratorDeclaredLaterInTheUnitIsNotVisible) {
+    SourceProgram program{R"prg(
+        int f(void) { return A; }
+        enum { A = 5 };
+        int main(void) { return f(); }
+    )prg"};
+    program.compile();
+    program.assertCompilationErrors("`A` is not defined");
+}
+
+TEST(Compiler, enumeratorInitializedByANestedEnumStillShadows) {
+    SourceProgram program{R"prg(int printf(const char *, ...);
+        int A = 7;
+        int main() {
+            enum E { A = 1, B = (int)sizeof(enum F { C = 3 }) };
+            printf("%d %d", A, B);
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("1 4");
 }
 
 } // namespace

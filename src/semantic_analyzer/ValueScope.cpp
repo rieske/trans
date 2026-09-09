@@ -29,6 +29,18 @@ int ValueScope::allocateAutomatic(const type::Type& type) {
             nextLocalWordIndex, type.getAlignment(), wordSlotsFor(type));
 }
 
+bool ValueScope::insertEnumerator(SymbolKey key, type::IntegerConstant value) {
+    if (localSymbols.find(key) != localSymbols.end()) {
+        return false;
+    }
+    symbols::ValueEntry entry {
+            key.source, value.type, translation_unit::Context { "", 0 }, 0,
+            symbols::Storage::Automatic, key.source };
+    entry.markEnumerator(std::move(value));
+    localSymbols.insert(std::make_pair(std::move(key), std::move(entry)));
+    return true;
+}
+
 bool ValueScope::insertSymbol(SymbolKey key, const type::Type& type, translation_unit::Context context,
         symbols::Storage storage, std::string objectName, std::string sourceName) {
     if (localSymbols.find(key) != localSymbols.end()) {

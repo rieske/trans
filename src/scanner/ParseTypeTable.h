@@ -17,6 +17,8 @@ class ParseTypeTable {
 public:
     void add(const std::string& name, const type::Type& type);
     std::optional<type::Type> lookup(std::string_view name) const;
+    // File scope is 0; pending parameter types sit one past the current frame.
+    std::optional<int> bindingDepth(std::string_view name) const;
     bool containsInCurrentScope(std::string_view name) const;
     void addPending(const std::string& name, const type::Type& type);
     void clearPending();

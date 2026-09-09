@@ -24,12 +24,9 @@ void SemanticAnalysisVisitor::visit(ast::JumpStatement& statement) {
 
 void SemanticAnalysisVisitor::visit(ast::SwitchStatement& statement) {
     statement.expression->accept(*this);
-    if (statement.expression->hasResultSymbol(annotations())) {
-        // C: the controlling expression of a switch has integer type.
-        const type::Type controlling = statement.expression->getResultSymbol(annotations())->getType();
-        if (!type::isIntegral(controlling)) {
-            semanticError("switch quantity is not an integer", statement.expression->getContext());
-        }
+    if (statement.expression->hasAnalyzedValue(annotations())
+            && !type::isIntegral(statement.expression->valueType(annotations()))) {
+        semanticError("switch quantity is not an integer", statement.expression->getContext());
     }
 
     auto exitLabel = symbolTable.newLabel();
@@ -122,10 +119,10 @@ void SemanticAnalysisVisitor::visit(ast::ReturnStatement& statement) {
         return;
     }
     statement.returnExpression->accept(*this);
-    if (!statement.returnExpression->hasResultSymbol(annotations())) {
+    auto* retExpr = statement.returnExpression.get();
+    if (!retExpr->hasAnalyzedValue(annotations())) {
         return;
     }
-    auto* retExpr = statement.returnExpression.get();
     if (symbolTable.isAtFileScope()) {
         rejectFunctionValue(retExpr->expressionType(), retExpr->getContext());
         return;
@@ -149,11 +146,7 @@ void SemanticAnalysisVisitor::visit(ast::NullStatement& statement) {
 
 void SemanticAnalysisVisitor::visit(ast::IfStatement& statement) {
     statement.testExpression->accept(*this);
-    decayArrayValue(*statement.testExpression, symbolTable, annotations());
-    if (statement.testExpression->hasResultSymbol(annotations())) {
-        rejectFunctionValue(statement.testExpression->getResultSymbol(annotations())->getType(),
-                statement.testExpression->getContext());
-    }
+    requireScalarValue(*statement.testExpression);
     statement.body->accept(*this);
     if (statement.elseBody) {
         statement.elseBody->accept(*this);
@@ -187,7 +180,7 @@ void SemanticAnalysisVisitor::visit(ast::ForLoopHeader& loopHeader) {
     loopHeader.initialization.accept(*this);
     if (loopHeader.clause) {
         loopHeader.clause->accept(*this);
-        decayArrayValue(*loopHeader.clause, symbolTable, annotations());
+        requireScalarValue(*loopHeader.clause);
     }
     if (loopHeader.increment) {
         loopHeader.increment->accept(*this);
@@ -199,7 +192,7 @@ void SemanticAnalysisVisitor::visit(ast::ForLoopHeader& loopHeader) {
 
 void SemanticAnalysisVisitor::visit(ast::WhileLoopHeader& loopHeader) {
     loopHeader.clause->accept(*this);
-    decayArrayValue(*loopHeader.clause, symbolTable, annotations());
+    requireScalarValue(*loopHeader.clause);
 
     loopHeader.setLoopEntry(annotations(), symbolTable.newLabel());
     loopHeader.setLoopExit(annotations(), symbolTable.newLabel());
@@ -207,7 +200,7 @@ void SemanticAnalysisVisitor::visit(ast::WhileLoopHeader& loopHeader) {
 
 void SemanticAnalysisVisitor::visit(ast::DoWhileLoopHeader& loopHeader) {
     loopHeader.clause->accept(*this);
-    decayArrayValue(*loopHeader.clause, symbolTable, annotations());
+    requireScalarValue(*loopHeader.clause);
 
     loopHeader.setLoopEntry(annotations(), symbolTable.newLabel());
     // continue jumps here (re-test), not to the body entry.

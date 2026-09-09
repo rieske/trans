@@ -25,6 +25,7 @@ class ValueScope {
 public:
     bool insertSymbol(SymbolKey key, const type::Type& type, translation_unit::Context context,
             symbols::Storage storage, std::string objectName, std::string sourceName);
+    bool insertEnumerator(SymbolKey key, type::IntegerConstant value);
     void insertFunctionArgument(std::string objectName, const type::Type& type,
             translation_unit::Context context, std::string sourceName);
     symbols::ValueEntry createTemporarySymbol(type::Type type);

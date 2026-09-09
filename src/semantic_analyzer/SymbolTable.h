@@ -6,6 +6,7 @@
 #include <string>
 #include <vector>
 
+#include "types/IntegerConstant.h"
 #include "types/Type.h"
 #include "symbols/FunctionEntry.h"
 #include "symbols/LabelEntry.h"
@@ -40,6 +41,8 @@ public:
     bool isFunctionDefined(const std::string& name) const;
     void markFunctionDefined(const std::string& name);
     const symbols::ValueEntry* find(const std::string& name) const;
+    const symbols::ValueEntry* findFileScope(const std::string& name) const;
+    bool insertEnumerator(const std::string& name, type::IntegerConstant value);
     const symbols::ValueEntry& lookup(const std::string& name) const;
     symbols::ValueEntry createTemporarySymbol(type::Type type);
     symbols::LabelEntry newLabel();
@@ -61,6 +64,7 @@ public:
     symbols::FunctionEntry currentFunctionEntry() const;
 
 private:
+    const symbols::ValueEntry* walkBlockScopes(const std::string& name) const;
     void insertFunctionArgument(std::string name, type::Type type, translation_unit::Context context);
     // Block-scope extern is the file-scope object of that name (create if missing).
     // The block sees the composite type; file scope keeps its own.

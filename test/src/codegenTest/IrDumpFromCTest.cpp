@@ -131,4 +131,27 @@ TEST(IrDumpFromC, unusedIntegerAddDropsAtO1) {
     EXPECT_THAT(compileToIr(src, 1), Not(HasSubstr("+")));
 }
 
+TEST(IrDumpFromC, voidValuesAreNeverMaterialized) {
+    EXPECT_THAT(compileToIr("void v(void){}\nint c = 1;\n"
+                            "int main(void){ (void)v(); c ? v() : v(); return 0; }\n", 0), StrEq(
+            "PROC v\n"
+            "\tRETURN\n"
+            "ENDPROC v\n"
+            "PROC main\n"
+            "\t$t0 := &v (function)\n"
+            "\tCALL v\n"
+            "\tCMP c, 0\n"
+            "\tJE __L0\n"
+            "\t$t1 := &v (function)\n"
+            "\tCALL v\n"
+            "\tGOTO __L1\n"
+            "__L0:\n"
+            "\t$t2 := &v (function)\n"
+            "\tCALL v\n"
+            "__L1:\n"
+            "\t$t3 := 0\n"
+            "\tRETURN $t3\n"
+            "ENDPROC main\n"));
+}
+
 } // namespace

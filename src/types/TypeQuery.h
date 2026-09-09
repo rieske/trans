@@ -132,9 +132,13 @@ inline bool hasComputableRuntimeSize(const Type& t) {
     return hasRuntimeSize(t) && !hasUnspecifiedVlaSize(t);
 }
 
-// Sizeof of an object type when it is an ICE. GNU sizeof(function) is 1; ISO treats
-// it as incomplete. VM types are complete but not an ICE (nullopt, not an error).
+// Sizeof of an object type when it is an ICE. GNU sizeof(function) and sizeof(void)
+// are 1; ISO treats both as incomplete. VM types are complete but not an ICE
+// (nullopt, not an error).
 inline std::optional<int> sizeofObject(const Type& t, bool gnu) {
+    if (t.isVoid()) {
+        return gnu ? std::optional<int> { 1 } : std::nullopt;
+    }
     if (isBareFunction(t)) {
         if (gnu) {
             return 1;
@@ -408,6 +412,9 @@ inline std::optional<Type> arithmeticExpressionResult(const Type& leftRaw, const
 inline std::optional<Type> conditionalResultType(const Type& trueRaw, const Type& falseRaw) {
     const Type left = afterLvalueConversion(trueRaw);
     const Type right = afterLvalueConversion(falseRaw);
+    if (left.isVoid() && right.isVoid()) {
+        return left;
+    }
     if (isArithmeticType(left) && isArithmeticType(right)) {
         return usualArithmeticResult(left, right);
     }

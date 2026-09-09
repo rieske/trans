@@ -26,6 +26,25 @@ TEST(Expression, valueTypeFallsBackToExpressionType) {
     EXPECT_FALSE(id.hasResultSymbol(store));
 }
 
+TEST(Expression, voidValueIsAnalyzedWithoutAResult) {
+    symbols::AnnotationStore store;
+    ast::IdentifierExpression id("v", ctx());
+    id.setType(type::voidType());
+    EXPECT_TRUE(id.isVoidValue());
+    EXPECT_TRUE(id.hasAnalyzedValue(store));
+    EXPECT_FALSE(id.hasResultSymbol(store));
+    EXPECT_TRUE(id.valueType(store).isVoid());
+}
+
+TEST(Expression, resultIsTheValueTypeWhenPresent) {
+    symbols::AnnotationStore store;
+    ast::IdentifierExpression id("x", ctx());
+    symbols::ValueEntry v("x", type::signedInteger(), ctx(), 0);
+    id.setTypeAndResult(store, v);
+    EXPECT_TRUE(id.hasAnalyzedValue(store));
+    EXPECT_TRUE(id.valueType(store).isPrimitive());
+}
+
 TEST(Expression, arrayObjectKeepsArrayTypeAndPointerResult) {
     symbols::AnnotationStore store;
     ast::IdentifierExpression id("a", ctx());

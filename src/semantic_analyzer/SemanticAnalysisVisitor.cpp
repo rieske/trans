@@ -1,5 +1,9 @@
 #include "SemanticAnalysisVisitorInternal.h"
 
+#include "ast/DeclarationSpecifiers.h"
+#include "ast/FormalArgument.h"
+#include "ast/FunctionDeclarator.h"
+#include "ast/FunctionDefinition.h"
 #include "ast/GnuBuiltinFunctions.h"
 #include "ast/TypeSpecifier.h"
 #include "ast/VlaExpressionTable.h"
@@ -15,13 +19,6 @@ const ast::VlaExpressionTable& SemanticAnalysisVisitor::vlaTable() const {
         throw std::logic_error { "missing VLA expression table" };
     }
     return *vlas_;
-}
-
-const scanner::LexicalSession& SemanticAnalysisVisitor::session() const {
-    if (!session_) {
-        throw std::logic_error { "missing lexical session" };
-    }
-    return *session_;
 }
 
 diag::Sink& SemanticAnalysisVisitor::sink() const {
@@ -69,7 +66,7 @@ void finalizeRecordDefinition(type::Type& record, SemanticAnalysisVisitor& visit
     type::relayoutFromMemberSpecs(record, specs);
 }
 
-void finalizeSpecifierType(ast::TypeSpecifier& spec, SemanticAnalysisVisitor& visitor) {
+void resolveSpecifierType(ast::TypeSpecifier& spec, SemanticAnalysisVisitor& visitor) {
     spec.resolveTypeof(visitor);
     if (!spec.hasType()) {
         return;
@@ -83,14 +80,26 @@ void finalizeSpecifierType(ast::TypeSpecifier& spec, SemanticAnalysisVisitor& vi
     }
 }
 
+void finalizeSpecifierType(ast::TypeSpecifier& spec, SemanticAnalysisVisitor& visitor) {
+    visitor.declareEnumerators(spec);
+    resolveSpecifierType(spec, visitor);
+}
+
+void analyzeSpecifiers(ast::DeclarationSpecifiers& specifiers, SemanticAnalysisVisitor& visitor) {
+    if (specifiers.getStorageSpecifiers().size() > 1) {
+        visitor.semanticError("multiple storage classes in declaration specifiers",
+                specifiers.getStorageSpecifiers().at(1).getContext());
+    }
+    for (auto& specifier : specifiers.getTypeSpecifiers()) {
+        resolveSpecifierType(specifier, visitor);
+    }
+}
+
 void SemanticAnalysisVisitor::visit(ast::DeclarationSpecifiers& declarationSpecifiers) {
-    if (declarationSpecifiers.getStorageSpecifiers().size() > 1) {
-        semanticError("multiple storage classes in declaration specifiers",
-                declarationSpecifiers.getStorageSpecifiers().at(1).getContext());
+    for (const auto& specifier : declarationSpecifiers.getTypeSpecifiers()) {
+        declareEnumerators(specifier);
     }
-    for (auto& specifier : declarationSpecifiers.getTypeSpecifiers()) {
-        finalizeSpecifierType(specifier, *this);
-    }
+    analyzeSpecifiers(declarationSpecifiers, *this);
 }
 
 void SemanticAnalysisVisitor::visit(ast::Declaration& declaration) {
@@ -196,7 +205,8 @@ void SemanticAnalysisVisitor::analyzeInitializedDeclarator(ast::InitializedDecla
                     declarator.getContext());
         } else if (type.isFunction()) {
             // Prototypes: register with resolved return type (FunctionDeclarator no longer inserts).
-            if (session().isEnumerator(declarator.getName()) && symbolTable.isAtFileScope()) {
+            const auto* fileScope = symbolTable.findFileScope(declarator.getName());
+            if (symbolTable.isAtFileScope() && fileScope && fileScope->isEnumerator()) {
                 semanticError("redefinition of enumerator `" + declarator.getName() + "` as a function",
                         declarator.getContext());
             } else if (symbolTable.hasGlobalVariable(declarator.getName())) {
@@ -222,10 +232,6 @@ void SemanticAnalysisVisitor::analyzeInitializedDeclarator(ast::InitializedDecla
         } else if (symbolTable.isAtFileScope() && symbolTable.hasFunction(declarator.getName())) {
             semanticError("symbol `" + declarator.getName() + "` declaration conflicts with function of the same name",
                     declarator.getContext());
-        } else if (session().isEnumerator(declarator.getName()) && symbolTable.isAtFileScope()) {
-            // File-scope ordinary identifiers share a namespace with enumerators (C).
-            semanticError("redefinition of enumerator `" + declarator.getName() + "`",
-                    declarator.getContext());
         } else if (symbolTable.isAtFileScope()) {
             const ObjectBind result = symbolTable.bindFileScopeObject(declarator.getName(), type,
                     declarator.getContext(), storage, declarator.hasInitializer());
@@ -244,11 +250,17 @@ void SemanticAnalysisVisitor::analyzeInitializedDeclarator(ast::InitializedDecla
                 break;
             case ObjectBind::TypeConflict:
             case ObjectBind::SecondDefinition:
-                semanticError(
-                        "symbol `" + declarator.getName() +
-                                "` declaration conflicts with previous declaration on " +
-                                to_string(symbolTable.lookup(declarator.getName()).getContext()),
-                        declarator.getContext());
+                if (const auto* existing = symbolTable.findFileScope(declarator.getName());
+                        existing && existing->isEnumerator()) {
+                    semanticError("redefinition of enumerator `" + declarator.getName() + "`",
+                            declarator.getContext());
+                } else {
+                    semanticError(
+                            "symbol `" + declarator.getName() +
+                                    "` declaration conflicts with previous declaration on " +
+                                    to_string(symbolTable.lookup(declarator.getName()).getContext()),
+                            declarator.getContext());
+                }
                 break;
             }
         } else if (symbolTable.insertSymbol(declarator.getName(), type, declarator.getContext(),
@@ -322,7 +334,7 @@ void SemanticAnalysisVisitor::visit(ast::FunctionDeclarator& declarator) {
 }
 
 void SemanticAnalysisVisitor::visit(ast::FormalArgument& argument) {
-    argument.visitSpecifiers(*this);
+    analyzeSpecifiers(argument.getSpecifiers(), *this);
     argument.visitDeclarator(*this);
     type::Type type { type::voidType() };
     try {
@@ -387,6 +399,13 @@ void SemanticAnalysisVisitor::visit(ast::FunctionDefinition& function) {
     symbolTable.startFunction(function.getName(), function.definedFunctionParameterNames());
     namedLabels.clear();
     pendingGotos.clear();
+    if (const auto* fn = function.definedFunctionDeclarator()) {
+        for (const auto& argument : fn->getFormalArguments()) {
+            for (const auto& specifier : argument.getSpecifiers().getTypeSpecifiers()) {
+                declareEnumerators(specifier);
+            }
+        }
+    }
     // Parameters and outermost body declarations share one scope (C); do not enterBlockScope.
     function.visitBodyChildren(*this);
     for (auto* gotoStmt : pendingGotos) {
@@ -430,10 +449,32 @@ bool SemanticAnalysisVisitor::checkOperandTypes(const type::Type& left, const ty
     return checkAssign(right, left, context, nullptr);
 }
 
+void SemanticAnalysisVisitor::declareEnumerators(const ast::TypeSpecifier& specifier) {
+    for (const auto& enumerator : specifier.enumerators()) {
+        symbolTable.insertEnumerator(enumerator.name, enumerator.value);
+    }
+}
+
 void SemanticAnalysisVisitor::rejectFunctionValue(const type::Type& type, const translation_unit::Context& context) {
     if (type::isBareFunction(type)) {
         semanticError("function designator used as a value is not supported", context);
     }
+}
+
+// C: the contexts that require a scalar value.
+void SemanticAnalysisVisitor::checkScalarValue(ast::Expression& expression) {
+    if (!expression.hasExpressionType()) {
+        return;
+    }
+    if (!type::isProductScalar(type::afterLvalueConversion(expression.expressionType()))) {
+        semanticError("used a non-scalar value where a scalar is required", expression.getContext());
+    }
+}
+
+// Same rule where the value is also taken: arrays decay to pointers first.
+void SemanticAnalysisVisitor::requireScalarValue(ast::Expression& expression) {
+    decayArrayValue(expression, symbolTable, annotations());
+    checkScalarValue(expression);
 }
 
 void SemanticAnalysisVisitor::semanticError(std::string message, const translation_unit::Context& context) {

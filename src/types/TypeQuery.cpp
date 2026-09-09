@@ -27,7 +27,10 @@ bool isNullConstantCandidate(const Type& t) {
 
 bool productAssignFrom(const Type& dest, const Type& source) {
     // Own gate (not "valueCompatible plus ..."): see TypeQuery.h.
-    if (dest.isVoid() || isBareFunction(dest)) {
+    if (dest.isVoid()) {
+        return source.isVoid();
+    }
+    if (isBareFunction(dest)) {
         return false;
     }
     if (dest.isIncompleteRecord()) {

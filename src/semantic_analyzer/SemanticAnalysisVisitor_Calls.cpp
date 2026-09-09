@@ -196,10 +196,10 @@ void SemanticAnalysisVisitor::visit(ast::FunctionCall& functionCall) {
     }
 
     for (std::size_t i { 0 }; i < declaredArguments.size(); ++i) {
-        if (!arguments.at(i)->hasResultSymbol(annotations())) {
+        if (!arguments.at(i)->hasAnalyzedValue(annotations())) {
             return;
         }
-        type::Type actual = arguments.at(i)->getResultSymbol(annotations())->getType();
+        type::Type actual = arguments.at(i)->valueType(annotations());
         if (actual.isArray()) {
             actual = actual.decayArray();
         }
@@ -225,33 +225,25 @@ void SemanticAnalysisVisitor::visit(ast::FunctionCall& functionCall) {
 
     annotations().setCallPlan(&functionCall, callee.plan);
 
-    auto returnType = callee.type.getReturnType();
-    if (!returnType.isVoid()) {
-        functionCall.setTypeAndResult(annotations(), symbolTable.createTemporarySymbol(returnType));
-    }
+    setAnalyzedType(functionCall, callee.type.getReturnType(), symbolTable, annotations());
 }
 
 void SemanticAnalysisVisitor::visit(ast::IdentifierExpression& identifier) {
     const std::string& name = identifier.getIdentifier();
 
-    // Ordinary objects/functions hide enumerators in the same scope (C).
-    // Prefer a visible symbol before a parse-time enumerator fold.
-    // Clear that fold so the name is an lvalue again.
     if (const auto* entry = symbolTable.find(name)) {
+        if (entry->isEnumerator()) {
+            identifier.setFoldedConstant(*entry->enumeratorValue());
+            identifier.setTypeAndResult(annotations(),
+                    symbolTable.createTemporarySymbol(entry->getType()));
+            return;
+        }
         identifier.clearFoldedConstant();
         if (type::isBareFunction(entry->getType())) {
             setFunctionDesignator(identifier, symbolTable, annotations());
             return;
         }
         identifier.setTypeAndResult(annotations(), *entry);
-        return;
-    }
-
-    type::IntegerConstant ice;
-    if (identifier.evaluateConstant(ice) || session().lookupEnumerator(name, ice)) {
-        identifier.setFoldedConstant(ice);
-        identifier.setTypeAndResult(annotations(),
-                symbolTable.createTemporarySymbol(ice.type));
         return;
     }
 
