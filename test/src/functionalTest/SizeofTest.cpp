@@ -461,16 +461,16 @@ TEST(Compiler, arrayCountExceedsIntMaxIsSemanticError) {
     program.assertCompilationErrors("array size is too large");
 }
 
-TEST(Compiler, sizeofVoidTypeIsError) {
+TEST(Compiler, sizeofVoidIsOneUnderGnuExtensions) {
     SourceProgram program{R"prg(int printf(const char *, ...);
 int scanf(const char *, ...);
         int main() {
-            printf("%d", sizeof(void));
+            printf("%d", (int)sizeof(void));
             return 0;
         }
     )prg"};
     program.compile();
-    program.assertCompilationErrors("sizeof");
+    program.runAndExpect("1");
 }
 
 TEST(Compiler, sizeofIncompleteStructTypeIsError) {

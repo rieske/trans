@@ -343,4 +343,18 @@ TEST(Compiler, int128WidenOnReturnAndNarrowOnArg) {
     program.runAndExpect("-1");
 }
 
+TEST(Compiler, castToAStructTargetIsRejected) {
+    SourceProgram program{R"prg(
+        struct S { int m; };
+        int main(void) {
+            int i = 5;
+            struct S s = (struct S)i;
+            (void)s;
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.assertCompilationErrors("conversion to non-scalar type");
+}
+
 } // namespace

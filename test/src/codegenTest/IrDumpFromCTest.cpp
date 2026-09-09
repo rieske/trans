@@ -131,4 +131,19 @@ TEST(IrDumpFromC, unusedIntegerAddDropsAtO1) {
     EXPECT_THAT(compileToIr(src, 1), Not(HasSubstr("+")));
 }
 
+TEST(IrDumpFromC, DISABLED_voidCallAllocatesNoResultTemp) {
+    EXPECT_THAT(compileToIr("void v(void){}\nint main(void){ v(); v(); return 0; }\n", 0), StrEq(
+            "PROC v\n"
+            "\tRETURN\n"
+            "ENDPROC v\n"
+            "PROC main\n"
+            "\t$t1 := &v (function)\n"
+            "\tCALL v\n"
+            "\t$t2 := &v (function)\n"
+            "\tCALL v\n"
+            "\t$t3 := 0\n"
+            "\tRETURN $t3\n"
+            "ENDPROC main\n"));
+}
+
 } // namespace

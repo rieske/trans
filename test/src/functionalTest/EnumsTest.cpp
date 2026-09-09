@@ -717,4 +717,53 @@ TEST(Compiler, shadowingEnumeratorWorksAsACaseLabel) {
     program.runAndExpect("9");
 }
 
+TEST(Compiler, arrayBoundUsesTheObjectShadowingAnEnumerator) {
+    SourceProgram program{R"prg(int printf(const char *, ...);
+        enum { A = 5 };
+        int main() {
+            int A = 3;
+            int v[A];
+            printf("%d", (int)sizeof v);
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("12");
+}
+
+TEST(Compiler, bitFieldWidthFromAShadowedEnumeratorIsRejected) {
+    SourceProgram program{R"prg(
+        enum { A = 5 };
+        int main(void) {
+            int A = 3;
+            struct S { unsigned b : A; } s;
+            (void)s;
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.assertCompilationErrors("bit-field width is not a constant");
+}
+
+TEST(Compiler, DISABLED_prototypeEnumeratorDoesNotOutliveItsDeclarator) {
+    SourceProgram program{R"prg(
+        void f(enum { R = 5 } e);
+        int main(void) {
+            return R;
+        }
+    )prg"};
+    program.compile();
+    program.assertCompilationErrors("`R` is not defined");
+}
+
+TEST(Compiler, enumeratorDeclaredLaterInTheUnitIsNotVisible) {
+    SourceProgram program{R"prg(
+        int f(void) { return A; }
+        enum { A = 5 };
+        int main(void) { return f(); }
+    )prg"};
+    program.compile();
+    program.assertCompilationErrors("`A` is not defined");
+}
+
 } // namespace

@@ -303,4 +303,16 @@ TEST(Compiler, voidValuedExpressionsStayLegalWhereCAllowsThem) {
     program.runAndExpect("7");
 }
 
+TEST(Compiler, sizeofAVoidValueIsOne) {
+    SourceProgram program{R"prg(int printf(const char *, ...);
+        void v(void) { }
+        int main(void) {
+            printf("%d", (int)sizeof(v()));
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("1");
+}
+
 } // namespace

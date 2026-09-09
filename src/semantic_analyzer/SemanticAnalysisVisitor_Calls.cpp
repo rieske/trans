@@ -268,13 +268,6 @@ void SemanticAnalysisVisitor::visit(ast::IdentifierExpression& identifier) {
         return;
     }
 
-    if (session().lookupEnumerator(name, ice)) {
-        identifier.setFoldedConstant(ice);
-        identifier.setTypeAndResult(annotations(),
-                symbolTable.createTemporarySymbol(ice.type));
-        return;
-    }
-
     if (name == "__func__" || name == "__FUNCTION__" || name == "__PRETTY_FUNCTION__") {
         if (symbolTable.isAtFileScope()) {
             semanticError("__func__ used outside a function", identifier.getContext());

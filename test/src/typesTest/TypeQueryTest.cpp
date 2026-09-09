@@ -78,13 +78,14 @@ TEST(TypeQuery, unspecifiedVlaHasNoComputableRuntimeSize) {
     EXPECT_FALSE(type::hasUnspecifiedVlaSize(type::array(type::signedInteger(), 3)));
 }
 
-TEST(TypeQuery, sizeofObjectGnuFunctionIsOne) {
+TEST(TypeQuery, sizeofObjectGnuFunctionAndVoidAreOne) {
     type::Type fn = type::function(type::signedInteger(), {});
     EXPECT_EQ(type::sizeofObject(fn, true), 1);
     EXPECT_EQ(type::sizeofObject(fn, false), std::nullopt);
     EXPECT_EQ(type::sizeofObject(type::signedInteger(), true), 4);
     EXPECT_EQ(type::sizeofObject(type::signedInteger(), false), 4);
-    EXPECT_EQ(type::sizeofObject(type::voidType(), true), std::nullopt);
+    EXPECT_EQ(type::sizeofObject(type::voidType(), true), 1);
+    EXPECT_EQ(type::sizeofObject(type::voidType(), false), std::nullopt);
     EXPECT_EQ(type::sizeofObject(type::pointer(fn), true), 8);
 }
 

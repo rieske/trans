@@ -388,7 +388,8 @@ void enumerationConstant(AbstractSyntaxTreeBuilderContext& context) {
 void identifierExpression(AbstractSyntaxTreeBuilderContext& context) {
     auto identifier = context.popTerminal();
     type::IntegerConstant ice;
-    const bool folded = context.environment().lookupEnumConstant(identifier.value, ice);
+    const bool folded = context.environment().lookupEnumConstant(identifier.value, ice)
+            && !context.environment().lookupObject(identifier.value);
     auto expr = std::make_unique<IdentifierExpression>(std::move(identifier.value), identifier.context);
     if (folded) {
         expr->setFoldedConstant(std::move(ice));

@@ -438,6 +438,10 @@ void SemanticAnalysisVisitor::visit(ast::TypeCast& expression) {
         semanticError("cast to array or function type ‘" + target.to_string() + "’", expression.getContext());
         return;
     }
+    if (!target.isVoid() && !type::isProductScalar(target)) {
+        semanticError("conversion to non-scalar type requested", expression.getContext());
+        return;
+    }
 
     // Operand may be an array object or a dual-type multi-dim row (value already a pointer).
     // Codegen materializes AddressOf only when the value type is still an array.
