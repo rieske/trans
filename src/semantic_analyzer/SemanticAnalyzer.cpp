@@ -15,13 +15,11 @@ std::vector<symbols::ValueEntry> SemanticAnalyzer::getDataHomes() const {
     return analyzerVisitor.getDataHomes();
 }
 
-bool SemanticAnalyzer::analyze(ast::AbstractSyntaxTree& tree, const scanner::LexicalSession& session,
-        diag::Sink& sink) {
+bool SemanticAnalyzer::analyze(ast::AbstractSyntaxTree& tree, diag::Sink& sink) {
     tree.annotations().clear();
     analyzerVisitor.setAnnotationStore(tree.annotations());
 
     analyzerVisitor.setVlaExpressions(tree.vlaExpressions());
-    analyzerVisitor.setSession(&session);
     analyzerVisitor.setSink(&sink);
     analyzerVisitor.installGnuBuiltins();
 

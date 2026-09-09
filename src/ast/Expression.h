@@ -80,6 +80,8 @@ public:
     bool hasExpressionType() const { return type.has_value(); }
     // A void expression has a type but no value to read.
     bool isVoidValue() const { return type.has_value() && type->isVoid(); }
+    // SA produced a type: a result home, or a void expression with no home.
+    bool hasAnalyzedValue(const symbols::AnnotationStore& store) const;
 
     // Dual-type: array expressions keep the array as expression type.
     bool isArrayObjectType() const { return hasExpressionType() && expressionType().isArray(); }

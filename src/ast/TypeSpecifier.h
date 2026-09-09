@@ -11,7 +11,6 @@
 
 namespace ast {
 
-// One enumeration constant, as written in an enum definition.
 struct Enumerator {
     std::string name;
     type::IntegerConstant value;

@@ -188,6 +188,24 @@ int scanf(const char *, ...);
     program.runAndExpect("0 1");
 }
 
+// One enumerator list on two members; A must be declared once, not harvested twice.
+TEST(Compiler, enumTwoStructMembersShareOneEnumeratorList) {
+    SourceProgram program{R"prg(int printf(const char *, ...);
+        struct S {
+            enum { A = 3, B = 4 } x, y;
+        };
+        int main() {
+            struct S s;
+            s.x = A;
+            s.y = B;
+            printf("%d %d %d %d", A, B, s.x, s.y);
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("3 4 3 4");
+}
+
 // Flag-style enumerators with shifts, as in wt-status.h / am.c.
 TEST(Compiler, enumBitflagsInStructMember) {
     SourceProgram program{R"prg(int printf(const char *, ...);

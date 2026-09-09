@@ -6,7 +6,6 @@
 #include <vector>
 
 #include "ast/AbstractSyntaxTree.h"
-#include "scanner/LexicalSession.h"
 #include "semantic_analyzer/SemanticAnalysisVisitor.h"
 
 namespace diag {
@@ -19,8 +18,7 @@ class SemanticAnalyzer {
 public:
     explicit SemanticAnalyzer(bool gnuExtensions = true);
 
-    bool analyze(ast::AbstractSyntaxTree& tree, const scanner::LexicalSession& session,
-            diag::Sink& sink);
+    bool analyze(ast::AbstractSyntaxTree& tree, diag::Sink& sink);
     std::map<std::string, std::string> getConstants() const;
     std::vector<symbols::ValueEntry> getDataHomes() const;
 

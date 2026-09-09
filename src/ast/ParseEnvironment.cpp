@@ -70,14 +70,12 @@ std::optional<type::Type> ParseEnvironment::lookupValueType(const std::string& n
             return found->second;
         }
     }
-    const auto objectDepth = session_.types.bindingDepth(name);
-    const auto enumeratorDepth = session_.enums.bindingDepth(name);
-    if (objectDepth && (!enumeratorDepth || *objectDepth >= *enumeratorDepth)) {
-        return lookupObject(name);
+    auto binding = innermostOrdinary(name);
+    if (binding.objectType) {
+        return binding.objectType;
     }
-    type::IntegerConstant ice;
-    if (enumeratorDepth && lookupEnumConstant(name, ice)) {
-        return ice.type;
+    if (binding.enumerator) {
+        return binding.enumerator->type;
     }
     return std::nullopt;
 }
@@ -163,22 +161,11 @@ bool ParseEnvironment::enumeratorInCurrentScope(const std::string& name) const {
     return session_.enums.containsInCurrentScope(name);
 }
 
-void ParseEnvironment::ensureEnumFrame() {
-    const std::size_t depth = static_cast<std::size_t>(session_.enumBodyDepth());
-    while (enumFrames_.size() < depth) {
-        enumFrames_.emplace_back();
-    }
-    if (enumFrames_.empty()) {
-        enumFrames_.emplace_back();
-    }
-}
-
 bool ParseEnvironment::addEnumerator(std::string name) {
-    ensureEnumFrame();
-    if (!enumFrames_.back().body) {
-        return addEnumerator(std::move(name), type::fromLiteralBits(0, type::signedInteger()));
+    if (auto next = session_.enums.nextInCurrentBody()) {
+        return addEnumerator(std::move(name), *next);
     }
-    return addEnumerator(std::move(name), enumFrames_.back().body->next);
+    return addEnumerator(std::move(name), type::fromLiteralBits(0, type::signedInteger()));
 }
 
 bool ParseEnvironment::addEnumerator(std::string name, type::IntegerConstant value) {
@@ -187,26 +174,8 @@ bool ParseEnvironment::addEnumerator(std::string name, type::IntegerConstant val
         return false;
     }
     session_.enums.add(name, value);
-    ensureEnumFrame();
-    EnumFrame& frame = enumFrames_.back();
-    frame.enumerators.push_back(Enumerator { std::move(name), value });
-    const type::SignedBits v = type::signedValue(value);
-    if (!frame.body) {
-        frame.body = EnumBody { type::nextEnumerator(value), v, v };
-        return true;
-    }
-    if (v < frame.body->min) {
-        frame.body->min = v;
-    }
-    if (v > frame.body->max) {
-        frame.body->max = v;
-    }
-    frame.body->next = type::nextEnumerator(value);
+    session_.enums.recordInCurrentBody(std::move(name), value);
     return true;
-}
-
-std::vector<Enumerator> ParseEnvironment::takeEnumerators() {
-    return std::move(lastClosedEnumerators_);
 }
 
 bool ParseEnvironment::lookupEnumConstant(const std::string& name,
@@ -214,56 +183,46 @@ bool ParseEnvironment::lookupEnumConstant(const std::string& name,
     return session_.enums.lookup(name, value);
 }
 
+ParseEnvironment::OrdinaryBinding ParseEnvironment::innermostOrdinary(const std::string& name) const {
+    OrdinaryBinding binding;
+    const auto objectDepth = session_.types.bindingDepth(name);
+    const auto enumeratorDepth = session_.enums.bindingDepth(name);
+    if (objectDepth && (!enumeratorDepth || *objectDepth >= *enumeratorDepth)) {
+        binding.objectType = lookupObject(name);
+        return binding;
+    }
+    type::IntegerConstant ice;
+    if (enumeratorDepth && session_.enums.lookup(name, ice)) {
+        binding.enumerator = ice;
+    }
+    return binding;
+}
+
 bool ParseEnvironment::lookupInnermostEnumerator(const std::string& name,
         type::IntegerConstant& value) const {
-    const auto enumeratorDepth = session_.enums.bindingDepth(name);
-    if (!enumeratorDepth) {
+    auto binding = innermostOrdinary(name);
+    if (!binding.enumerator) {
         return false;
     }
-    const auto objectDepth = session_.types.bindingDepth(name);
-    if (objectDepth && *objectDepth >= *enumeratorDepth) {
-        return false;
-    }
-    return session_.enums.lookup(name, value);
+    value = *binding.enumerator;
+    return true;
 }
 
-type::Type ParseEnvironment::endEnumDefinition(const std::string& tag) {
-    type::Type underlying = type::signedInteger();
-    if (!enumFrames_.empty()) {
-        EnumFrame frame = std::move(enumFrames_.back());
-        enumFrames_.pop_back();
-        lastClosedEnumerators_ = std::move(frame.enumerators);
-        if (frame.body) {
-            underlying = type::enumUnderlyingType(frame.body->min, frame.body->max);
-        }
-    } else {
-        lastClosedEnumerators_.clear();
+ParseEnvironment::ClosedEnum ParseEnvironment::endEnumDefinition(const std::string& tag) {
+    scanner::ClosedEnumBody body = session_.enums.closeBody();
+    ClosedEnum closed;
+    if (body.hasRange) {
+        closed.underlying = type::enumUnderlyingType(body.min, body.max);
+    }
+    closed.enumerators.reserve(body.enumerators.size());
+    for (auto& enumerator : body.enumerators) {
+        closed.enumerators.push_back(
+                Enumerator { std::move(enumerator.first), std::move(enumerator.second) });
     }
     if (!tag.empty()) {
-        enumTags_.insert_or_assign(tag, underlying);
+        enumTags_.insert_or_assign(tag, closed.underlying);
     }
-    return underlying;
-}
-
-void ParseEnvironment::beginRecordEnumerators() {
-    recordEnumerators_.emplace_back();
-}
-
-void ParseEnvironment::addRecordEnumerators(std::vector<Enumerator> enumerators) {
-    if (recordEnumerators_.empty() || enumerators.empty()) {
-        return;
-    }
-    auto& dest = recordEnumerators_.back();
-    dest.insert(dest.end(), enumerators.begin(), enumerators.end());
-}
-
-std::vector<Enumerator> ParseEnvironment::takeRecordEnumerators() {
-    if (recordEnumerators_.empty()) {
-        return {};
-    }
-    std::vector<Enumerator> taken = std::move(recordEnumerators_.back());
-    recordEnumerators_.pop_back();
-    return taken;
+    return closed;
 }
 
 std::optional<type::Type> ParseEnvironment::lookupEnumTag(const std::string& tag) const {

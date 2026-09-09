@@ -145,6 +145,7 @@ TEST(TypeQuery, productRejectsArrayAndVoidAndIncomplete) {
     EXPECT_TRUE(type::productCanAssignFrom(pi, arr));
     EXPECT_TRUE(type::productCanAssignFrom(i, arr));
     EXPECT_FALSE(type::productCanAssignFrom(type::voidType(), i));
+    EXPECT_TRUE(type::productCanAssignFrom(type::voidType(), type::voidType()));
     EXPECT_FALSE(type::productCanAssignFrom(type::incompleteRecord(), i));
 }
 

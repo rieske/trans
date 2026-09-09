@@ -14,10 +14,6 @@ namespace ast {
 class VlaExpressionTable;
 }
 
-namespace scanner {
-struct LexicalSession;
-}
-
 namespace diag {
 class Sink;
 }
@@ -94,7 +90,6 @@ public:
     void setAnnotationStore(symbols::AnnotationStore& store) { store_ = &store; }
     void setGnuExtensions(bool enabled) { gnuExtensions_ = enabled; }
     void setVlaExpressions(ast::VlaExpressionTable* table) { vlas_ = table; }
-    void setSession(const scanner::LexicalSession* session) { session_ = session; }
     void setSink(diag::Sink* sink) { sink_ = sink; }
     const ast::VlaExpressionTable& vlaTable() const;
     diag::Sink& sink() const;
@@ -164,7 +159,6 @@ private:
     SymbolTable symbolTable;
     symbols::AnnotationStore* store_ { nullptr };
     ast::VlaExpressionTable* vlas_ { nullptr };
-    const scanner::LexicalSession* session_ { nullptr };
     diag::Sink* sink_ { nullptr };
     bool gnuExtensions_ { true };
 };

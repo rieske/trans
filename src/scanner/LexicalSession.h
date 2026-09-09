@@ -121,10 +121,9 @@ struct LexicalSession {
         } else if (kind == BraceFrame::Record) {
             enterRecord();
         } else if (kind == BraceFrame::EnumBody) {
-            ++enumBodyDepth_;
+            enums.openBody();
         }
     }
-    int enumBodyDepth() const { return enumBodyDepth_; }
     void closeBrace() {
         if (braces_.empty()) {
             leaveBlock();
@@ -136,8 +135,6 @@ struct LexicalSession {
             leaveBlock();
         } else if (kind == BraceFrame::Record) {
             leaveRecord();
-        } else if (kind == BraceFrame::EnumBody && enumBodyDepth_ > 0) {
-            --enumBodyDepth_;
         }
     }
     void endDeclarators() {
@@ -159,7 +156,6 @@ struct LexicalSession {
 
 private:
     std::vector<BraceFrame> braces_;
-    int enumBodyDepth_ { 0 };
 };
 
 } // namespace scanner

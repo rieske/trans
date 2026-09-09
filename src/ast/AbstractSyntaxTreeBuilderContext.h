@@ -133,7 +133,12 @@ public:
     void newStructMemberList();
     void addStructMember(std::string name, type::Type memberType,
             std::optional<int> bitWidth = std::nullopt);
-    std::vector<type::MemberSpec> popStructMemberList();
+    void addStructEnumerators(std::vector<Enumerator> enumerators);
+    struct RecordBody {
+        std::vector<type::MemberSpec> members;
+        std::vector<Enumerator> enumerators;
+    };
+    RecordBody popStructMemberList();
     // Scoped to the struct body, like the member list above: a struct defined inside a
     // member declaration must not drain the declarators the enclosing struct_decl holds.
     void newStructDeclaratorList();
@@ -187,7 +192,7 @@ private:
     std::vector<ExternalDeclaration> translationUnit;
 
     std::stack<bool> isUnionStack;
-    std::stack<std::vector<type::MemberSpec>> structMemberLists;
+    std::stack<RecordBody> structMemberLists;
     std::stack<std::vector<std::pair<std::unique_ptr<Declarator>, std::optional<int>>>> structDeclaratorLists;
     std::stack<GenericAssociation> genericAssociations;
     std::stack<std::vector<GenericAssociation>> genericAssocLists;

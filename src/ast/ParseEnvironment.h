@@ -60,28 +60,27 @@ public:
     bool addEnumerator(std::string name);
     bool addEnumerator(std::string name, type::IntegerConstant value);
     bool lookupEnumConstant(const std::string& name, type::IntegerConstant& value) const;
-    // True when the innermost ordinary binding of name is an enumerator.
+    // Innermost ordinary binding in the session tables. objectType set when an
+    // object is nearer or tied; enumerator set when an enumerator is nearer.
+    struct OrdinaryBinding {
+        std::optional<type::Type> objectType;
+        std::optional<type::IntegerConstant> enumerator;
+    };
+    OrdinaryBinding innermostOrdinary(const std::string& name) const;
     bool lookupInnermostEnumerator(const std::string& name, type::IntegerConstant& value) const;
-    // Enumerators of the definition just closed by endEnumDefinition.
-    std::vector<Enumerator> takeEnumerators();
-    // Finishes the innermost open enum body; returns the underlying type. Non-empty tag is registered.
-    type::Type endEnumDefinition(const std::string& tag = {});
+    // Finishes the innermost open enum body. Non-empty tag is registered.
+    struct ClosedEnum {
+        type::Type underlying { type::signedInteger() };
+        std::vector<Enumerator> enumerators;
+    };
+    ClosedEnum endEnumDefinition(const std::string& tag = {});
     std::optional<type::Type> lookupEnumTag(const std::string& tag) const;
-    void beginRecordEnumerators();
-    void addRecordEnumerators(std::vector<Enumerator> enumerators);
-    std::vector<Enumerator> takeRecordEnumerators();
 
     VlaExpressionTable& vlaExpressions() { return *vlas_; }
     const VlaExpressionTable& vlaExpressions() const { return *vlas_; }
     std::shared_ptr<VlaExpressionTable> vlaExpressionsShared() const { return vlas_; }
 
 private:
-    struct EnumBody {
-        type::IntegerConstant next;
-        type::SignedBits min;
-        type::SignedBits max;
-    };
-
     scanner::LexicalSession& session_;
     const ParseEnvironment* tagParent_ { nullptr };
     bool gnuExtensions_ { true };
@@ -89,15 +88,6 @@ private:
     std::map<std::string, type::Type> transients_;
     std::map<std::string, type::Type> structTags_;
     std::map<std::string, type::Type> enumTags_;
-    struct EnumFrame {
-        std::vector<Enumerator> enumerators;
-        std::optional<EnumBody> body;
-    };
-    std::vector<EnumFrame> enumFrames_;
-    std::vector<Enumerator> lastClosedEnumerators_;
-    std::vector<std::vector<Enumerator>> recordEnumerators_;
-
-    void ensureEnumFrame();
 };
 
 } // namespace ast

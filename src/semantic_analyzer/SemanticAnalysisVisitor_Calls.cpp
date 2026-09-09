@@ -196,11 +196,10 @@ void SemanticAnalysisVisitor::visit(ast::FunctionCall& functionCall) {
     }
 
     for (std::size_t i { 0 }; i < declaredArguments.size(); ++i) {
-        if (!arguments.at(i)->hasResultSymbol(annotations())
-                && !arguments.at(i)->isVoidValue()) {
+        if (!arguments.at(i)->hasAnalyzedValue(annotations())) {
             return;
         }
-        type::Type actual = arguments.at(i)->getResultSymbol(annotations())->getType();
+        type::Type actual = arguments.at(i)->valueType(annotations());
         if (actual.isArray()) {
             actual = actual.decayArray();
         }
@@ -226,12 +225,7 @@ void SemanticAnalysisVisitor::visit(ast::FunctionCall& functionCall) {
 
     annotations().setCallPlan(&functionCall, callee.plan);
 
-    auto returnType = callee.type.getReturnType();
-    if (returnType.isVoid()) {
-        functionCall.setType(returnType);
-    } else {
-        functionCall.setTypeAndResult(annotations(), symbolTable.createTemporarySymbol(returnType));
-    }
+    setAnalyzedType(functionCall, callee.type.getReturnType(), symbolTable, annotations());
 }
 
 void SemanticAnalysisVisitor::visit(ast::IdentifierExpression& identifier) {

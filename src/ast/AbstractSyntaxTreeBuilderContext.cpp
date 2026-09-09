@@ -302,16 +302,21 @@ bool AbstractSyntaxTreeBuilderContext::popIsUnion() {
 
 void AbstractSyntaxTreeBuilderContext::newStructMemberList() {
     structMemberLists.push({});
-    environment_.beginRecordEnumerators();
 }
 
 void AbstractSyntaxTreeBuilderContext::addStructMember(std::string name, type::Type memberType,
         std::optional<int> bitWidth) {
-    topOf(structMemberLists, "struct member list").push_back(
+    topOf(structMemberLists, "struct member list").members.push_back(
             type::MemberSpec { std::move(name), std::move(memberType), bitWidth });
 }
 
-std::vector<type::MemberSpec> AbstractSyntaxTreeBuilderContext::popStructMemberList() {
+void AbstractSyntaxTreeBuilderContext::addStructEnumerators(std::vector<Enumerator> enumerators) {
+    auto& dest = topOf(structMemberLists, "struct member list").enumerators;
+    dest.insert(dest.end(), enumerators.begin(), enumerators.end());
+}
+
+AbstractSyntaxTreeBuilderContext::RecordBody
+AbstractSyntaxTreeBuilderContext::popStructMemberList() {
     return popFrom(structMemberLists, "struct member list");
 }
 

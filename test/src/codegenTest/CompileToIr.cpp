@@ -89,7 +89,7 @@ std::string compileToIr(const std::string& source, int optLevel) {
     std::unique_ptr<ast::AbstractSyntaxTree> tree = builder->buildTree();
 
     semantic_analyzer::SemanticAnalyzer analyzer { configuration.gnuExtensions() };
-    if (!analyzer.analyze(*tree, session, sink)) {
+    if (!analyzer.analyze(*tree, sink)) {
         throw std::runtime_error { "compileToIr: semantic errors\n" + ignored.str() };
     }
 

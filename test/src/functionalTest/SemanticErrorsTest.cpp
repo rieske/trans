@@ -123,6 +123,29 @@ INSTANTIATE_TEST_SUITE_P(Compiler, SemanticErrorCatalog, testing::Values(
         "used a non-scalar value where a scalar is required",
     },
     SemanticErrorCase{
+        "voidCallAsArgument",
+        R"prg(
+            void v(void) { }
+            int f(int x) { return x; }
+            int main(void) {
+                return f(v());
+            }
+        )prg",
+        "can't convert void to int",
+    },
+    SemanticErrorCase{
+        "voidCastAsArgument",
+        R"prg(
+            int f(int x) { return x; }
+            int main(void) {
+                int x;
+                x = 0;
+                return f((void)x);
+            }
+        )prg",
+        "can't convert void to int",
+    },
+    SemanticErrorCase{
         "castStructToInt",
         R"prg(
             struct S { int m; };

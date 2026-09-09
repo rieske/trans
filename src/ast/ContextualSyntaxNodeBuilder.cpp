@@ -7,6 +7,13 @@
 namespace ast {
 namespace {
 
+std::vector<Enumerator> specEnumerators(const DeclarationSpecifiers& specs) {
+    if (specs.getTypeSpecifiers().empty()) {
+        return {};
+    }
+    return specs.toTypeSpecifier().enumerators();
+}
+
 int foldBitFieldWidth(AbstractSyntaxTreeBuilderContext& context) {
     auto widthExpr = context.popExpression();
     context.popTerminal();
@@ -499,18 +506,18 @@ ContextualSyntaxNodeBuilder::ContextualSyntaxNodeBuilder(const parser::Grammar& 
                 context.popTerminal(); // {
                 auto tag = context.popTerminal();
                 context.popTerminal(); // enum
-                type::Type underlying = context.environment().endEnumDefinition(tag.value);
-                TypeSpecifier spec { underlying, tag.value };
-                spec.setEnumerators(context.environment().takeEnumerators());
+                auto closed = context.environment().endEnumDefinition(tag.value);
+                TypeSpecifier spec { closed.underlying, tag.value };
+                spec.setEnumerators(std::move(closed.enumerators));
                 context.pushTypeSpecifier(std::move(spec));
             });
     bind(s_enum_spec, { s_enum_kw, s_open_brace, s_enumerator_list, s_close_brace }, [](AbstractSyntaxTreeBuilderContext& context) {
                 context.popTerminal(); // }
                 context.popTerminal(); // {
                 context.popTerminal(); // enum
-                type::Type underlying = context.environment().endEnumDefinition();
-                TypeSpecifier spec { underlying, "" };
-                spec.setEnumerators(context.environment().takeEnumerators());
+                auto closed = context.environment().endEnumDefinition();
+                TypeSpecifier spec { closed.underlying, "" };
+                spec.setEnumerators(std::move(closed.enumerators));
                 context.pushTypeSpecifier(std::move(spec));
             });
     bind(s_enum_spec, { s_enum_kw, s_id_for_enum }, [](AbstractSyntaxTreeBuilderContext& context) {
@@ -549,35 +556,35 @@ ContextualSyntaxNodeBuilder::ContextualSyntaxNodeBuilder(const parser::Grammar& 
                 const auto close = context.popTerminal(); // }
                 context.popTerminal(); // {
                 auto tag = context.popTerminal();
-                auto members = context.popStructMemberList();
+                auto body = context.popStructMemberList();
                 context.popStructDeclaratorList();
                 bool isUnion = context.popIsUnion();
                 // Shared incomplete tag so self-referential members keep one layout identity.
                 type::Type tagType = context.environment().ensureStructTag(tag.value);
-                completeRecordFromSpec(context, tagType, std::move(members), isUnion, close.context);
+                completeRecordFromSpec(context, tagType, std::move(body.members), isUnion, close.context);
                 if (context.failed()) {
                     return;
                 }
                 // Shared body: tagType already sees completion via structureBodyIdentity().
                 TypeSpecifier spec { tagType, tag.value };
                 spec.markDefinesRecord();
-                spec.setEnumerators(context.environment().takeRecordEnumerators());
+                spec.setEnumerators(std::move(body.enumerators));
                 context.pushTypeSpecifier(std::move(spec));
             });
     bind(s_struct_or_union_spec, { s_struct_or_union, s_open_brace, s_struct_decl_list, s_close_brace }, [](AbstractSyntaxTreeBuilderContext& context) {
                 const auto close = context.popTerminal(); // }
                 context.popTerminal(); // {
-                auto members = context.popStructMemberList();
+                auto body = context.popStructMemberList();
                 context.popStructDeclaratorList();
                 bool isUnion = context.popIsUnion();
                 type::Type completed = type::incompleteRecord();
-                completeRecordFromSpec(context, completed, std::move(members), isUnion, close.context);
+                completeRecordFromSpec(context, completed, std::move(body.members), isUnion, close.context);
                 if (context.failed()) {
                     return;
                 }
                 TypeSpecifier spec { completed, "" };
                 spec.markDefinesRecord();
-                spec.setEnumerators(context.environment().takeRecordEnumerators());
+                spec.setEnumerators(std::move(body.enumerators));
                 context.pushTypeSpecifier(std::move(spec));
             });
     bind(s_struct_or_union_spec, { s_struct_or_union, s_identifier }, [](AbstractSyntaxTreeBuilderContext& context) {
@@ -586,7 +593,6 @@ ContextualSyntaxNodeBuilder::ContextualSyntaxNodeBuilder(const parser::Grammar& 
                 context.popStructMemberList(); // no body
                 context.popStructDeclaratorList();
                 context.environment().session().recordPacked.abandon();
-                (void)context.environment().takeRecordEnumerators();
                 context.pushTypeSpecifier(TypeSpecifier {
                         context.environment().ensureStructTag(tag.value), tag.value });
             });
@@ -619,9 +625,6 @@ ContextualSyntaxNodeBuilder::ContextualSyntaxNodeBuilder(const parser::Grammar& 
                     return;
                 }
                 auto baseType = specs.getResolvedType();
-                if (!specs.getTypeSpecifiers().empty()) {
-                    context.environment().addRecordEnumerators(specs.toTypeSpecifier().enumerators());
-                }
                 for (auto& [declarator, bitWidth] : declarators) {
                     if (!declarator) {
                         context.addStructMember("", baseType, bitWidth);
@@ -630,6 +633,7 @@ ContextualSyntaxNodeBuilder::ContextualSyntaxNodeBuilder(const parser::Grammar& 
                                 declarator->getFundamentalType(baseType), bitWidth);
                     }
                 }
+                context.addStructEnumerators(specEnumerators(specs));
             });
     // C11 anonymous struct/union: untagged record body (empty stored name).
     // Tagged type-only forms (struct T { ... };) must not become empty-name members.
@@ -641,8 +645,8 @@ ContextualSyntaxNodeBuilder::ContextualSyntaxNodeBuilder(const parser::Grammar& 
                 }
                 if (specs.isUntaggedRecordBody()) {
                     context.addStructMember("", specs.getResolvedType());
-                    context.environment().addRecordEnumerators(specs.toTypeSpecifier().enumerators());
                 }
+                context.addStructEnumerators(specEnumerators(specs));
             });
     bind(s_struct_decl_list, { s_struct_decl }, doNothing);
     bind(s_struct_decl_list, { s_struct_decl_list, s_struct_decl }, doNothing);

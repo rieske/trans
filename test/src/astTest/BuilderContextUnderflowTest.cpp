@@ -79,6 +79,7 @@ TEST(BuilderContext, addToListOnEmptyStackThrowsNamingTheStack) {
             context.addToStatementList(ast::BlockItem { std::make_unique<ast::ReturnStatement>() }),
             "statement list");
     EXPECT_UNDERFLOW(context.addStructMember("m", type::signedInteger()), "struct member list");
+    EXPECT_UNDERFLOW(context.addStructEnumerators({}), "struct member list");
     EXPECT_UNDERFLOW(context.addStructDeclarator(nullptr), "struct declarator list");
     EXPECT_UNDERFLOW(context.addGenericAssociation(ast::GenericAssociation {}),
             "generic association list");

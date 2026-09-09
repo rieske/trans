@@ -24,15 +24,9 @@ void SemanticAnalysisVisitor::visit(ast::JumpStatement& statement) {
 
 void SemanticAnalysisVisitor::visit(ast::SwitchStatement& statement) {
     statement.expression->accept(*this);
-    if (statement.expression->isVoidValue()
-            || statement.expression->hasResultSymbol(annotations())) {
-        // C: the controlling expression of a switch has integer type.
-        const type::Type controlling = statement.expression->isVoidValue()
-                ? statement.expression->expressionType()
-                : statement.expression->getResultSymbol(annotations())->getType();
-        if (!type::isIntegral(controlling)) {
-            semanticError("switch quantity is not an integer", statement.expression->getContext());
-        }
+    if (statement.expression->hasAnalyzedValue(annotations())
+            && !type::isIntegral(statement.expression->valueType(annotations()))) {
+        semanticError("switch quantity is not an integer", statement.expression->getContext());
     }
 
     auto exitLabel = symbolTable.newLabel();
@@ -126,15 +120,7 @@ void SemanticAnalysisVisitor::visit(ast::ReturnStatement& statement) {
     }
     statement.returnExpression->accept(*this);
     auto* retExpr = statement.returnExpression.get();
-    if (retExpr->isVoidValue()) {
-        if (!symbolTable.isAtFileScope()
-                && !symbolTable.currentFunctionEntry().returnType().isVoid()) {
-            checkAssign(symbolTable.currentFunctionEntry().returnType(), type::voidType(),
-                    retExpr->getContext(), retExpr);
-        }
-        return;
-    }
-    if (!retExpr->hasResultSymbol(annotations())) {
+    if (!retExpr->hasAnalyzedValue(annotations())) {
         return;
     }
     if (symbolTable.isAtFileScope()) {

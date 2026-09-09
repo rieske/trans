@@ -49,11 +49,8 @@ void SemanticAnalysisVisitor::visit(ast::ArrayAccess& arrayAccess) {
     arrayAccess.visitLeftOperand(*this);
     arrayAccess.visitRightOperand(*this);
 
-    if (arrayAccess.getLeftOperand()->isVoidValue() || arrayAccess.getRightOperand()->isVoidValue()) {
-        semanticError("invalid type for operator[]\n", arrayAccess.getContext());
-        return;
-    }
-    if (!arrayAccess.hasLeftOperandSymbol(annotations()) || !arrayAccess.hasRightOperandSymbol(annotations())) {
+    if (!arrayAccess.getLeftOperand()->hasAnalyzedValue(annotations())
+            || !arrayAccess.getRightOperand()->hasAnalyzedValue(annotations())) {
         return;
     }
 
@@ -66,14 +63,17 @@ void SemanticAnalysisVisitor::visit(ast::ArrayAccess& arrayAccess) {
 
     symbols::BinaryOperand baseOperand = symbols::BinaryOperand::Left;
     type::ArraySubscriptInfo sub;
+    ast::Expression* index = right;
     if (type::isSubscriptBase(leftExpr, leftValue)) {
         sub = type::arraySubscriptInfo(leftExpr, leftValue);
     } else if ((type::isIntegralScalar(leftExpr) || type::isIntegralScalar(leftValue))
             && type::isSubscriptBase(rightExpr, rightValue)) {
         baseOperand = symbols::BinaryOperand::Right;
+        index = left;
         sub = type::arraySubscriptInfo(rightExpr, rightValue);
     }
-    if (!sub.valid() || rightValue.isVoid()) {
+    const type::Type indexType = type::afterLvalueConversion(index->valueType(annotations()));
+    if (!sub.valid() || !type::isIntegral(indexType)) {
         semanticError("invalid type for operator[]\n", arrayAccess.getContext());
         return;
     }
@@ -446,14 +446,10 @@ void SemanticAnalysisVisitor::visit(ast::TypeCast& expression) {
         semanticError("conversion to non-scalar type requested", expression.getContext());
         return;
     }
-    if (target.isVoid()) {
-        expression.setType(target);
-        return;
-    }
 
     // Operand may be an array object or a dual-type multi-dim row (value already a pointer).
     // Codegen materializes AddressOf only when the value type is still an array.
-    expression.setTypeAndResult(annotations(), symbolTable.createTemporarySymbol(target));
+    setAnalyzedType(expression, target, symbolTable, annotations());
 }
 
 void SemanticAnalysisVisitor::visit(ast::ArithmeticExpression& expression) {
@@ -620,39 +616,28 @@ void SemanticAnalysisVisitor::visit(ast::ConditionalExpression& expression) {
     }
     auto* trueExpr = expression.getTrueExpression();
     auto* falseExpr = expression.getFalseExpression();
-    const bool trueVoid = trueExpr->isVoidValue();
-    const bool falseVoid = falseExpr->isVoidValue();
-    if ((trueVoid || trueExpr->hasResultSymbol(annotations()))
-            && (falseVoid || falseExpr->hasResultSymbol(annotations()))) {
-        const type::Type trueType = trueVoid ? trueExpr->expressionType()
-                : expression.trueSymbol(annotations())->getType();
-        const type::Type falseType = falseVoid ? falseExpr->expressionType()
-                : expression.falseSymbol(annotations())->getType();
-        const std::optional<type::Type> result = type::conditionalResultType(trueType, falseType);
-        if (!result) {
-            semanticError("incompatible operand types in conditional expression", expression.getContext());
-            return;
-        }
-        decayArrayValue(*trueExpr, symbolTable, annotations());
-        decayArrayValue(*falseExpr, symbolTable, annotations());
-
-        expression.setType(*result);
-        if (!result->isVoid()) {
-            expression.setTypeAndResult(annotations(), symbolTable.createTemporarySymbol(*result));
-        }
-        expression.setFalsyLabel(annotations(), symbolTable.newLabel());
-        expression.setExitLabel(annotations(), symbolTable.newLabel());
+    if (!trueExpr->hasAnalyzedValue(annotations()) || !falseExpr->hasAnalyzedValue(annotations())) {
+        return;
     }
+    const std::optional<type::Type> result = type::conditionalResultType(
+            trueExpr->valueType(annotations()), falseExpr->valueType(annotations()));
+    if (!result) {
+        semanticError("incompatible operand types in conditional expression", expression.getContext());
+        return;
+    }
+    decayArrayValue(*trueExpr, symbolTable, annotations());
+    decayArrayValue(*falseExpr, symbolTable, annotations());
+
+    setAnalyzedType(expression, *result, symbolTable, annotations());
+    expression.setFalsyLabel(annotations(), symbolTable.newLabel());
+    expression.setExitLabel(annotations(), symbolTable.newLabel());
 }
 
 void SemanticAnalysisVisitor::visit(ast::AssignmentExpression& expression) {
     expression.visitLeftOperand(*this);
     expression.visitRightOperand(*this);
-    if (!expression.hasLeftOperandSymbol(annotations())) {
-        return;
-    }
-    if (!expression.hasRightOperandSymbol(annotations())
-            && !expression.getRightOperand()->isVoidValue()) {
+    if (!expression.hasLeftOperandSymbol(annotations())
+            || !expression.getRightOperand()->hasAnalyzedValue(annotations())) {
         return;
     }
 
@@ -680,16 +665,10 @@ void SemanticAnalysisVisitor::visit(ast::AssignmentExpression& expression) {
 void SemanticAnalysisVisitor::visit(ast::ExpressionList& expression) {
     expression.visitLeftOperand(*this);
     expression.visitRightOperand(*this);
-    if (expression.getRightOperand()->isVoidValue()) {
-        expression.setType(type::voidType());
+    if (!expression.getRightOperand()->hasAnalyzedValue(annotations())) {
         return;
     }
-    if (!expression.hasRightOperandSymbol(annotations())) {
-        return;
-    }
-    // Comma operator: value and type of the right operand, which decays like any other value.
-    decayArrayValue(*expression.getRightOperand(), symbolTable, annotations());
-    expression.setTypeAndResult(annotations(), *expression.rightOperandSymbol(annotations()));
+    takeAnalyzedFrom(expression, *expression.getRightOperand(), symbolTable, annotations());
 }
 
 } // namespace semantic_analyzer

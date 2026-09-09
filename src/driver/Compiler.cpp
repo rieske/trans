@@ -328,7 +328,7 @@ std::optional<std::string> Compiler::compile(std::string sourceFileName) const {
     std::unique_ptr<ast::AbstractSyntaxTree> tree = syntaxTreeBuilder->buildTree();
 
     semantic_analyzer::SemanticAnalyzer semanticAnalyzer { configuration.gnuExtensions() };
-    if (!semanticAnalyzer.analyze(*tree, session, sink)) {
+    if (!semanticAnalyzer.analyze(*tree, sink)) {
         err << "Error: Semantic errors were detected\n";
         return std::nullopt;
     }

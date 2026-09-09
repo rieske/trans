@@ -101,6 +101,10 @@ bool Expression::hasResultSymbol(const symbols::AnnotationStore& store) const {
     return store.hasResult(this);
 }
 
+bool Expression::hasAnalyzedValue(const symbols::AnnotationStore& store) const {
+    return isVoidValue() || hasResultSymbol(store);
+}
+
 symbols::ValueEntry* Expression::getResultSymbol(symbols::AnnotationStore& store) const {
     return store.result(this);
 }

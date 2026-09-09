@@ -1,5 +1,7 @@
 #include "SemanticAnalysisVisitorInternal.h"
 
+#include "ast/DeclarationSpecifiers.h"
+#include "ast/FormalArgument.h"
 #include "ast/FunctionDeclarator.h"
 #include "ast/FunctionDefinition.h"
 #include "ast/GnuBuiltinFunctions.h"
@@ -83,14 +85,21 @@ void finalizeSpecifierType(ast::TypeSpecifier& spec, SemanticAnalysisVisitor& vi
     resolveSpecifierType(spec, visitor);
 }
 
+void analyzeSpecifiers(ast::DeclarationSpecifiers& specifiers, SemanticAnalysisVisitor& visitor) {
+    if (specifiers.getStorageSpecifiers().size() > 1) {
+        visitor.semanticError("multiple storage classes in declaration specifiers",
+                specifiers.getStorageSpecifiers().at(1).getContext());
+    }
+    for (auto& specifier : specifiers.getTypeSpecifiers()) {
+        resolveSpecifierType(specifier, visitor);
+    }
+}
+
 void SemanticAnalysisVisitor::visit(ast::DeclarationSpecifiers& declarationSpecifiers) {
-    if (declarationSpecifiers.getStorageSpecifiers().size() > 1) {
-        semanticError("multiple storage classes in declaration specifiers",
-                declarationSpecifiers.getStorageSpecifiers().at(1).getContext());
+    for (const auto& specifier : declarationSpecifiers.getTypeSpecifiers()) {
+        declareEnumerators(specifier);
     }
-    for (auto& specifier : declarationSpecifiers.getTypeSpecifiers()) {
-        finalizeSpecifierType(specifier, *this);
-    }
+    analyzeSpecifiers(declarationSpecifiers, *this);
 }
 
 void SemanticAnalysisVisitor::visit(ast::Declaration& declaration) {
@@ -196,19 +205,15 @@ void SemanticAnalysisVisitor::analyzeInitializedDeclarator(ast::InitializedDecla
                     declarator.getContext());
         } else if (type.isFunction()) {
             // Prototypes: register with resolved return type (FunctionDeclarator no longer inserts).
-            if (symbolTable.isAtFileScope()) {
-                if (const auto* existing = symbolTable.findFileScope(declarator.getName());
-                        existing && existing->isEnumerator()) {
-                    semanticError("redefinition of enumerator `" + declarator.getName() + "` as a function",
-                            declarator.getContext());
-                    typeOk = false;
-                }
-            }
-            if (typeOk && symbolTable.hasGlobalVariable(declarator.getName())) {
+            const auto* fileScope = symbolTable.findFileScope(declarator.getName());
+            if (symbolTable.isAtFileScope() && fileScope && fileScope->isEnumerator()) {
+                semanticError("redefinition of enumerator `" + declarator.getName() + "` as a function",
+                        declarator.getContext());
+            } else if (symbolTable.hasGlobalVariable(declarator.getName())) {
                 semanticError("function `" + declarator.getName()
                                 + "` conflicts with global variable of the same name",
                         declarator.getContext());
-            } else if (typeOk && symbolTable.hasFunction(declarator.getName())) {
+            } else if (symbolTable.hasFunction(declarator.getName())) {
                 auto existing = symbolTable.findFunction(declarator.getName());
                 if (!type.compatibleWith(existing.getType())) {
                     semanticError("function `" + declarator.getName()
@@ -220,7 +225,7 @@ void SemanticAnalysisVisitor::analyzeInitializedDeclarator(ast::InitializedDecla
                     semanticError(staticFollowsNonStaticMessage(declarator.getName()),
                             declarator.getContext());
                 }
-            } else if (typeOk) {
+            } else {
                 symbolTable.insertFunction(declarator.getName(), type,
                         declarator.getContext(), specifiers.hasStorage(ast::Storage::STATIC));
             }
@@ -329,13 +334,7 @@ void SemanticAnalysisVisitor::visit(ast::FunctionDeclarator& declarator) {
 }
 
 void SemanticAnalysisVisitor::visit(ast::FormalArgument& argument) {
-    if (argument.getSpecifiers().getStorageSpecifiers().size() > 1) {
-        semanticError("multiple storage classes in declaration specifiers",
-                argument.getSpecifiers().getStorageSpecifiers().at(1).getContext());
-    }
-    for (auto& specifier : argument.getSpecifiers().getTypeSpecifiers()) {
-        resolveSpecifierType(specifier, *this);
-    }
+    analyzeSpecifiers(argument.getSpecifiers(), *this);
     argument.visitDeclarator(*this);
     type::Type type { type::voidType() };
     try {
