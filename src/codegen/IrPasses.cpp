@@ -598,6 +598,10 @@ bool isDeadAssignable(Op op) {
     case Op::Shr:
     case Op::PointerOffset:
     case Op::PointerDiff:
+    case Op::AddressOf:
+    case Op::Dereference:
+    case Op::IndexAddress:
+    case Op::FieldAddress:
         return true;
     default:
         return false;
