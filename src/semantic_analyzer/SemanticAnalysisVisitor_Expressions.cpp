@@ -269,7 +269,7 @@ void SemanticAnalysisVisitor::visit(ast::UnaryExpression& expression) {
                 expression.setAggregateAddressResult(annotations(), addr, pointee);
             } else {
                 expression.setTypeAndResult(annotations(), symbolTable.createTemporarySymbol(pointee));
-                expression.setLvalueSymbol(annotations(), symbolTable.createTemporarySymbol(valueType));
+                expression.setLvalueSymbol(annotations(), *expression.operandSymbol(annotations()));
             }
             break;
         }
