@@ -57,6 +57,8 @@ public:
     bool hasFunction(const std::string& name) const;
     bool hasGlobalVariable(const std::string& name) const;
     bool isAtFileScope() const;
+    // The function whose body is open; call only when isAtFileScope() is false.
+    symbols::FunctionEntry currentFunctionEntry() const;
 
 private:
     void insertFunctionArgument(std::string name, type::Type type, translation_unit::Context context);
@@ -72,6 +74,7 @@ private:
     struct FunctionScope {
         ValueScope values;
         std::vector<unsigned> blockIds;
+        symbols::FunctionEntry function;
     };
     // C has no nested function definitions: at most one is open.
     std::optional<FunctionScope> currentFunction;

@@ -158,6 +158,10 @@ bool SymbolTable::isAtFileScope() const {
     return !currentFunction;
 }
 
+symbols::FunctionEntry SymbolTable::currentFunctionEntry() const {
+    return openFunction().function;
+}
+
 bool SymbolTable::hasGlobalVariable(const std::string& name) const {
     const symbols::ValueEntry* entry = globalScope.find({ 0, name });
     return entry && !entry->getType().isFunction();
@@ -246,9 +250,8 @@ symbols::LabelEntry SymbolTable::newLabel() {
 }
 
 void SymbolTable::startFunction(std::string name, std::vector<std::string> formalArguments) {
-    currentFunction.emplace();
-    currentFunction->blockIds.push_back(++nextScopeId);
     auto function = findFunction(name);
+    currentFunction = FunctionScope { {}, { ++nextScopeId }, function };
     size_t i { 0 };
     for (auto& argument : function.arguments()) {
         if (i < formalArguments.size()) {
