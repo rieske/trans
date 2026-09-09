@@ -677,4 +677,44 @@ TEST(Compiler, qualifiedEnumSpecifierStillDeclaresItsEnumerators) {
     program.runAndExpect("3");
 }
 
+TEST(Compiler, sizeofAndGenericUseTheShadowingEnumerator) {
+    SourceProgram program{R"prg(int printf(const char *, ...);
+        long A = 7;
+        int main() {
+            enum { A = 1 };
+            printf("%d %d", (int)sizeof A, _Generic(A, int: 4, long: 8, default: 0));
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("4 4");
+}
+
+TEST(Compiler, eachFunctionSeesItsOwnBlockEnumerator) {
+    SourceProgram program{R"prg(int printf(const char *, ...);
+        int A = 7;
+        int f(void) { enum { A = 1 }; return A; }
+        int g(void) { enum { A = 2 }; return A; }
+        int main() {
+            printf("%d %d %d", f(), g(), A);
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("1 2 7");
+}
+
+TEST(Compiler, shadowingEnumeratorWorksAsACaseLabel) {
+    SourceProgram program{R"prg(int printf(const char *, ...);
+        int A = 7;
+        int main() {
+            enum { A = 2 };
+            switch (2) { case A: printf("%d", 9); return 0; }
+            return 1;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("9");
+}
+
 } // namespace

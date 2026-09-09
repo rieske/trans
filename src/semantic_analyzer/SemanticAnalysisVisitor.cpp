@@ -323,9 +323,10 @@ void SemanticAnalysisVisitor::visit(ast::FunctionDeclarator& declarator) {
 }
 
 void SemanticAnalysisVisitor::visit(ast::FormalArgument& argument) {
+    const bool enclosingParameterList = inParameterList;
     inParameterList = true;
     argument.visitSpecifiers(*this);
-    inParameterList = false;
+    inParameterList = enclosingParameterList;
     argument.visitDeclarator(*this);
     type::Type type { type::voidType() };
     try {
