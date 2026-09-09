@@ -1,7 +1,9 @@
 #include "Declarator.h"
 
+#include "FormalArgument.h"
 #include "translation_unit/Context.h"
 #include "AbstractSyntaxTreeVisitor.h"
+#include "types/TypeConstraint.h"
 
 namespace ast {
 
@@ -46,8 +48,25 @@ void Declarator::forEachArrayDeclarator(const std::function<void(ArrayDeclarator
     declarator->forEachArrayDeclarator(fn);
 }
 
+void Declarator::forEachFormalArgument(const std::function<void(const FormalArgument&)>& fn) const {
+    declarator->forEachFormalArgument(fn);
+}
+
 const FunctionDeclarator* Declarator::innermostFunctionDeclarator() const {
     return declarator->innermostFunctionDeclarator();
+}
+
+const char* Declarator::arrayConstraintError(const type::Type& built) const {
+    if (const char* error = type::arrayTypeError(built)) {
+        return error;
+    }
+    const char* error = nullptr;
+    forEachFormalArgument([&](const FormalArgument& argument) {
+        if (!error) {
+            error = type::arrayTypeError(argument.declaredType());
+        }
+    });
+    return error;
 }
 
 } // namespace ast

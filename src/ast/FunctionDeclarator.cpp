@@ -76,5 +76,16 @@ type::Type FunctionDeclarator::getFundamentalType(std::vector<Pointer> indirecti
     return nested->getFundamentalType({}, functionType);
 }
 
+void FunctionDeclarator::forEachFormalArgument(
+        const std::function<void(const FormalArgument&)>& fn) const {
+    for (const auto& argument : formalArguments) {
+        fn(argument);
+        argument.forEachFormalArgument(fn);
+    }
+    if (nested) {
+        nested->forEachFormalArgument(fn);
+    }
+}
+
 } // namespace ast
 

@@ -85,6 +85,13 @@ private:
     ValueScope globalScope;
     std::vector<symbols::ValueEntry> functionScopeDataHomes;
     unsigned nextScopeId { 0 };
+    unsigned nextLabel { 0 };
+    unsigned nextConstant { 0 };
+    unsigned nextUnnamedStatic { 0 };
+
+    std::string generateLabelName();
+    std::string generateConstantName();
+    std::string generateUnnamedStaticName();
 
     FunctionScope& openFunction();
     const FunctionScope& openFunction() const;

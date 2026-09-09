@@ -313,7 +313,9 @@ void StackMachine::emitStore(Register& source, Value& symbol) {
 void StackMachine::bindResult(Register& reg, Value& result) {
     if (addressOf(result).isGlobal()) {
         emitStore(reg, result);
-        assert(result.isStored() && "global Value must not be register-linked");
+        if (!result.isStored()) {
+            internalError("global Value must not be register-linked");
+        }
         return;
     }
     canonicalize(reg, result);

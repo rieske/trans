@@ -30,52 +30,52 @@ struct LayoutCursor {
     long long maxSize { 0 };
 };
 
-void requireFitsInt(long long value, const char* error) {
+const char* fitsIntError(long long value, const char* error) {
     if (value > static_cast<long long>(std::numeric_limits<int>::max())) {
-        throw std::invalid_argument { error };
+        return error;
     }
+    return nullptr;
 }
 
-void requireUniqueMemberName(const LayoutCursor& cursor, const std::string& name, bool asUnion) {
+const char* uniqueMemberNameError(const LayoutCursor& cursor, const std::string& name, bool asUnion) {
     if (name.empty()) {
-        return;
+        return nullptr;
     }
     for (const auto& existing : cursor.members) {
         if (existing.name == name) {
-            throw std::invalid_argument { asUnion
-                    ? "duplicate union member name"
-                    : "duplicate structure member name" };
+            return asUnion ? "duplicate union member name" : "duplicate structure member name";
         }
     }
+    return nullptr;
 }
 
-void requireCompleteMember(const Type& memberType, bool flexibleArray, bool asUnion) {
+const char* completeMemberError(const Type& memberType, bool flexibleArray, bool asUnion) {
     if (isTentativeRecord(memberType)) {
-        return;
+        return nullptr;
     }
     if (isIncompleteMemberOrElementType(memberType) && !flexibleArray) {
-        throw std::invalid_argument { asUnion
-                ? "union member has incomplete type"
-                : "structure member has incomplete type" };
+        return asUnion ? "union member has incomplete type" : "structure member has incomplete type";
     }
+    return nullptr;
 }
 
-// Validates bit-field width; returns the declared type width in bits (the pack unit).
-int bitFieldUnitBits(const Type& memberType, int width, const std::string& name) {
+// Validates bit-field width; writes the declared type width in bits (the pack unit).
+const char* bitFieldUnitBits(const Type& memberType, int width, const std::string& name,
+        int& typeBits) {
     if (!isIntegral(memberType)) {
-        throw std::invalid_argument { "bit-field has non-integer type" };
+        return "bit-field has non-integer type";
     }
     if (width == 0 && !name.empty()) {
-        throw std::invalid_argument { "zero width for bit-field" };
+        return "zero width for bit-field";
     }
-    const int typeBits = memberType.getSize() * 8;
+    typeBits = memberType.getSize() * 8;
     if (memberType.getSize() > 8 || width > 64) {
-        throw std::invalid_argument { "bit-field type is too wide" };
+        return "bit-field type is too wide";
     }
     if (width > typeBits) {
-        throw std::invalid_argument { "width of bit-field exceeds its type" };
+        return "width of bit-field exceeds its type";
     }
-    return typeBits;
+    return nullptr;
 }
 
 void noteUnionMemberSize(LayoutCursor& cursor, const Type& memberType) {
@@ -90,15 +90,20 @@ void layoutOrdinaryUnionMember(LayoutCursor& cursor, const std::string& name, co
     noteUnionMemberSize(cursor, memberType);
 }
 
-void layoutOrdinaryStructMember(LayoutCursor& cursor, const std::string& name, const Type& memberType,
-        int align) {
+const char* layoutOrdinaryStructMember(LayoutCursor& cursor, const std::string& name,
+        const Type& memberType, int align) {
     long long offset = (cursor.bitOffset + 7) / 8;
     offset = alignUp(offset, align);
-    requireFitsInt(offset, "structure size is too large");
+    if (const char* error = fitsIntError(offset, "structure size is too large")) {
+        return error;
+    }
     cursor.members.emplace_back(name, memberType, static_cast<int>(offset));
     offset += memberSize(memberType);
-    requireFitsInt(offset, "structure size is too large");
+    if (const char* error = fitsIntError(offset, "structure size is too large")) {
+        return error;
+    }
     cursor.bitOffset = offset * 8;
+    return nullptr;
 }
 
 void layoutBitFieldUnionMember(LayoutCursor& cursor, const std::string& name, const Type& memberType,
@@ -109,21 +114,23 @@ void layoutBitFieldUnionMember(LayoutCursor& cursor, const std::string& name, co
     noteUnionMemberSize(cursor, memberType);
 }
 
-void layoutBitFieldStructMember(LayoutCursor& cursor, const std::string& name, const Type& memberType,
-        int width, int typeBits, int align) {
+const char* layoutBitFieldStructMember(LayoutCursor& cursor, const std::string& name,
+        const Type& memberType, int width, int typeBits, int align) {
     if (width == 0) {
         const long long alignBits = static_cast<long long>(align) * 8;
         if (alignBits > 0 && (cursor.bitOffset % alignBits) != 0) {
             cursor.bitOffset = alignUp(cursor.bitOffset, alignBits);
         }
-        return;
+        return nullptr;
     }
     const int unitBits = typeBits > 0 ? typeBits : 8;
     const int excess = static_cast<int>(cursor.bitOffset % unitBits);
     if (excess + width > unitBits) {
         cursor.bitOffset = alignUp(cursor.bitOffset, static_cast<long long>(align) * 8);
     }
-    requireFitsInt(cursor.bitOffset, "structure size is too large");
+    if (const char* error = fitsIntError(cursor.bitOffset, "structure size is too large")) {
+        return error;
+    }
     if (!name.empty()) {
         const int container = (static_cast<int>(cursor.bitOffset) / unitBits) * memberType.getSize();
         const int shift = static_cast<int>(cursor.bitOffset) % unitBits;
@@ -131,22 +138,29 @@ void layoutBitFieldStructMember(LayoutCursor& cursor, const std::string& name, c
                 makeBitField(memberType, width, shift));
     }
     cursor.bitOffset += width;
+    return nullptr;
 }
 
-int finalizeLayoutSize(const LayoutCursor& cursor, bool asUnion) {
+const char* finalizeLayoutSize(const LayoutCursor& cursor, bool asUnion, int& size) {
     if (asUnion) {
-        const long long size = alignUp(cursor.maxSize, cursor.maxAlign);
-        requireFitsInt(size, "union size is too large");
-        return static_cast<int>(size);
+        const long long bytes = alignUp(cursor.maxSize, cursor.maxAlign);
+        if (const char* error = fitsIntError(bytes, "union size is too large")) {
+            return error;
+        }
+        size = static_cast<int>(bytes);
+        return nullptr;
     }
-    const long long size = alignUp((cursor.bitOffset + 7) / 8, cursor.maxAlign);
-    requireFitsInt(size, "structure size is too large");
-    return static_cast<int>(size);
+    const long long bytes = alignUp((cursor.bitOffset + 7) / 8, cursor.maxAlign);
+    if (const char* error = fitsIntError(bytes, "structure size is too large")) {
+        return error;
+    }
+    size = static_cast<int>(bytes);
+    return nullptr;
 }
 
-// Built into temporaries so a failed re-complete does not corrupt the live body.
-void layoutRecordMembers(Type::StructBody& body, const std::vector<MemberSpec>& members, bool asUnion,
-        bool packed) {
+// Built into a temporary so a failed re-complete does not corrupt the live body.
+const char* layoutRecordMembers(Type::StructBody& body, const std::vector<MemberSpec>& members,
+        bool asUnion, bool packed) {
     LayoutCursor cursor;
 
     const std::size_t memberCount = members.size();
@@ -158,8 +172,15 @@ void layoutRecordMembers(Type::StructBody& body, const std::vector<MemberSpec>& 
                 && i + 1 == memberCount
                 && !cursor.members.empty()
                 && memberType.isIncompleteArray();
-        requireCompleteMember(memberType, flexibleArray, asUnion);
-        requireUniqueMemberName(cursor, name, asUnion);
+        if (const char* error = completeMemberError(memberType, flexibleArray, asUnion)) {
+            return error;
+        }
+        if (const char* error = arrayTypeError(memberType)) {
+            return error;
+        }
+        if (const char* error = uniqueMemberNameError(cursor, name, asUnion)) {
+            return error;
+        }
 
         const int align = packed ? 1 : memberType.getAlignment();
         if (align > cursor.maxAlign) {
@@ -168,25 +189,33 @@ void layoutRecordMembers(Type::StructBody& body, const std::vector<MemberSpec>& 
 
         if (spec.bitWidth) {
             const int width = *spec.bitWidth;
-            const int unitBits = bitFieldUnitBits(memberType, width, name);
+            int typeBits = 0;
+            if (const char* error = bitFieldUnitBits(memberType, width, name, typeBits)) {
+                return error;
+            }
             if (asUnion) {
                 layoutBitFieldUnionMember(cursor, name, memberType, width);
-            } else {
-                layoutBitFieldStructMember(cursor, name, memberType, width, unitBits, align);
+            } else if (const char* error = layoutBitFieldStructMember(
+                    cursor, name, memberType, width, typeBits, align)) {
+                return error;
             }
             continue;
         }
         if (asUnion) {
             layoutOrdinaryUnionMember(cursor, name, memberType);
-        } else {
-            layoutOrdinaryStructMember(cursor, name, memberType, align);
+        } else if (const char* error = layoutOrdinaryStructMember(cursor, name, memberType, align)) {
+            return error;
         }
     }
 
+    int size = 0;
+    if (const char* error = finalizeLayoutSize(cursor, asUnion, size)) {
+        return error;
+    }
     body.members = std::move(cursor.members);
     body.isUnion = asUnion;
     body.packed = packed;
-    body.size = finalizeLayoutSize(cursor, asUnion);
+    body.size = size;
     bool complete = true;
     for (const auto& member : body.members) {
         if (!member.type) {
@@ -198,24 +227,32 @@ void layoutRecordMembers(Type::StructBody& body, const std::vector<MemberSpec>& 
         }
     }
     body.complete = complete;
+    return nullptr;
 }
 
 } // namespace
 
-void completeStructure(Type& structType, const std::vector<MemberSpec>& members, bool packed) {
-    auto* rec = std::get_if<Type::RecordPayload>(&structType._payload);
+const char* completeRecord(Type& record, const std::vector<MemberSpec>& members, bool asUnion,
+        bool packed) {
+    auto* rec = std::get_if<Type::RecordPayload>(&record._payload);
     if (!rec || !rec->body) {
-        throw std::domain_error { "completeStructure on non-record type" };
+        throw std::domain_error {
+                asUnion ? "completeUnion on non-record type" : "completeStructure on non-record type" };
     }
-    layoutRecordMembers(*rec->body, members, false, packed);
+    Type::StructBody built;
+    if (const char* error = layoutRecordMembers(built, members, asUnion, packed)) {
+        return error;
+    }
+    *rec->body = std::move(built);
+    return nullptr;
 }
 
-void completeUnion(Type& unionTy, const std::vector<MemberSpec>& members, bool packed) {
-    auto* rec = std::get_if<Type::RecordPayload>(&unionTy._payload);
-    if (!rec || !rec->body) {
-        throw std::domain_error { "completeUnion on non-record type" };
-    }
-    layoutRecordMembers(*rec->body, members, true, packed);
+const char* completeStructure(Type& structType, const std::vector<MemberSpec>& members, bool packed) {
+    return completeRecord(structType, members, false, packed);
+}
+
+const char* completeUnion(Type& unionTy, const std::vector<MemberSpec>& members, bool packed) {
+    return completeRecord(unionTy, members, true, packed);
 }
 
 } // namespace type

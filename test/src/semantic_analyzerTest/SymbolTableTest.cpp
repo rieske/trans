@@ -72,6 +72,24 @@ TEST(SymbolTable, unnamedStaticObjectIsDataHome) {
     ASSERT_THAT(homes.front().staticInit().size(), Eq(1u));
 }
 
+TEST(SymbolTable, generatedNamesArePerTable) {
+    SymbolTable first;
+    SymbolTable second;
+    const auto a = first.newLabel();
+    const auto b = first.newLabel();
+    const auto c = second.newLabel();
+    EXPECT_THAT(a.getName(), Eq("__L1"));
+    EXPECT_THAT(b.getName(), Eq("__L2"));
+    EXPECT_THAT(c.getName(), Eq("__L1"));
+
+    EXPECT_THAT(first.newConstant("x"), Eq("L$str1"));
+    EXPECT_THAT(second.newConstant("y"), Eq("L$str1"));
+
+    translation_unit::Context ctx { "t.c", 1 };
+    EXPECT_THAT(first.createUnnamedStaticObject(type::signedInteger(), ctx).getName(), Eq("L$cl1"));
+    EXPECT_THAT(second.createUnnamedStaticObject(type::signedInteger(), ctx).getName(), Eq("L$cl1"));
+}
+
 TEST(SymbolTable, unnamedStaticObjectsHaveDistinctNames) {
     SymbolTable table;
     translation_unit::Context ctx { "t.c", 1 };

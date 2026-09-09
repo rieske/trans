@@ -48,6 +48,10 @@ const FunctionDeclarator* ArrayDeclarator::innermostFunctionDeclarator() const {
     return baseDeclarator->innermostFunctionDeclarator();
 }
 
+void ArrayDeclarator::forEachFormalArgument(const std::function<void(const FormalArgument&)>& fn) const {
+    baseDeclarator->forEachFormalArgument(fn);
+}
+
 ArrayBoundFold ArrayDeclarator::foldOwnBound() {
     if (!subscriptExpression || hasArraySize()) {
         return ArrayBoundFold::Complete;

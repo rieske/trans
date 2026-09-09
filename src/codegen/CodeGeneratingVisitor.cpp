@@ -397,8 +397,9 @@ void CodeGeneratingVisitor::visit(ast::IdentifierExpression& identifier) {
             }
         }
     }
-    assert(!identifier.holdsFunctionDesignator()
-            && "designator form without FunctionDesignatorPlan on the store");
+    if (identifier.holdsFunctionDesignator()) {
+        codegen::internalError("designator form without FunctionDesignatorPlan on the store");
+    }
 }
 
 void CodeGeneratingVisitor::visit(ast::ConstantExpression& constant) {

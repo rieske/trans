@@ -15,7 +15,6 @@
 
 #include <limits>
 #include <optional>
-#include <stdexcept>
 
 namespace semantic_analyzer {
 
@@ -199,12 +198,11 @@ bool SemanticAnalysisVisitor::applyIncompleteArrayBound(type::Type& type, ast::E
     if (bound.kind != IncompleteArrayBound::Kind::Bound) {
         return true;
     }
-    try {
-        type = type::array(type.getElementType(), bound.bound);
-    } catch (const std::invalid_argument& ex) {
-        semanticError(ex.what(), context);
+    if (const char* error = type::arrayLayerError(type.getElementType(), true, bound.bound)) {
+        semanticError(error, context);
         return false;
     }
+    type = type::array(type.getElementType(), bound.bound);
     return true;
 }
 

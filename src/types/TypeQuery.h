@@ -7,6 +7,7 @@
 
 #include "Operator.h"
 #include "Type.h"
+#include "TypeConstraint.h"
 
 namespace type {
 
@@ -95,7 +96,7 @@ inline bool isPointerToBareFunction(const Type& t) {
 // Void, bare function, incomplete record, or incomplete array (not pointer-to-incomplete).
 // Shared definition used by sizeof and member/element completeness checks.
 inline bool isIncompleteObjectType(const Type& t) {
-    return t.isVoid() || isBareFunction(t) || t.isIncompleteRecord() || t.isIncompleteArray();
+    return incompleteArrayElement(t);
 }
 
 // VLA, or array whose element has a runtime size. Pointer-to-VLA is not included:

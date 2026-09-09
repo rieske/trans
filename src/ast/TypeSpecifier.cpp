@@ -12,8 +12,9 @@
 
 namespace ast {
 
-TypeSpecifier::TypeSpecifier(type::Type type, std::string name) :
+TypeSpecifier::TypeSpecifier(type::Type type, std::string name, translation_unit::Context context) :
         name { std::move(name) },
+        context_ { std::move(context) },
         type { std::move(type) }
 {
 }
@@ -30,6 +31,10 @@ TypeSpecifier& TypeSpecifier::operator=(TypeSpecifier&&) noexcept = default;
 
 const std::string& TypeSpecifier::getName() const {
     return name;
+}
+
+const translation_unit::Context& TypeSpecifier::getContext() const {
+    return context_;
 }
 
 bool TypeSpecifier::hasType() const {

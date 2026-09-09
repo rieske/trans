@@ -6,6 +6,7 @@
 #include <string>
 #include <vector>
 
+#include "translation_unit/Context.h"
 #include "types/IntegerConstant.h"
 #include "types/Type.h"
 
@@ -24,7 +25,8 @@ class VlaExpressionTable;
 
 class TypeSpecifier {
 public:
-    TypeSpecifier(type::Type type, std::string name);
+    TypeSpecifier(type::Type type, std::string name,
+            translation_unit::Context context = translation_unit::Context { "", 0 });
     explicit TypeSpecifier(std::shared_ptr<Expression> typeofOperand);
     TypeSpecifier(const TypeSpecifier&);
     TypeSpecifier& operator=(const TypeSpecifier&);
@@ -32,6 +34,7 @@ public:
     TypeSpecifier& operator=(TypeSpecifier&&) noexcept;
 
     const std::string& getName() const;
+    const translation_unit::Context& getContext() const;
     bool hasType() const;
     type::Type getType() const;
     void dropSpelling();
@@ -48,6 +51,7 @@ public:
 
 private:
     std::string name;
+    translation_unit::Context context_ { "", 0 };
     std::optional<type::Type> type;
     std::shared_ptr<Expression> typeofOperand_;
     std::shared_ptr<Declarator> deferredDeclarator_;

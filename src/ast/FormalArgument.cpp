@@ -36,13 +36,28 @@ void FormalArgument::visitDeclarator(AbstractSyntaxTreeVisitor& visitor) {
     }
 }
 
-type::Type FormalArgument::getType() const {
+type::Type FormalArgument::declaredType() const {
     auto baseType = specifiers.getResolvedType();
-    type::Type type = baseType;
     if (declarator) {
-        type = declarator->getFundamentalType(baseType);
+        return declarator->getFundamentalType(baseType);
     }
-    return type::adjustedParameterType(std::move(type));
+    return baseType;
+}
+
+type::Type FormalArgument::getType() const {
+    return type::adjustedParameterType(declaredType());
+}
+
+const char* FormalArgument::arrayConstraintError() const {
+    return declarator
+            ? declarator->arrayConstraintError(declaredType())
+            : type::arrayTypeError(declaredType());
+}
+
+void FormalArgument::forEachFormalArgument(const std::function<void(const FormalArgument&)>& fn) const {
+    if (declarator) {
+        declarator->forEachFormalArgument(fn);
+    }
 }
 
 std::string FormalArgument::getName() const {

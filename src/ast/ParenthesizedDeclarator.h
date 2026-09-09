@@ -21,6 +21,7 @@ public:
     type::Type getFundamentalType(std::vector<Pointer> indirection, const type::Type& baseType) const override;
 
     void forEachArrayDeclarator(const std::function<void(ArrayDeclarator&)>& fn) override;
+    void forEachFormalArgument(const std::function<void(const FormalArgument&)>& fn) const override;
     const FunctionDeclarator* innermostFunctionDeclarator() const override;
 
 private:

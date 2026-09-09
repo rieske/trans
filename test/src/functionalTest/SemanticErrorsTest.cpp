@@ -581,6 +581,72 @@ INSTANTIATE_TEST_SUITE_P(Compiler, SemanticErrorCatalog, testing::Values(
         "invalid operands to binary operator",
     },
     SemanticErrorCase{
+        "duplicateStructureMember",
+        R"prg(
+            struct S { int x; int x; };
+            int main(void) { return 0; }
+        )prg",
+        "duplicate structure member name",
+    },
+    SemanticErrorCase{
+        "duplicateUnionMember",
+        R"prg(
+            union U { int x; int x; };
+            int main(void) { return 0; }
+        )prg",
+        "duplicate union member name",
+    },
+    SemanticErrorCase{
+        "voidArrayVariable",
+        R"prg(
+            int main(void) {
+                void a[3];
+                return 0;
+            }
+        )prg",
+        "array of incomplete type",
+    },
+    SemanticErrorCase{
+        "voidArrayParameter",
+        R"prg(
+            int f(void a[3]) { return 0; }
+            int main(void) { return 0; }
+        )prg",
+        "array of incomplete type",
+    },
+    SemanticErrorCase{
+        "voidArrayTypedef",
+        R"prg(
+            typedef void a[3];
+            int main(void) { return 0; }
+        )prg",
+        "array of incomplete type",
+    },
+    SemanticErrorCase{
+        "voidArrayFunctionReturn",
+        R"prg(
+            void (*f())[3] { return 0; }
+            int main(void) { return 0; }
+        )prg",
+        "array of incomplete type",
+    },
+    SemanticErrorCase{
+        "voidArrayStructMember",
+        R"prg(
+            struct S { void a[3]; int x; };
+            int main(void) { return 0; }
+        )prg",
+        "array of incomplete type",
+    },
+    SemanticErrorCase{
+        "voidArrayStructMemberParam",
+        R"prg(
+            struct S { int (*p)(void a[3]); };
+            int main(void) { return 0; }
+        )prg",
+        "array of incomplete type",
+    },
+    SemanticErrorCase{
         "incompleteLocalArray",
         R"prg(
             int main() {
