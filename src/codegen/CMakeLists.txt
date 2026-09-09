@@ -7,6 +7,7 @@ add_library(backend
         Cfg.cpp
         CodeGeneratingVisitor.cpp
         CodeGeneratingVisitor_Addressing.cpp
+        CodeGeneratingVisitor_Calls.cpp
         CodeGeneratingVisitor_Complex.cpp
         CodeGeneratingVisitor_BitField.cpp
         CodeGeneratingVisitor_Control.cpp

@@ -38,6 +38,7 @@ public:
     void refineType(const SymbolKey& key, const type::Type& type);
     void setContext(const SymbolKey& key, translation_unit::Context context);
     void markFunctionDefined(const SymbolKey& key);
+    void applyFunctionSpecifiers(const SymbolKey& key, bool isInline, bool isNoreturn, bool isExtern);
 
     const std::map<SymbolKey, symbols::ValueEntry>& getSymbols() const;
     std::vector<symbols::ValueEntry> getArguments() const;

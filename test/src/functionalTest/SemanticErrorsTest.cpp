@@ -355,6 +355,38 @@ INSTANTIATE_TEST_SUITE_P(Compiler, SemanticErrorCatalog, testing::Values(
         "lvalue required",
     },
     SemanticErrorCase{
+        "inlineOnVariable",
+        R"prg(
+            inline int x;
+            int main(void) { return 0; }
+        )prg",
+        "function specifier",
+    },
+    SemanticErrorCase{
+        "noreturnOnVariable",
+        R"prg(
+            noreturn int x;
+            int main(void) { return 0; }
+        )prg",
+        "function specifier",
+    },
+    SemanticErrorCase{
+        "inlineOnParameter",
+        R"prg(
+            int f(inline int x) { return x; }
+            int main(void) { return 0; }
+        )prg",
+        "function specifier",
+    },
+    SemanticErrorCase{
+        "noreturnReturns",
+        R"prg(
+            noreturn void die(void) { return; }
+            int main(void) { return 0; }
+        )prg",
+        "noreturn",
+    },
+    SemanticErrorCase{
         "voidVariable",
         R"prg(
             int main() {

@@ -92,6 +92,14 @@ void finalizeSpecifierType(ast::TypeSpecifier& spec, SemanticAnalysisVisitor& vi
     resolveSpecifierType(spec, visitor);
 }
 
+void applyIncomingFunctionSpecs(SymbolTable& table, const std::string& name,
+        const ast::DeclarationSpecifiers& specs) {
+    table.applyFunctionSpecifiers(name,
+            specs.hasFunctionSpec(ast::FunctionSpec::INLINE),
+            specs.hasFunctionSpec(ast::FunctionSpec::NORETURN),
+            specs.hasStorage(ast::Storage::EXTERN));
+}
+
 void analyzeSpecifiers(ast::DeclarationSpecifiers& specifiers, SemanticAnalysisVisitor& visitor) {
     if (specifiers.getStorageSpecifiers().size() > 1) {
         visitor.semanticError("multiple storage classes in declaration specifiers",
@@ -114,6 +122,10 @@ void SemanticAnalysisVisitor::visit(ast::Declaration& declaration) {
 
     const auto& declSpecs = declaration.getDeclarationSpecifiers();
     if (declSpecs.isTypedef()) {
+        if (!declSpecs.getFunctionSpecifiers().empty() && !declaration.getDeclarators().empty()) {
+            semanticError("function specifier may only appear in a function declaration",
+                    declaration.getDeclarators().front()->getContext());
+        }
         // Type alias only: no runtime symbol, so there is nothing for an initializer to
         // initialize.
         for (const auto& declarator : declaration.getDeclarators()) {
@@ -194,6 +206,11 @@ void SemanticAnalysisVisitor::analyzeInitializedDeclarator(ast::InitializedDecla
                 declarator.getContext());
         typeOk = false;
     }
+    if (!specifiers.getFunctionSpecifiers().empty() && !type.isFunction()) {
+        semanticError("function specifier may only appear in a function declaration",
+                declarator.getContext());
+        typeOk = false;
+    }
     bool initializerVisited = false;
     if (typeOk && !rewriteCharArrayStringInitializer(declarator, type)) {
         typeOk = false;
@@ -232,10 +249,13 @@ void SemanticAnalysisVisitor::analyzeInitializedDeclarator(ast::InitializedDecla
                         specifiers.hasStorage(ast::Storage::STATIC))) {
                     semanticError(staticFollowsNonStaticMessage(declarator.getName()),
                             declarator.getContext());
+                } else {
+                    applyIncomingFunctionSpecs(symbolTable, declarator.getName(), specifiers);
                 }
             } else {
                 symbolTable.insertFunction(declarator.getName(), type,
                         declarator.getContext(), specifiers.hasStorage(ast::Storage::STATIC));
+                applyIncomingFunctionSpecs(symbolTable, declarator.getName(), specifiers);
             }
         } else if (symbolTable.isAtFileScope() && symbolTable.hasFunction(declarator.getName())) {
             semanticError("symbol `" + declarator.getName() + "` declaration conflicts with function of the same name",
@@ -343,6 +363,10 @@ void SemanticAnalysisVisitor::visit(ast::FunctionDeclarator& declarator) {
 
 void SemanticAnalysisVisitor::visit(ast::FormalArgument& argument) {
     analyzeSpecifiers(argument.getSpecifiers(), *this);
+    if (!argument.getSpecifiers().getFunctionSpecifiers().empty()) {
+        semanticError("function specifier may not appear in a parameter declaration",
+                argument.getDeclarationContext());
+    }
     argument.visitDeclarator(*this);
     type::Type type = argument.getType();
     if (type.isVoid()) {
@@ -396,10 +420,14 @@ void SemanticAnalysisVisitor::visit(ast::FunctionDefinition& function) {
         }
         symbolTable.updateFunction(function.getName(), functionType,
                 function.getDeclaratorContext());
+        applyIncomingFunctionSpecs(symbolTable, function.getName(),
+                function.getReturnTypeSpecifiers());
     } else {
         symbolTable.insertFunction(function.getName(), functionType,
                 function.getDeclaratorContext(),
                 function.getReturnTypeSpecifiers().hasStorage(ast::Storage::STATIC));
+        applyIncomingFunctionSpecs(symbolTable, function.getName(),
+                function.getReturnTypeSpecifiers());
     }
     symbolTable.markFunctionDefined(function.getName());
     symbolTable.startFunction(function.getName(), function.definedFunctionParameterNames());

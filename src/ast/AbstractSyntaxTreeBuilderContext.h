@@ -14,6 +14,7 @@
 #include "FunctionDeclarator.h"
 #include "ParseEnvironment.h"
 #include "Pointer.h"
+#include "FunctionSpecifier.h"
 #include "StorageSpecifier.h"
 #include "TerminalSymbol.h"
 #include "TypeSpecifier.h"
@@ -58,6 +59,9 @@ public:
 
     void pushStorageSpecifier(StorageSpecifier storageSpecifier);
     StorageSpecifier popStorageSpecifier();
+
+    void pushFunctionSpecifier(FunctionSpecifier functionSpecifier);
+    FunctionSpecifier popFunctionSpecifier();
 
     void pushTypeQualifier(type::Qualifier typeQualifier);
     type::Qualifier popTypeQualifier();
@@ -168,6 +172,7 @@ private:
 
     std::stack<TypeSpecifier> typeSpecifiers;
     std::stack<StorageSpecifier> storageSpecifiers;
+    std::stack<FunctionSpecifier> functionSpecifiers;
     std::stack<type::Qualifier> typeQualifiers;
     std::stack<std::vector<type::Qualifier>> typeQualifierLists;
     std::stack<Constant> constants;

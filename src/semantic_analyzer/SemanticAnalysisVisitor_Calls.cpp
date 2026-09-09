@@ -47,7 +47,7 @@ std::optional<Callee> resolveCallee(ast::FunctionCall& functionCall, SymbolTable
         if (d && d->functionName) {
             auto entry = symbolTable.findFunction(*d->functionName);
             return Callee {
-                symbols::DirectCallPlan { *d->functionName },
+                symbols::DirectCallPlan { *d->functionName, entry.isNoreturn() },
                 entry.getType().getFunction(),
             };
         }

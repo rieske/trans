@@ -89,6 +89,14 @@ StorageSpecifier AbstractSyntaxTreeBuilderContext::popStorageSpecifier() {
     return popFrom(storageSpecifiers, "storage specifier");
 }
 
+void AbstractSyntaxTreeBuilderContext::pushFunctionSpecifier(FunctionSpecifier functionSpecifier) {
+    functionSpecifiers.push(functionSpecifier);
+}
+
+FunctionSpecifier AbstractSyntaxTreeBuilderContext::popFunctionSpecifier() {
+    return popFrom(functionSpecifiers, "function specifier");
+}
+
 void AbstractSyntaxTreeBuilderContext::pushTypeQualifier(type::Qualifier typeQualifier) {
     typeQualifiers.push(typeQualifier);
 }

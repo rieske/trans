@@ -82,8 +82,8 @@ ContextualSyntaxNodeBuilder::ContextualSyntaxNodeBuilder(const parser::Grammar& 
     bind(s_storage_class_spec, { grammar.symbolId("typedef") }, typedefStorageClass);
 
     int s_function_spec = grammar.symbolId("<function_spec>");
-    bind(s_function_spec, { grammar.symbolId("inline") }, functionSpecifier);
-    bind(s_function_spec, { grammar.symbolId("noreturn") }, functionSpecifier);
+    bind(s_function_spec, { grammar.symbolId("inline") }, inlineFunctionSpecifier);
+    bind(s_function_spec, { grammar.symbolId("noreturn") }, noreturnFunctionSpecifier);
 
     int s_decl_specs = grammar.symbolId("<decl_specs>");
     bind(s_decl_specs, { s_type_specifier }, declarationTypeSpecifier);
@@ -93,7 +93,7 @@ ContextualSyntaxNodeBuilder::ContextualSyntaxNodeBuilder(const parser::Grammar& 
     bind(s_decl_specs, { s_type_qualifier }, declarationTypeQualifier);
     bind(s_decl_specs, { s_type_qualifier, s_decl_specs }, addDeclarationTypeQualifier);
     bind(s_decl_specs, { s_function_spec }, functionSpecifierOnly);
-    bind(s_decl_specs, { s_function_spec, s_decl_specs }, doNothing);
+    bind(s_decl_specs, { s_function_spec, s_decl_specs }, addDeclarationFunctionSpecifier);
 
     int s_direct_declarator = grammar.symbolId("<direct_declarator>");
     int s_declarator = grammar.symbolId("<declarator>");

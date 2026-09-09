@@ -4,6 +4,7 @@
 #include <vector>
 
 #include "AbstractSyntaxTreeNode.h"
+#include "FunctionSpecifier.h"
 #include "StorageSpecifier.h"
 #include "TypeSpecifier.h"
 
@@ -16,6 +17,7 @@ public:
     DeclarationSpecifiers(TypeSpecifier typeSpecifier, DeclarationSpecifiers declarationSpecifiers = { });
     DeclarationSpecifiers(type::Qualifier typeQualifier, DeclarationSpecifiers declarationSpecifiers = { });
     DeclarationSpecifiers(StorageSpecifier storageSpecifier, DeclarationSpecifiers declarationSpecifiers = { });
+    DeclarationSpecifiers(FunctionSpecifier functionSpecifier, DeclarationSpecifiers declarationSpecifiers = { });
     static DeclarationSpecifiers none();
 
     void accept(AbstractSyntaxTreeVisitor& visitor) override;
@@ -27,6 +29,8 @@ public:
     const std::vector<TypeSpecifier>& getTypeSpecifiers() const;
     const std::vector<StorageSpecifier>& getStorageSpecifiers() const;
     bool hasStorage(Storage storage) const;
+    const std::vector<FunctionSpecifier>& getFunctionSpecifiers() const;
+    bool hasFunctionSpec(FunctionSpec spec) const;
     bool isTypedef() const { return hasStorage(Storage::TYPEDEF); }
     // Combine multi-word type specs (unsigned int, long unsigned, ...) into one Type.
     type::Type getResolvedType() const;
@@ -43,6 +47,7 @@ private:
     std::vector<TypeSpecifier> typeSpecifiers;
     std::vector<type::Qualifier> typeQualifiers;
     std::vector<StorageSpecifier> storageSpecifiers;
+    std::vector<FunctionSpecifier> functionSpecifiers;
 };
 
 } // namespace ast

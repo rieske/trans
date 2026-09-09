@@ -89,6 +89,7 @@ using AddressPlan = std::variant<FieldPlan, IndexPlan, FunctionDesignatorPlan>;
 // Va* arms are compiler builtins, not libc calls.
 struct DirectCallPlan {
     std::string calleeName;
+    bool noreturn { false };
 };
 
 struct IndirectCallPlan {

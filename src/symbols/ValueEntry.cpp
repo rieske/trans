@@ -35,6 +35,31 @@ bool ValueEntry::isFunctionDefined() const {
     return functionDefined_;
 }
 
+void ValueEntry::applyFunctionSpecs(bool isInline, bool isNoreturn, bool isExtern) {
+    if (isInline) {
+        inline_ = true;
+    } else {
+        externalNonInline_ = true;
+    }
+    if (isNoreturn) {
+        noreturn_ = true;
+    }
+    if (isExtern) {
+        functionExtern_ = true;
+    }
+}
+
+bool ValueEntry::isNoreturn() const {
+    return noreturn_;
+}
+
+bool ValueEntry::providesExternalDefinition() const {
+    if (isStatic()) {
+        return false;
+    }
+    return externalNonInline_ || !inline_ || functionExtern_;
+}
+
 translation_unit::Context ValueEntry::getContext() const {
     return context;
 }

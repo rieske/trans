@@ -149,6 +149,10 @@ void SymbolTable::markFunctionDefined(const std::string& name) {
     globalScope.markFunctionDefined({ 0, name });
 }
 
+void SymbolTable::applyFunctionSpecifiers(const std::string& name, bool isInline, bool isNoreturn, bool isExtern) {
+    globalScope.applyFunctionSpecifiers({ 0, name }, isInline, isNoreturn, isExtern);
+}
+
 bool SymbolTable::isAtFileScope() const {
     return !currentFunction;
 }

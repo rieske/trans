@@ -11,7 +11,8 @@ FunctionEntry::FunctionEntry(std::string name, type::Type type, translation_unit
         name { std::move(name) },
         type { std::move(type) },
         context { std::move(context) },
-        internalLinkage { internalLinkage }
+        internalLinkage { internalLinkage },
+        providesExternalDefinition_ { !internalLinkage }
 {
     if (!this->type.isFunction()) {
         throw std::logic_error { "FunctionEntry requires a function type" };
@@ -22,6 +23,8 @@ FunctionEntry::FunctionEntry(const ValueEntry& value) :
         FunctionEntry { value.getName(), value.getType(), value.getContext(),
                 value.isStatic() }
 {
+    noreturn_ = value.isNoreturn();
+    providesExternalDefinition_ = value.providesExternalDefinition();
 }
 
 translation_unit::Context FunctionEntry::getContext() const {
@@ -30,6 +33,14 @@ translation_unit::Context FunctionEntry::getContext() const {
 
 bool FunctionEntry::hasInternalLinkage() const {
     return internalLinkage;
+}
+
+bool FunctionEntry::isNoreturn() const {
+    return noreturn_;
+}
+
+bool FunctionEntry::providesExternalDefinition() const {
+    return providesExternalDefinition_;
 }
 
 const std::string& FunctionEntry::getName() const {

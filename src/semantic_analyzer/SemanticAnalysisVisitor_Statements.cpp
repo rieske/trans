@@ -115,6 +115,12 @@ void SemanticAnalysisVisitor::visit(ast::LabeledStatement& statement) {
 }
 
 void SemanticAnalysisVisitor::visit(ast::ReturnStatement& statement) {
+    if (!symbolTable.isAtFileScope() && symbolTable.currentFunctionEntry().isNoreturn()) {
+        const translation_unit::Context where = statement.returnExpression
+                ? statement.returnExpression->getContext()
+                : symbolTable.currentFunctionEntry().getContext();
+        semanticError("function declared noreturn returns", where);
+    }
     if (!statement.returnExpression) {
         return;
     }

@@ -30,6 +30,12 @@ DeclarationSpecifiers::DeclarationSpecifiers(StorageSpecifier storageSpecifier, 
     storageSpecifiers.push_back(storageSpecifier);
 }
 
+DeclarationSpecifiers::DeclarationSpecifiers(FunctionSpecifier functionSpecifier, DeclarationSpecifiers declarationSpecifiers) :
+        DeclarationSpecifiers(declarationSpecifiers)
+{
+    functionSpecifiers.push_back(functionSpecifier);
+}
+
 DeclarationSpecifiers DeclarationSpecifiers::none() {
     return {};
 }
@@ -78,6 +84,19 @@ const std::vector<StorageSpecifier>& DeclarationSpecifiers::getStorageSpecifiers
 bool DeclarationSpecifiers::hasStorage(Storage storage) const {
     for (const auto& s : storageSpecifiers) {
         if (s.getStorage() == storage) {
+            return true;
+        }
+    }
+    return false;
+}
+
+const std::vector<FunctionSpecifier>& DeclarationSpecifiers::getFunctionSpecifiers() const {
+    return functionSpecifiers;
+}
+
+bool DeclarationSpecifiers::hasFunctionSpec(FunctionSpec spec) const {
+    for (const auto& s : functionSpecifiers) {
+        if (s.getSpec() == spec) {
             return true;
         }
     }
