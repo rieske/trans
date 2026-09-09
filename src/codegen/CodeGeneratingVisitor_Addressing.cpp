@@ -1,4 +1,5 @@
 #include "CodeGeneratingVisitor.h"
+#include "ast/AstNodes.h"
 #include "codegen/IrBuilders.h"
 
 #include <stdexcept>
@@ -6,7 +7,6 @@
 
 #include "types/TypeQuery.h"
 
-#include "ast/Expression.h"
 #include "ast/VlaExpressionTable.h"
 #include "symbols/ValueEntry.h"
 

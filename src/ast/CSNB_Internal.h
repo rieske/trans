@@ -1,57 +1,13 @@
 #ifndef CSNB_INTERNAL_H_
 #define CSNB_INTERNAL_H_
 
-#include "ContextualSyntaxNodeBuilder.h"
 #include "DeclarationSpecifiers.h"
 
 #include <functional>
 
-#include "ArithmeticExpression.h"
-#include "ArrayAccess.h"
-#include "ArrayDeclarator.h"
-#include "AssignmentExpression.h"
-#include "BitwiseExpression.h"
-#include "Block.h"
-#include "ComparisonExpression.h"
-#include "ConditionalExpression.h"
-#include "Constant.h"
-#include "ConstantExpression.h"
-#include "MemberAccess.h"
-#include "InitializerListExpression.h"
-#include "types/Type.h"
-#include "ExpressionList.h"
-#include "ExternalDeclaration.h"
-#include "ForLoopHeader.h"
-#include "FunctionCall.h"
-#include "FunctionDefinition.h"
-#include "Identifier.h"
-#include "IdentifierExpression.h"
-#include "IfStatement.h"
-#include "JumpStatement.h"
-#include "GotoStatement.h"
-#include "LabeledStatement.h"
-#include "SwitchStatement.h"
-#include "CaseLabel.h"
-#include "DefaultLabel.h"
-#include "LogicalAndExpression.h"
-#include "LogicalOrExpression.h"
-#include "LoopStatement.h"
-#include "NullStatement.h"
-#include "ParenthesizedDeclarator.h"
-#include "PostfixExpression.h"
-#include "PrefixExpression.h"
-#include "ReturnStatement.h"
-#include "ShiftExpression.h"
-#include "TypeCast.h"
-#include "TypeNameExpression.h"
-#include "CompoundLiteral.h"
-#include "UnaryExpression.h"
-#include "WhileLoopHeader.h"
-#include "DoWhileLoopHeader.h"
-#include "ast/StringLiteralExpression.h"
-#include "GenericSelection.h"
-
 namespace ast {
+
+class AbstractSyntaxTreeBuilderContext;
 
 std::function<void(AbstractSyntaxTreeBuilderContext&)> notImplementedYet(const char* feature);
 

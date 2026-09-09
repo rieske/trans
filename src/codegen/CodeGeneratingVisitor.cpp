@@ -1,7 +1,7 @@
 #include "CodeGeneratingVisitor.h"
+#include "ast/AstNodes.h"
 #include "codegen/IrBuilders.h"
 #include "codegen/InternalError.h"
-#include "ast/InitializerListExpression.h"
 
 #include <cassert>
 #include <stdexcept>

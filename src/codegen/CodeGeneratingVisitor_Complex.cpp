@@ -1,4 +1,5 @@
 #include "CodeGeneratingVisitor.h"
+#include "ast/AstNodes.h"
 #include "codegen/InternalError.h"
 
 #include <stdexcept>
