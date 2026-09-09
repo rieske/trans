@@ -251,17 +251,14 @@ TEST(AnnotationStore, labelSlots) {
 }
 
 
-TEST(AnnotationStore, caseTempPreOperationAndHolderSlots) {
+TEST(AnnotationStore, caseTempAndHolderSlots) {
     symbols::AnnotationStore store;
     int node = 9;
     translation_unit::Context ctx { "t", 1 };
     store.setCaseTemp(&node, symbols::ValueEntry("ct", type::signedInteger(), ctx, 0));
-    store.setPreOperation(&node, symbols::ValueEntry("pre", type::signedInteger(), ctx, 1));
     store.setHolder(&node, symbols::ValueEntry("hold", type::signedInteger(), ctx, 2));
     ASSERT_NE(store.caseTemp(&node), nullptr);
     EXPECT_EQ(store.caseTemp(&node)->getName(), "ct");
-    ASSERT_NE(store.preOperation(&node), nullptr);
-    EXPECT_EQ(store.preOperation(&node)->getName(), "pre");
     ASSERT_NE(store.holder(&node), nullptr);
     EXPECT_EQ(store.holder(&node)->getName(), "hold");
 }
