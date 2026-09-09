@@ -297,4 +297,19 @@ TEST(FrameLayout, lastUseOrdinalsMatchBodyAfterRunIrPasses) {
     EXPECT_EQ(lastOf(values, t1), 2);
 }
 
+TEST(FrameLayout, unreferencedTempTakesNoSlot) {
+    IrStringTable strings;
+    Procedure p;
+    p.name = strings.intern("f");
+    const int unused = addFrameTemp(strings, p, type::voidType());
+    const int used = addFrameTemp(strings, p, type::signedInteger());
+
+    std::vector<Value> values = packFrameValues(
+            p.frame.locals,
+            { ir::assignConstant(strings.intern("1"), used) });
+
+    EXPECT_EQ(slotOf(values, unused), -1);
+    EXPECT_EQ(slotOf(values, used), 0);
+}
+
 } // namespace
