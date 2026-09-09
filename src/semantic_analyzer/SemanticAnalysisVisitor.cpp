@@ -436,6 +436,18 @@ void SemanticAnalysisVisitor::rejectFunctionValue(const type::Type& type, const 
     }
 }
 
+// C: if, while, for, do-while, ?: and ! all take a scalar; arrays and function
+// designators reach them as pointers.
+void SemanticAnalysisVisitor::requireScalarValue(ast::Expression& expression) {
+    decayArrayValue(expression, symbolTable, annotations());
+    if (!expression.hasExpressionType()) {
+        return;
+    }
+    if (!type::isProductScalar(type::afterLvalueConversion(expression.expressionType()))) {
+        semanticError("used a non-scalar value where a scalar is required", expression.getContext());
+    }
+}
+
 void SemanticAnalysisVisitor::semanticError(std::string message, const translation_unit::Context& context) {
     sink().error(context, std::move(message));
 }

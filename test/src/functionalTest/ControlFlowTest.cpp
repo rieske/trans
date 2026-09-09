@@ -405,4 +405,36 @@ int scanf(const char *, ...);
     program.runAndExpect("8");
 }
 
+TEST(Compiler, everyScalarControllingExpressionIsAccepted) {
+    SourceProgram program{R"prg(int printf(const char *, ...);
+        int g(void) { return 1; }
+        int a[3] = { 1, 2, 3 };
+        int main(void) {
+            int i = 1;
+            double d = 1.5;
+            int *p = a;
+            _Complex double z = 1.0;
+            int n = 0;
+            if (i) { n += 1; }
+            if (d) { n += 2; }
+            if (p) { n += 4; }
+            if (a) { n += 8; }
+            if (g) { n += 16; }
+            if (z) { n += 32; }
+            while (a) { n += 64; break; }
+            for (; p; ) { n += 128; break; }
+            do { n += 256; break; } while (a);
+            n += a ? 512 : 0;
+            n += !p ? 0 : 1024;
+            n += !a ? 0 : 2048;
+            n += !g ? 0 : 4096;
+            n += g ? 8192 : 0;
+            printf("%d", n);
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("16383");
+}
+
 } // namespace

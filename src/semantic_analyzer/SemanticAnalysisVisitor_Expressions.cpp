@@ -313,7 +313,7 @@ void SemanticAnalysisVisitor::visit(ast::UnaryExpression& expression) {
     }
     case type::UnaryOp::LogicalNot:
         rejectFunctionValue(type::afterLvalueConversion(expression.operandType()), expression.getContext());
-        decayArrayValue(*expression.getOperandExpression(), symbolTable, annotations());
+        requireScalarValue(*expression.getOperandExpression());
         expression.setTypeAndResult(annotations(), symbolTable.createTemporarySymbol(type::signedInteger()));
         expression.setTruthyLabel(annotations(), symbolTable.newLabel());
         expression.setFalsyLabel(annotations(), symbolTable.newLabel());
@@ -615,6 +615,7 @@ void SemanticAnalysisVisitor::visit(ast::ConditionalExpression& expression) {
     expression.visitCondition(*this);
     expression.visitTrueExpression(*this);
     expression.visitFalseExpression(*this);
+    requireScalarValue(*expression.getCondition());
 
     if (!expression.getCondition()->hasResultSymbol(annotations())
             || !expression.getTrueExpression()->hasResultSymbol(annotations())
@@ -623,7 +624,6 @@ void SemanticAnalysisVisitor::visit(ast::ConditionalExpression& expression) {
     }
 
     rejectFunctionValue(expression.conditionSymbol(annotations())->getType(), expression.getContext());
-    decayArrayValue(*expression.getCondition(), symbolTable, annotations());
 
     auto* trueExpr = expression.getTrueExpression();
     auto* falseExpr = expression.getFalseExpression();

@@ -23,6 +23,83 @@ TEST_P(SemanticErrorCatalog, RejectsWithMessage) {
 
 INSTANTIATE_TEST_SUITE_P(Compiler, SemanticErrorCatalog, testing::Values(
     SemanticErrorCase{
+        "ifOnStruct",
+        R"prg(
+            int main(void) {
+                struct S { int m; }; struct S s = { 1 };
+                if (s) { return 1; }
+                return 0;
+            }
+        )prg",
+        "used a non-scalar value where a scalar is required",
+    },
+    SemanticErrorCase{
+        "whileOnStruct",
+        R"prg(
+            int main(void) {
+                struct S { int m; }; struct S s = { 1 };
+                while (s) { break; }
+                return 0;
+            }
+        )prg",
+        "used a non-scalar value where a scalar is required",
+    },
+    SemanticErrorCase{
+        "forOnStruct",
+        R"prg(
+            int main(void) {
+                struct S { int m; }; struct S s = { 1 };
+                for (; s; ) { break; }
+                return 0;
+            }
+        )prg",
+        "used a non-scalar value where a scalar is required",
+    },
+    SemanticErrorCase{
+        "doWhileOnStruct",
+        R"prg(
+            int main(void) {
+                struct S { int m; }; struct S s = { 1 };
+                do { break; } while (s);
+                return 0;
+            }
+        )prg",
+        "used a non-scalar value where a scalar is required",
+    },
+    SemanticErrorCase{
+        "conditionalOnStruct",
+        R"prg(
+            int main(void) {
+                struct S { int m; }; struct S s = { 1 };
+                return s ? 1 : 0;
+                return 0;
+            }
+        )prg",
+        "used a non-scalar value where a scalar is required",
+    },
+    SemanticErrorCase{
+        "ifOnUnion",
+        R"prg(
+            int main(void) {
+                union U { int m; }; union U u = { 1 };
+                if (u) { return 1; }
+                return 0;
+            }
+        )prg",
+        "used a non-scalar value where a scalar is required",
+    },
+    SemanticErrorCase{
+        "logicalNotOnStruct",
+        R"prg(
+            int main(void) {
+                struct S { int m; }; struct S s = { 1 };
+                return !s;
+                return 0;
+            }
+        )prg",
+        "used a non-scalar value where a scalar is required",
+    },
+    SemanticErrorCase{
         "switchOnArray",
         R"prg(
             int main(void) {

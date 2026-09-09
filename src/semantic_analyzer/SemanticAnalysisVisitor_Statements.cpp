@@ -149,7 +149,7 @@ void SemanticAnalysisVisitor::visit(ast::NullStatement& statement) {
 
 void SemanticAnalysisVisitor::visit(ast::IfStatement& statement) {
     statement.testExpression->accept(*this);
-    decayArrayValue(*statement.testExpression, symbolTable, annotations());
+    requireScalarValue(*statement.testExpression);
     if (statement.testExpression->hasResultSymbol(annotations())) {
         rejectFunctionValue(statement.testExpression->getResultSymbol(annotations())->getType(),
                 statement.testExpression->getContext());
@@ -187,7 +187,7 @@ void SemanticAnalysisVisitor::visit(ast::ForLoopHeader& loopHeader) {
     loopHeader.initialization.accept(*this);
     if (loopHeader.clause) {
         loopHeader.clause->accept(*this);
-        decayArrayValue(*loopHeader.clause, symbolTable, annotations());
+        requireScalarValue(*loopHeader.clause);
     }
     if (loopHeader.increment) {
         loopHeader.increment->accept(*this);
@@ -199,7 +199,7 @@ void SemanticAnalysisVisitor::visit(ast::ForLoopHeader& loopHeader) {
 
 void SemanticAnalysisVisitor::visit(ast::WhileLoopHeader& loopHeader) {
     loopHeader.clause->accept(*this);
-    decayArrayValue(*loopHeader.clause, symbolTable, annotations());
+    requireScalarValue(*loopHeader.clause);
 
     loopHeader.setLoopEntry(annotations(), symbolTable.newLabel());
     loopHeader.setLoopExit(annotations(), symbolTable.newLabel());
@@ -207,7 +207,7 @@ void SemanticAnalysisVisitor::visit(ast::WhileLoopHeader& loopHeader) {
 
 void SemanticAnalysisVisitor::visit(ast::DoWhileLoopHeader& loopHeader) {
     loopHeader.clause->accept(*this);
-    decayArrayValue(*loopHeader.clause, symbolTable, annotations());
+    requireScalarValue(*loopHeader.clause);
 
     loopHeader.setLoopEntry(annotations(), symbolTable.newLabel());
     // continue jumps here (re-test), not to the body entry.

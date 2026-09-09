@@ -141,6 +141,7 @@ private:
     void lowerStaticAggregateInit(const std::string& name, const type::Type& objectType,
             const ast::InitializerListExpression* list, const translation_unit::Context& context);
     void rejectFunctionValue(const type::Type& type, const translation_unit::Context& context);
+    void requireScalarValue(ast::Expression& expression);
 
     void analyzeLogicalExpression(ast::LogicalExpression& expression);
     void checkObjectArrayBounds(ast::InitializedDeclarator& declarator, bool allowVla);
