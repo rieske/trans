@@ -423,8 +423,9 @@ TEST(TypeQuery, needsNumericConvert) {
     EXPECT_TRUE(type::needsNumericConvert(type::boolean(), type::floating()));
     EXPECT_TRUE(type::needsNumericConvert(type::signedInteger(), type::signedLong()));
     EXPECT_TRUE(type::needsNumericConvert(type::signedLong(), type::signedInt128()));
+    EXPECT_TRUE(type::needsNumericConvert(type::signedInt128(), type::signedLong()));
+    EXPECT_TRUE(type::needsNumericConvert(type::signedInteger(), type::signedCharacter()));
     EXPECT_FALSE(type::needsNumericConvert(type::floating(), type::floating()));
-    EXPECT_FALSE(type::needsNumericConvert(type::signedInt128(), type::signedLong()));
     EXPECT_FALSE(type::needsNumericConvert(type::signedInteger(), type::boolean()));
     EXPECT_FALSE(type::needsNumericConvert(type::floating(), type::boolean()));
     EXPECT_TRUE(type::needsNumericConvert(type::floating(), type::complexFloat()));
@@ -492,6 +493,14 @@ TEST(TypeQuery, needsIntegerWiden) {
     EXPECT_FALSE(type::needsIntegerWiden(type::signedInteger(), type::pointer(type::voidType())));
 }
 
+TEST(TypeQuery, needsIntegerNarrow) {
+    EXPECT_TRUE(type::needsIntegerNarrow(type::signedInteger(), type::signedCharacter()));
+    EXPECT_TRUE(type::needsIntegerNarrow(type::signedInt128(), type::signedLong()));
+    EXPECT_FALSE(type::needsIntegerNarrow(type::signedInteger(), type::signedLong()));
+    EXPECT_FALSE(type::needsIntegerNarrow(type::signedLong(), type::signedLong()));
+    EXPECT_FALSE(type::needsIntegerNarrow(type::signedInteger(), type::boolean()));
+}
+
 TEST(TypeQuery, needsIntegerToPointerExtend) {
     EXPECT_TRUE(type::needsIntegerToPointerExtend(type::signedInteger(), type::pointer(type::voidType())));
     EXPECT_TRUE(type::needsIntegerToPointerExtend(type::unsignedInteger(), type::pointer(type::voidType())));
@@ -508,7 +517,8 @@ TEST(TypeQuery, needsConversionAndConstantBool) {
     EXPECT_TRUE(type::needsConversion(type::signedLong(), type::signedInt128()));
     EXPECT_TRUE(type::needsConversion(type::unsignedLong(), type::signedInt128()));
     EXPECT_TRUE(type::needsConversion(type::signedInteger(), type::unsignedInt128()));
-    EXPECT_FALSE(type::needsConversion(type::signedInt128(), type::signedLong()));
+    EXPECT_TRUE(type::needsConversion(type::signedInt128(), type::signedLong()));
+    EXPECT_TRUE(type::needsConversion(type::signedInteger(), type::signedCharacter()));
     EXPECT_FALSE(type::needsConversion(type::signedLong(), type::signedLong()));
     EXPECT_FALSE(type::needsConversion(type::signedInt128(), type::unsignedInt128()));
     EXPECT_TRUE(type::needsConversion(type::signedInteger(), type::pointer(type::voidType())));

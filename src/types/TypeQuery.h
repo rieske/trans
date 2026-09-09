@@ -336,6 +336,11 @@ inline bool needsIntegerWiden(const Type& from, const Type& to) {
             && from.getSize() > 0 && to.getSize() > from.getSize();
 }
 
+inline bool needsIntegerNarrow(const Type& from, const Type& to) {
+    return isIntegral(from) && isIntegral(to) && !isBoolean(to)
+            && to.getSize() > 0 && from.getSize() > to.getSize();
+}
+
 // Integer-to-pointer (6.3.2.3): widen a narrower integer to pointer width.
 inline bool needsIntegerToPointerExtend(const Type& from, const Type& to) {
     return isIntegral(from) && to.isPointer()
@@ -354,7 +359,7 @@ inline bool needsNumericConvert(const Type& from, const Type& to) {
             || (isIntegral(from) && isFloating(to));
     const bool floatWidth = isFloating(from) && isFloating(to)
             && from.getSize() != to.getSize();
-    return floatInt || floatWidth || needsIntegerWiden(from, to);
+    return floatInt || floatWidth || needsIntegerWiden(from, to) || needsIntegerNarrow(from, to);
 }
 
 // Usual arithmetic conversions: if either side is complex, convert both to

@@ -1137,6 +1137,31 @@ TEST(Compiler, dirtyIntShiftedThenUsedAsLong) {
     program.runAndExpect("1");
 }
 
+// git t/unit-tests u-odb-inmemory: char data[] = "foobar" next to a heap pointer.
+// A 4-byte store into the 7-byte array clobbers the pointer (SEGV on the next call).
+TEST(Compiler, charArrayStringInitDoesNotClobberAdjacentPointer) {
+    SourceProgram program{R"prg(int printf(const char *, ...);
+        void *calloc(unsigned long, unsigned long);
+        int seven(void) { return 7; }
+        struct Box { int (*fp)(void); };
+        struct Box *make(void) {
+            struct Box *p;
+            p = (struct Box *)calloc(1, sizeof(struct Box));
+            p->fp = seven;
+            return p;
+        }
+        int main() {
+            struct Box *p;
+            p = make();
+            char data[] = "foobar";
+            printf("%d %s", p->fp(), data);
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("7 foobar");
+}
+
 TEST(Compiler, dereferenceSignedCharMinusOneAsLong) {
     SourceProgram program{R"prg(int printf(const char *, ...);
         void dirty8(void *p) {
