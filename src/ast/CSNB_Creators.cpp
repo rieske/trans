@@ -115,9 +115,9 @@ void functionSpecifierOnly(AbstractSyntaxTreeBuilderContext& context) {
 }
 
 void addDeclarationFunctionSpecifier(AbstractSyntaxTreeBuilderContext& context) {
-    auto declarationSpecifiers = context.popDeclarationSpecifiers();
-    auto functionSpecifier = context.popFunctionSpecifier();
-    context.pushDeclarationSpecifiers({ functionSpecifier, declarationSpecifiers });
+    auto specs = context.popDeclarationSpecifiers();
+    specs.add(context.popFunctionSpecifier());
+    context.pushDeclarationSpecifiers(std::move(specs));
 }
 
 void autoStorageClass(AbstractSyntaxTreeBuilderContext& context) {
@@ -164,9 +164,9 @@ void declarationTypeSpecifier(AbstractSyntaxTreeBuilderContext& context) {
 }
 
 void addDeclarationTypeSpecifier(AbstractSyntaxTreeBuilderContext& context) {
-    auto declarationSpecifiers = context.popDeclarationSpecifiers();
-    auto typeSpecifier = context.popTypeSpecifier();
-    context.pushDeclarationSpecifiers( { typeSpecifier, declarationSpecifiers });
+    auto specs = context.popDeclarationSpecifiers();
+    specs.add(context.popTypeSpecifier());
+    context.pushDeclarationSpecifiers(std::move(specs));
 }
 
 DeclarationSpecifiers popResolvedSpecQualifiers(AbstractSyntaxTreeBuilderContext& context) {
@@ -195,9 +195,9 @@ void declarationStorageClassSpecifier(AbstractSyntaxTreeBuilderContext& context)
 }
 
 void addDeclarationStorageClassSpecifier(AbstractSyntaxTreeBuilderContext& context) {
-    auto declarationSpecifiers = context.popDeclarationSpecifiers();
-    auto storageSpecifier = context.popStorageSpecifier();
-    context.pushDeclarationSpecifiers( { storageSpecifier, declarationSpecifiers });
+    auto specs = context.popDeclarationSpecifiers();
+    specs.add(context.popStorageSpecifier());
+    context.pushDeclarationSpecifiers(std::move(specs));
 }
 
 void declarationTypeQualifier(AbstractSyntaxTreeBuilderContext& context) {
@@ -205,9 +205,9 @@ void declarationTypeQualifier(AbstractSyntaxTreeBuilderContext& context) {
 }
 
 void addDeclarationTypeQualifier(AbstractSyntaxTreeBuilderContext& context) {
-    auto declarationSpecifiers = context.popDeclarationSpecifiers();
-    auto typeQualifier = context.popTypeQualifier();
-    context.pushDeclarationSpecifiers( { typeQualifier, declarationSpecifiers });
+    auto specs = context.popDeclarationSpecifiers();
+    specs.add(context.popTypeQualifier());
+    context.pushDeclarationSpecifiers(std::move(specs));
 }
 
 void identifierDeclarator(AbstractSyntaxTreeBuilderContext& context) {
@@ -309,7 +309,7 @@ void parameterDeclaration(AbstractSyntaxTreeBuilderContext& context) {
     auto declarator = context.popDeclarator();
     auto specs = context.popDeclarationSpecifiers();
     specs.resolveTypeofAtParseTime(context.environment());
-    FormalArgument argument { specs, std::move(declarator) };
+    FormalArgument argument { std::move(specs), std::move(declarator) };
     context.environment().maybeRegisterParameterShadow(argument.getName());
     context.environment().maybeDefineParameter(argument);
     context.pushFormalArgument(std::move(argument));
@@ -487,7 +487,7 @@ void typeofExpression(AbstractSyntaxTreeBuilderContext& context) {
         context.pushTypeSpecifier(TypeSpecifier { *parsed, "" });
         return;
     }
-    context.pushTypeSpecifier(TypeSpecifier { std::shared_ptr<Expression> { std::move(expr) } });
+    context.pushTypeSpecifier(TypeSpecifier { std::move(expr) });
 }
 
 void genericAssociationTyped(AbstractSyntaxTreeBuilderContext& context) {
@@ -803,13 +803,14 @@ void initializedDeclaration(AbstractSyntaxTreeBuilderContext& context) {
         rejectEnumeratorRedefinition(context, declarator->getName(), declarator->getContext());
     }
     context.environment().registerInitializedDeclaration(declarationSpecifiers, initializedDeclarators);
-    context.pushDeclaration(std::make_unique<Declaration>(declarationSpecifiers, std::move(initializedDeclarators)));
+    context.pushDeclaration(std::make_unique<Declaration>(std::move(declarationSpecifiers),
+            std::move(initializedDeclarators)));
 }
 
 void declaration(AbstractSyntaxTreeBuilderContext& context) {
     context.popTerminal();
     auto declarationSpecifiers = context.popDeclarationSpecifiers();
-    context.pushDeclaration(std::make_unique<Declaration>(declarationSpecifiers));
+    context.pushDeclaration(std::make_unique<Declaration>(std::move(declarationSpecifiers)));
 }
 
 void declarationList(AbstractSyntaxTreeBuilderContext& context) {
@@ -1009,7 +1010,7 @@ void defaultReturnTypeFunctionDefinition(AbstractSyntaxTreeBuilderContext& conte
     rejectEnumeratorRedefinition(context, declarator->getName(), declarator->getContext());
     context.environment().tryDefineObject(defaultReturnTypeSpecifiers, *declarator);
     context.pushExternalDeclaration(ExternalDeclaration { std::make_unique<FunctionDefinition>(
-            defaultReturnTypeSpecifiers, std::move(declarator), std::move(body)) });
+            std::move(defaultReturnTypeSpecifiers), std::move(declarator), std::move(body)) });
 }
 
 void externalDeclaration(AbstractSyntaxTreeBuilderContext& context) {

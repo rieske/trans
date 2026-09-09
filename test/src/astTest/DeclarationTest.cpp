@@ -16,7 +16,7 @@ using namespace ast;
 TEST(Declaration, isConstructedUsingDeclarationSpecifiers) {
     DeclarationSpecifiers declSpecs { type::Qualifier::CONST };
 
-    Declaration declaration { declSpecs };
+    Declaration declaration { std::move(declSpecs) };
 }
 
 }

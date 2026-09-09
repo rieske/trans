@@ -26,12 +26,14 @@ class VlaExpressionTable;
 class TypeSpecifier {
 public:
     TypeSpecifier(type::Type type, std::string name,
-            translation_unit::Context context = translation_unit::Context { "", 0 });
-    explicit TypeSpecifier(std::shared_ptr<Expression> typeofOperand);
-    TypeSpecifier(const TypeSpecifier&);
-    TypeSpecifier& operator=(const TypeSpecifier&);
+            translation_unit::Context context = translation_unit::Context { "", 0 },
+            bool definesRecord = false);
+    explicit TypeSpecifier(std::unique_ptr<Expression> typeofOperand);
+    ~TypeSpecifier();
     TypeSpecifier(TypeSpecifier&&) noexcept;
     TypeSpecifier& operator=(TypeSpecifier&&) noexcept;
+    TypeSpecifier(const TypeSpecifier&) = delete;
+    TypeSpecifier& operator=(const TypeSpecifier&) = delete;
 
     const std::string& getName() const;
     const translation_unit::Context& getContext() const;
@@ -42,9 +44,9 @@ public:
     void deferAbstractDeclarator(std::unique_ptr<Declarator> declarator);
     void resolveTypeof(AbstractSyntaxTreeVisitor& visitor);
     bool resolveTypeofAtParseTime(const ParseEnvironment& environment);
+    std::optional<type::Type> typeAtParseTime(const ParseEnvironment& environment) const;
     bool needsSemanticResolve() const;
     void refoldConstantArrayBounds(const VlaExpressionTable& exprs);
-    void markDefinesRecord();
     bool definesRecord() const;
     void setEnumerators(std::vector<Enumerator> enumerators);
     const std::vector<Enumerator>& enumerators() const;
@@ -53,8 +55,8 @@ private:
     std::string name;
     translation_unit::Context context_ { "", 0 };
     std::optional<type::Type> type;
-    std::shared_ptr<Expression> typeofOperand_;
-    std::shared_ptr<Declarator> deferredDeclarator_;
+    std::unique_ptr<Expression> typeofOperand_;
+    std::unique_ptr<Declarator> deferredDeclarator_;
     bool definesRecord_ { false };
     std::vector<Enumerator> enumerators_;
 

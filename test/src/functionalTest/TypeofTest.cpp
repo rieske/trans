@@ -916,4 +916,38 @@ TEST(Compiler, typeofUsesTheEnumeratorShadowingAnOuterObject) {
     program.runAndExpect("4");
 }
 
+TEST(Compiler, typeofLocalWithPointerDeclaratorAndConstPrepend) {
+    SourceProgram program{R"prg(int printf(const char *, ...);
+        int main(void) {
+            int x;
+            const typeof(x) *p;
+            static typeof(x) y;
+            x = 7;
+            y = x;
+            p = &y;
+            printf("%d %d %d", (int)sizeof(p), *p, y);
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("8 7 7");
+}
+
+TEST(Compiler, typeofCastToPointerToOperand) {
+    SourceProgram program{R"prg(int printf(const char *, ...);
+        int main(void) {
+            int x;
+            void *q;
+            int *p;
+            x = 3;
+            q = &x;
+            p = (typeof(x) *)q;
+            printf("%d", *p);
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("3");
+}
+
 } // namespace

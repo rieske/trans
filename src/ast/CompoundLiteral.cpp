@@ -17,11 +17,7 @@ void CompoundLiteral::accept(AbstractSyntaxTreeVisitor& visitor) {
 }
 
 std::optional<type::Type> CompoundLiteral::typeAtParseTime(const ParseEnvironment& environment) const {
-    TypeSpecifier spec = typeSpecifier;
-    if (!spec.resolveTypeofAtParseTime(environment) || !spec.hasType()) {
-        return std::nullopt;
-    }
-    return spec.getType();
+    return typeSpecifier.typeAtParseTime(environment);
 }
 
 translation_unit::Context CompoundLiteral::getContext() const {

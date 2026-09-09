@@ -728,7 +728,7 @@ TEST(ParseEnvironment, tryDefineObjectSkipsPendingTypeof) {
     LexicalSession session;
     ParseEnvironment env{session};
     DeclarationSpecifiers specs { TypeSpecifier {
-            std::make_shared<IdentifierExpression>("nope", translation_unit::Context { "t", 1 }) } };
+            std::make_unique<IdentifierExpression>("nope", translation_unit::Context { "t", 1 }) } };
     ASSERT_TRUE(specs.needsSemanticResolve());
     auto declarator = std::make_unique<Declarator>(
             std::make_unique<FunctionDeclarator>(std::make_unique<Identifier>(
@@ -761,7 +761,7 @@ TEST(ParseEnvironment, registerInitializedDeclarationSkipsPendingTypeof) {
     LexicalSession session;
     ParseEnvironment env{session};
     DeclarationSpecifiers specs { TypeSpecifier {
-            std::make_shared<IdentifierExpression>("nope", translation_unit::Context { "t", 1 }) } };
+            std::make_unique<IdentifierExpression>("nope", translation_unit::Context { "t", 1 }) } };
     ASSERT_TRUE(specs.needsSemanticResolve());
     std::vector<std::unique_ptr<InitializedDeclarator>> decls;
     decls.push_back(plainDeclarator("y"));

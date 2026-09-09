@@ -39,7 +39,7 @@ TEST(TypeSpecifier, deferAbstractDeclaratorCombinesWhenTypeIsKnown) {
 }
 
 TEST(TypeSpecifier, pendingTypeofHasNoType) {
-    TypeSpecifier ts { std::make_shared<IdentifierExpression>("x", translation_unit::Context { "t", 1 }) };
+    TypeSpecifier ts { std::make_unique<IdentifierExpression>("x", translation_unit::Context { "t", 1 }) };
     EXPECT_FALSE(ts.hasType());
     EXPECT_TRUE(ts.needsSemanticResolve());
     EXPECT_THROW(ts.getType(), std::runtime_error);
@@ -54,7 +54,7 @@ TEST(TypeSpecifier, dropSpellingKeepsTypeAndPendingDeclarator) {
     EXPECT_EQ(named.getName(), "");
     EXPECT_TRUE(named.getType().equivalentTo(type::signedInteger()));
 
-    TypeSpecifier pending { std::make_shared<IdentifierExpression>("x", translation_unit::Context { "t", 1 }) };
+    TypeSpecifier pending { std::make_unique<IdentifierExpression>("x", translation_unit::Context { "t", 1 }) };
     pending.deferAbstractDeclarator(unnamedPointerDeclarator());
     pending.dropSpelling();
     EXPECT_EQ(pending.getName(), "");
@@ -164,16 +164,36 @@ TEST(TypeSpecifier, resolveTypeofAtParseTimeUsesEnvironment) {
     scanner::LexicalSession session;
     ParseEnvironment env { session };
     env.defineObject("x", type::signedInteger());
-    TypeSpecifier ts { std::make_shared<IdentifierExpression>("x", translation_unit::Context { "t", 1 }) };
+    TypeSpecifier ts { std::make_unique<IdentifierExpression>("x", translation_unit::Context { "t", 1 }) };
     ts.deferAbstractDeclarator(unnamedPointerDeclarator());
     ASSERT_TRUE(ts.resolveTypeofAtParseTime(env));
     EXPECT_TRUE(ts.getType().isPointer());
     EXPECT_TRUE(ts.getType().dereference().equivalentTo(type::signedInteger()));
     EXPECT_FALSE(ts.needsSemanticResolve());
 
-    TypeSpecifier unknown { std::make_shared<IdentifierExpression>("nope", translation_unit::Context { "t", 1 }) };
+    TypeSpecifier unknown { std::make_unique<IdentifierExpression>("nope", translation_unit::Context { "t", 1 }) };
     EXPECT_FALSE(unknown.resolveTypeofAtParseTime(env));
     EXPECT_TRUE(unknown.needsSemanticResolve());
+}
+
+TEST(TypeSpecifier, typeAtParseTimePeeksWithoutResolving) {
+    scanner::LexicalSession session;
+    ParseEnvironment env { session };
+    env.defineObject("x", type::signedInteger());
+    TypeSpecifier ts { std::make_unique<IdentifierExpression>("x", translation_unit::Context { "t", 1 }) };
+    ts.deferAbstractDeclarator(unnamedPointerDeclarator());
+    auto peeked = ts.typeAtParseTime(env);
+    ASSERT_TRUE(peeked.has_value());
+    EXPECT_TRUE(peeked->isPointer());
+    EXPECT_TRUE(ts.needsSemanticResolve());
+    EXPECT_FALSE(ts.hasType());
+}
+
+TEST(TypeSpecifier, definesRecordIsSetInCtor) {
+    TypeSpecifier def { type::incompleteRecord(), "S", translation_unit::Context { "t", 1 }, true };
+    TypeSpecifier tag { type::incompleteRecord(), "S" };
+    EXPECT_TRUE(def.definesRecord());
+    EXPECT_FALSE(tag.definesRecord());
 }
 
 } // namespace

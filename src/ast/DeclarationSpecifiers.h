@@ -1,6 +1,7 @@
 #ifndef DECLARATIONSPECIFIER_H_
 #define DECLARATIONSPECIFIER_H_
 
+#include <optional>
 #include <vector>
 
 #include "AbstractSyntaxTreeNode.h"
@@ -14,15 +15,21 @@ class ParseEnvironment;
 
 class DeclarationSpecifiers: public AbstractSyntaxTreeNode {
 public:
-    DeclarationSpecifiers(TypeSpecifier typeSpecifier, DeclarationSpecifiers declarationSpecifiers = { });
-    DeclarationSpecifiers(type::Qualifier typeQualifier, DeclarationSpecifiers declarationSpecifiers = { });
-    DeclarationSpecifiers(StorageSpecifier storageSpecifier, DeclarationSpecifiers declarationSpecifiers = { });
-    DeclarationSpecifiers(FunctionSpecifier functionSpecifier, DeclarationSpecifiers declarationSpecifiers = { });
+    DeclarationSpecifiers(TypeSpecifier typeSpecifier, DeclarationSpecifiers rest = { });
+    DeclarationSpecifiers(type::Qualifier typeQualifier, DeclarationSpecifiers rest = { });
+    DeclarationSpecifiers(StorageSpecifier storageSpecifier, DeclarationSpecifiers rest = { });
+    DeclarationSpecifiers(FunctionSpecifier functionSpecifier, DeclarationSpecifiers rest = { });
     static DeclarationSpecifiers none();
+
+    void add(TypeSpecifier typeSpecifier);
+    void add(type::Qualifier typeQualifier);
+    void add(StorageSpecifier storageSpecifier);
+    void add(FunctionSpecifier functionSpecifier);
 
     void accept(AbstractSyntaxTreeVisitor& visitor) override;
     void resolveTypeof(AbstractSyntaxTreeVisitor& visitor);
     bool resolveTypeofAtParseTime(const ParseEnvironment& environment);
+    std::optional<type::Type> typeAtParseTime(const ParseEnvironment& environment) const;
     bool needsSemanticResolve() const;
 
     std::vector<TypeSpecifier>& getTypeSpecifiers();

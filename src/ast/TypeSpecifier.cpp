@@ -12,20 +12,21 @@
 
 namespace ast {
 
-TypeSpecifier::TypeSpecifier(type::Type type, std::string name, translation_unit::Context context) :
+TypeSpecifier::TypeSpecifier(type::Type type, std::string name, translation_unit::Context context,
+        bool definesRecord) :
         name { std::move(name) },
         context_ { std::move(context) },
-        type { std::move(type) }
+        type { std::move(type) },
+        definesRecord_ { definesRecord }
 {
 }
 
-TypeSpecifier::TypeSpecifier(std::shared_ptr<Expression> typeofOperand) :
+TypeSpecifier::TypeSpecifier(std::unique_ptr<Expression> typeofOperand) :
         typeofOperand_ { std::move(typeofOperand) }
 {
 }
 
-TypeSpecifier::TypeSpecifier(const TypeSpecifier&) = default;
-TypeSpecifier& TypeSpecifier::operator=(const TypeSpecifier&) = default;
+TypeSpecifier::~TypeSpecifier() = default;
 TypeSpecifier::TypeSpecifier(TypeSpecifier&&) noexcept = default;
 TypeSpecifier& TypeSpecifier::operator=(TypeSpecifier&&) noexcept = default;
 
@@ -61,7 +62,7 @@ void TypeSpecifier::applyDeclarator() {
 }
 
 void TypeSpecifier::deferAbstractDeclarator(std::unique_ptr<Declarator> declarator) {
-    deferredDeclarator_ = std::shared_ptr<Declarator> { std::move(declarator) };
+    deferredDeclarator_ = std::move(declarator);
     if (!typeofOperand_ && type) {
         name.clear();
         applyDeclarator();
@@ -84,16 +85,31 @@ bool TypeSpecifier::needsSemanticResolve() const {
 }
 
 bool TypeSpecifier::resolveTypeofAtParseTime(const ParseEnvironment& environment) {
-    if (typeofOperand_) {
-        auto parsed = environment.typeOf(*typeofOperand_);
-        if (!parsed) {
-            return false;
-        }
-        type = *parsed;
-        typeofOperand_.reset();
+    auto parsed = typeAtParseTime(environment);
+    if (!parsed) {
+        return false;
     }
-    applyDeclarator();
-    return static_cast<bool>(type);
+    type = std::move(*parsed);
+    typeofOperand_.reset();
+    deferredDeclarator_.reset();
+    return true;
+}
+
+std::optional<type::Type> TypeSpecifier::typeAtParseTime(const ParseEnvironment& environment) const {
+    if (type) {
+        return *type;
+    }
+    if (!typeofOperand_) {
+        return std::nullopt;
+    }
+    auto parsed = environment.typeOf(*typeofOperand_);
+    if (!parsed) {
+        return std::nullopt;
+    }
+    if (deferredDeclarator_) {
+        return deferredDeclarator_->getFundamentalType(*parsed);
+    }
+    return *parsed;
 }
 
 type::Type foldConstantArrayBounds(const type::Type& t, const VlaExpressionTable& exprs) {
@@ -132,10 +148,6 @@ void TypeSpecifier::setEnumerators(std::vector<Enumerator> enumerators) {
 
 const std::vector<Enumerator>& TypeSpecifier::enumerators() const {
     return enumerators_;
-}
-
-void TypeSpecifier::markDefinesRecord() {
-    definesRecord_ = true;
 }
 
 bool TypeSpecifier::definesRecord() const {

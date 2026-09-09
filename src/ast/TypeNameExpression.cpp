@@ -18,11 +18,7 @@ void TypeNameExpression::accept(AbstractSyntaxTreeVisitor& visitor) {
 }
 
 std::optional<type::Type> TypeNameExpression::typeAtParseTime(const ParseEnvironment& environment) const {
-    TypeSpecifier spec = typeSpecifier_;
-    if (!spec.resolveTypeofAtParseTime(environment) || !spec.hasType()) {
-        return std::nullopt;
-    }
-    return spec.getType();
+    return typeSpecifier_.typeAtParseTime(environment);
 }
 
 translation_unit::Context TypeNameExpression::getContext() const {

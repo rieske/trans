@@ -5,7 +5,7 @@
 namespace ast {
 
 Declaration::Declaration(DeclarationSpecifiers declarationSpecifiers, std::vector<std::unique_ptr<InitializedDeclarator>> declarators) :
-        declarationSpecifiers { declarationSpecifiers },
+        declarationSpecifiers { std::move(declarationSpecifiers) },
         declarators { std::move(declarators) }
 {
 }

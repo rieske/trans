@@ -12,32 +12,44 @@
 
 namespace ast {
 
-DeclarationSpecifiers::DeclarationSpecifiers(TypeSpecifier typeSpecifier, DeclarationSpecifiers declarationSpecifiers) :
-        DeclarationSpecifiers(declarationSpecifiers)
-{
-    typeSpecifiers.push_back(typeSpecifier);
+DeclarationSpecifiers::DeclarationSpecifiers(TypeSpecifier typeSpecifier, DeclarationSpecifiers rest) :
+        DeclarationSpecifiers(std::move(rest)) {
+    add(std::move(typeSpecifier));
 }
 
-DeclarationSpecifiers::DeclarationSpecifiers(type::Qualifier typeQualifier, DeclarationSpecifiers declarationSpecifiers) :
-        DeclarationSpecifiers(declarationSpecifiers)
-{
-    typeQualifiers.push_back(typeQualifier);
+DeclarationSpecifiers::DeclarationSpecifiers(type::Qualifier typeQualifier, DeclarationSpecifiers rest) :
+        DeclarationSpecifiers(std::move(rest)) {
+    add(typeQualifier);
 }
 
-DeclarationSpecifiers::DeclarationSpecifiers(StorageSpecifier storageSpecifier, DeclarationSpecifiers declarationSpecifiers) :
-        DeclarationSpecifiers(declarationSpecifiers)
-{
-    storageSpecifiers.push_back(storageSpecifier);
+DeclarationSpecifiers::DeclarationSpecifiers(StorageSpecifier storageSpecifier, DeclarationSpecifiers rest) :
+        DeclarationSpecifiers(std::move(rest)) {
+    add(std::move(storageSpecifier));
 }
 
-DeclarationSpecifiers::DeclarationSpecifiers(FunctionSpecifier functionSpecifier, DeclarationSpecifiers declarationSpecifiers) :
-        DeclarationSpecifiers(declarationSpecifiers)
-{
-    functionSpecifiers.push_back(functionSpecifier);
+DeclarationSpecifiers::DeclarationSpecifiers(FunctionSpecifier functionSpecifier, DeclarationSpecifiers rest) :
+        DeclarationSpecifiers(std::move(rest)) {
+    add(std::move(functionSpecifier));
 }
 
 DeclarationSpecifiers DeclarationSpecifiers::none() {
     return {};
+}
+
+void DeclarationSpecifiers::add(TypeSpecifier typeSpecifier) {
+    typeSpecifiers.push_back(std::move(typeSpecifier));
+}
+
+void DeclarationSpecifiers::add(type::Qualifier typeQualifier) {
+    typeQualifiers.push_back(typeQualifier);
+}
+
+void DeclarationSpecifiers::add(StorageSpecifier storageSpecifier) {
+    storageSpecifiers.push_back(std::move(storageSpecifier));
+}
+
+void DeclarationSpecifiers::add(FunctionSpecifier functionSpecifier) {
+    functionSpecifiers.push_back(std::move(functionSpecifier));
 }
 
 void DeclarationSpecifiers::accept(AbstractSyntaxTreeVisitor& visitor) {
@@ -58,6 +70,23 @@ bool DeclarationSpecifiers::resolveTypeofAtParseTime(const ParseEnvironment& env
         }
     }
     return ok;
+}
+
+std::optional<type::Type> DeclarationSpecifiers::typeAtParseTime(const ParseEnvironment& environment) const {
+    if (!needsSemanticResolve()) {
+        return getResolvedType();
+    }
+    if (typeSpecifiers.size() != 1) {
+        return std::nullopt;
+    }
+    auto parsed = typeSpecifiers.front().typeAtParseTime(environment);
+    if (!parsed) {
+        return std::nullopt;
+    }
+    if (typeQualifiers.empty()) {
+        return parsed;
+    }
+    return parsed->withQualifiers(typeQualifiers);
 }
 
 bool DeclarationSpecifiers::needsSemanticResolve() const {
@@ -271,11 +300,12 @@ TypeSpecifier DeclarationSpecifiers::toTypeSpecifier() const {
     if (typeSpecifiers.empty()) {
         throw std::invalid_argument { "toTypeSpecifier with no type specifier" };
     }
-    if (typeSpecifiers.size() == 1 && typeQualifiers.empty()) {
-        return typeSpecifiers.front();
-    }
-    std::string name = typeSpecifiers.size() == 1 ? typeSpecifiers.front().getName() : std::string {};
-    TypeSpecifier merged { getResolvedType(), std::move(name) };
+    const TypeSpecifier& front = typeSpecifiers.front();
+    const bool single = typeSpecifiers.size() == 1;
+    std::string name = single ? front.getName() : std::string {};
+    TypeSpecifier merged { getResolvedType(), std::move(name),
+            single ? front.getContext() : translation_unit::Context { "", 0 },
+            single && front.definesRecord() };
     const auto defining = std::find_if(typeSpecifiers.begin(), typeSpecifiers.end(),
             [](const TypeSpecifier& s) { return !s.enumerators().empty(); });
     if (defining != typeSpecifiers.end()) {

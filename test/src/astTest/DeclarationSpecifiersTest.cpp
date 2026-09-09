@@ -160,10 +160,19 @@ TEST(DeclarationSpecifiers, constAppliesToNonPrimitiveType) {
     EXPECT_EQ(t.structureBodyIdentity(), rec.structureBodyIdentity());
 }
 
+TEST(DeclarationSpecifiers, toTypeSpecifierKeepsDefinesRecordOnSingleSpec) {
+    using namespace ast;
+    TypeSpecifier def { type::incompleteRecord(), "S", translation_unit::Context { "t", 1 }, true };
+    DeclarationSpecifiers d { std::move(def) };
+    auto ts = d.toTypeSpecifier();
+    EXPECT_TRUE(ts.definesRecord());
+    EXPECT_EQ(ts.getName(), "S");
+}
+
 TEST(DeclarationSpecifiers, toTypeSpecifierIdentityWhenSingleUnqualified) {
     using namespace ast;
     TypeSpecifier original { type::signedInteger(), "int" };
-    DeclarationSpecifiers d { original };
+    DeclarationSpecifiers d { std::move(original) };
     auto ts = d.toTypeSpecifier();
     EXPECT_EQ(ts.getName(), "int");
     EXPECT_TRUE(ts.getType().equivalentTo(type::signedInteger()));
