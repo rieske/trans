@@ -44,7 +44,7 @@ public:
     const ValueEntry* result(NodeRef node) const;
     bool hasResult(NodeRef node) const { return hasValue(node, ValueSlot::Result); }
 
-    // Lvalue address temps (arrays, members, *).
+    // Lvalue address (array/member addr temp, or the pointer *E stores through).
     void setLvalue(NodeRef node, ValueEntry value) {
         setValue(node, ValueSlot::Lvalue, std::move(value));
     }

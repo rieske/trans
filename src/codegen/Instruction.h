@@ -43,7 +43,7 @@ enum class Op {
     AssignLabelAddress,  // arg0(label) result
     LvalueAssign,        // arg0 result
     AddressOf,           // arg0 result
-    Dereference,         // arg0 arg1(lvalue) result
+    Dereference,         // arg0 arg1(scratch) result
     IndexAddress,        // arg0 arg1 result imm(stride) baseMode
     FieldAddress,        // arg0 result imm(offset) baseMode
     CopyPart,            // arg0 result imm(byteOffset)

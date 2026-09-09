@@ -197,6 +197,43 @@ int scanf(const char *, ...);
     program.runAndExpect("6");
 }
 
+TEST(Compiler, starPostfixAssignStoresThroughSavedPointer) {
+    SourceProgram program{R"prg(int printf(const char *, ...);
+        int main() {
+            int a[2];
+            int *p;
+            a[0] = 1;
+            a[1] = 2;
+            p = a;
+            *p++ = 9;
+            printf("%d %d %d", a[0], a[1], *p);
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("9 2 2");
+}
+
+TEST(Compiler, parenStarPostfixMemberAssignStoresThroughSavedPointer) {
+    SourceProgram program{R"prg(int printf(const char *, ...);
+        struct S { int x; int y; };
+        int main() {
+            struct S s[2];
+            struct S *p;
+            s[0].x = 1;
+            s[0].y = 2;
+            s[1].x = 3;
+            s[1].y = 4;
+            p = s;
+            (*p++).y = 9;
+            printf("%d %d %d %d", s[0].x, s[0].y, s[1].y, p->x);
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("1 9 4 3");
+}
+
 TEST(Compiler, postfixIncrementThroughPointer) {
     SourceProgram program{R"prg(int printf(const char *, ...);
 int scanf(const char *, ...);

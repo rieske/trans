@@ -62,6 +62,69 @@ TEST(Compiler, addressOfDerefIsIdentityWithoutLoad) {
     program.runAndExpect("ok");
 }
 
+TEST(Compiler, addressOfStarRowIsTheRowAddress) {
+    SourceProgram program{R"prg(int printf(const char *, ...);
+        int main(void) {
+            int a[2][3];
+            int *p = &*a[1];
+            if (p != &a[1][0])
+                return 1;
+            printf("ok");
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("ok");
+}
+
+TEST(Compiler, addressOfStarMemberArrayIsTheMemberAddress) {
+    SourceProgram program{R"prg(int printf(const char *, ...);
+        struct S { int arr[4]; };
+        int main(void) {
+            struct S s;
+            if (&*s.arr != s.arr)
+                return 1;
+            printf("ok");
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("ok");
+}
+
+TEST(Compiler, addressOfStarStringIsTheString) {
+    SourceProgram program{R"prg(int printf(const char *, ...);
+        int main(void) {
+            const char *p = &*"xy";
+            if (p[0] != 'x' || p[1] != 'y' || p[2] != 0)
+                return 1;
+            printf("ok");
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("ok");
+}
+
+TEST(Compiler, addressOfStarStarPtrToArrayIsTheFirstElement) {
+    SourceProgram program{R"prg(int printf(const char *, ...);
+        int main(void) {
+            int a[3];
+            int (*p)[3];
+            a[0] = 1;
+            a[1] = 2;
+            a[2] = 3;
+            p = &a;
+            if (&**p != &a[0])
+                return 1;
+            printf("ok");
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("ok");
+}
+
 TEST(Compiler, pointerSubscriptStillLoadsInRange) {
     SourceProgram program{R"prg(int printf(const char *, ...);
         int main(void) {

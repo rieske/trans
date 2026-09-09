@@ -131,6 +131,261 @@ TEST(IrDumpFromC, unusedIntegerAddDropsAtO1) {
     EXPECT_THAT(compileToIr(src, 1), Not(HasSubstr("+")));
 }
 
+TEST(IrDumpFromC, starAssignStoresThroughPointerAtO0AndO1) {
+    const char* src = "void f(int *p) { *p = 9; }\n";
+    EXPECT_THAT(compileToIr(src, 0), StrEq(
+            "PROC f\n"
+            "\t$t0 := *L$loc1_p\n"
+            "\t$t1 := 9\n"
+            "\t$t0 := $t1\n"
+            "\t*L$loc1_p := $t0\n"
+            "\tRETURN\n"
+            "ENDPROC f\n"));
+    EXPECT_THAT(compileToIr(src, 1), StrEq(
+            "PROC f\n"
+            "\t$t0 := *L$loc1_p\n"
+            "\t$t1 := 9\n"
+            "\t*L$loc1_p := $t1\n"
+            "\tRETURN\n"
+            "ENDPROC f\n"));
+}
+
+TEST(IrDumpFromC, starStarAssignStoresThroughInnerLoadAtO0AndO1) {
+    const char* src = "void f(int **pp) { **pp = 9; }\n";
+    EXPECT_THAT(compileToIr(src, 0), StrEq(
+            "PROC f\n"
+            "\t$t0 := *L$loc1_pp\n"
+            "\t$t1 := *$t0\n"
+            "\t$t2 := 9\n"
+            "\t$t1 := $t2\n"
+            "\t*$t0 := $t1\n"
+            "\tRETURN\n"
+            "ENDPROC f\n"));
+    EXPECT_THAT(compileToIr(src, 1), StrEq(
+            "PROC f\n"
+            "\t$t0 := *L$loc1_pp\n"
+            "\t$t1 := *$t0\n"
+            "\t$t2 := 9\n"
+            "\t*$t0 := $t2\n"
+            "\tRETURN\n"
+            "ENDPROC f\n"));
+}
+
+TEST(IrDumpFromC, starStarStarAssignStoresThroughMiddleLoad) {
+    const char* src = "void f(int ***ppp) { ***ppp = 8; }\n";
+    EXPECT_THAT(compileToIr(src, 0), StrEq(
+            "PROC f\n"
+            "\t$t0 := *L$loc1_ppp\n"
+            "\t$t1 := *$t0\n"
+            "\t$t2 := *$t1\n"
+            "\t$t3 := 8\n"
+            "\t$t2 := $t3\n"
+            "\t*$t1 := $t2\n"
+            "\tRETURN\n"
+            "ENDPROC f\n"));
+    EXPECT_THAT(compileToIr(src, 1), StrEq(
+            "PROC f\n"
+            "\t$t0 := *L$loc1_ppp\n"
+            "\t$t1 := *$t0\n"
+            "\t$t2 := *$t1\n"
+            "\t$t3 := 8\n"
+            "\t*$t1 := $t3\n"
+            "\tRETURN\n"
+            "ENDPROC f\n"));
+}
+
+TEST(IrDumpFromC, starPostfixAssignStoresThroughSavedPointer) {
+    const char* src = "void f(int *p) { *p++ = 9; }\n";
+    EXPECT_THAT(compileToIr(src, 0), StrEq(
+            "PROC f\n"
+            "\t$t0 := L$loc1_p\n"
+            "\t__t0 := 1\n"
+            "\tL$loc1_p := L$loc1_p + __t0*4 (ptr)\n"
+            "\t$t1 := *$t0\n"
+            "\t$t2 := 9\n"
+            "\t$t1 := $t2\n"
+            "\t*$t0 := $t1\n"
+            "\tRETURN\n"
+            "ENDPROC f\n"));
+    EXPECT_THAT(compileToIr(src, 1), StrEq(
+            "PROC f\n"
+            "\t$t0 := L$loc1_p\n"
+            "\t__t0 := 1\n"
+            "\tL$loc1_p := L$loc1_p + __t0*4 (ptr)\n"
+            "\t$t1 := *$t0\n"
+            "\t$t2 := 9\n"
+            "\t*$t0 := $t2\n"
+            "\tRETURN\n"
+            "ENDPROC f\n"));
+}
+
+TEST(IrDumpFromC, starPrefixAssignStoresThroughIncrementedPointer) {
+    const char* src = "void f(int *p) { *++p = 9; }\n";
+    EXPECT_THAT(compileToIr(src, 0), HasSubstr("*L$loc1_p :="));
+    EXPECT_THAT(compileToIr(src, 1), HasSubstr("*L$loc1_p :="));
+}
+
+TEST(IrDumpFromC, starCastAssignStoresThroughCastTemp) {
+    const char* src = "void f(int *p) { *(int *)p = 9; }\n";
+    EXPECT_THAT(compileToIr(src, 0), StrEq(
+            "PROC f\n"
+            "\t$t0 := L$loc1_p\n"
+            "\t$t1 := *$t0\n"
+            "\t$t2 := 9\n"
+            "\t$t1 := $t2\n"
+            "\t*$t0 := $t1\n"
+            "\tRETURN\n"
+            "ENDPROC f\n"));
+    EXPECT_THAT(compileToIr(src, 1), StrEq(
+            "PROC f\n"
+            "\t$t0 := L$loc1_p\n"
+            "\t$t1 := *$t0\n"
+            "\t$t2 := 9\n"
+            "\t*$t0 := $t2\n"
+            "\tRETURN\n"
+            "ENDPROC f\n"));
+}
+
+TEST(IrDumpFromC, starOffsetAssignStoresThroughPointerOffset) {
+    const char* src = "void f(int *p) { *(p + 1) = 9; }\n";
+    EXPECT_THAT(compileToIr(src, 0), StrEq(
+            "PROC f\n"
+            "\t$t0 := 1\n"
+            "\t$t1 := L$loc1_p + $t0*4 (ptr)\n"
+            "\t$t2 := *$t1\n"
+            "\t$t3 := 9\n"
+            "\t$t2 := $t3\n"
+            "\t*$t1 := $t2\n"
+            "\tRETURN\n"
+            "ENDPROC f\n"));
+    EXPECT_THAT(compileToIr(src, 1), StrEq(
+            "PROC f\n"
+            "\t$t0 := 1\n"
+            "\t$t1 := L$loc1_p + $t0*4 (ptr)\n"
+            "\t$t2 := *$t1\n"
+            "\t$t3 := 9\n"
+            "\t*$t1 := $t3\n"
+            "\tRETURN\n"
+            "ENDPROC f\n"));
+}
+
+TEST(IrDumpFromC, parenStarMemberAssignUsesPointerAsFieldBase) {
+    const char* src = "struct S { int x; int y; }; void f(struct S *p) { (*p).y = 9; }\n";
+    EXPECT_THAT(compileToIr(src, 0), HasSubstr("&(L$loc1_p->4)"));
+    EXPECT_THAT(compileToIr(src, 1), HasSubstr("&(L$loc1_p->4)"));
+    EXPECT_THAT(compileToIr(src, 0), Not(HasSubstr("&($t")));
+}
+
+TEST(IrDumpFromC, parenStarPostfixMemberAssignUsesSavedPointerAsFieldBase) {
+    const char* src = "struct S { int x; int y; }; void f(struct S *p) { (*p++).y = 9; }\n";
+    const std::string o0 = compileToIr(src, 0);
+    EXPECT_THAT(o0, HasSubstr("$t0 := L$loc1_p"));
+    EXPECT_THAT(o0, HasSubstr("&($t0->4)"));
+    EXPECT_THAT(o0, Not(HasSubstr("*L$loc1_p :=")));
+    EXPECT_THAT(compileToIr(src, 1), HasSubstr("&($t0->4)"));
+}
+
+TEST(IrDumpFromC, parenStarBitFieldAssignUsesPointerAsFieldBase) {
+    const char* src = "struct S { int bf : 3; int y; }; void f(struct S *p) { (*p).bf = 1; }\n";
+    EXPECT_THAT(compileToIr(src, 0), HasSubstr("&(L$loc1_p->"));
+    EXPECT_THAT(compileToIr(src, 0), Not(HasSubstr("&($t")));
+}
+
+TEST(IrDumpFromC, arrowAndIndexAssignStayOnDefinedAddress) {
+    EXPECT_THAT(compileToIr("struct S { int x; int y; }; void f(struct S *p) { p->y = 9; }\n", 0),
+            HasSubstr("&(L$loc1_p->4)"));
+    EXPECT_THAT(compileToIr("void f(void) { int a[4]; a[1] = 9; }\n", 0),
+            HasSubstr("&L$loc1_a["));
+}
+
+TEST(IrDumpFromC, addressOfStarDropsSelfCopyAtO0) {
+    const char* src = "int *f(int *p) { return &*p; }\n";
+    EXPECT_THAT(compileToIr(src, 0), StrEq(
+            "PROC f\n"
+            "\t$t0 := L$loc1_p\n"
+            "\tRETURN $t0\n"
+            "ENDPROC f\n"));
+    EXPECT_THAT(compileToIr(src, 1), StrEq(
+            "PROC f\n"
+            "\t$t0 := L$loc1_p\n"
+            "\tRETURN $t0\n"
+            "ENDPROC f\n"));
+}
+
+TEST(IrDumpFromC, addressOfStarRowDoesNotAddressThePointerTemp) {
+    const char* src = "int *f(int a[2][3], int i) { return &*a[i]; }\n";
+    EXPECT_THAT(compileToIr(src, 0), StrEq(
+            "PROC f\n"
+            "\t$t0 := &L$loc1_a[L$loc1_i] stride=12 (ptr)\n"
+            "\t$t1 := $t0\n"
+            "\tRETURN $t1\n"
+            "ENDPROC f\n"));
+    EXPECT_THAT(compileToIr(src, 1), StrEq(
+            "PROC f\n"
+            "\t$t0 := &L$loc1_a[L$loc1_i] stride=12 (ptr)\n"
+            "\tRETURN $t0\n"
+            "ENDPROC f\n"));
+}
+
+TEST(IrDumpFromC, addressOfStarMemberArrayDoesNotAddressThePointerTemp) {
+    const char* src = "struct S { int arr[4]; }; int *f(struct S *s) { return &*s->arr; }\n";
+    EXPECT_THAT(compileToIr(src, 0), StrEq(
+            "PROC f\n"
+            "\t$t0 := &(L$loc1_s->0)\n"
+            "\t$t1 := $t0\n"
+            "\tRETURN $t1\n"
+            "ENDPROC f\n"));
+    EXPECT_THAT(compileToIr(src, 1), StrEq(
+            "PROC f\n"
+            "\t$t0 := &(L$loc1_s->0)\n"
+            "\tRETURN $t0\n"
+            "ENDPROC f\n"));
+}
+
+TEST(IrDumpFromC, addressOfStarStringDoesNotAddressThePointerTemp) {
+    const char* src = "const char *f(void) { return &*\"xy\"; }\n";
+    EXPECT_THAT(compileToIr(src, 0), StrEq(
+            "PROC f\n"
+            "\t$t0 := &L$str0\n"
+            "\t$t1 := $t0\n"
+            "\tRETURN $t1\n"
+            "ENDPROC f\n"));
+    EXPECT_THAT(compileToIr(src, 1), StrEq(
+            "PROC f\n"
+            "\t$t0 := &L$str0\n"
+            "\tRETURN $t0\n"
+            "ENDPROC f\n"));
+}
+
+TEST(IrDumpFromC, addressOfStarStarPtrToArrayDoesNotAddressThePointerTemp) {
+    const char* src = "int *f(int (*p)[3]) { return &**p; }\n";
+    EXPECT_THAT(compileToIr(src, 0), StrEq(
+            "PROC f\n"
+            "\t$t0 := L$loc1_p\n"
+            "\t$t1 := $t0\n"
+            "\tRETURN $t1\n"
+            "ENDPROC f\n"));
+    EXPECT_THAT(compileToIr(src, 1), StrEq(
+            "PROC f\n"
+            "\t$t0 := L$loc1_p\n"
+            "\tRETURN $t0\n"
+            "ENDPROC f\n"));
+}
+
+TEST(IrDumpFromC, addressOfStarPostfixDoesNotUndoIncrement) {
+    const char* src = "int *f(int *p) { return &*p++; }\n";
+    EXPECT_THAT(compileToIr(src, 0), StrEq(
+            "PROC f\n"
+            "\t$t0 := L$loc1_p\n"
+            "\t__t0 := 1\n"
+            "\tL$loc1_p := L$loc1_p + __t0*4 (ptr)\n"
+            "\t$t1 := $t0\n"
+            "\tRETURN $t1\n"
+            "ENDPROC f\n"));
+    EXPECT_THAT(compileToIr(src, 1), HasSubstr("$t0 := L$loc1_p"));
+    EXPECT_THAT(compileToIr(src, 1), Not(HasSubstr("L$loc1_p := $t0")));
+}
+
 TEST(IrDumpFromC, voidValuesAreNeverMaterialized) {
     EXPECT_THAT(compileToIr("void v(void){}\nint c = 1;\n"
                             "int main(void){ (void)v(); c ? v() : v(); return 0; }\n", 0), StrEq(

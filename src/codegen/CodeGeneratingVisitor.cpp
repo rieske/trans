@@ -67,6 +67,16 @@ int CodeGeneratingVisitor::id(const symbols::LabelEntry& label) {
     return module_.strings.intern(label.getName());
 }
 
+void CodeGeneratingVisitor::emitAssignUnlessSame(int src, int dest) {
+    if (src != dest) {
+        emit(ir::assign(src, dest));
+    }
+}
+
+void CodeGeneratingVisitor::emitPointerLoad(const symbols::ValueEntry& pointer, int result) {
+    emit(ir::dereference(id(pointer), addScratchValue(pointer.getType()), result));
+}
+
 void CodeGeneratingVisitor::emitBooleanConvert(int source, int dest) {
     const int one = id("__bc" + std::to_string(convertLabel_++) + "t");
     const int done = id("__bc" + std::to_string(convertLabel_++) + "d");
@@ -426,50 +436,35 @@ void CodeGeneratingVisitor::visit(ast::UnaryExpression& expression) {
         if (expression.getOperandExpression()->holdsFunctionDesignator()) {
             break;
         } else if (auto* lvalue = expression.operandLvalueSymbol(store_)) {
-            // &a[i] / &*p: address is already computed in the operand's lvalue temp.
-            emit(ir::assign(id(*lvalue), id(*expression.getResultSymbol(store_))));
+            // &a[i] / &*p: copy the already-computed address into &'s Result.
+            emitAssignUnlessSame(id(*lvalue), id(*expression.getResultSymbol(store_)));
         } else {
             emitArrayObjectAddress(*expression.operandSymbol(store_),
                     id(*expression.getResultSymbol(store_)));
         }
         break;
-    case type::UnaryOp::Deref:
-        if (expression.operandSymbol(store_)->getType().isPointer()) {
-            // *fp for pointer-to-function: SA keeps the pointer value (no memory load).
-            if (type::isPointerToBareFunction(expression.operandSymbol(store_)->getType())) {
-                if (expression.operandSymbol(store_)->getName() != expression.getResultSymbol(store_)->getName()) {
-                    emit(ir::assign(
-                            id(*expression.operandSymbol(store_)), id(*expression.getResultSymbol(store_))));
-                }
+    case type::UnaryOp::Deref: {
+        const symbols::ValueEntry* operand = expression.operandSymbol(store_);
+        const symbols::ValueEntry* result = expression.getResultSymbol(store_);
+        const symbols::ValueEntry* lvalue = expression.getLvalueSymbol(store_);
+        if (operand->getType().isPointer()) {
+            if (type::isPointerToBareFunction(operand->getType())) {
+                emitAssignUnlessSame(id(*operand), id(*result));
                 break;
             }
-            // Already an address (pointer or multi-dim decayed row).
-            if (expression.getResultSymbol(store_)->getName() == expression.getLvalueSymbol(store_)->getName()) {
-                // Address-only multi-dim *a: just materialize &array into the temp if needed.
-                // Result and lvalue share the address temp; operand is the array object.
-                if (expression.operandType().isArray()) {
-                    emitArrayObjectAddress(*expression.operandSymbol(store_),
-                            id(*expression.getLvalueSymbol(store_)));
-                } else {
-                    emit(ir::assign(
-                            id(*expression.operandSymbol(store_)), id(*expression.getResultSymbol(store_))));
-                }
+            if (lvalue && id(*result) == id(*lvalue)) {
+                emitAssignUnlessSame(id(*operand), id(*result));
             } else {
-                emit(ir::dereference(id(*expression.operandSymbol(store_)),
-                        id(*expression.getLvalueSymbol(store_)), id(*expression.getResultSymbol(store_))));
+                emitPointerLoad(*operand, id(*result));
             }
         } else if (expression.operandType().isArray()) {
-            emitArrayObjectAddress(*expression.operandSymbol(store_),
-                    id(*expression.getLvalueSymbol(store_)));
-            if (expression.getResultSymbol(store_)->getName() != expression.getLvalueSymbol(store_)->getName()) {
-                const int addr = id(*expression.getLvalueSymbol(store_));
-                emit(ir::dereference(addr, addr, id(*expression.getResultSymbol(store_))));
+            emitArrayObjectAddress(*operand, id(*lvalue));
+            if (id(*result) != id(*lvalue)) {
+                emitPointerLoad(*lvalue, id(*result));
             }
-        } else {
-            emit(ir::dereference(id(*expression.operandSymbol(store_)),
-                    id(*expression.getLvalueSymbol(store_)), id(*expression.getResultSymbol(store_))));
         }
         break;
+    }
     case type::UnaryOp::Plus:
         emit(ir::assign(
                 convertedResult(*expression.getOperandExpression()),

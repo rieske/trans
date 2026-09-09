@@ -117,6 +117,8 @@ private:
     void emitIntegerMulDiv(type::ArithmeticOp op, int left, int right, int result, const type::Type& resultType);
     void emitComplexMulDiv(type::ArithmeticOp op, int left, int right, int result, const type::Type& resultType);
     int addScratchValue(const type::Type& scratchType);
+    void emitAssignUnlessSame(int src, int dest);
+    void emitPointerLoad(const symbols::ValueEntry& pointer, int result);
     void emitSizeofProduct(const type::Type& measured, int result);
     struct ScaledIndex {
         int name;
