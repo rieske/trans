@@ -86,8 +86,8 @@ private:
     std::map<std::string, type::Type> structTags_;
     std::map<std::string, type::Type> enumTags_;
     std::optional<EnumBody> enumBody_;
-    // Enumerator with the enum-body depth it was declared at.
-    std::vector<std::pair<int, Enumerator>> enumerators_;
+    // One frame per open enum body; enum bodies nest.
+    std::vector<std::vector<Enumerator>> enumerators_;
 };
 
 } // namespace ast

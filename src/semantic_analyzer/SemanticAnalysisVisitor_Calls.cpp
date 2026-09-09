@@ -232,9 +232,7 @@ void SemanticAnalysisVisitor::visit(ast::FunctionCall& functionCall) {
 void SemanticAnalysisVisitor::visit(ast::IdentifierExpression& identifier) {
     const std::string& name = identifier.getIdentifier();
 
-    // The nearest declaration wins. Block scopes come first, then the parse-time fold,
-    // which is the only record of an enum defined where analysis never walks (a sizeof
-    // type-name the parser folds away, a record member), and last file scope.
+    // Nearest wins: block scope, then the parse-time fold, then file scope.
     auto bindTo = [&](const symbols::ValueEntry& entry) {
         if (type::isBareFunction(entry.getType())) {
             setFunctionDesignator(identifier, symbolTable, annotations());

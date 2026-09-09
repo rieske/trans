@@ -69,7 +69,7 @@ void SemanticAnalysisVisitor::visit(ast::ArrayAccess& arrayAccess) {
         baseOperand = symbols::BinaryOperand::Right;
         sub = type::arraySubscriptInfo(rightExpr, rightValue);
     }
-    if (!sub.valid() || leftValue.isVoid() || rightValue.isVoid()) {
+    if (!sub.valid() || rightValue.isVoid()) {
         semanticError("invalid type for operator[]\n", arrayAccess.getContext());
         return;
     }

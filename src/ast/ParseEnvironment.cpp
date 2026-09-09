@@ -174,7 +174,11 @@ bool ParseEnvironment::addEnumerator(std::string name, type::IntegerConstant val
         return false;
     }
     session_.enums.add(name, value);
-    enumerators_.emplace_back(session_.enumBodyDepth(), Enumerator { std::move(name), value });
+    const std::size_t frame = static_cast<std::size_t>(session_.enumBodyDepth());
+    if (enumerators_.size() <= frame) {
+        enumerators_.resize(frame + 1);
+    }
+    enumerators_[frame].push_back(Enumerator { std::move(name), value });
     const type::SignedBits v = type::signedValue(value);
     if (!enumBody_) {
         enumBody_ = EnumBody { type::nextEnumerator(value), v, v };
@@ -191,18 +195,13 @@ bool ParseEnvironment::addEnumerator(std::string name, type::IntegerConstant val
 }
 
 std::vector<Enumerator> ParseEnvironment::takeEnumerators() {
-    // The body just closed sat one level deeper than the enclosing one.
-    const int depth = session_.enumBodyDepth() + 1;
-    std::vector<Enumerator> taken;
-    auto keep = enumerators_.begin();
-    for (auto& entry : enumerators_) {
-        if (entry.first == depth) {
-            taken.push_back(std::move(entry.second));
-        } else {
-            *keep++ = std::move(entry);
-        }
+    // The body just closed sat one frame deeper than the enclosing one.
+    const std::size_t frame = static_cast<std::size_t>(session_.enumBodyDepth()) + 1;
+    if (frame >= enumerators_.size()) {
+        return {};
     }
-    enumerators_.erase(keep, enumerators_.end());
+    std::vector<Enumerator> taken = std::move(enumerators_[frame]);
+    enumerators_.resize(frame);
     return taken;
 }
 
