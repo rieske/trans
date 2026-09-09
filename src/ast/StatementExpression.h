@@ -17,10 +17,17 @@ public:
     ExprKind exprKind() const override { return ExprKind::StatementExpression; }
     std::optional<type::Type> typeAtParseTime(const ParseEnvironment& environment) const override;
 
+    // GNU: the value of a statement expression is not an lvalue.
+    bool isLval() const override { return false; }
+
     translation_unit::Context getContext() const override;
 
     Block& body() { return *body_; }
     const Block& body() const { return *body_; }
+
+    // GNU: the value is the last block item, when that item is an expression.
+    Expression* valueExpression();
+    const Expression* valueExpression() const;
 
 private:
     translation_unit::Context context_;

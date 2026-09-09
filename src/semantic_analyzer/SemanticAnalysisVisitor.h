@@ -142,6 +142,7 @@ private:
             const ast::InitializerListExpression* list, const translation_unit::Context& context);
     void rejectFunctionValue(const type::Type& type, const translation_unit::Context& context);
 
+    void analyzeLogicalExpression(ast::LogicalExpression& expression);
     void checkObjectArrayBounds(ast::InitializedDeclarator& declarator, bool allowVla);
 
     // Innermost loop first: break → exit, continue → cont (entry for while, pre-increment for for).
@@ -156,8 +157,6 @@ private:
     // Named labels (goto targets) within the current function.
     std::map<std::string, symbols::LabelEntry> namedLabels;
     std::vector<ast::GotoStatement*> pendingGotos;
-
-    // Return type of the function currently under analysis (for return checkAssign).
 
     SymbolTable symbolTable;
     symbols::AnnotationStore* store_ { nullptr };

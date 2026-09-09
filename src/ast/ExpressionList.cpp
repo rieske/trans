@@ -2,12 +2,12 @@
 
 #include "AbstractSyntaxTreeVisitor.h"
 #include "ParseEnvironment.h"
+#include "types/TypeQuery.h"
 
 namespace ast {
 
 ExpressionList::ExpressionList(std::unique_ptr<Expression> leftHandSide, std::unique_ptr<Expression> rightHandSide) :
         DoubleOperandExpression(std::move(leftHandSide), std::move(rightHandSide)) {
-    lval = leftOperand->isLval();
 }
 
 ExpressionList::~ExpressionList() {
@@ -21,7 +21,8 @@ std::optional<type::Type> ExpressionList::typeAtParseTime(const ParseEnvironment
     if (!leftOperand->typeAtParseTime(environment)) {
         return std::nullopt;
     }
-    return rightOperand->typeAtParseTime(environment);
+    const std::optional<type::Type> right = rightOperand->typeAtParseTime(environment);
+    return right ? type::afterLvalueConversion(*right) : right;
 }
 
 } // namespace ast
