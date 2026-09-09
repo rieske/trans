@@ -1,8 +1,8 @@
 #include "gtest/gtest.h"
-#include "codegen/IrBuilders.h"
 #include "gmock/gmock.h"
 
 #include "codegen/Instruction.h"
+#include "codegen/IrBuilders.h"
 #include "codegen/IrPasses.h"
 #include "codegen/Value.h"
 

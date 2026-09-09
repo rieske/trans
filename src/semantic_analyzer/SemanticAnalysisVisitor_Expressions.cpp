@@ -243,15 +243,17 @@ void SemanticAnalysisVisitor::visit(ast::UnaryExpression& expression) {
             }
             break;
         }
-        if (symbols::bitFieldOf(annotations().addressPlan(expression.getOperandExpression()))) {
+        ast::Expression& operand = *expression.getOperandExpression();
+        if (symbols::bitFieldOf(annotations().addressPlan(&operand))) {
             semanticError("cannot take address of bit-field", expression.getContext());
-            expression.setTypeAndResult(annotations(),
-                    symbolTable.createTemporarySymbol(type::pointer(expression.operandType())));
-            break;
+        } else if (!operand.isLval()) {
+            semanticError("lvalue required as unary `&` operand", expression.getContext());
+        } else {
+            markAddressOnly(operand, annotations());
+            rejectFunctionValue(expression.operandType(), expression.getContext());
         }
-        markAddressOnly(*expression.getOperandExpression(), annotations());
-        rejectFunctionValue(expression.operandType(), expression.getContext());
-        expression.setTypeAndResult(annotations(), symbolTable.createTemporarySymbol(type::pointer(expression.operandType())));
+        expression.setTypeAndResult(annotations(),
+                symbolTable.createTemporarySymbol(type::pointer(expression.operandType())));
         break;
     }
     case type::UnaryOp::Deref: {

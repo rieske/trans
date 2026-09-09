@@ -1,5 +1,4 @@
 #include "gtest/gtest.h"
-#include "codegen/IrBuilders.h"
 #include "gmock/gmock.h"
 
 #include <sstream>
@@ -14,6 +13,7 @@
 #include "codegen/ATandTInstructionSet.h"
 #include "codegen/Cfg.h"
 #include "codegen/Instruction.h"
+#include "codegen/IrBuilders.h"
 #include "codegen/IrPasses.h"
 #include "codegen/StackMachine.h"
 #include "codegen/SysVCallConv.h"

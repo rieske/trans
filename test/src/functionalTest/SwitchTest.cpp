@@ -219,4 +219,38 @@ int scanf(const char *, ...);
     program.runAndExpect("4");
 }
 
+TEST(Compiler, switchAcceptsEveryIntegerControllingType) {
+    SourceProgram program{R"prg(int printf(const char *, ...);
+        enum E { A = 1 };
+        struct Bits { int b : 3; };
+        int pick(int v) {
+            switch (v) {
+            case 1:
+                return 1;
+            default:
+                return 0;
+            }
+        }
+        int main(void) {
+            char c = 1;
+            long long l = 1;
+            unsigned u = 1;
+            _Bool t = 1;
+            enum E e = A;
+            struct Bits s = { 1 };
+            int n = 0;
+            switch (c) { case 1: n += 1; break; }
+            switch (l) { case 1: n += 2; break; }
+            switch (u) { case 1: n += 4; break; }
+            switch (t) { case 1: n += 8; break; }
+            switch (e) { case A: n += 16; break; }
+            switch (s.b) { case 1: n += 32; break; }
+            printf("%d %d", n, pick(1));
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("63 1");
+}
+
 } // namespace

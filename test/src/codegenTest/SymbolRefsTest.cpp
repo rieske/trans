@@ -1,7 +1,7 @@
 #include "gtest/gtest.h"
-#include "codegen/IrBuilders.h"
 
 #include "codegen/Instruction.h"
+#include "codegen/IrBuilders.h"
 #include "codegen/SymbolRefs.h"
 
 namespace {

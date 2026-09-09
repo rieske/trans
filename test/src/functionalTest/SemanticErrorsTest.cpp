@@ -23,6 +23,83 @@ TEST_P(SemanticErrorCatalog, RejectsWithMessage) {
 
 INSTANTIATE_TEST_SUITE_P(Compiler, SemanticErrorCatalog, testing::Values(
     SemanticErrorCase{
+        "switchOnArray",
+        R"prg(
+            int main(void) {
+                int a[3];
+                switch (a) {
+                case 1:
+                    break;
+                }
+                return 0;
+            }
+        )prg",
+        "switch quantity is not an integer",
+    },
+    SemanticErrorCase{
+        "switchOnDouble",
+        R"prg(
+            int main(void) {
+                double d = 1;
+                switch (d) {
+                case 1:
+                    break;
+                }
+                return 0;
+            }
+        )prg",
+        "switch quantity is not an integer",
+    },
+    SemanticErrorCase{
+        "switchOnPointer",
+        R"prg(
+            int main(void) {
+                int x; int *p = &x;
+                switch (p) {
+                case 1:
+                    break;
+                }
+                return 0;
+            }
+        )prg",
+        "switch quantity is not an integer",
+    },
+    SemanticErrorCase{
+        "switchOnStruct",
+        R"prg(
+            int main(void) {
+                struct S { int m; }; struct S v = { 1 };
+                switch (v) {
+                case 1:
+                    break;
+                }
+                return 0;
+            }
+        )prg",
+        "switch quantity is not an integer",
+    },
+    SemanticErrorCase{
+        "addressOfArithmeticResult",
+        R"prg(
+            int main(void) {
+                int *p = &(1 + 2);
+                return 0;
+            }
+        )prg",
+        "lvalue required",
+    },
+    SemanticErrorCase{
+        "addressOfCallResult",
+        R"prg(
+            int f(void) { return 1; }
+            int main(void) {
+                int *p = &f();
+                return 0;
+            }
+        )prg",
+        "lvalue required",
+    },
+    SemanticErrorCase{
         "voidVariable",
         R"prg(
             int main() {

@@ -25,8 +25,11 @@ void SemanticAnalysisVisitor::visit(ast::JumpStatement& statement) {
 void SemanticAnalysisVisitor::visit(ast::SwitchStatement& statement) {
     statement.expression->accept(*this);
     if (statement.expression->hasResultSymbol(annotations())) {
-        rejectFunctionValue(statement.expression->getResultSymbol(annotations())->getType(),
-                statement.expression->getContext());
+        // C: the controlling expression of a switch has integer type.
+        const type::Type controlling = statement.expression->getResultSymbol(annotations())->getType();
+        if (!type::isIntegral(controlling)) {
+            semanticError("switch quantity is not an integer", statement.expression->getContext());
+        }
     }
 
     auto exitLabel = symbolTable.newLabel();
