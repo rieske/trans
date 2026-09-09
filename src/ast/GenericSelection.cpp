@@ -34,11 +34,11 @@ std::optional<type::Type> GenericSelection::typeAtParseTime(const ParseEnvironme
             arms[i] = { true, nullptr };
             continue;
         }
-        TypeSpecifier spec = *association.typeName;
-        if (!spec.resolveTypeofAtParseTime(environment) || !spec.hasType()) {
+        auto parsed = association.typeName->typeAtParseTime(environment);
+        if (!parsed) {
             return std::nullopt;
         }
-        resolved[i] = spec.getType();
+        resolved[i] = *parsed;
         arms[i] = { false, &resolved[i] };
     }
     const type::GenericSelectionChoice choice = type::selectGenericAssociation(converted, arms);

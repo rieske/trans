@@ -65,7 +65,7 @@ TEST(SemanticAnalyzer, fileScopeEnumeratorConflictsWithFileScopeObject) {
 
     std::vector<ExternalDeclaration> translationUnit;
     translationUnit.push_back(ExternalDeclaration {
-            std::make_unique<Declaration>(DeclarationSpecifiers { enumSpec }) });
+            std::make_unique<Declaration>(DeclarationSpecifiers { std::move(enumSpec) }) });
     translationUnit.push_back(ExternalDeclaration { std::make_unique<Declaration>(
             DeclarationSpecifiers { TypeSpecifier { type::signedInteger(), "int" } },
             std::move(objects)) });

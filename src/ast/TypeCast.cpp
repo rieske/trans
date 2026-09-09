@@ -8,8 +8,8 @@
 namespace ast {
 
 TypeCast::TypeCast(TypeSpecifier typeSpecifier, std::unique_ptr<Expression> castExpression) :
-        SingleOperandExpression { std::move(castExpression) }, typeSpecifier {
-                typeSpecifier } {
+        SingleOperandExpression { std::move(castExpression) },
+        typeSpecifier { std::move(typeSpecifier) } {
 }
 
 TypeCast::~TypeCast() {
@@ -20,11 +20,7 @@ void TypeCast::accept(AbstractSyntaxTreeVisitor& visitor) {
 }
 
 std::optional<type::Type> TypeCast::typeAtParseTime(const ParseEnvironment& environment) const {
-    TypeSpecifier spec = typeSpecifier;
-    if (!spec.resolveTypeofAtParseTime(environment) || !spec.hasType()) {
-        return std::nullopt;
-    }
-    return spec.getType();
+    return typeSpecifier.typeAtParseTime(environment);
 }
 
 const TypeSpecifier& TypeCast::getTypeSpecifier() const {

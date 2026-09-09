@@ -12,7 +12,7 @@ FunctionDefinition::FunctionDefinition(
         std::unique_ptr<Declarator> declarator,
         std::unique_ptr<Block> body)
 :
-        returnType { returnType },
+        returnType { std::move(returnType) },
         declarator { std::move(declarator) },
         body { std::move(body) }
 {

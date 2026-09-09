@@ -6,12 +6,12 @@
 namespace ast {
 
 FormalArgument::FormalArgument(DeclarationSpecifiers specifiers) :
-        specifiers { specifiers }
+        specifiers { std::move(specifiers) }
 {
 }
 
 FormalArgument::FormalArgument(DeclarationSpecifiers specifiers, std::unique_ptr<Declarator> declarator) :
-        specifiers { specifiers },
+        specifiers { std::move(specifiers) },
         declarator { std::move(declarator) }
 {
 }

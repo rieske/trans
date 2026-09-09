@@ -8,10 +8,12 @@ namespace ast {
 namespace {
 
 std::vector<Enumerator> specEnumerators(const DeclarationSpecifiers& specs) {
-    if (specs.getTypeSpecifiers().empty()) {
-        return {};
+    for (const auto& specifier : specs.getTypeSpecifiers()) {
+        if (!specifier.enumerators().empty()) {
+            return specifier.enumerators();
+        }
     }
-    return specs.toTypeSpecifier().enumerators();
+    return {};
 }
 
 int foldBitFieldWidth(AbstractSyntaxTreeBuilderContext& context) {
@@ -566,8 +568,7 @@ ContextualSyntaxNodeBuilder::ContextualSyntaxNodeBuilder(const parser::Grammar& 
                     return;
                 }
                 // Shared body: tagType already sees completion via structureBodyIdentity().
-                TypeSpecifier spec { tagType, tag.value, tag.context };
-                spec.markDefinesRecord();
+                TypeSpecifier spec { tagType, tag.value, tag.context, true };
                 spec.setEnumerators(std::move(body.enumerators));
                 context.pushTypeSpecifier(std::move(spec));
             });
@@ -582,8 +583,7 @@ ContextualSyntaxNodeBuilder::ContextualSyntaxNodeBuilder(const parser::Grammar& 
                 if (context.failed()) {
                     return;
                 }
-                TypeSpecifier spec { completed, "", close.context };
-                spec.markDefinesRecord();
+                TypeSpecifier spec { completed, "", close.context, true };
                 spec.setEnumerators(std::move(body.enumerators));
                 context.pushTypeSpecifier(std::move(spec));
             });

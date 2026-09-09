@@ -90,16 +90,19 @@ void ParseEnvironment::bindBlockDeclarations(const Block& block) {
         if (!declaration) {
             continue;
         }
-        DeclarationSpecifiers specs = declaration->getDeclarationSpecifiers();
-        if (!specs.resolveTypeofAtParseTime(*this) || specs.getTypeSpecifiers().empty()) {
+        const auto& specs = declaration->getDeclarationSpecifiers();
+        if (specs.getTypeSpecifiers().empty()) {
             continue;
         }
-        const type::Type base = specs.getResolvedType();
+        auto base = specs.typeAtParseTime(*this);
+        if (!base) {
+            continue;
+        }
         for (const auto& declarator : declaration->getDeclarators()) {
             if (declarator->getName().empty()) {
                 continue;
             }
-            type::Type declared = declarator->getFundamentalType(base);
+            type::Type declared = declarator->getFundamentalType(*base);
             if (declarator->getDeclarator().arrayConstraintError(declared)) {
                 continue;
             }
