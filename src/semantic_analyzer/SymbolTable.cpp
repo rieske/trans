@@ -7,26 +7,9 @@
 namespace {
 
 const std::string LABEL_PREFIX = "__L";
-unsigned nextLabel { 0 };
-
 // Not a C identifier; legal non-local label in NASM and gas.
 const std::string CONSTANT_PREFIX = "L$str";
-unsigned nextConstant { 0 };
-
 const std::string UNNAMED_STATIC_PREFIX = "L$cl";
-unsigned nextUnnamedStatic { 0 };
-
-std::string generateLabelName() {
-    return LABEL_PREFIX + std::to_string(++nextLabel);
-}
-
-std::string generateConstantName() {
-    return CONSTANT_PREFIX + std::to_string(++nextConstant);
-}
-
-std::string generateUnnamedStaticName() {
-    return UNNAMED_STATIC_PREFIX + std::to_string(++nextUnnamedStatic);
-}
 
 } // namespace
 
@@ -47,6 +30,18 @@ const symbols::ValueEntry* fileScopeFunction(const ValueScope& scope, const std:
 }
 
 } // namespace
+
+std::string SymbolTable::generateLabelName() {
+    return LABEL_PREFIX + std::to_string(++nextLabel);
+}
+
+std::string SymbolTable::generateConstantName() {
+    return CONSTANT_PREFIX + std::to_string(++nextConstant);
+}
+
+std::string SymbolTable::generateUnnamedStaticName() {
+    return UNNAMED_STATIC_PREFIX + std::to_string(++nextUnnamedStatic);
+}
 
 bool SymbolTable::insertSymbol(std::string name, const type::Type& type, translation_unit::Context context,
         symbols::Storage storage) {

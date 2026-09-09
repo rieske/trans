@@ -331,12 +331,6 @@ TEST(Type, variableArrayCompositePrefersSpecifiedBound) {
     EXPECT_EQ(fromSpec->getElementType().dereference().getArraySize(), 3);
 }
 
-TEST(Type, variableArrayRejectsIncompleteElement) {
-    using namespace type;
-    EXPECT_THROW(variableArray(incompleteArray(signedInteger())), std::invalid_argument);
-    EXPECT_THROW(variableArray(voidType()), std::invalid_argument);
-}
-
 TEST(Type, incompleteArrayIsDistinctFromZeroLength) {
     using namespace type;
     auto inc = incompleteArray(signedInteger());
@@ -349,11 +343,6 @@ TEST(Type, incompleteArrayIsDistinctFromZeroLength) {
     EXPECT_THAT(zero.to_string(), Eq("int[0]"));
     EXPECT_FALSE(inc.equivalentTo(zero));
     EXPECT_TRUE(inc.equivalentTo(incompleteArray(signedInteger())));
-}
-
-TEST(Type, arrayRejectsIncompleteArrayElement) {
-    using namespace type;
-    EXPECT_THROW(array(incompleteArray(signedInteger()), 2), std::invalid_argument);
 }
 
 TEST(Type, nestedArrayToStringOutsideIn) {
@@ -372,11 +361,6 @@ TEST(Type, arrayOfFunctionPointersIsComplete) {
     EXPECT_THAT(a.getSize(), Eq(24));
 }
 
-TEST(Type, arrayRejectsBareFunctionElement) {
-    using namespace type;
-    EXPECT_THROW(array(function(signedInteger(), {}), 2), std::invalid_argument);
-}
-
 TEST(Type, pointerToArrayIsPointerNotArray) {
     using namespace type;
     auto a = array(signedInteger(), 3);
@@ -387,22 +371,6 @@ TEST(Type, pointerToArrayIsPointerNotArray) {
     auto peeled = p.dereference();
     EXPECT_THAT(peeled.isArray(), IsTrue());
     EXPECT_THAT(peeled.getArraySize(), Eq(3));
-}
-
-TEST(Type, arrayRejectsNegativeCount) {
-    using namespace type;
-    EXPECT_THROW(array(signedInteger(), -1), std::invalid_argument);
-}
-
-TEST(Type, arrayRejectsSizeOverflow) {
-    using namespace type;
-    // 4 * 536870913 > INT_MAX
-    EXPECT_THROW(array(signedInteger(), 536870913), std::invalid_argument);
-}
-
-TEST(Type, arrayRejectsVoidElement) {
-    using namespace type;
-    EXPECT_THROW(array(voidType(), 3), std::invalid_argument);
 }
 
 TEST(Type, getElementTypeOnNonArrayThrows) {
@@ -604,31 +572,6 @@ TEST(Type, resolveOffsetof) {
     EXPECT_THAT(offInc.status, Eq(OffsetofStatus::Incomplete));
 }
 
-TEST(Type, bitFieldRejectsIllegalWidthAndType) {
-    using namespace type;
-    auto badWide = incompleteRecord();
-    EXPECT_THROW(completeStructure(badWide, { MemberSpec { "x", signedInteger(), 33 } }),
-            std::invalid_argument);
-    auto badZero = incompleteRecord();
-    EXPECT_THROW(completeStructure(badZero, { MemberSpec { "x", signedInteger(), 0 } }),
-            std::invalid_argument);
-    auto badType = incompleteRecord();
-    EXPECT_THROW(completeStructure(badType, { MemberSpec { "f", floating(), 3 } }),
-            std::invalid_argument);
-    auto badInt128 = incompleteRecord();
-    EXPECT_THROW(completeStructure(badInt128, { MemberSpec { "x", signedInt128(), 8 } }),
-            std::invalid_argument);
-    auto badInt128Width = incompleteRecord();
-    EXPECT_THROW(completeStructure(badInt128Width, { MemberSpec { "x", signedInt128(), 80 } }),
-            std::invalid_argument);
-}
-
-TEST(Type, structureRejectsIncompleteMembers) {
-    using namespace type;
-    EXPECT_THROW(structure({{"v", voidType()}}), std::invalid_argument);
-    EXPECT_THROW(structure({{"f", function(signedInteger(), {})}}), std::invalid_argument);
-}
-
 TEST(Type, structureAllowsFlexibleArrayMember) {
     using namespace type;
     auto s = structure({
@@ -654,48 +597,11 @@ TEST(Type, structureFlexibleArrayAfterCharPadsToElementAlign) {
     EXPECT_THAT(offsetOf(s, "data"), Eq(4));
 }
 
-TEST(Type, structureRejectsFlexibleArrayIfNotLast) {
-    using namespace type;
-    EXPECT_THROW(structure({
-            { "data", incompleteArray(signedInteger()) },
-            { "n", signedInteger() },
-    }), std::invalid_argument);
-}
-
-TEST(Type, structureRejectsFlexibleArrayAsOnlyMember) {
-    using namespace type;
-    EXPECT_THROW(structure({
-            { "data", incompleteArray(signedInteger()) },
-    }), std::invalid_argument);
-}
-
-TEST(Type, unionRejectsFlexibleArrayMember) {
-    using namespace type;
-    EXPECT_THROW(unionType({
-            { "n", signedInteger() },
-            { "data", incompleteArray(signedInteger()) },
-    }), std::invalid_argument);
-}
-
 TEST(Type, structureAllowsFunctionPointerMembers) {
     using namespace type;
     auto s = structure({{"fp", pointer(function(signedInteger(), {}))}});
     EXPECT_THAT(s.isStructure(), IsTrue());
     EXPECT_THAT(s.getSize(), Eq(8));
-}
-
-TEST(Type, structureRejectsDuplicateMemberNames) {
-    using namespace type;
-    EXPECT_THROW(
-            structure({{"x", signedInteger()}, {"x", signedCharacter()}}),
-            std::invalid_argument);
-}
-
-TEST(Type, structureRejectsSizeOverflow) {
-    using namespace type;
-    // Each member fits in int; sum of two exceeds INT_MAX.
-    auto huge = array(signedCharacter(), 1073741824); // 2^30
-    EXPECT_THROW(structure({{"a", huge}, {"b", huge}}), std::invalid_argument);
 }
 
 TEST(Type, pointerToStructureIsPointerNotStructure) {
@@ -830,11 +736,6 @@ TEST(Type, completeStructureRejectsNonRecord) {
     EXPECT_THROW(completeUnion(i, { MemberSpec { "x", signedInteger() } }), std::domain_error);
 }
 
-TEST(Type, arrayRejectsIncompleteRecordElement) {
-    using namespace type;
-    EXPECT_THROW(array(incompleteRecord(), 3), std::invalid_argument);
-}
-
 TEST(Type, pointerAppliesQualifiersViaConstructor) {
     using namespace type;
     auto p = pointer(signedInteger(), { Qualifier::CONST, Qualifier::VOLATILE });
@@ -875,24 +776,6 @@ TEST(Type, unionLayoutAllMembersAtZero) {
     EXPECT_THAT(u.getSize(), Eq(4));
     EXPECT_THAT(offsetOf(u, "c"), Eq(0));
     EXPECT_THAT(offsetOf(u, "i"), Eq(0));
-}
-
-TEST(Type, completeStructureFailurePreservesPriorSharedLayout) {
-    using namespace type;
-    auto tag = incompleteRecord();
-    completeStructure(tag, { MemberSpec { "x", signedInteger() } });
-    EXPECT_THAT(tag.getSize(), Eq(4));
-    auto alias = tag;
-    auto ptr = pointer(tag);
-
-    EXPECT_THROW(completeStructure(tag, { MemberSpec { "y", incompleteRecord() } }),
-            std::invalid_argument);
-
-    EXPECT_THAT(tag.getSize(), Eq(4));
-    EXPECT_THAT(alias.getSize(), Eq(4));
-    EXPECT_THAT(ptr.dereference().getSize(), Eq(4));
-    EXPECT_THAT(offsetOf(tag, "x"), Eq(0));
-    EXPECT_THAT(tag.isCompleteRecord(), IsTrue());
 }
 
 TEST(Type, structureNamedPredicatesAreStructOnly) {

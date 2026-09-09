@@ -22,6 +22,7 @@ public:
 
     std::string getName() const;
     Declarator& getDeclarator() { return *declarator; }
+    const Declarator& getDeclarator() const { return *declarator; }
     type::Type getFundamentalType(const type::Type& baseType) const;
 
     void forEachArrayDeclarator(const std::function<void(ArrayDeclarator&)>& fn);

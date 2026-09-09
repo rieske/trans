@@ -32,14 +32,14 @@ void completeRecordFromSpec(AbstractSyntaxTreeBuilderContext& context, type::Typ
         std::vector<type::MemberSpec> members, bool isUnion,
         const translation_unit::Context& where) {
     const bool packed = context.environment().session().recordPacked.consume();
-    try {
-        if (isUnion) {
-            type::completeUnion(record, std::move(members), packed);
-        } else {
-            type::completeStructure(record, std::move(members), packed);
-        }
-    } catch (const std::invalid_argument& error) {
-        context.error(where, error.what());
+    if (context.failed()) {
+        return;
+    }
+    const char* error = isUnion
+            ? type::completeUnion(record, std::move(members), packed)
+            : type::completeStructure(record, std::move(members), packed);
+    if (error) {
+        context.error(where, error);
     }
 }
 
@@ -566,7 +566,7 @@ ContextualSyntaxNodeBuilder::ContextualSyntaxNodeBuilder(const parser::Grammar& 
                     return;
                 }
                 // Shared body: tagType already sees completion via structureBodyIdentity().
-                TypeSpecifier spec { tagType, tag.value };
+                TypeSpecifier spec { tagType, tag.value, tag.context };
                 spec.markDefinesRecord();
                 spec.setEnumerators(std::move(body.enumerators));
                 context.pushTypeSpecifier(std::move(spec));
@@ -582,7 +582,7 @@ ContextualSyntaxNodeBuilder::ContextualSyntaxNodeBuilder(const parser::Grammar& 
                 if (context.failed()) {
                     return;
                 }
-                TypeSpecifier spec { completed, "" };
+                TypeSpecifier spec { completed, "", close.context };
                 spec.markDefinesRecord();
                 spec.setEnumerators(std::move(body.enumerators));
                 context.pushTypeSpecifier(std::move(spec));
@@ -629,8 +629,11 @@ ContextualSyntaxNodeBuilder::ContextualSyntaxNodeBuilder(const parser::Grammar& 
                     if (!declarator) {
                         context.addStructMember("", baseType, bitWidth);
                     } else {
-                        context.addStructMember(declarator->getName(),
-                                declarator->getFundamentalType(baseType), bitWidth);
+                        type::Type memberType = declarator->getFundamentalType(baseType);
+                        if (const char* error = declarator->arrayConstraintError(memberType)) {
+                            context.error(declarator->getContext(), error);
+                        }
+                        context.addStructMember(declarator->getName(), memberType, bitWidth);
                     }
                 }
                 context.addStructEnumerators(specEnumerators(specs));

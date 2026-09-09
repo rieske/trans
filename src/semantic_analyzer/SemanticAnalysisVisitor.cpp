@@ -46,7 +46,8 @@ translation_unit::Context arrayBoundContext(const type::Type& t, const ast::VlaE
 
 } // namespace
 
-void finalizeRecordDefinition(type::Type& record, SemanticAnalysisVisitor& visitor) {
+void finalizeRecordDefinition(type::Type& record, SemanticAnalysisVisitor& visitor,
+        const translation_unit::Context& where) {
     if (!record.isRecord() || record.isCompleteRecord()) {
         return;
     }
@@ -55,7 +56,7 @@ void finalizeRecordDefinition(type::Type& record, SemanticAnalysisVisitor& visit
         const auto& vlas = visitor.vlaTable();
         visitVariableBounds(spec.type, visitor, vlas);
         if (spec.type.isRecord()) {
-            finalizeRecordDefinition(spec.type, visitor);
+            finalizeRecordDefinition(spec.type, visitor, where);
         }
         spec.type = ast::foldConstantArrayBounds(spec.type, vlas);
         if (type::hasRuntimeSize(spec.type)) {
@@ -63,7 +64,13 @@ void finalizeRecordDefinition(type::Type& record, SemanticAnalysisVisitor& visit
                     arrayBoundContext(spec.type, vlas));
         }
     }
-    type::relayoutFromMemberSpecs(record, specs);
+    if (const char* error = type::relayoutFromMemberSpecs(record, specs)) {
+        translation_unit::Context at = where;
+        if (at.getOffset() == 0 && at.getSourceName().empty()) {
+            at = arrayBoundContext(record, visitor.vlaTable());
+        }
+        visitor.semanticError(error, at);
+    }
 }
 
 void resolveSpecifierType(ast::TypeSpecifier& spec, SemanticAnalysisVisitor& visitor) {
@@ -76,7 +83,7 @@ void resolveSpecifierType(ast::TypeSpecifier& spec, SemanticAnalysisVisitor& vis
     spec.refoldConstantArrayBounds(vlas);
     if (spec.definesRecord()) {
         type::Type record = spec.getType();
-        finalizeRecordDefinition(record, visitor);
+        finalizeRecordDefinition(record, visitor, spec.getContext());
     }
 }
 
@@ -116,6 +123,10 @@ void SemanticAnalysisVisitor::visit(ast::Declaration& declaration) {
                         declarator->getContext());
             }
             checkObjectArrayBounds(*declarator, !symbolTable.isAtFileScope());
+            type::Type aliased = declarator->getFundamentalType(declSpecs.getResolvedType());
+            if (const char* error = declarator->getDeclarator().arrayConstraintError(aliased)) {
+                semanticError(error, declarator->getContext());
+            }
         }
         return;
     }
@@ -173,12 +184,9 @@ void SemanticAnalysisVisitor::analyzeInitializedDeclarator(ast::InitializedDecla
     }
     checkObjectArrayBounds(declarator, storage == symbols::Storage::Automatic);
 
-    type::Type type { type::voidType() };
-    try {
-        type = declarator.getFundamentalType(baseType);
-    } catch (const std::invalid_argument& ex) {
-        // array size overflow, array of incomplete type, etc.
-        semanticError(ex.what(), declarator.getContext());
+    type::Type type = declarator.getFundamentalType(baseType);
+    if (const char* error = declarator.getDeclarator().arrayConstraintError(type)) {
+        semanticError(error, declarator.getContext());
         typeOk = false;
     }
     if (typeOk && type.isFunction() && declarator.hasInitializer()) {
@@ -336,13 +344,7 @@ void SemanticAnalysisVisitor::visit(ast::FunctionDeclarator& declarator) {
 void SemanticAnalysisVisitor::visit(ast::FormalArgument& argument) {
     analyzeSpecifiers(argument.getSpecifiers(), *this);
     argument.visitDeclarator(*this);
-    type::Type type { type::voidType() };
-    try {
-        type = argument.getType();
-    } catch (const std::invalid_argument& ex) {
-        semanticError(ex.what(), argument.getDeclarationContext());
-        return;
-    }
+    type::Type type = argument.getType();
     if (type.isVoid()) {
         semanticError("function argument ‘" + argument.getName() + "’ declared void", argument.getDeclarationContext());
     }
@@ -359,6 +361,10 @@ void SemanticAnalysisVisitor::visit(ast::FunctionDefinition& function) {
     type::Type functionType = function.getDeclaratorType(baseType);
     if (!functionType.isFunction()) {
         semanticError("function definition declarator is not a function", function.getDeclaratorContext());
+        return;
+    }
+    if (const char* error = function.getDeclarator().arrayConstraintError(functionType)) {
+        semanticError(error, function.getDeclaratorContext());
         return;
     }
     if (symbolTable.hasGlobalVariable(function.getName())) {

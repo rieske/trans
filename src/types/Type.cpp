@@ -65,32 +65,19 @@ Type function(const Type& returnType, const std::vector<Type>& arguments, bool v
 
 Type array(const Type& elementType, int elementCount) {
     if (elementCount < 0) {
-        throw std::invalid_argument { "array size must be non-negative" };
-    }
-    // Complete object element: void, bare function, and incomplete records are rejected.
-    if (isIncompleteMemberOrElementType(elementType)) {
-        throw std::invalid_argument { "array of incomplete type" };
-    }
-    // After incomplete rejection, use raw element size (may be 0 for empty complete records).
-    const long long stride = elementType.getSize();
-    const long long bytes = stride * static_cast<long long>(elementCount);
-    if (bytes > static_cast<long long>(std::numeric_limits<int>::max())) {
-        throw std::invalid_argument { "array size is too large" };
+        throw std::logic_error { "array size must be non-negative" };
     }
     Type result { std::vector<Qualifier> {} };
     Type::ArrayPayload arr;
     arr.element = std::make_shared<Type>(elementType);
     arr.count = elementCount;
-    arr.sizeBytes = static_cast<int>(bytes);
+    arr.sizeBytes = arrayByteSize(elementType, elementCount).value_or(0);
     arr.complete = true;
     result._payload = std::move(arr);
     return result;
 }
 
 Type incompleteArray(const Type& elementType) {
-    if (isIncompleteMemberOrElementType(elementType)) {
-        throw std::invalid_argument { "array of incomplete type" };
-    }
     Type result { std::vector<Qualifier> {} };
     Type::ArrayPayload arr;
     arr.element = std::make_shared<Type>(elementType);
@@ -102,9 +89,6 @@ Type incompleteArray(const Type& elementType) {
 }
 
 Type variableArray(const Type& elementType, std::shared_ptr<VlaBound> bound) {
-    if (isIncompleteMemberOrElementType(elementType)) {
-        throw std::invalid_argument { "array of incomplete type" };
-    }
     if (!bound) {
         bound = std::make_shared<VlaBound>();
         bound->unspecified = true;
@@ -186,7 +170,7 @@ void Type::applyQualifiers(const std::vector<Qualifier>& qualifiers) {
             case Qualifier::RESTRICT:
                 break;
             default:
-                throw std::invalid_argument { "Unsupported type qualifier" };
+                throw std::logic_error { "Unsupported type qualifier" };
         }
     }
 }
@@ -692,8 +676,7 @@ void Type::applyPacked() {
         b->packed = true;
         return;
     }
-    b->packed = true;
-    relayoutFromMemberSpecs(*this, memberSpecs(*this));
+    relayoutFromMemberSpecs(*this, memberSpecs(*this), true);
 }
 
 std::vector<MemberSpec> memberSpecs(const Type& record) {
@@ -713,17 +696,19 @@ std::vector<MemberSpec> memberSpecs(const Type& record) {
     return specs;
 }
 
-void relayoutFromMemberSpecs(Type& record, const std::vector<MemberSpec>& specs) {
-    const bool packed = record.isPacked();
+const char* relayoutFromMemberSpecs(Type& record, const std::vector<MemberSpec>& specs, bool packed) {
     const bool transparent = record.isTransparentUnion();
-    if (record.isUnion()) {
-        completeUnion(record, specs, packed);
-    } else {
-        completeStructure(record, specs, packed);
-    }
-    if (transparent) {
+    const char* error = record.isUnion()
+            ? completeUnion(record, specs, packed)
+            : completeStructure(record, specs, packed);
+    if (!error && transparent) {
         record.markTransparentUnion();
     }
+    return error;
+}
+
+const char* relayoutFromMemberSpecs(Type& record, const std::vector<MemberSpec>& specs) {
+    return relayoutFromMemberSpecs(record, specs, record.isPacked());
 }
 
 bool Type::isAggregate() const {

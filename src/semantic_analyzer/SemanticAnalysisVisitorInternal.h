@@ -7,6 +7,7 @@
 #include <utility>
 
 #include "ast/Expression.h"
+#include "translation_unit/Context.h"
 #include "types/IntegerConstant.h"
 #include "types/Type.h"
 #include "types/TypeQuery.h"
@@ -44,7 +45,8 @@ IncompleteArrayBound incompleteArrayBoundFromInitializer(ast::Expression* init);
 
 void visitVariableBounds(const type::Type& t, ast::AbstractSyntaxTreeVisitor& visitor,
         const ast::VlaExpressionTable& vlas);
-void finalizeRecordDefinition(type::Type& record, SemanticAnalysisVisitor& visitor);
+void finalizeRecordDefinition(type::Type& record, SemanticAnalysisVisitor& visitor,
+        const translation_unit::Context& where);
 void resolveSpecifierType(ast::TypeSpecifier& spec, SemanticAnalysisVisitor& visitor);
 void finalizeSpecifierType(ast::TypeSpecifier& spec, SemanticAnalysisVisitor& visitor);
 

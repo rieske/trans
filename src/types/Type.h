@@ -91,10 +91,13 @@ public:
     friend Type variableArray(const Type& elementType, std::shared_ptr<VlaBound> bound);
     friend Type incompleteRecord();
     friend Type structure(const std::vector<std::pair<std::string, Type>>& members);
-    friend void completeStructure(Type& structType, const std::vector<MemberSpec>& members,
+    friend const char* completeStructure(Type& structType, const std::vector<MemberSpec>& members,
             bool packed);
     friend Type unionType(const std::vector<std::pair<std::string, Type>>& members);
-    friend void completeUnion(Type& unionType, const std::vector<MemberSpec>& members, bool packed);
+    friend const char* completeUnion(Type& unionType, const std::vector<MemberSpec>& members,
+            bool packed);
+    friend const char* completeRecord(Type& record, const std::vector<MemberSpec>& members,
+            bool asUnion, bool packed);
 
     int getSize() const;
     // Natural alignment in bytes (SysV/amd64 stand-in).
@@ -285,15 +288,16 @@ struct MemberSpec {
 Type structure(const std::vector<std::pair<std::string, Type>>& members = {});
 // Completes a shared StructBody as a struct (isUnion=false). All Type values
 // holding that body identity update kind()/layout together.
-void completeStructure(Type& structType, const std::vector<MemberSpec>& members,
+const char* completeStructure(Type& structType, const std::vector<MemberSpec>& members,
         bool packed = false);
 // Ordinary members only (no bit-fields). Prefer completeUnion(MemberSpec) for bit-fields.
 Type unionType(const std::vector<std::pair<std::string, Type>>& members = {});
 // Union: all members at offset 0; size is the max member stride. packed: alignment 1.
-void completeUnion(Type& unionType, const std::vector<MemberSpec>& members,
+const char* completeUnion(Type& unionType, const std::vector<MemberSpec>& members,
         bool packed = false);
 std::vector<MemberSpec> memberSpecs(const Type& record);
-void relayoutFromMemberSpecs(Type& record, const std::vector<MemberSpec>& specs);
+const char* relayoutFromMemberSpecs(Type& record, const std::vector<MemberSpec>& specs);
+const char* relayoutFromMemberSpecs(Type& record, const std::vector<MemberSpec>& specs, bool packed);
 
 Type signedCharacter(const std::vector<Qualifier>& qualifiers = {});
 Type unsignedCharacter(const std::vector<Qualifier>& qualifiers = {});

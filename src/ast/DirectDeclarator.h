@@ -12,6 +12,7 @@
 namespace ast {
 
 class ArrayDeclarator;
+class FormalArgument;
 class FunctionDeclarator;
 
 class DirectDeclarator: public AbstractSyntaxTreeNode {
@@ -26,6 +27,7 @@ public:
     virtual type::Type getFundamentalType(std::vector<Pointer> indirection, const type::Type& baseType) const = 0;
 
     virtual void forEachArrayDeclarator(const std::function<void(ArrayDeclarator&)>&) {}
+    virtual void forEachFormalArgument(const std::function<void(const FormalArgument&)>&) const {}
 
     // FunctionDeclarator closest to the identifier, or nullptr if this is not a function.
     virtual const FunctionDeclarator* innermostFunctionDeclarator() const { return nullptr; }

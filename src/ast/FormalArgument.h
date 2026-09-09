@@ -1,6 +1,7 @@
 #ifndef _PARAM_DECL_NODE_H_
 #define _PARAM_DECL_NODE_H_
 
+#include <functional>
 #include <memory>
 #include <string>
 
@@ -20,7 +21,10 @@ public:
     void visitSpecifiers(AbstractSyntaxTreeVisitor& visitor);
     void visitDeclarator(AbstractSyntaxTreeVisitor& visitor);
 
+    type::Type declaredType() const;
     type::Type getType() const;
+    const char* arrayConstraintError() const;
+    void forEachFormalArgument(const std::function<void(const FormalArgument&)>& fn) const;
     DeclarationSpecifiers& getSpecifiers() { return specifiers; }
     const DeclarationSpecifiers& getSpecifiers() const { return specifiers; }
     std::string getName() const;

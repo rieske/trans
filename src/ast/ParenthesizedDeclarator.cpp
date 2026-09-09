@@ -29,4 +29,9 @@ const FunctionDeclarator* ParenthesizedDeclarator::innermostFunctionDeclarator()
     return declarator->innermostFunctionDeclarator();
 }
 
+void ParenthesizedDeclarator::forEachFormalArgument(
+        const std::function<void(const FormalArgument&)>& fn) const {
+    declarator->forEachFormalArgument(fn);
+}
+
 } // namespace ast

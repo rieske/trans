@@ -53,10 +53,10 @@ void ParseEnvironment::maybeDefineParameter(const FormalArgument& argument) {
     if (argument.getName().empty() || argument.needsSemanticResolve()) {
         return;
     }
-    try {
-        session_.types.addPending(argument.getName(), argument.getType());
-    } catch (const std::invalid_argument&) {
+    if (argument.arrayConstraintError()) {
+        return;
     }
+    session_.types.addPending(argument.getName(), argument.getType());
 }
 
 std::optional<type::Type> ParseEnvironment::lookupObject(const std::string& name) const {
@@ -99,7 +99,11 @@ void ParseEnvironment::bindBlockDeclarations(const Block& block) {
             if (declarator->getName().empty()) {
                 continue;
             }
-            defineTransient(declarator->getName(), declarator->getFundamentalType(base));
+            type::Type declared = declarator->getFundamentalType(base);
+            if (declarator->getDeclarator().arrayConstraintError(declared)) {
+                continue;
+            }
+            defineTransient(declarator->getName(), std::move(declared));
         }
     }
 }
@@ -125,6 +129,9 @@ void ParseEnvironment::registerInitializedDeclaration(
         }
         for (const auto& declarator : declarators) {
             type::Type aliased = declarator->getFundamentalType(baseType);
+            if (declarator->getDeclarator().arrayConstraintError(aliased)) {
+                continue;
+            }
             defineTypedef(declarator->getName(), aliased);
         }
         if (declarators.empty()) {
@@ -151,10 +158,11 @@ void ParseEnvironment::tryDefineObject(const DeclarationSpecifiers& specs, Decla
     if (specs.needsSemanticResolve() || declarator.getName().empty()) {
         return;
     }
-    try {
-        defineObject(declarator.getName(), declarator.getFundamentalType(specs.getResolvedType()));
-    } catch (const std::invalid_argument&) {
+    type::Type declared = declarator.getFundamentalType(specs.getResolvedType());
+    if (declarator.arrayConstraintError(declared)) {
+        return;
     }
+    defineObject(declarator.getName(), std::move(declared));
 }
 
 bool ParseEnvironment::enumeratorInCurrentScope(const std::string& name) const {

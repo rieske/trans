@@ -50,6 +50,10 @@ type::Type FunctionDefinition::getDeclaratorType(const type::Type& baseType) con
     return declarator->getFundamentalType(baseType);
 }
 
+const Declarator& FunctionDefinition::getDeclarator() const {
+    return *declarator;
+}
+
 translation_unit::Context FunctionDefinition::getDeclaratorContext() const {
     return declarator->getContext();
 }

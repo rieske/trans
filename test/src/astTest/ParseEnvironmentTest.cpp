@@ -684,7 +684,8 @@ TEST(ParseEnvironment, parameterIncompleteArrayIsSkipped) {
                     std::make_unique<Identifier>(TerminalSymbol { "a", ctx }),
                     std::make_unique<ConstantExpression>(
                             Constant { "3", type::signedInteger(), ctx }))) };
-    EXPECT_THROW(arg.getType(), std::invalid_argument);
+    EXPECT_TRUE(arg.declaredType().isArray());
+    EXPECT_TRUE(arg.getType().isPointer());
     EXPECT_NO_THROW(env.maybeDefineParameter(arg));
     EXPECT_FALSE(env.lookupObject("a").has_value());
 }
