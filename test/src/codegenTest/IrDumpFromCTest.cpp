@@ -131,6 +131,9 @@ TEST(IrDumpFromC, unusedIntegerAddDropsAtO1) {
     EXPECT_THAT(compileToIr(src, 1), Not(HasSubstr("+")));
 }
 
+// A void result is still a Value, so it takes a frame word at -O0 (none at -O1).
+// Skipping it in frame layout breaks the conditional and comma paths, which do
+// reference it; removing the cost needs void results to stop being Values.
 TEST(IrDumpFromC, DISABLED_voidCallAllocatesNoResultTemp) {
     EXPECT_THAT(compileToIr("void v(void){}\nint main(void){ v(); v(); return 0; }\n", 0), StrEq(
             "PROC v\n"

@@ -174,7 +174,7 @@ bool ParseEnvironment::addEnumerator(std::string name, type::IntegerConstant val
         return false;
     }
     session_.enums.add(name, value);
-    enumerators_.push_back(Enumerator { name, value });
+    enumerators_.emplace_back(session_.enumBodyDepth(), Enumerator { name, value });
     const type::SignedBits v = type::signedValue(value);
     if (!enumBody_) {
         enumBody_ = EnumBody { type::nextEnumerator(value), v, v };
@@ -191,8 +191,18 @@ bool ParseEnvironment::addEnumerator(std::string name, type::IntegerConstant val
 }
 
 std::vector<Enumerator> ParseEnvironment::takeEnumerators() {
-    std::vector<Enumerator> taken = std::move(enumerators_);
-    enumerators_.clear();
+    // The body just closed sat one level deeper than the enclosing one.
+    const int depth = session_.enumBodyDepth() + 1;
+    std::vector<Enumerator> taken;
+    auto keep = enumerators_.begin();
+    for (auto& entry : enumerators_) {
+        if (entry.first == depth) {
+            taken.push_back(std::move(entry.second));
+        } else {
+            *keep++ = std::move(entry);
+        }
+    }
+    enumerators_.erase(keep, enumerators_.end());
     return taken;
 }
 

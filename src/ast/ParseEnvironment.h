@@ -3,6 +3,7 @@
 
 #include <map>
 #include <optional>
+#include <utility>
 #include <string>
 
 #include <memory>
@@ -85,7 +86,8 @@ private:
     std::map<std::string, type::Type> structTags_;
     std::map<std::string, type::Type> enumTags_;
     std::optional<EnumBody> enumBody_;
-    std::vector<Enumerator> enumerators_;
+    // Enumerator with the enum-body depth it was declared at.
+    std::vector<std::pair<int, Enumerator>> enumerators_;
 };
 
 } // namespace ast

@@ -120,8 +120,13 @@ struct LexicalSession {
             enterBlock();
         } else if (kind == BraceFrame::Record) {
             enterRecord();
+        } else {
+            ++enumBodyDepth_;
         }
     }
+    // Enum bodies nest, so each definition can tell its own enumerators from an
+    // enclosing one's.
+    int enumBodyDepth() const { return enumBodyDepth_; }
     void closeBrace() {
         if (braces_.empty()) {
             leaveBlock();
@@ -133,6 +138,8 @@ struct LexicalSession {
             leaveBlock();
         } else if (kind == BraceFrame::Record) {
             leaveRecord();
+        } else if (enumBodyDepth_ > 0) {
+            --enumBodyDepth_;
         }
     }
     void endDeclarators() {
@@ -153,6 +160,7 @@ struct LexicalSession {
     LexicalSession& operator=(LexicalSession&&) = delete;
 
 private:
+    int enumBodyDepth_ { 0 };
     std::vector<BraceFrame> braces_;
 };
 

@@ -745,6 +745,9 @@ TEST(Compiler, bitFieldWidthFromAShadowedEnumeratorIsRejected) {
     program.assertCompilationErrors("bit-field width is not a constant");
 }
 
+// Needs the enumerator to live in a pending frame that a function body commits and a
+// prototype discards, the way parameter names already do. A definition's parameter
+// enumerators stay visible in its body, so they cannot simply be dropped.
 TEST(Compiler, DISABLED_prototypeEnumeratorDoesNotOutliveItsDeclarator) {
     SourceProgram program{R"prg(
         void f(enum { R = 5 } e);
@@ -764,6 +767,22 @@ TEST(Compiler, enumeratorDeclaredLaterInTheUnitIsNotVisible) {
     )prg"};
     program.compile();
     program.assertCompilationErrors("`A` is not defined");
+}
+
+// An enumerator whose initializer defines a nested enum: the enclosing definition's
+// enumerators reach the type specifier, but the shadowed name still resolves to the
+// outer object. Same on master.
+TEST(Compiler, DISABLED_enumeratorInitializedByANestedEnumStillShadows) {
+    SourceProgram program{R"prg(int printf(const char *, ...);
+        int A = 7;
+        int main() {
+            enum E { A = 1, B = (int)sizeof(enum F { C = 3 }) };
+            printf("%d %d", A, B);
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("1 4");
 }
 
 } // namespace

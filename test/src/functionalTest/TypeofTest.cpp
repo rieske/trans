@@ -902,6 +902,9 @@ TEST(Compiler, typeofOfAnObjectShadowingAnEnumeratorStillCompiles) {
     program.runAndExpect("8");
 }
 
+// Needs parse-time typing to defer to semantic analysis for a name that is both an
+// object and an enumerator; every type-name position other than a declaration treats
+// an unresolved operand as fatal.
 TEST(Compiler, DISABLED_typeofUsesTheEnumeratorShadowingAnOuterObject) {
     SourceProgram program{R"prg(int printf(const char *, ...);
         long A = 7;
