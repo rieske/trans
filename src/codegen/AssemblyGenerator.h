@@ -24,8 +24,6 @@ public:
             const std::vector<GlobalVariable>& globalVariables);
 
 private:
-    void emit(const Instruction& instruction);
-
     std::ostream* out_;
     std::unique_ptr<InstructionSet> instructions_;
     std::unique_ptr<Amd64Registers> registers_;

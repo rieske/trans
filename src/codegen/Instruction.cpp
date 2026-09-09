@@ -2,8 +2,10 @@
 
 #include "SysVCallConv.h"
 #include "ValueKind.h"
+#include "symbols/ValueEntry.h"
 #include "types/ObjectAbi.h"
 #include "types/SysVClassify.h"
+#include "types/TypeQuery.h"
 
 #include <stdexcept>
 #include <string>
@@ -44,6 +46,24 @@ int addFrameTemp(IrStringTable& strings, Procedure& procedure, const type::Type&
     const int scratchId = scratch.id();
     procedure.frame.locals.push_back(std::move(scratch));
     return scratchId;
+}
+
+Value valueFromSymbol(IrStringTable& strings, const symbols::ValueEntry& symbol) {
+    const type::Type& objectType = symbol.getType();
+    const type::Type homeType = type::hasRuntimeSize(objectType)
+            ? type::pointer(objectType)
+            : objectType;
+    Value value {
+            strings.intern(symbol.getName()),
+            symbol.getIndex(),
+            valueKindFromCType(homeType),
+            homeType.getSize(),
+            type::sysv::classify(homeType)
+    };
+    if (symbol.isExpressionTemp()) {
+        value.markExpressionTemp();
+    }
+    return value;
 }
 
 namespace {

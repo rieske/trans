@@ -131,4 +131,40 @@ void StackMachine::allocaBytes(int sizeName, int resultName) {
     bindResult(resultRegister, resolve(resultName));
 }
 
+void StackMachine::addressOf(int operandName, int resultName) {
+    auto& operand = resolve(operandName);
+    storeInMemory(operand);
+    Register& resultRegister = get64BitRegister();
+    assembly << instructionSet->lea(memoryOperand(operand), resultRegister);
+    bindResult(resultRegister, resolve(resultName));
+}
+
+void StackMachine::functionAddress(int functionName, int resultName) {
+    Register& resultRegister = get64BitRegister();
+    const std::string& name = text(functionName);
+    if (isDefinedProcedure(functionName)) {
+        assembly << instructionSet->lea(MemoryOperand::global(name), resultRegister);
+    } else {
+        assembly << instructionSet->loadGot(name, resultRegister);
+    }
+    bindResult(resultRegister, resolve(resultName));
+}
+
+void StackMachine::dereference(int operandName, int lvalueName, int resultName) {
+    auto& operand = resolve(operandName);
+    auto& result = resolve(resultName);
+    Register& pointerRegister = materialize(operand);
+    if (!nativeMoveSize(result.getSizeInBytes())) {
+        copyFromPointer(pointerRegister, result);
+    } else {
+        Register& resultRegister = get64BitRegisterExcluding(pointerRegister);
+        loadPromotedFrom(MemoryOperand::at(pointerRegister, 0), result, resultRegister);
+        bindResult(resultRegister, result);
+    }
+
+    Register& lvalueRegister = get64BitRegisterExcluding(pointerRegister);
+    assembly << instructionSet->mov(pointerRegister, lvalueRegister);
+    lvalueRegister.assign(&resolve(lvalueName));
+}
+
 } // namespace codegen

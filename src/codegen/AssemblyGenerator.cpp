@@ -1,7 +1,6 @@
 #include "AssemblyGenerator.h"
 
 #include <set>
-#include <stdexcept>
 #include <variant>
 
 namespace codegen {
@@ -73,158 +72,10 @@ void AssemblyGenerator::generateAssemblyCode(IntermediateRepresentation& ir,
     for (const auto& procedure : ir.procedures) {
         stackMachine->startProcedure(procedure);
         for (const auto& instruction : procedure.body) {
-            emit(instruction);
-            stackMachine->finishInstruction();
+            stackMachine->emit(instruction);
         }
         stackMachine->endProcedure();
     }
-}
-
-void AssemblyGenerator::emit(const Instruction& instruction) {
-    switch (instruction.op) {
-    case Op::Label:
-        stackMachine->label(instruction.arg0);
-        return;
-    case Op::Jump:
-        stackMachine->jump(instruction.cond, instruction.arg0, instruction.imm != 0);
-        return;
-    case Op::ValueCompare:
-        stackMachine->compare(instruction.arg0, instruction.arg1, instruction.imm != 0);
-        return;
-    case Op::ZeroCompare:
-        stackMachine->zeroCompare(instruction.arg0);
-        return;
-    case Op::AddressOf:
-        stackMachine->addressOf(instruction.arg0, instruction.result);
-        return;
-    case Op::Dereference:
-        stackMachine->dereference(instruction.arg0, instruction.arg1, instruction.result);
-        return;
-    case Op::IndexAddress:
-        stackMachine->indexAddress(
-                instruction.arg0, instruction.arg1, instruction.imm, instruction.result,
-                instruction.baseMode);
-        return;
-    case Op::PointerOffset:
-        stackMachine->pointerOffset(instruction.arg0, instruction.arg1, instruction.imm,
-                instruction.result, instruction.pointerSubtract);
-        return;
-    case Op::PointerDiff:
-        stackMachine->pointerDifference(
-                instruction.arg0, instruction.arg1, instruction.imm, instruction.result);
-        return;
-    case Op::FieldAddress:
-        stackMachine->fieldAddress(
-                instruction.arg0, instruction.imm, instruction.result, instruction.baseMode);
-        return;
-    case Op::CopyPart:
-        stackMachine->copyPart(instruction.arg0, instruction.result, instruction.imm);
-        return;
-    case Op::FunctionAddress:
-        stackMachine->functionAddress(instruction.arg0, instruction.result);
-        return;
-    case Op::UnaryMinus:
-        stackMachine->unaryMinus(instruction.arg0, instruction.result);
-        return;
-    case Op::UnaryNot:
-        stackMachine->unaryNot(instruction.arg0, instruction.result);
-        return;
-    case Op::Assign:
-        stackMachine->assign(instruction.arg0, instruction.result);
-        return;
-    case Op::Widen:
-        stackMachine->widenInteger(instruction.arg0, instruction.result, instruction.imm != 0);
-        return;
-    case Op::AssignConstant:
-        stackMachine->assignConstant(instruction.arg0, instruction.result, instruction.arg1);
-        return;
-    case Op::AssignLabelAddress:
-        stackMachine->assignLabelAddress(instruction.arg0, instruction.result);
-        return;
-    case Op::LvalueAssign:
-        stackMachine->lvalueAssign(instruction.arg0, instruction.result);
-        return;
-    case Op::Argument:
-        stackMachine->procedureArgument(instruction.arg0);
-        return;
-    case Op::Call:
-        if (instruction.callIndirect) {
-            stackMachine->callProcedureIndirect(instruction.arg0, instruction.memoryReturnDest);
-        } else {
-            stackMachine->callProcedure(instruction.arg0, instruction.memoryReturnDest);
-        }
-        return;
-    case Op::Return:
-        stackMachine->returnFromProcedure(instruction.arg0);
-        return;
-    case Op::VoidReturn:
-        stackMachine->returnFromProcedure();
-        return;
-    case Op::Retrieve:
-        stackMachine->retrieveProcedureReturnValue(instruction.result, instruction.memoryReturn);
-        return;
-    case Op::Xor:
-        stackMachine->xorCommand(instruction.arg0, instruction.arg1, instruction.result);
-        return;
-    case Op::Or:
-        stackMachine->orCommand(instruction.arg0, instruction.arg1, instruction.result);
-        return;
-    case Op::And:
-        stackMachine->andCommand(instruction.arg0, instruction.arg1, instruction.result);
-        return;
-    case Op::Add:
-        stackMachine->add(instruction.arg0, instruction.arg1, instruction.result);
-        return;
-    case Op::Sub:
-        stackMachine->sub(instruction.arg0, instruction.arg1, instruction.result);
-        return;
-    case Op::Mul:
-        stackMachine->mul(instruction.arg0, instruction.arg1, instruction.result);
-        return;
-    case Op::Div:
-        stackMachine->div(instruction.arg0, instruction.arg1, instruction.result,
-                instruction.imm != 0);
-        return;
-    case Op::Mod:
-        stackMachine->mod(instruction.arg0, instruction.arg1, instruction.result,
-                instruction.imm != 0);
-        return;
-    case Op::Inc:
-        stackMachine->inc(instruction.arg0, instruction.imm);
-        return;
-    case Op::Dec:
-        stackMachine->dec(instruction.arg0, instruction.imm);
-        return;
-    case Op::Shl:
-        stackMachine->shl(instruction.arg0, instruction.arg1, instruction.result);
-        return;
-    case Op::Shr:
-        stackMachine->shr(instruction.arg0, instruction.arg1, instruction.result,
-                instruction.imm != 0);
-        return;
-    case Op::VaStart:
-        stackMachine->vaStart(instruction.arg0, instruction.arg1);
-        return;
-    case Op::VaArg:
-        stackMachine->vaArg(instruction.arg0, instruction.result);
-        return;
-    case Op::VaCopy:
-        stackMachine->vaCopy(instruction.arg0, instruction.arg1);
-        return;
-    case Op::VaEnd:
-        stackMachine->vaEnd();
-        return;
-    case Op::Bswap:
-        stackMachine->bswap(instruction.arg0, instruction.result, instruction.imm);
-        return;
-    case Op::Ctz:
-        stackMachine->ctz(instruction.arg0, instruction.result, instruction.imm);
-        return;
-    case Op::Alloca:
-        stackMachine->allocaBytes(instruction.arg0, instruction.result);
-        return;
-    }
-    throw std::logic_error { "AssemblyGenerator::emit: unhandled Op" };
 }
 
 } // namespace codegen
