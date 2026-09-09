@@ -725,6 +725,105 @@ TEST(IrPasses, eliminateDeadTemps_keepsStore) {
     EXPECT_THAT(toString(ir), HasSubstr("*p := t"));
 }
 
+TEST(IrPasses, eliminateDeadTemps_dropsUnusedDereference) {
+    IntermediateRepresentation ir;
+    IrN n { ir.strings };
+    ir.procedures.push_back(makeProc(ir.strings, "f", {
+            ir::dereference(n("p"), n("s"), n("t")),
+            ir::ret(n("x")),
+    }, exprTemps(ir.strings, { "p", "s", "t", "x" })));
+
+    eliminateDeadTemps(ir.procedures.front());
+
+    EXPECT_THAT(toString(ir), StrEq(
+            "PROC f\n"
+            "\tRETURN x\n"
+            "ENDPROC f\n"));
+}
+
+TEST(IrPasses, eliminateDeadTemps_dropsUnusedAddressOf) {
+    IntermediateRepresentation ir;
+    IrN n { ir.strings };
+    ir.procedures.push_back(makeProc(ir.strings, "f", {
+            ir::addressOf(n("a"), n("p")),
+            ir::ret(n("x")),
+    }, exprTemps(ir.strings, { "a", "p", "x" })));
+
+    eliminateDeadTemps(ir.procedures.front());
+
+    EXPECT_THAT(toString(ir), StrEq(
+            "PROC f\n"
+            "\tRETURN x\n"
+            "ENDPROC f\n"));
+}
+
+TEST(IrPasses, eliminateDeadTemps_dropsUnusedIndexAddress) {
+    IntermediateRepresentation ir;
+    IrN n { ir.strings };
+    ir.procedures.push_back(makeProc(ir.strings, "f", {
+            ir::indexAddress(n("a"), n("i"), 4, n("q")),
+            ir::ret(n("x")),
+    }, exprTemps(ir.strings, { "a", "i", "q", "x" })));
+
+    eliminateDeadTemps(ir.procedures.front());
+
+    EXPECT_THAT(toString(ir), StrEq(
+            "PROC f\n"
+            "\tRETURN x\n"
+            "ENDPROC f\n"));
+}
+
+TEST(IrPasses, eliminateDeadTemps_dropsUnusedFieldAddress) {
+    IntermediateRepresentation ir;
+    IrN n { ir.strings };
+    ir.procedures.push_back(makeProc(ir.strings, "f", {
+            ir::fieldAddress(n("p"), 4, n("q")),
+            ir::ret(n("x")),
+    }, exprTemps(ir.strings, { "p", "q", "x" })));
+
+    eliminateDeadTemps(ir.procedures.front());
+
+    EXPECT_THAT(toString(ir), StrEq(
+            "PROC f\n"
+            "\tRETURN x\n"
+            "ENDPROC f\n"));
+}
+
+TEST(IrPasses, eliminateDeadTemps_keepsUsedDereference) {
+    IntermediateRepresentation ir;
+    IrN n { ir.strings };
+    ir.procedures.push_back(makeProc(ir.strings, "f", {
+            ir::dereference(n("p"), n("s"), n("t")),
+            ir::ret(n("t")),
+    }, exprTemps(ir.strings, { "p", "s", "t" })));
+
+    eliminateDeadTemps(ir.procedures.front());
+
+    EXPECT_THAT(toString(ir), HasSubstr("t := *p"));
+}
+
+TEST(IrPasses, eliminateDeadTemps_dropsOuterLoadKeepsStoreAddress) {
+    IntermediateRepresentation ir;
+    IrN n { ir.strings };
+    ir.procedures.push_back(makeProc(ir.strings, "f", {
+            ir::dereference(n("pp"), n("s0"), n("t0")),
+            ir::dereference(n("t0"), n("s1"), n("t1")),
+            ir::assignConstant(n("9"), n("t2")),
+            ir::lvalueAssign(n("t2"), n("t0")),
+            ir::voidReturn(),
+    }, exprTemps(ir.strings, { "pp", "s0", "t0", "s1", "t1", "t2" })));
+
+    eliminateDeadTemps(ir.procedures.front());
+
+    EXPECT_THAT(toString(ir), StrEq(
+            "PROC f\n"
+            "\tt0 := *pp\n"
+            "\tt2 := 9\n"
+            "\t*t0 := t2\n"
+            "\tRETURN\n"
+            "ENDPROC f\n"));
+}
+
 TEST(IrPasses, eliminateDeadTemps_keepsCall) {
     IntermediateRepresentation ir;
     IrN n { ir.strings };

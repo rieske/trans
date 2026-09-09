@@ -143,9 +143,8 @@ TEST(IrDumpFromC, starAssignStoresThroughPointerAtO0AndO1) {
             "ENDPROC f\n"));
     EXPECT_THAT(compileToIr(src, 1), StrEq(
             "PROC f\n"
-            "\t$t0 := *L$loc1_p\n"
-            "\t$t1 := 9\n"
-            "\t*L$loc1_p := $t1\n"
+            "\t$t0 := 9\n"
+            "\t*L$loc1_p := $t0\n"
             "\tRETURN\n"
             "ENDPROC f\n"));
 }
@@ -164,9 +163,8 @@ TEST(IrDumpFromC, starStarAssignStoresThroughInnerLoadAtO0AndO1) {
     EXPECT_THAT(compileToIr(src, 1), StrEq(
             "PROC f\n"
             "\t$t0 := *L$loc1_pp\n"
-            "\t$t1 := *$t0\n"
-            "\t$t2 := 9\n"
-            "\t*$t0 := $t2\n"
+            "\t$t1 := 9\n"
+            "\t*$t0 := $t1\n"
             "\tRETURN\n"
             "ENDPROC f\n"));
 }
@@ -187,9 +185,8 @@ TEST(IrDumpFromC, starStarStarAssignStoresThroughMiddleLoad) {
             "PROC f\n"
             "\t$t0 := *L$loc1_ppp\n"
             "\t$t1 := *$t0\n"
-            "\t$t2 := *$t1\n"
-            "\t$t3 := 8\n"
-            "\t*$t1 := $t3\n"
+            "\t$t2 := 8\n"
+            "\t*$t1 := $t2\n"
             "\tRETURN\n"
             "ENDPROC f\n"));
 }
@@ -212,9 +209,8 @@ TEST(IrDumpFromC, starPostfixAssignStoresThroughSavedPointer) {
             "\t$t0 := L$loc1_p\n"
             "\t__t0 := 1\n"
             "\tL$loc1_p := L$loc1_p + __t0*4 (ptr)\n"
-            "\t$t1 := *$t0\n"
-            "\t$t2 := 9\n"
-            "\t*$t0 := $t2\n"
+            "\t$t1 := 9\n"
+            "\t*$t0 := $t1\n"
             "\tRETURN\n"
             "ENDPROC f\n"));
 }
@@ -239,9 +235,8 @@ TEST(IrDumpFromC, starCastAssignStoresThroughCastTemp) {
     EXPECT_THAT(compileToIr(src, 1), StrEq(
             "PROC f\n"
             "\t$t0 := L$loc1_p\n"
-            "\t$t1 := *$t0\n"
-            "\t$t2 := 9\n"
-            "\t*$t0 := $t2\n"
+            "\t$t1 := 9\n"
+            "\t*$t0 := $t1\n"
             "\tRETURN\n"
             "ENDPROC f\n"));
 }
@@ -262,9 +257,8 @@ TEST(IrDumpFromC, starOffsetAssignStoresThroughPointerOffset) {
             "PROC f\n"
             "\t$t0 := 1\n"
             "\t$t1 := L$loc1_p + $t0*4 (ptr)\n"
-            "\t$t2 := *$t1\n"
-            "\t$t3 := 9\n"
-            "\t*$t1 := $t3\n"
+            "\t$t2 := 9\n"
+            "\t*$t1 := $t2\n"
             "\tRETURN\n"
             "ENDPROC f\n"));
 }
@@ -296,6 +290,43 @@ TEST(IrDumpFromC, arrowAndIndexAssignStayOnDefinedAddress) {
             HasSubstr("&(L$loc1_p->4)"));
     EXPECT_THAT(compileToIr("void f(void) { int a[4]; a[1] = 9; }\n", 0),
             HasSubstr("&L$loc1_a["));
+    EXPECT_THAT(compileToIr("struct S { int x; int y; }; void f(struct S *p) { p->y = 9; }\n", 1),
+            StrEq(
+                    "PROC f\n"
+                    "\t$t0 := &(L$loc1_p->4)\n"
+                    "\t$t1 := 9\n"
+                    "\t*$t0 := $t1\n"
+                    "\tRETURN\n"
+                    "ENDPROC f\n"));
+    EXPECT_THAT(compileToIr("void f(void) { int a[4]; a[1] = 9; }\n", 1), StrEq(
+            "PROC f\n"
+            "\t$t0 := 1\n"
+            "\t$t1 := &L$loc1_a[$t0] stride=4 (array)\n"
+            "\t$t2 := 9\n"
+            "\t*$t1 := $t2\n"
+            "\tRETURN\n"
+            "ENDPROC f\n"));
+}
+
+TEST(IrDumpFromC, starRmwKeepsTheLoadAtO1) {
+    EXPECT_THAT(compileToIr("void f(int *p) { ++*p; }\n", 1), StrEq(
+            "PROC f\n"
+            "\t$t0 := *L$loc1_p\n"
+            "\tINC $t0\n"
+            "\t*L$loc1_p := $t0\n"
+            "\tRETURN\n"
+            "ENDPROC f\n"));
+}
+
+TEST(IrDumpFromC, starAssignFromStarKeepsOneLoadAtO1) {
+    EXPECT_THAT(compileToIr("void f(int *p) { *p = *p + 1; }\n", 1), StrEq(
+            "PROC f\n"
+            "\t$t0 := *L$loc1_p\n"
+            "\t$t1 := 1\n"
+            "\t$t2 := $t0 + $t1\n"
+            "\t*L$loc1_p := $t2\n"
+            "\tRETURN\n"
+            "ENDPROC f\n"));
 }
 
 TEST(IrDumpFromC, addressOfStarDropsSelfCopyAtO0) {
