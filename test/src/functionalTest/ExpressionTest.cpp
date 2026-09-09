@@ -287,4 +287,20 @@ TEST(Compiler, castsOfScalarAndDecayedOperandsStayLegal) {
     program.runAndExpect("5 2 1 1 1");
 }
 
+TEST(Compiler, voidValuedExpressionsStayLegalWhereCAllowsThem) {
+    SourceProgram program{R"prg(int printf(const char *, ...);
+        void v(void) { }
+        int c = 1;
+        int main(void) {
+            v();
+            (void)v();
+            c ? v() : v();
+            printf("%d", (v(), 7));
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("7");
+}
+
 } // namespace

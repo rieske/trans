@@ -24,7 +24,8 @@ enum class ObjectBind {
 };
 
 // C: ordinary identifiers and enumeration constants share one namespace, so a name
-// binds to whichever was declared in the nearest enclosing scope.
+// binds to whichever was declared in the nearest enclosing scope. Both fields null
+// means the name is not bound in any open block scope.
 struct NameBinding {
     const symbols::ValueEntry* value { nullptr };
     const type::IntegerConstant* enumerator { nullptr };
@@ -48,7 +49,9 @@ public:
     bool isFunctionDefined(const std::string& name) const;
     void markFunctionDefined(const std::string& name);
     const symbols::ValueEntry* find(const std::string& name) const;
-    NameBinding findName(const std::string& name) const;
+    // Innermost binding among the open block scopes; file scope is not consulted.
+    NameBinding findBlockName(const std::string& name) const;
+    // File-scope enumerators keep their parse-time fold; only block scopes need a home.
     void insertEnumerator(const std::string& name, type::IntegerConstant value);
     const symbols::ValueEntry& lookup(const std::string& name) const;
     symbols::ValueEntry createTemporarySymbol(type::Type type);
@@ -90,7 +93,6 @@ private:
     // C has no nested function definitions: at most one is open.
     std::optional<FunctionScope> currentFunction;
     ValueScope globalScope;
-    std::map<SymbolKey, type::IntegerConstant> globalEnumerators;
     std::vector<symbols::ValueEntry> functionScopeDataHomes;
     unsigned nextScopeId { 0 };
 

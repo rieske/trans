@@ -622,4 +622,59 @@ TEST(Compiler, forInitDeclaratorDoesNotHideAnEnumerator) {
     program.runAndExpect("5");
 }
 
+TEST(Compiler, enumInPrototypeParameterListDoesNotShadowTheBlock) {
+    SourceProgram program{R"prg(int printf(const char *, ...);
+        int main() {
+            int P = 7;
+            {
+                void f(enum { P = 3 } e);
+                printf("%d", P);
+            }
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("7");
+}
+
+TEST(Compiler, enumeratorInASizeofTypeNameShadowsTheFileScopeOne) {
+    SourceProgram program{R"prg(int printf(const char *, ...);
+        enum { A = 9 };
+        int main() {
+            int n = (int)sizeof(enum { A = 1 });
+            (void)n;
+            printf("%d", A);
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("1");
+}
+
+TEST(Compiler, enumeratorInARecordMemberShadowsTheFileScopeOne) {
+    SourceProgram program{R"prg(int printf(const char *, ...);
+        enum { A = 9 };
+        int main() {
+            struct T { enum { A = 1 } m; };
+            printf("%d", A);
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("1");
+}
+
+TEST(Compiler, qualifiedEnumSpecifierStillDeclaresItsEnumerators) {
+    SourceProgram program{R"prg(int printf(const char *, ...);
+        int A = 55;
+        int main() {
+            (void)(const enum E2 { A = 3 })0;
+            printf("%d", A);
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("3");
+}
+
 } // namespace

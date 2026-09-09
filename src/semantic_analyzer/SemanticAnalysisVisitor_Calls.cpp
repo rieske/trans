@@ -226,17 +226,16 @@ void SemanticAnalysisVisitor::visit(ast::FunctionCall& functionCall) {
     annotations().setCallPlan(&functionCall, callee.plan);
 
     auto returnType = callee.type.getReturnType();
-    if (!returnType.isVoid()) {
-        functionCall.setTypeAndResult(annotations(), symbolTable.createTemporarySymbol(returnType));
-    }
+    functionCall.setTypeAndResult(annotations(), symbolTable.createTemporarySymbol(returnType));
 }
 
 void SemanticAnalysisVisitor::visit(ast::IdentifierExpression& identifier) {
     const std::string& name = identifier.getIdentifier();
 
-    // The nearest declaration wins; the parse-time fold is only a guess, so drop it
-    // when an object or function turns out to be nearer.
-    const auto binding = symbolTable.findName(name);
+    // The nearest declaration wins. Block scopes come first, then the parse-time fold,
+    // which is the only record of an enum defined where analysis never walks (a sizeof
+    // type-name the parser folds away, a record member), and last file scope.
+    const auto binding = symbolTable.findBlockName(name);
     if (binding.enumerator) {
         identifier.setFoldedConstant(*binding.enumerator);
         identifier.setTypeAndResult(annotations(),
@@ -254,7 +253,22 @@ void SemanticAnalysisVisitor::visit(ast::IdentifierExpression& identifier) {
     }
 
     type::IntegerConstant ice;
-    if (identifier.evaluateConstant(ice) || session().lookupEnumerator(name, ice)) {
+    if (identifier.evaluateConstant(ice)) {
+        identifier.setTypeAndResult(annotations(),
+                symbolTable.createTemporarySymbol(ice.type));
+        return;
+    }
+
+    if (const auto* entry = symbolTable.find(name)) {
+        if (type::isBareFunction(entry->getType())) {
+            setFunctionDesignator(identifier, symbolTable, annotations());
+            return;
+        }
+        identifier.setTypeAndResult(annotations(), *entry);
+        return;
+    }
+
+    if (session().lookupEnumerator(name, ice)) {
         identifier.setFoldedConstant(ice);
         identifier.setTypeAndResult(annotations(),
                 symbolTable.createTemporarySymbol(ice.type));

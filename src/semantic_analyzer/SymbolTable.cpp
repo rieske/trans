@@ -230,36 +230,28 @@ const symbols::ValueEntry* SymbolTable::find(const std::string& name) const {
 
 void SymbolTable::insertEnumerator(const std::string& name, type::IntegerConstant value) {
     if (isAtFileScope()) {
-        globalEnumerators.insert_or_assign(SymbolKey { 0, name }, std::move(value));
         return;
     }
     auto& fn = openFunction();
     fn.enumerators.insert_or_assign(SymbolKey { currentScopeId(), name }, std::move(value));
 }
 
-NameBinding SymbolTable::findName(const std::string& name) const {
-    if (!isAtFileScope()) {
-        const auto& fn = openFunction();
-        for (auto it = fn.blockIds.rbegin(); it != fn.blockIds.rend(); ++it) {
-            const SymbolKey key { *it, name };
-            auto enumerator = fn.enumerators.find(key);
-            if (enumerator != fn.enumerators.end()) {
-                return NameBinding { nullptr, &enumerator->second };
-            }
-            if (const symbols::ValueEntry* entry = fn.values.find(key)) {
-                return NameBinding { entry, nullptr };
-            }
+NameBinding SymbolTable::findBlockName(const std::string& name) const {
+    if (isAtFileScope()) {
+        return NameBinding {};
+    }
+    const auto& fn = openFunction();
+    for (auto it = fn.blockIds.rbegin(); it != fn.blockIds.rend(); ++it) {
+        const SymbolKey key { *it, name };
+        auto enumerator = fn.enumerators.find(key);
+        if (enumerator != fn.enumerators.end()) {
+            return NameBinding { nullptr, &enumerator->second };
         }
-        if (const symbols::ValueEntry* argument = fn.values.findArgumentBySource(name)) {
-            return NameBinding { argument, nullptr };
+        if (const symbols::ValueEntry* entry = fn.values.find(key)) {
+            return NameBinding { entry, nullptr };
         }
     }
-    const SymbolKey global { 0, name };
-    auto enumerator = globalEnumerators.find(global);
-    if (enumerator != globalEnumerators.end()) {
-        return NameBinding { nullptr, &enumerator->second };
-    }
-    return NameBinding { globalScope.find(global), nullptr };
+    return NameBinding { fn.values.findArgumentBySource(name), nullptr };
 }
 
 const symbols::ValueEntry& SymbolTable::lookup(const std::string& name) const {

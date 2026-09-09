@@ -70,7 +70,7 @@ TerminalSymbol AbstractSyntaxTreeBuilderContext::popTerminal() {
 }
 
 void AbstractSyntaxTreeBuilderContext::pushTypeSpecifier(TypeSpecifier typeSpecifier) {
-    typeSpecifiers.push(typeSpecifier);
+    typeSpecifiers.push(std::move(typeSpecifier));
 }
 
 bool AbstractSyntaxTreeBuilderContext::hasTypeSpecifier() const {

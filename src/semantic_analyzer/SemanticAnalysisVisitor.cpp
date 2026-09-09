@@ -323,7 +323,9 @@ void SemanticAnalysisVisitor::visit(ast::FunctionDeclarator& declarator) {
 }
 
 void SemanticAnalysisVisitor::visit(ast::FormalArgument& argument) {
+    inParameterList = true;
     argument.visitSpecifiers(*this);
+    inParameterList = false;
     argument.visitDeclarator(*this);
     type::Type type { type::voidType() };
     try {
@@ -432,6 +434,9 @@ bool SemanticAnalysisVisitor::checkOperandTypes(const type::Type& left, const ty
 }
 
 void SemanticAnalysisVisitor::declareEnumerators(const ast::TypeSpecifier& specifier) {
+    if (inParameterList) {
+        return;
+    }
     for (const auto& enumerator : specifier.enumerators()) {
         symbolTable.insertEnumerator(enumerator.name, enumerator.value);
     }
@@ -443,18 +448,17 @@ void SemanticAnalysisVisitor::rejectFunctionValue(const type::Type& type, const 
     }
 }
 
-// C: a cast, && / ||, and the if / while / for / do-while / ?: / ! contexts all
-// require a scalar value.
+// C: the contexts that require a scalar value.
 void SemanticAnalysisVisitor::checkScalarValue(ast::Expression& expression) {
-    // A void call carries no type at all, so an untyped operand is not a scalar either.
-    if (!expression.hasExpressionType()
-            || !type::isProductScalar(type::afterLvalueConversion(expression.expressionType()))) {
+    if (!expression.hasExpressionType()) {
+        return;
+    }
+    if (!type::isProductScalar(type::afterLvalueConversion(expression.expressionType()))) {
         semanticError("used a non-scalar value where a scalar is required", expression.getContext());
     }
 }
 
-// Same rule, for the contexts that also take the value: arrays and function
-// designators reach them as pointers.
+// Same rule where the value is also taken: arrays decay to pointers first.
 void SemanticAnalysisVisitor::requireScalarValue(ast::Expression& expression) {
     decayArrayValue(expression, symbolTable, annotations());
     checkScalarValue(expression);

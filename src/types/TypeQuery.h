@@ -408,6 +408,9 @@ inline std::optional<Type> arithmeticExpressionResult(const Type& leftRaw, const
 inline std::optional<Type> conditionalResultType(const Type& trueRaw, const Type& falseRaw) {
     const Type left = afterLvalueConversion(trueRaw);
     const Type right = afterLvalueConversion(falseRaw);
+    if (left.isVoid() && right.isVoid()) {
+        return left;
+    }
     if (isArithmeticType(left) && isArithmeticType(right)) {
         return usualArithmeticResult(left, right);
     }

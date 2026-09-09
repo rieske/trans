@@ -23,6 +23,40 @@ TEST_P(SemanticErrorCatalog, RejectsWithMessage) {
 
 INSTANTIATE_TEST_SUITE_P(Compiler, SemanticErrorCatalog, testing::Values(
     SemanticErrorCase{
+        "switchOnVoidCall",
+        R"prg(
+            void v(void) { }
+            int main(void) {
+                switch (v()) { }
+                return 0;
+            }
+        )prg",
+        "switch quantity is not an integer",
+    },
+    SemanticErrorCase{
+        "subscriptByVoidCall",
+        R"prg(
+            void v(void) { }
+            int a[3];
+            int main(void) {
+                return a[v()];
+            }
+        )prg",
+        "invalid type for operator[]",
+    },
+    SemanticErrorCase{
+        "assignFromVoidCall",
+        R"prg(
+            void v(void) { }
+            int main(void) {
+                int x;
+                x = v();
+                return x;
+            }
+        )prg",
+        "can't convert void to int",
+    },
+    SemanticErrorCase{
         "ifOnVoidCall",
         R"prg(
             void v(void) { }

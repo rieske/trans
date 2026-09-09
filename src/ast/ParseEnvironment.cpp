@@ -70,17 +70,11 @@ std::optional<type::Type> ParseEnvironment::lookupValueType(const std::string& n
             return found->second;
         }
     }
-    auto objectType = lookupObject(name);
-    type::IntegerConstant ice;
-    const bool enumerator = lookupEnumConstant(name, ice);
-    if (objectType && enumerator) {
-        // Which of the two is nearer is not knowable here; leave it to semantic analysis.
-        return std::nullopt;
-    }
-    if (objectType) {
+    if (auto objectType = lookupObject(name)) {
         return objectType;
     }
-    if (enumerator) {
+    type::IntegerConstant ice;
+    if (lookupEnumConstant(name, ice)) {
         return ice.type;
     }
     return std::nullopt;

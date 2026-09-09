@@ -254,7 +254,13 @@ TypeSpecifier DeclarationSpecifiers::toTypeSpecifier() const {
         return typeSpecifiers.front();
     }
     std::string name = typeSpecifiers.size() == 1 ? typeSpecifiers.front().getName() : std::string {};
-    return TypeSpecifier { getResolvedType(), std::move(name) };
+    TypeSpecifier merged { getResolvedType(), std::move(name) };
+    for (const auto& specifier : typeSpecifiers) {
+        if (!specifier.enumerators().empty()) {
+            merged.setEnumerators(specifier.enumerators());
+        }
+    }
+    return merged;
 }
 
 } // namespace ast
