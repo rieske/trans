@@ -339,6 +339,9 @@ std::optional<std::string> Compiler::compile(std::string sourceFileName) const {
     }
 
     codegen::IntermediateRepresentation ir = codegen::generateIr(*tree, configuration.optLevel());
+    if (configuration.dumpsIr()) {
+        out << ir;
+    }
 
     // Materialize assembly only after frontend succeeds so failed compiles never create .s temps.
     std::optional<ScopedTempFile> assemblyTemp;
