@@ -1,1 +1,0 @@
-int main(void){ enum { A = 1 }; { enum { A = 2 }; { enum { A = 3 }; return A; } } }
