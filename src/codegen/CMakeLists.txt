@@ -11,6 +11,8 @@ add_library(backend
         CodeGeneratingVisitor_Complex.cpp
         CodeGeneratingVisitor_BitField.cpp
         CodeGeneratingVisitor_Control.cpp
+        CodeGeneratingVisitor_Declarations.cpp
+        CodeGeneratingVisitor_Expressions.cpp
         CodeGeneratingVisitor_Lvalue.cpp
         FrameLayout.cpp
         Instruction.cpp
@@ -28,6 +30,7 @@ add_library(backend
         StackMachine_Arith.cpp
         StackMachine_Call.cpp
         StackMachine_Complex.cpp
+        StackMachine_Emit.cpp
         StackMachine_Sse.cpp
         StackMachine_Va.cpp
         StackMachine_Wide.cpp

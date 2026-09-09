@@ -147,4 +147,8 @@ void CodeGeneratingVisitor::visit(ast::DoWhileLoopHeader& loopHeader) {
     emit(ir::jump(id(*loopHeader.getLoopEntry(store_)), JumpCondition::IF_NOT_EQUAL));
 }
 
+void CodeGeneratingVisitor::visit(ast::Block& block) {
+    block.visitChildren(*this);
+}
+
 } // namespace codegen

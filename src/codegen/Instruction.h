@@ -14,6 +14,10 @@ namespace type {
 class Type;
 }
 
+namespace symbols {
+class ValueEntry;
+}
+
 namespace codegen {
 
 // Mid-end opcode stream. Procedure::body stays the persistent linear
@@ -113,6 +117,7 @@ struct IntermediateRepresentation {
 
 void internProcedureTemps(IrStringTable& strings, Procedure& procedure);
 int addFrameTemp(IrStringTable& strings, Procedure& procedure, const type::Type& type);
+Value valueFromSymbol(IrStringTable& strings, const symbols::ValueEntry& symbol);
 
 enum class InstructionClass { Label, Terminator, Ordinary };
 

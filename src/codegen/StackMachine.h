@@ -40,7 +40,7 @@ public:
 
     void startProcedure(const Procedure& procedure);
     void endProcedure();
-    void finishInstruction();
+    void emit(const Instruction& instruction);
 
     void label(int name);
     void jump(JumpCondition jumpCondition, int label, bool signedRel = true);
@@ -114,6 +114,10 @@ public:
     void registerDefinedProcedure(int procedureName);
 
 private:
+    static bool nativeMoveSize(int n) {
+        return n == 1 || n == 2 || n == 4 || n == 8;
+    }
+    void finishInstruction();
     bool isDefinedProcedure(int name) const;
     // Shared by indexAddress and pointerOffset: sign/zero-extend index into RAX, imul if stride != 1.
     void scaleIntegerIntoRax(Value& index, int elementSizeBytes);
