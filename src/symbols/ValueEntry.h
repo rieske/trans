@@ -36,6 +36,9 @@ public:
     void markDefiningInitializer();
     void markFunctionDefined();
     bool isFunctionDefined() const;
+    void applyFunctionSpecs(bool isInline, bool isNoreturn, bool isExtern);
+    bool isNoreturn() const;
+    bool providesExternalDefinition() const;
     type::Type getType() const;
     // File-scope redecl: replace with the C 6.2.7 composite type.
     void refineType(const type::Type& refined);
@@ -65,6 +68,10 @@ private:
     Storage storage;
     bool definingInitializer { false };
     bool functionDefined_ { false };
+    bool inline_ { false };
+    bool noreturn_ { false };
+    bool functionExtern_ { false };
+    bool externalNonInline_ { false };
     bool expressionTemp_ { false };
     std::optional<type::IntegerConstant> enumeratorValue_;
     std::vector<StaticInitValue> staticInitWords;

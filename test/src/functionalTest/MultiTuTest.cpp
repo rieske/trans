@@ -125,6 +125,80 @@ TEST(MultiTu, nmDoesNotExportStaticFunctionOrObject) {
     program.runAndExpect("1");
 }
 
+TEST(MultiTu, inlineDefinitionIsNotGlobalAndIsCallable) {
+    std::string src = writeTmpC("c99_inline_nm", R"prg(int printf(const char *, ...);
+        inline int add1(int x) {
+            return x + 1;
+        }
+        int main(void) {
+            printf("%d", add1(41));
+            return 0;
+        }
+    )prg");
+    std::string obj = src + ".o";
+    removePath(obj);
+
+    std::string err;
+    ASSERT_EQ(compileOnly(src, &err), 0) << err;
+    const std::string nm = nmObject(obj);
+    EXPECT_FALSE(nmTypeIsGlobal(nmSymbolType(nm, "add1"))) << nm;
+    EXPECT_TRUE(nmTypeIsDefined(nmSymbolType(nm, "add1"))) << nm;
+
+    SourceProgram program { readFile(src) };
+    program.compile();
+    program.runAndExpect("42");
+}
+
+TEST(MultiTu, externInlineDefinitionIsGlobal) {
+    std::string src = writeTmpC("c99_extern_inline_nm", R"prg(
+        extern inline int add1(int x) {
+            return x + 1;
+        }
+        int main(void) {
+            return add1(0);
+        }
+    )prg");
+    std::string obj = src + ".o";
+    removePath(obj);
+
+    std::string err;
+    ASSERT_EQ(compileOnly(src, &err), 0) << err;
+    const std::string nm = nmObject(obj);
+    EXPECT_TRUE(nmTypeIsGlobal(nmSymbolType(nm, "add1"))) << nm;
+}
+
+TEST(MultiTu, priorNonInlineDeclExportsInlineDefinition) {
+    std::string src = writeTmpC("c99_inline_after_proto_nm", R"prg(
+        int add1(int x);
+        inline int add1(int x) {
+            return x + 1;
+        }
+        int main(void) {
+            return add1(0);
+        }
+    )prg");
+    std::string obj = src + ".o";
+    removePath(obj);
+
+    std::string err;
+    ASSERT_EQ(compileOnly(src, &err), 0) << err;
+    const std::string nm = nmObject(obj);
+    EXPECT_TRUE(nmTypeIsGlobal(nmSymbolType(nm, "add1"))) << nm;
+}
+
+TEST(MultiTu, noreturnCallDoesNotFallThrough) {
+    SourceProgram program { R"prg(int printf(const char *, ...);
+        noreturn void die(void) {}
+        int main(void) {
+            die();
+            printf("%d", 1);
+            return 0;
+        }
+    )prg" };
+    program.compile();
+    program.runAndExpect("");
+}
+
 TEST(MultiTu, defineInOneTuCallFromAnother) {
     std::string libSrc = writeTmpC("multi_tu_lib", R"prg(
         int add_one(int x) {

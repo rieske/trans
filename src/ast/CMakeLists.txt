@@ -58,6 +58,7 @@ add_library(ast
         ShiftExpression.cpp
         SingleOperandExpression.cpp
         StorageSpecifier.cpp
+        FunctionSpecifier.cpp
         StringLiteralExpression.cpp
         StatementExpression.cpp
         SwitchStatement.cpp

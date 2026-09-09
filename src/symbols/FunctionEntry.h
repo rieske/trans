@@ -21,6 +21,8 @@ public:
     type::Type getType() const;
     translation_unit::Context getContext() const;
     bool hasInternalLinkage() const;
+    bool isNoreturn() const;
+    bool providesExternalDefinition() const;
 
     const std::vector<type::Type>& arguments() const;
     const type::Type& returnType() const;
@@ -31,6 +33,8 @@ private:
     type::Type type;
     translation_unit::Context context;
     bool internalLinkage { false };
+    bool noreturn_ { false };
+    bool providesExternalDefinition_ { true };
 };
 
 } // namespace symbols

@@ -120,6 +120,10 @@ void ValueScope::markFunctionDefined(const SymbolKey& key) {
     localSymbols.at(key).markFunctionDefined();
 }
 
+void ValueScope::applyFunctionSpecifiers(const SymbolKey& key, bool isInline, bool isNoreturn, bool isExtern) {
+    localSymbols.at(key).applyFunctionSpecs(isInline, isNoreturn, isExtern);
+}
+
 symbols::ValueEntry ValueScope::createTemporarySymbol(type::Type type) {
     std::string tempName = generateTempName();
     const int index = allocateAutomatic(type);

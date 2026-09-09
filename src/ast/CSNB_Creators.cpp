@@ -102,12 +102,22 @@ void restrictQualifier(AbstractSyntaxTreeBuilderContext& context) {
     context.pushTypeQualifier(type::Qualifier::RESTRICT);
 }
 
-void functionSpecifier(AbstractSyntaxTreeBuilderContext& context) {
-    context.popTerminal();
+void inlineFunctionSpecifier(AbstractSyntaxTreeBuilderContext& context) {
+    context.pushFunctionSpecifier(FunctionSpecifier::INLINE(context.popTerminal().context));
+}
+
+void noreturnFunctionSpecifier(AbstractSyntaxTreeBuilderContext& context) {
+    context.pushFunctionSpecifier(FunctionSpecifier::NORETURN(context.popTerminal().context));
 }
 
 void functionSpecifierOnly(AbstractSyntaxTreeBuilderContext& context) {
-    context.pushDeclarationSpecifiers(DeclarationSpecifiers::none());
+    context.pushDeclarationSpecifiers({ context.popFunctionSpecifier() });
+}
+
+void addDeclarationFunctionSpecifier(AbstractSyntaxTreeBuilderContext& context) {
+    auto declarationSpecifiers = context.popDeclarationSpecifiers();
+    auto functionSpecifier = context.popFunctionSpecifier();
+    context.pushDeclarationSpecifiers({ functionSpecifier, declarationSpecifiers });
 }
 
 void autoStorageClass(AbstractSyntaxTreeBuilderContext& context) {

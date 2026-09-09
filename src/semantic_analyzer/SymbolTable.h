@@ -40,6 +40,7 @@ public:
     symbols::FunctionEntry findFunction(std::string name) const;
     bool isFunctionDefined(const std::string& name) const;
     void markFunctionDefined(const std::string& name);
+    void applyFunctionSpecifiers(const std::string& name, bool isInline, bool isNoreturn, bool isExtern);
     const symbols::ValueEntry* find(const std::string& name) const;
     const symbols::ValueEntry* findFileScope(const std::string& name) const;
     bool insertEnumerator(const std::string& name, type::IntegerConstant value);
