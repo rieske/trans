@@ -235,6 +235,14 @@ void SemanticAnalysisVisitor::visit(ast::IdentifierExpression& identifier) {
     // The nearest declaration wins. Block scopes come first, then the parse-time fold,
     // which is the only record of an enum defined where analysis never walks (a sizeof
     // type-name the parser folds away, a record member), and last file scope.
+    auto bindTo = [&](const symbols::ValueEntry& entry) {
+        if (type::isBareFunction(entry.getType())) {
+            setFunctionDesignator(identifier, symbolTable, annotations());
+            return;
+        }
+        identifier.setTypeAndResult(annotations(), entry);
+    };
+
     const auto binding = symbolTable.findBlockName(name);
     if (binding.enumerator) {
         identifier.setFoldedConstant(*binding.enumerator);
@@ -244,11 +252,7 @@ void SemanticAnalysisVisitor::visit(ast::IdentifierExpression& identifier) {
     }
     if (binding.value) {
         identifier.clearFoldedConstant();
-        if (type::isBareFunction(binding.value->getType())) {
-            setFunctionDesignator(identifier, symbolTable, annotations());
-            return;
-        }
-        identifier.setTypeAndResult(annotations(), *binding.value);
+        bindTo(*binding.value);
         return;
     }
 
@@ -259,12 +263,9 @@ void SemanticAnalysisVisitor::visit(ast::IdentifierExpression& identifier) {
         return;
     }
 
-    if (const auto* entry = symbolTable.find(name)) {
-        if (type::isBareFunction(entry->getType())) {
-            setFunctionDesignator(identifier, symbolTable, annotations());
-            return;
-        }
-        identifier.setTypeAndResult(annotations(), *entry);
+    // The block scopes are already known to be empty, so only file scope is left.
+    if (const auto* entry = symbolTable.findFileScope(name)) {
+        bindTo(*entry);
         return;
     }
 

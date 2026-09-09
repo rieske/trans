@@ -174,7 +174,7 @@ bool ParseEnvironment::addEnumerator(std::string name, type::IntegerConstant val
         return false;
     }
     session_.enums.add(name, value);
-    enumerators_.emplace_back(session_.enumBodyDepth(), Enumerator { name, value });
+    enumerators_.emplace_back(session_.enumBodyDepth(), Enumerator { std::move(name), value });
     const type::SignedBits v = type::signedValue(value);
     if (!enumBody_) {
         enumBody_ = EnumBody { type::nextEnumerator(value), v, v };

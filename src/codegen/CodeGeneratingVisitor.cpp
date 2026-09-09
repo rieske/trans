@@ -626,7 +626,7 @@ void CodeGeneratingVisitor::visit(ast::TypeNameExpression&) {
 void CodeGeneratingVisitor::visit(ast::TypeCast& expression) {
     expression.visitOperand(*this);
     // A cast to void evaluates the operand and discards it.
-    if (expression.hasExpressionType() && expression.expressionType().isVoid()) {
+    if (expression.isVoidValue()) {
         return;
     }
     auto* source = expression.operandSymbol(store_);
@@ -832,7 +832,7 @@ void CodeGeneratingVisitor::visit(ast::LogicalOrExpression& expression) {
 
 void CodeGeneratingVisitor::visit(ast::ConditionalExpression& expression) {
     // Void arms produce no value; the arms still run for their side effects.
-    const bool valueless = expression.hasExpressionType() && expression.expressionType().isVoid();
+    const bool valueless = expression.isVoidValue();
     expression.visitCondition(*this);
     emit(ir::zeroCompare(convertedResult(*expression.getCondition())));
     emit(ir::jump(id(*expression.getFalsyLabel(store_)), JumpCondition::IF_EQUAL));

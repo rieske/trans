@@ -78,6 +78,8 @@ public:
     // C type of the expression (sizeof / isArray / isStructure).
     type::Type expressionType() const;
     bool hasExpressionType() const { return type.has_value(); }
+    // A void expression has a type but no value to read.
+    bool isVoidValue() const { return type.has_value() && type->isVoid(); }
 
     // Dual-type: array expressions keep the array as expression type.
     bool isArrayObjectType() const { return hasExpressionType() && expressionType().isArray(); }

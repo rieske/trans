@@ -258,6 +258,7 @@ TypeSpecifier DeclarationSpecifiers::toTypeSpecifier() const {
     for (const auto& specifier : typeSpecifiers) {
         if (!specifier.enumerators().empty()) {
             merged.setEnumerators(specifier.enumerators());
+            break;
         }
     }
     return merged;

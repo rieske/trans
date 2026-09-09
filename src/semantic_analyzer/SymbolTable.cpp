@@ -213,18 +213,35 @@ ObjectBind SymbolTable::bindFileScopeObject(std::string name, const type::Type& 
     return ObjectBind::Bound;
 }
 
-const symbols::ValueEntry* SymbolTable::find(const std::string& name) const {
-    if (!isAtFileScope()) {
-        const auto& fn = openFunction();
-        for (auto it = fn.blockIds.rbegin(); it != fn.blockIds.rend(); ++it) {
-            if (const symbols::ValueEntry* entry = fn.values.find({ *it, name })) {
-                return entry;
+NameBinding SymbolTable::walkBlockScopes(const std::string& name, bool withEnumerators) const {
+    if (isAtFileScope()) {
+        return NameBinding {};
+    }
+    const auto& fn = openFunction();
+    SymbolKey key { 0, name };
+    for (auto it = fn.blockIds.rbegin(); it != fn.blockIds.rend(); ++it) {
+        key.scopeId = *it;
+        if (withEnumerators) {
+            auto enumerator = fn.enumerators.find(key);
+            if (enumerator != fn.enumerators.end()) {
+                return NameBinding { nullptr, &enumerator->second };
             }
         }
-        if (const symbols::ValueEntry* argument = fn.values.findArgumentBySource(name)) {
-            return argument;
+        if (const symbols::ValueEntry* entry = fn.values.find(key)) {
+            return NameBinding { entry, nullptr };
         }
     }
+    return NameBinding { fn.values.findArgumentBySource(name), nullptr };
+}
+
+const symbols::ValueEntry* SymbolTable::find(const std::string& name) const {
+    if (const symbols::ValueEntry* entry = walkBlockScopes(name, false).value) {
+        return entry;
+    }
+    return findFileScope(name);
+}
+
+const symbols::ValueEntry* SymbolTable::findFileScope(const std::string& name) const {
     return globalScope.find({ 0, name });
 }
 
@@ -237,21 +254,7 @@ void SymbolTable::insertEnumerator(const std::string& name, type::IntegerConstan
 }
 
 NameBinding SymbolTable::findBlockName(const std::string& name) const {
-    if (isAtFileScope()) {
-        return NameBinding {};
-    }
-    const auto& fn = openFunction();
-    for (auto it = fn.blockIds.rbegin(); it != fn.blockIds.rend(); ++it) {
-        const SymbolKey key { *it, name };
-        auto enumerator = fn.enumerators.find(key);
-        if (enumerator != fn.enumerators.end()) {
-            return NameBinding { nullptr, &enumerator->second };
-        }
-        if (const symbols::ValueEntry* entry = fn.values.find(key)) {
-            return NameBinding { entry, nullptr };
-        }
-    }
-    return NameBinding { fn.values.findArgumentBySource(name), nullptr };
+    return walkBlockScopes(name, true);
 }
 
 const symbols::ValueEntry& SymbolTable::lookup(const std::string& name) const {

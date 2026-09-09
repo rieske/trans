@@ -51,6 +51,7 @@ public:
     const symbols::ValueEntry* find(const std::string& name) const;
     // Innermost binding among the open block scopes; file scope is not consulted.
     NameBinding findBlockName(const std::string& name) const;
+    const symbols::ValueEntry* findFileScope(const std::string& name) const;
     // File-scope enumerators keep their parse-time fold; only block scopes need a home.
     void insertEnumerator(const std::string& name, type::IntegerConstant value);
     const symbols::ValueEntry& lookup(const std::string& name) const;
@@ -74,6 +75,7 @@ public:
     symbols::FunctionEntry currentFunctionEntry() const;
 
 private:
+    NameBinding walkBlockScopes(const std::string& name, bool withEnumerators) const;
     void insertFunctionArgument(std::string name, type::Type type, translation_unit::Context context);
     // Block-scope extern is the file-scope object of that name (create if missing).
     // The block sees the composite type; file scope keeps its own.
