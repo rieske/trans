@@ -4,10 +4,18 @@
 #include <memory>
 #include <optional>
 #include <string>
+#include <vector>
 
+#include "types/IntegerConstant.h"
 #include "types/Type.h"
 
 namespace ast {
+
+// One enumeration constant, as written in an enum definition.
+struct Enumerator {
+    std::string name;
+    type::IntegerConstant value;
+};
 
 class AbstractSyntaxTreeVisitor;
 class Declarator;
@@ -36,6 +44,8 @@ public:
     void refoldConstantArrayBounds(const VlaExpressionTable& exprs);
     void markDefinesRecord();
     bool definesRecord() const;
+    void setEnumerators(std::vector<Enumerator> enumerators);
+    const std::vector<Enumerator>& enumerators() const;
 
 private:
     std::string name;
@@ -43,6 +53,7 @@ private:
     std::shared_ptr<Expression> typeofOperand_;
     std::shared_ptr<Declarator> deferredDeclarator_;
     bool definesRecord_ { false };
+    std::vector<Enumerator> enumerators_;
 
     void applyDeclarator();
 };

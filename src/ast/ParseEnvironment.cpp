@@ -70,11 +70,17 @@ std::optional<type::Type> ParseEnvironment::lookupValueType(const std::string& n
             return found->second;
         }
     }
-    if (auto objectType = lookupObject(name)) {
+    auto objectType = lookupObject(name);
+    type::IntegerConstant ice;
+    const bool enumerator = lookupEnumConstant(name, ice);
+    if (objectType && enumerator) {
+        // Which of the two is nearer is not knowable here; leave it to semantic analysis.
+        return std::nullopt;
+    }
+    if (objectType) {
         return objectType;
     }
-    type::IntegerConstant ice;
-    if (lookupEnumConstant(name, ice)) {
+    if (enumerator) {
         return ice.type;
     }
     return std::nullopt;
@@ -174,6 +180,7 @@ bool ParseEnvironment::addEnumerator(std::string name, type::IntegerConstant val
         return false;
     }
     session_.enums.add(name, value);
+    enumerators_.push_back(Enumerator { name, value });
     const type::SignedBits v = type::signedValue(value);
     if (!enumBody_) {
         enumBody_ = EnumBody { type::nextEnumerator(value), v, v };
@@ -187,6 +194,12 @@ bool ParseEnvironment::addEnumerator(std::string name, type::IntegerConstant val
     }
     enumBody_->next = type::nextEnumerator(value);
     return true;
+}
+
+std::vector<Enumerator> ParseEnvironment::takeEnumerators() {
+    std::vector<Enumerator> taken = std::move(enumerators_);
+    enumerators_.clear();
+    return taken;
 }
 
 bool ParseEnvironment::lookupEnumConstant(const std::string& name,

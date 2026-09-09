@@ -469,4 +469,157 @@ TEST(Compiler, enumeratorRedefinedAsFunctionDefinitionIsError) {
     program.assertCompilationErrors("redefinition of enumerator");
 }
 
+TEST(Compiler, blockScopeObjectShadowsFileScopeEnumerator) {
+    SourceProgram program{R"prg(int printf(const char *, ...);
+        enum { A = 5 };
+        int main() {
+            int A = 7;
+            printf("%d", A);
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("7");
+}
+
+TEST(Compiler, parameterShadowsFileScopeEnumerator) {
+    SourceProgram program{R"prg(int printf(const char *, ...);
+        enum { A = 5 };
+        int f(int A) { return A; }
+        int main() {
+            printf("%d %d", f(9), A);
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("9 5");
+}
+
+TEST(Compiler, innerEnumeratorShadowsOuterEnumerator) {
+    SourceProgram program{R"prg(int printf(const char *, ...);
+        int main() {
+            enum { A = 5 };
+            {
+                enum { A = 1 };
+                printf("%d", A);
+            }
+            printf(" %d", A);
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("1 5");
+}
+
+TEST(Compiler, blockEnumeratorShadowsFileScopeFunction) {
+    SourceProgram program{R"prg(int printf(const char *, ...);
+        int A(void) { return 0; }
+        int main() {
+            enum { A = 1 };
+            printf("%d", A);
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("1");
+}
+
+TEST(Compiler, blockEnumeratorShadowsFileScopeObject) {
+    SourceProgram program{R"prg(int printf(const char *, ...);
+        int A = 7;
+        int main() {
+            enum { A = 1 };
+            printf("%d", A);
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("1");
+}
+
+TEST(Compiler, innerEnumeratorShadowsBlockScopeObject) {
+    SourceProgram program{R"prg(int printf(const char *, ...);
+        int main() {
+            int A = 7;
+            {
+                enum { A = 1 };
+                printf("%d", A);
+            }
+            printf(" %d", A);
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("1 7");
+}
+
+TEST(Compiler, laterDeclaratorInSameDeclarationSeesTheObject) {
+    SourceProgram program{R"prg(int printf(const char *, ...);
+        enum { ERR = -1, OK = 0 };
+        int main() {
+            int ERR = 7, code = ERR;
+            printf("%d %d", ERR, code);
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("7 7");
+}
+
+TEST(Compiler, objectShadowingEnumeratorKeepsItsLvalue) {
+    SourceProgram program{R"prg(int printf(const char *, ...);
+        enum { A = 5 };
+        int main() {
+            int A = 0, *p = &A;
+            *p = 3;
+            printf("%d", A);
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("3");
+}
+
+TEST(Compiler, parameterBeforeARecordBraceStillShadowsAnEnumerator) {
+    SourceProgram program{R"prg(int printf(const char *, ...);
+        enum { A = 5 };
+        int f(int A, struct S { int m; } *s) { (void)s; return A; }
+        int main() {
+            printf("%d", f(9, 0));
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("9");
+}
+
+TEST(Compiler, prototypeParameterDoesNotHideAnEnumerator) {
+    SourceProgram program{R"prg(int printf(const char *, ...);
+        int main() {
+            enum { N = 4 };
+            int (*cb)(int N) = 0, k = N;
+            (void)cb;
+            printf("%d", k);
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("4");
+}
+
+TEST(Compiler, forInitDeclaratorDoesNotHideAnEnumerator) {
+    SourceProgram program{R"prg(int printf(const char *, ...);
+        int main() {
+            enum { A = 5 };
+            {
+                for (int A = 0; A < 3; A++) { }
+                printf("%d", A);
+            }
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("5");
+}
+
 } // namespace

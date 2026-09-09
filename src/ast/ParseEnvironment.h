@@ -11,6 +11,7 @@
 #include "Declarator.h"
 #include "FormalArgument.h"
 #include "InitializedDeclarator.h"
+#include "TypeSpecifier.h"
 #include "VlaExpressionTable.h"
 #include "scanner/LexicalSession.h"
 #include "types/IntegerConstant.h"
@@ -59,6 +60,8 @@ public:
     bool addEnumerator(std::string name);
     bool addEnumerator(std::string name, type::IntegerConstant value);
     bool lookupEnumConstant(const std::string& name, type::IntegerConstant& value) const;
+    // The enumerators of the definition just closed; the caller takes ownership.
+    std::vector<Enumerator> takeEnumerators();
     // Finishes the open enum body; returns the underlying type. Non-empty tag is registered.
     type::Type endEnumDefinition(const std::string& tag = {});
     std::optional<type::Type> lookupEnumTag(const std::string& tag) const;
@@ -82,6 +85,7 @@ private:
     std::map<std::string, type::Type> structTags_;
     std::map<std::string, type::Type> enumTags_;
     std::optional<EnumBody> enumBody_;
+    std::vector<Enumerator> enumerators_;
 };
 
 } // namespace ast

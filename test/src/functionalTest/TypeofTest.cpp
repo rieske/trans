@@ -889,4 +889,18 @@ TEST(Compiler, enumSizeofTypeofFunctionDesignatorGnuIsOne) {
     program.runAndExpect("1");
 }
 
+TEST(Compiler, typeofUsesTheEnumeratorShadowingAnOuterObject) {
+    SourceProgram program{R"prg(int printf(const char *, ...);
+        long A = 7;
+        int main() {
+            enum { A = 1 };
+            __typeof__(A) v = 0;
+            printf("%d", (int)sizeof(v));
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("4");
+}
+
 } // namespace

@@ -70,6 +70,7 @@ void finalizeRecordDefinition(type::Type& record, SemanticAnalysisVisitor& visit
 }
 
 void finalizeSpecifierType(ast::TypeSpecifier& spec, SemanticAnalysisVisitor& visitor) {
+    visitor.declareEnumerators(spec);
     spec.resolveTypeof(visitor);
     if (!spec.hasType()) {
         return;
@@ -428,6 +429,12 @@ bool SemanticAnalysisVisitor::checkOperandTypes(const type::Type& left, const ty
 {
     // Historical product gate: accept when right can accept left (type-only).
     return checkAssign(right, left, context, nullptr);
+}
+
+void SemanticAnalysisVisitor::declareEnumerators(const ast::TypeSpecifier& specifier) {
+    for (const auto& enumerator : specifier.enumerators()) {
+        symbolTable.insertEnumerator(enumerator.name, enumerator.value);
+    }
 }
 
 void SemanticAnalysisVisitor::rejectFunctionValue(const type::Type& type, const translation_unit::Context& context) {

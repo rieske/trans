@@ -118,6 +118,8 @@ public:
     bool checkOperandTypes(const type::Type& left, const type::Type& right,
             const translation_unit::Context& context);
     void semanticError(std::string message, const translation_unit::Context& context);
+    // Enumerators of an enum definition become visible in the scope holding it.
+    void declareEnumerators(const ast::TypeSpecifier& specifier);
     // Insert-before-init for one declarator; specifiers supply resolved type and storage.
     void analyzeInitializedDeclarator(ast::InitializedDeclarator& declarator,
             const ast::DeclarationSpecifiers& specifiers);

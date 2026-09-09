@@ -23,6 +23,17 @@ TEST_P(SemanticErrorCatalog, RejectsWithMessage) {
 
 INSTANTIATE_TEST_SUITE_P(Compiler, SemanticErrorCatalog, testing::Values(
     SemanticErrorCase{
+        "staticInitFromObjectShadowingEnumerator",
+        R"prg(
+            enum { A = 5 };
+            int main(void) {
+                static int A = 7, B = A;
+                return B;
+            }
+        )prg",
+        "global initializer is not a constant expression",
+    },
+    SemanticErrorCase{
         "ifOnStruct",
         R"prg(
             int main(void) {

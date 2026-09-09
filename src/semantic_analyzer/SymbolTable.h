@@ -6,6 +6,7 @@
 #include <string>
 #include <vector>
 
+#include "types/IntegerConstant.h"
 #include "types/Type.h"
 #include "symbols/FunctionEntry.h"
 #include "symbols/LabelEntry.h"
@@ -20,6 +21,13 @@ enum class ObjectBind {
     SecondDefinition,
     StaticAfterNonStatic,
     NonStaticAfterStatic
+};
+
+// C: ordinary identifiers and enumeration constants share one namespace, so a name
+// binds to whichever was declared in the nearest enclosing scope.
+struct NameBinding {
+    const symbols::ValueEntry* value { nullptr };
+    const type::IntegerConstant* enumerator { nullptr };
 };
 
 class SymbolTable {
@@ -40,6 +48,8 @@ public:
     bool isFunctionDefined(const std::string& name) const;
     void markFunctionDefined(const std::string& name);
     const symbols::ValueEntry* find(const std::string& name) const;
+    NameBinding findName(const std::string& name) const;
+    void insertEnumerator(const std::string& name, type::IntegerConstant value);
     const symbols::ValueEntry& lookup(const std::string& name) const;
     symbols::ValueEntry createTemporarySymbol(type::Type type);
     symbols::LabelEntry newLabel();
@@ -73,12 +83,14 @@ private:
     // Block ids are monotonic across the whole unit: siblings never reuse an id.
     struct FunctionScope {
         ValueScope values;
+        std::map<SymbolKey, type::IntegerConstant> enumerators;
         std::vector<unsigned> blockIds;
         symbols::FunctionEntry function;
     };
     // C has no nested function definitions: at most one is open.
     std::optional<FunctionScope> currentFunction;
     ValueScope globalScope;
+    std::map<SymbolKey, type::IntegerConstant> globalEnumerators;
     std::vector<symbols::ValueEntry> functionScopeDataHomes;
     unsigned nextScopeId { 0 };
 

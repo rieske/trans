@@ -500,14 +500,18 @@ ContextualSyntaxNodeBuilder::ContextualSyntaxNodeBuilder(const parser::Grammar& 
                 auto tag = context.popTerminal();
                 context.popTerminal(); // enum
                 type::Type underlying = context.environment().endEnumDefinition(tag.value);
-                context.pushTypeSpecifier(TypeSpecifier { underlying, tag.value });
+                TypeSpecifier spec { underlying, tag.value };
+                spec.setEnumerators(context.environment().takeEnumerators());
+                context.pushTypeSpecifier(std::move(spec));
             });
     bind(s_enum_spec, { s_enum_kw, s_open_brace, s_enumerator_list, s_close_brace }, [](AbstractSyntaxTreeBuilderContext& context) {
                 context.popTerminal(); // }
                 context.popTerminal(); // {
                 context.popTerminal(); // enum
                 type::Type underlying = context.environment().endEnumDefinition();
-                context.pushTypeSpecifier(TypeSpecifier { underlying, "" });
+                TypeSpecifier spec { underlying, "" };
+                spec.setEnumerators(context.environment().takeEnumerators());
+                context.pushTypeSpecifier(std::move(spec));
             });
     bind(s_enum_spec, { s_enum_kw, s_id_for_enum }, [](AbstractSyntaxTreeBuilderContext& context) {
                 auto tag = context.popTerminal();

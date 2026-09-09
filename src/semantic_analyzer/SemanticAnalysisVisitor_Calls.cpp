@@ -234,16 +234,22 @@ void SemanticAnalysisVisitor::visit(ast::FunctionCall& functionCall) {
 void SemanticAnalysisVisitor::visit(ast::IdentifierExpression& identifier) {
     const std::string& name = identifier.getIdentifier();
 
-    // Ordinary objects/functions hide enumerators in the same scope (C).
-    // Prefer a visible symbol before a parse-time enumerator fold.
-    // Clear that fold so the name is an lvalue again.
-    if (const auto* entry = symbolTable.find(name)) {
+    // The nearest declaration wins; the parse-time fold is only a guess, so drop it
+    // when an object or function turns out to be nearer.
+    const auto binding = symbolTable.findName(name);
+    if (binding.enumerator) {
+        identifier.setFoldedConstant(*binding.enumerator);
+        identifier.setTypeAndResult(annotations(),
+                symbolTable.createTemporarySymbol(binding.enumerator->type));
+        return;
+    }
+    if (binding.value) {
         identifier.clearFoldedConstant();
-        if (type::isBareFunction(entry->getType())) {
+        if (type::isBareFunction(binding.value->getType())) {
             setFunctionDesignator(identifier, symbolTable, annotations());
             return;
         }
-        identifier.setTypeAndResult(annotations(), *entry);
+        identifier.setTypeAndResult(annotations(), *binding.value);
         return;
     }
 
