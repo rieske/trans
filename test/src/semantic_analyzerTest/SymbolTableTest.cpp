@@ -528,4 +528,40 @@ TEST(SymbolTable, markFunctionDefinedIsOnTheRecord) {
     EXPECT_TRUE(table.find("f") != nullptr);
 }
 
+TEST(SymbolTable, fileScopeEnumeratorIsAnOrdinaryNameNotADataHome) {
+    SymbolTable table;
+    const auto value = type::fromHostLong(5);
+    EXPECT_TRUE(table.insertEnumerator("A", value));
+    const ValueEntry* found = table.find("A");
+    ASSERT_NE(found, nullptr);
+    EXPECT_TRUE(found->isEnumerator());
+    ASSERT_NE(found->enumeratorValue(), nullptr);
+    EXPECT_EQ(type::toHostLong(*found->enumeratorValue()), 5);
+    EXPECT_FALSE(table.hasGlobalVariable("A"));
+    EXPECT_THAT(table.getDataHomes(), IsEmpty());
+}
+
+TEST(SymbolTable, enumeratorAndObjectShareAScope) {
+    SymbolTable table;
+    translation_unit::Context ctx { "t.c", 1 };
+    EXPECT_TRUE(table.insertEnumerator("A", type::fromHostLong(1)));
+    EXPECT_FALSE(table.insertSymbol("A", type::signedInteger(), ctx));
+    EXPECT_TRUE(table.find("A")->isEnumerator());
+
+    EXPECT_THAT(table.bindFileScopeObject("A", type::signedInteger(), ctx,
+            symbols::Storage::Global, false), Eq(ObjectBind::TypeConflict));
+}
+
+TEST(SymbolTable, blockEnumeratorShadowsFileScopeObject) {
+    SymbolTable table;
+    translation_unit::Context ctx { "t.c", 1 };
+    EXPECT_TRUE(table.insertSymbol("A", type::signedInteger(), ctx, symbols::Storage::Global));
+    startIntFunction(table);
+    EXPECT_TRUE(table.insertEnumerator("A", type::fromHostLong(1)));
+    const ValueEntry* found = table.find("A");
+    ASSERT_NE(found, nullptr);
+    EXPECT_TRUE(found->isEnumerator());
+    EXPECT_EQ(type::toHostLong(*found->enumeratorValue()), 1);
+}
+
 } // namespace

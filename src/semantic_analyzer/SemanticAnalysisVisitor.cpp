@@ -1,5 +1,7 @@
 #include "SemanticAnalysisVisitorInternal.h"
 
+#include "ast/FunctionDeclarator.h"
+#include "ast/FunctionDefinition.h"
 #include "ast/GnuBuiltinFunctions.h"
 #include "ast/TypeSpecifier.h"
 #include "ast/VlaExpressionTable.h"
@@ -15,13 +17,6 @@ const ast::VlaExpressionTable& SemanticAnalysisVisitor::vlaTable() const {
         throw std::logic_error { "missing VLA expression table" };
     }
     return *vlas_;
-}
-
-const scanner::LexicalSession& SemanticAnalysisVisitor::session() const {
-    if (!session_) {
-        throw std::logic_error { "missing lexical session" };
-    }
-    return *session_;
 }
 
 diag::Sink& SemanticAnalysisVisitor::sink() const {
@@ -69,8 +64,7 @@ void finalizeRecordDefinition(type::Type& record, SemanticAnalysisVisitor& visit
     type::relayoutFromMemberSpecs(record, specs);
 }
 
-void finalizeSpecifierType(ast::TypeSpecifier& spec, SemanticAnalysisVisitor& visitor) {
-    visitor.declareEnumerators(spec);
+void resolveSpecifierType(ast::TypeSpecifier& spec, SemanticAnalysisVisitor& visitor) {
     spec.resolveTypeof(visitor);
     if (!spec.hasType()) {
         return;
@@ -82,6 +76,11 @@ void finalizeSpecifierType(ast::TypeSpecifier& spec, SemanticAnalysisVisitor& vi
         type::Type record = spec.getType();
         finalizeRecordDefinition(record, visitor);
     }
+}
+
+void finalizeSpecifierType(ast::TypeSpecifier& spec, SemanticAnalysisVisitor& visitor) {
+    visitor.declareEnumerators(spec);
+    resolveSpecifierType(spec, visitor);
 }
 
 void SemanticAnalysisVisitor::visit(ast::DeclarationSpecifiers& declarationSpecifiers) {
@@ -197,14 +196,19 @@ void SemanticAnalysisVisitor::analyzeInitializedDeclarator(ast::InitializedDecla
                     declarator.getContext());
         } else if (type.isFunction()) {
             // Prototypes: register with resolved return type (FunctionDeclarator no longer inserts).
-            if (session().isEnumerator(declarator.getName()) && symbolTable.isAtFileScope()) {
-                semanticError("redefinition of enumerator `" + declarator.getName() + "` as a function",
-                        declarator.getContext());
-            } else if (symbolTable.hasGlobalVariable(declarator.getName())) {
+            if (symbolTable.isAtFileScope()) {
+                if (const auto* existing = symbolTable.findFileScope(declarator.getName());
+                        existing && existing->isEnumerator()) {
+                    semanticError("redefinition of enumerator `" + declarator.getName() + "` as a function",
+                            declarator.getContext());
+                    typeOk = false;
+                }
+            }
+            if (typeOk && symbolTable.hasGlobalVariable(declarator.getName())) {
                 semanticError("function `" + declarator.getName()
                                 + "` conflicts with global variable of the same name",
                         declarator.getContext());
-            } else if (symbolTable.hasFunction(declarator.getName())) {
+            } else if (typeOk && symbolTable.hasFunction(declarator.getName())) {
                 auto existing = symbolTable.findFunction(declarator.getName());
                 if (!type.compatibleWith(existing.getType())) {
                     semanticError("function `" + declarator.getName()
@@ -216,16 +220,12 @@ void SemanticAnalysisVisitor::analyzeInitializedDeclarator(ast::InitializedDecla
                     semanticError(staticFollowsNonStaticMessage(declarator.getName()),
                             declarator.getContext());
                 }
-            } else {
+            } else if (typeOk) {
                 symbolTable.insertFunction(declarator.getName(), type,
                         declarator.getContext(), specifiers.hasStorage(ast::Storage::STATIC));
             }
         } else if (symbolTable.isAtFileScope() && symbolTable.hasFunction(declarator.getName())) {
             semanticError("symbol `" + declarator.getName() + "` declaration conflicts with function of the same name",
-                    declarator.getContext());
-        } else if (session().isEnumerator(declarator.getName()) && symbolTable.isAtFileScope()) {
-            // File-scope ordinary identifiers share a namespace with enumerators (C).
-            semanticError("redefinition of enumerator `" + declarator.getName() + "`",
                     declarator.getContext());
         } else if (symbolTable.isAtFileScope()) {
             const ObjectBind result = symbolTable.bindFileScopeObject(declarator.getName(), type,
@@ -245,11 +245,17 @@ void SemanticAnalysisVisitor::analyzeInitializedDeclarator(ast::InitializedDecla
                 break;
             case ObjectBind::TypeConflict:
             case ObjectBind::SecondDefinition:
-                semanticError(
-                        "symbol `" + declarator.getName() +
-                                "` declaration conflicts with previous declaration on " +
-                                to_string(symbolTable.lookup(declarator.getName()).getContext()),
-                        declarator.getContext());
+                if (const auto* existing = symbolTable.findFileScope(declarator.getName());
+                        existing && existing->isEnumerator()) {
+                    semanticError("redefinition of enumerator `" + declarator.getName() + "`",
+                            declarator.getContext());
+                } else {
+                    semanticError(
+                            "symbol `" + declarator.getName() +
+                                    "` declaration conflicts with previous declaration on " +
+                                    to_string(symbolTable.lookup(declarator.getName()).getContext()),
+                            declarator.getContext());
+                }
                 break;
             }
         } else if (symbolTable.insertSymbol(declarator.getName(), type, declarator.getContext(),
@@ -323,10 +329,13 @@ void SemanticAnalysisVisitor::visit(ast::FunctionDeclarator& declarator) {
 }
 
 void SemanticAnalysisVisitor::visit(ast::FormalArgument& argument) {
-    const bool enclosingParameterList = inParameterList;
-    inParameterList = true;
-    argument.visitSpecifiers(*this);
-    inParameterList = enclosingParameterList;
+    if (argument.getSpecifiers().getStorageSpecifiers().size() > 1) {
+        semanticError("multiple storage classes in declaration specifiers",
+                argument.getSpecifiers().getStorageSpecifiers().at(1).getContext());
+    }
+    for (auto& specifier : argument.getSpecifiers().getTypeSpecifiers()) {
+        resolveSpecifierType(specifier, *this);
+    }
     argument.visitDeclarator(*this);
     type::Type type { type::voidType() };
     try {
@@ -391,6 +400,13 @@ void SemanticAnalysisVisitor::visit(ast::FunctionDefinition& function) {
     symbolTable.startFunction(function.getName(), function.definedFunctionParameterNames());
     namedLabels.clear();
     pendingGotos.clear();
+    if (const auto* fn = function.definedFunctionDeclarator()) {
+        for (const auto& argument : fn->getFormalArguments()) {
+            for (const auto& specifier : argument.getSpecifiers().getTypeSpecifiers()) {
+                declareEnumerators(specifier);
+            }
+        }
+    }
     // Parameters and outermost body declarations share one scope (C); do not enterBlockScope.
     function.visitBodyChildren(*this);
     for (auto* gotoStmt : pendingGotos) {
@@ -435,9 +451,6 @@ bool SemanticAnalysisVisitor::checkOperandTypes(const type::Type& left, const ty
 }
 
 void SemanticAnalysisVisitor::declareEnumerators(const ast::TypeSpecifier& specifier) {
-    if (inParameterList) {
-        return;
-    }
     for (const auto& enumerator : specifier.enumerators()) {
         symbolTable.insertEnumerator(enumerator.name, enumerator.value);
     }

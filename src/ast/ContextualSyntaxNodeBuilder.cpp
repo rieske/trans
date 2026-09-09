@@ -561,6 +561,7 @@ ContextualSyntaxNodeBuilder::ContextualSyntaxNodeBuilder(const parser::Grammar& 
                 // Shared body: tagType already sees completion via structureBodyIdentity().
                 TypeSpecifier spec { tagType, tag.value };
                 spec.markDefinesRecord();
+                spec.setEnumerators(context.environment().takeRecordEnumerators());
                 context.pushTypeSpecifier(std::move(spec));
             });
     bind(s_struct_or_union_spec, { s_struct_or_union, s_open_brace, s_struct_decl_list, s_close_brace }, [](AbstractSyntaxTreeBuilderContext& context) {
@@ -576,6 +577,7 @@ ContextualSyntaxNodeBuilder::ContextualSyntaxNodeBuilder(const parser::Grammar& 
                 }
                 TypeSpecifier spec { completed, "" };
                 spec.markDefinesRecord();
+                spec.setEnumerators(context.environment().takeRecordEnumerators());
                 context.pushTypeSpecifier(std::move(spec));
             });
     bind(s_struct_or_union_spec, { s_struct_or_union, s_identifier }, [](AbstractSyntaxTreeBuilderContext& context) {
@@ -584,6 +586,7 @@ ContextualSyntaxNodeBuilder::ContextualSyntaxNodeBuilder(const parser::Grammar& 
                 context.popStructMemberList(); // no body
                 context.popStructDeclaratorList();
                 context.environment().session().recordPacked.abandon();
+                (void)context.environment().takeRecordEnumerators();
                 context.pushTypeSpecifier(TypeSpecifier {
                         context.environment().ensureStructTag(tag.value), tag.value });
             });
@@ -616,6 +619,9 @@ ContextualSyntaxNodeBuilder::ContextualSyntaxNodeBuilder(const parser::Grammar& 
                     return;
                 }
                 auto baseType = specs.getResolvedType();
+                if (!specs.getTypeSpecifiers().empty()) {
+                    context.environment().addRecordEnumerators(specs.toTypeSpecifier().enumerators());
+                }
                 for (auto& [declarator, bitWidth] : declarators) {
                     if (!declarator) {
                         context.addStructMember("", baseType, bitWidth);
@@ -635,6 +641,7 @@ ContextualSyntaxNodeBuilder::ContextualSyntaxNodeBuilder(const parser::Grammar& 
                 }
                 if (specs.isUntaggedRecordBody()) {
                     context.addStructMember("", specs.getResolvedType());
+                    context.environment().addRecordEnumerators(specs.toTypeSpecifier().enumerators());
                 }
             });
     bind(s_struct_decl_list, { s_struct_decl }, doNothing);

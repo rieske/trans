@@ -97,7 +97,6 @@ public:
     void setSession(const scanner::LexicalSession* session) { session_ = session; }
     void setSink(diag::Sink* sink) { sink_ = sink; }
     const ast::VlaExpressionTable& vlaTable() const;
-    const scanner::LexicalSession& session() const;
     diag::Sink& sink() const;
     symbols::AnnotationStore& annotations() {
         if (!store_) {
@@ -143,7 +142,6 @@ private:
     void lowerStaticAggregateInit(const std::string& name, const type::Type& objectType,
             const ast::InitializerListExpression* list, const translation_unit::Context& context);
     void rejectFunctionValue(const type::Type& type, const translation_unit::Context& context);
-    bool inParameterList { false };
     void checkScalarValue(ast::Expression& expression);
     void requireScalarValue(ast::Expression& expression);
 

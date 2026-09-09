@@ -1,8 +1,6 @@
 #ifndef LEXICALSESSION_H_
 #define LEXICALSESSION_H_
 
-#include <algorithm>
-
 #include "EnumConstantRegistry.h"
 #include "IdentifierTable.h"
 #include "ParseTypeTable.h"
@@ -122,13 +120,11 @@ struct LexicalSession {
             enterBlock();
         } else if (kind == BraceFrame::Record) {
             enterRecord();
+        } else if (kind == BraceFrame::EnumBody) {
+            ++enumBodyDepth_;
         }
     }
-    // Enum bodies nest, so each definition can tell its own enumerators from an
-    // enclosing one's.
-    int enumBodyDepth() const {
-        return static_cast<int>(std::count(braces_.begin(), braces_.end(), BraceFrame::EnumBody));
-    }
+    int enumBodyDepth() const { return enumBodyDepth_; }
     void closeBrace() {
         if (braces_.empty()) {
             leaveBlock();
@@ -140,6 +136,8 @@ struct LexicalSession {
             leaveBlock();
         } else if (kind == BraceFrame::Record) {
             leaveRecord();
+        } else if (kind == BraceFrame::EnumBody && enumBodyDepth_ > 0) {
+            --enumBodyDepth_;
         }
     }
     void endDeclarators() {
@@ -161,6 +159,7 @@ struct LexicalSession {
 
 private:
     std::vector<BraceFrame> braces_;
+    int enumBodyDepth_ { 0 };
 };
 
 } // namespace scanner

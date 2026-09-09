@@ -49,6 +49,10 @@ void SemanticAnalysisVisitor::visit(ast::ArrayAccess& arrayAccess) {
     arrayAccess.visitLeftOperand(*this);
     arrayAccess.visitRightOperand(*this);
 
+    if (arrayAccess.getLeftOperand()->isVoidValue() || arrayAccess.getRightOperand()->isVoidValue()) {
+        semanticError("invalid type for operator[]\n", arrayAccess.getContext());
+        return;
+    }
     if (!arrayAccess.hasLeftOperandSymbol(annotations()) || !arrayAccess.hasRightOperandSymbol(annotations())) {
         return;
     }
@@ -442,6 +446,10 @@ void SemanticAnalysisVisitor::visit(ast::TypeCast& expression) {
         semanticError("conversion to non-scalar type requested", expression.getContext());
         return;
     }
+    if (target.isVoid()) {
+        expression.setType(target);
+        return;
+    }
 
     // Operand may be an array object or a dual-type multi-dim row (value already a pointer).
     // Codegen materializes AddressOf only when the value type is still an array.
@@ -607,34 +615,44 @@ void SemanticAnalysisVisitor::visit(ast::ConditionalExpression& expression) {
     expression.visitFalseExpression(*this);
     requireScalarValue(*expression.getCondition());
 
-    if (!expression.getCondition()->hasResultSymbol(annotations())
-            || !expression.getTrueExpression()->hasResultSymbol(annotations())
-            || !expression.getFalseExpression()->hasResultSymbol(annotations())) {
+    if (!expression.getCondition()->hasResultSymbol(annotations())) {
         return;
     }
-
     auto* trueExpr = expression.getTrueExpression();
     auto* falseExpr = expression.getFalseExpression();
-    const type::Type trueType = expression.trueSymbol(annotations())->getType();
-    const type::Type falseType = expression.falseSymbol(annotations())->getType();
-    const std::optional<type::Type> result = type::conditionalResultType(trueType, falseType);
-    if (!result) {
-        semanticError("incompatible operand types in conditional expression", expression.getContext());
-        return;
-    }
-    decayArrayValue(*trueExpr, symbolTable, annotations());
-    decayArrayValue(*falseExpr, symbolTable, annotations());
+    const bool trueVoid = trueExpr->isVoidValue();
+    const bool falseVoid = falseExpr->isVoidValue();
+    if ((trueVoid || trueExpr->hasResultSymbol(annotations()))
+            && (falseVoid || falseExpr->hasResultSymbol(annotations()))) {
+        const type::Type trueType = trueVoid ? trueExpr->expressionType()
+                : expression.trueSymbol(annotations())->getType();
+        const type::Type falseType = falseVoid ? falseExpr->expressionType()
+                : expression.falseSymbol(annotations())->getType();
+        const std::optional<type::Type> result = type::conditionalResultType(trueType, falseType);
+        if (!result) {
+            semanticError("incompatible operand types in conditional expression", expression.getContext());
+            return;
+        }
+        decayArrayValue(*trueExpr, symbolTable, annotations());
+        decayArrayValue(*falseExpr, symbolTable, annotations());
 
-    expression.setType(*result);
-    expression.setTypeAndResult(annotations(), symbolTable.createTemporarySymbol(*result));
-    expression.setFalsyLabel(annotations(), symbolTable.newLabel());
-    expression.setExitLabel(annotations(), symbolTable.newLabel());
+        expression.setType(*result);
+        if (!result->isVoid()) {
+            expression.setTypeAndResult(annotations(), symbolTable.createTemporarySymbol(*result));
+        }
+        expression.setFalsyLabel(annotations(), symbolTable.newLabel());
+        expression.setExitLabel(annotations(), symbolTable.newLabel());
+    }
 }
 
 void SemanticAnalysisVisitor::visit(ast::AssignmentExpression& expression) {
     expression.visitLeftOperand(*this);
     expression.visitRightOperand(*this);
-    if (!expression.hasLeftOperandSymbol(annotations()) || !expression.hasRightOperandSymbol(annotations())) {
+    if (!expression.hasLeftOperandSymbol(annotations())) {
+        return;
+    }
+    if (!expression.hasRightOperandSymbol(annotations())
+            && !expression.getRightOperand()->isVoidValue()) {
         return;
     }
 
@@ -662,6 +680,10 @@ void SemanticAnalysisVisitor::visit(ast::AssignmentExpression& expression) {
 void SemanticAnalysisVisitor::visit(ast::ExpressionList& expression) {
     expression.visitLeftOperand(*this);
     expression.visitRightOperand(*this);
+    if (expression.getRightOperand()->isVoidValue()) {
+        expression.setType(type::voidType());
+        return;
+    }
     if (!expression.hasRightOperandSymbol(annotations())) {
         return;
     }

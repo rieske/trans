@@ -164,7 +164,7 @@ symbols::FunctionEntry SymbolTable::currentFunctionEntry() const {
 
 bool SymbolTable::hasGlobalVariable(const std::string& name) const {
     const symbols::ValueEntry* entry = globalScope.find({ 0, name });
-    return entry && !entry->getType().isFunction();
+    return entry && !entry->getType().isFunction() && !entry->isEnumerator();
 }
 
 void SymbolTable::setStaticInit(const std::string& name, std::vector<symbols::StaticInitValue> words) {
@@ -188,6 +188,9 @@ ObjectBind SymbolTable::bindFileScopeObject(std::string name, const type::Type& 
         return ObjectBind::Bound;
     }
     const symbols::ValueEntry existing = globalScope.lookup({ 0, name });
+    if (existing.isEnumerator()) {
+        return ObjectBind::TypeConflict;
+    }
     if (!existing.isStatic() && storage == symbols::Storage::Static) {
         return ObjectBind::StaticAfterNonStatic;
     }
@@ -213,29 +216,23 @@ ObjectBind SymbolTable::bindFileScopeObject(std::string name, const type::Type& 
     return ObjectBind::Bound;
 }
 
-NameBinding SymbolTable::walkBlockScopes(const std::string& name, bool withEnumerators) const {
+const symbols::ValueEntry* SymbolTable::walkBlockScopes(const std::string& name) const {
     if (isAtFileScope()) {
-        return NameBinding {};
+        return nullptr;
     }
     const auto& fn = openFunction();
     SymbolKey key { 0, name };
     for (auto it = fn.blockIds.rbegin(); it != fn.blockIds.rend(); ++it) {
         key.scopeId = *it;
-        if (withEnumerators) {
-            auto enumerator = fn.enumerators.find(key);
-            if (enumerator != fn.enumerators.end()) {
-                return NameBinding { nullptr, &enumerator->second };
-            }
-        }
         if (const symbols::ValueEntry* entry = fn.values.find(key)) {
-            return NameBinding { entry, nullptr };
+            return entry;
         }
     }
-    return NameBinding { fn.values.findArgumentBySource(name), nullptr };
+    return fn.values.findArgumentBySource(name);
 }
 
 const symbols::ValueEntry* SymbolTable::find(const std::string& name) const {
-    if (const symbols::ValueEntry* entry = walkBlockScopes(name, false).value) {
+    if (const symbols::ValueEntry* entry = walkBlockScopes(name)) {
         return entry;
     }
     return findFileScope(name);
@@ -245,16 +242,11 @@ const symbols::ValueEntry* SymbolTable::findFileScope(const std::string& name) c
     return globalScope.find({ 0, name });
 }
 
-void SymbolTable::insertEnumerator(const std::string& name, type::IntegerConstant value) {
+bool SymbolTable::insertEnumerator(const std::string& name, type::IntegerConstant value) {
     if (isAtFileScope()) {
-        return;
+        return globalScope.insertEnumerator({ 0, name }, std::move(value));
     }
-    auto& fn = openFunction();
-    fn.enumerators.insert_or_assign(SymbolKey { currentScopeId(), name }, std::move(value));
-}
-
-NameBinding SymbolTable::findBlockName(const std::string& name) const {
-    return walkBlockScopes(name, true);
+    return openFunction().values.insertEnumerator({ currentScopeId(), name }, std::move(value));
 }
 
 const symbols::ValueEntry& SymbolTable::lookup(const std::string& name) const {
@@ -280,7 +272,7 @@ symbols::LabelEntry SymbolTable::newLabel() {
 
 void SymbolTable::startFunction(std::string name, std::vector<std::string> formalArguments) {
     auto function = findFunction(name);
-    currentFunction = FunctionScope { {}, {}, { ++nextScopeId }, function };
+    currentFunction = FunctionScope { {}, { ++nextScopeId }, function };
     size_t i { 0 };
     for (auto& argument : function.arguments()) {
         if (i < formalArguments.size()) {
@@ -326,7 +318,7 @@ std::map<std::string, symbols::ValueEntry> SymbolTable::getCurrentScopeSymbols()
     std::map<std::string, symbols::ValueEntry> symbols;
     for (const auto& entry : openFunction().values.getSymbols()) {
         // Automatic only for frame locals (non-automatic use data homes).
-        if (!entry.second.isGlobal()) {
+        if (!entry.second.isGlobal() && !entry.second.isEnumerator()) {
             symbols.emplace(entry.second.getName(), entry.second);
         }
     }
@@ -344,7 +336,8 @@ std::map<std::string, std::string> SymbolTable::getConstants() const {
 std::vector<symbols::ValueEntry> SymbolTable::getDataHomes() const {
     std::vector<symbols::ValueEntry> objects;
     for (const auto& entry : globalScope.getSymbols()) {
-        if (!entry.second.isGlobal() || entry.second.getType().isFunction()) {
+        if (!entry.second.isGlobal() || entry.second.getType().isFunction()
+                || entry.second.isEnumerator()) {
             continue;
         }
         objects.push_back(entry.second);

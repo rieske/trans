@@ -24,9 +24,12 @@ void SemanticAnalysisVisitor::visit(ast::JumpStatement& statement) {
 
 void SemanticAnalysisVisitor::visit(ast::SwitchStatement& statement) {
     statement.expression->accept(*this);
-    if (statement.expression->hasResultSymbol(annotations())) {
+    if (statement.expression->isVoidValue()
+            || statement.expression->hasResultSymbol(annotations())) {
         // C: the controlling expression of a switch has integer type.
-        const type::Type controlling = statement.expression->getResultSymbol(annotations())->getType();
+        const type::Type controlling = statement.expression->isVoidValue()
+                ? statement.expression->expressionType()
+                : statement.expression->getResultSymbol(annotations())->getType();
         if (!type::isIntegral(controlling)) {
             semanticError("switch quantity is not an integer", statement.expression->getContext());
         }
@@ -122,10 +125,18 @@ void SemanticAnalysisVisitor::visit(ast::ReturnStatement& statement) {
         return;
     }
     statement.returnExpression->accept(*this);
-    if (!statement.returnExpression->hasResultSymbol(annotations())) {
+    auto* retExpr = statement.returnExpression.get();
+    if (retExpr->isVoidValue()) {
+        if (!symbolTable.isAtFileScope()
+                && !symbolTable.currentFunctionEntry().returnType().isVoid()) {
+            checkAssign(symbolTable.currentFunctionEntry().returnType(), type::voidType(),
+                    retExpr->getContext(), retExpr);
+        }
         return;
     }
-    auto* retExpr = statement.returnExpression.get();
+    if (!retExpr->hasResultSymbol(annotations())) {
+        return;
+    }
     if (symbolTable.isAtFileScope()) {
         rejectFunctionValue(retExpr->expressionType(), retExpr->getContext());
         return;

@@ -8,6 +8,9 @@ namespace ast {
 TypeNameExpression::TypeNameExpression(TypeSpecifier typeSpecifier, translation_unit::Context context) :
         typeSpecifier_ { std::move(typeSpecifier) },
         context_ { std::move(context) } {
+    if (typeSpecifier_.hasType()) {
+        setType(typeSpecifier_.getType());
+    }
 }
 
 void TypeNameExpression::accept(AbstractSyntaxTreeVisitor& visitor) {

@@ -55,11 +55,25 @@ std::unique_ptr<AbstractSyntaxTree> fileScopeInt(const std::string& name) {
 
 } // namespace
 
-TEST(SemanticAnalyzer, sessionEnumeratorConflictsWithFileScopeObject) {
-    scanner::LexicalSession session;
-    session.enums.add("E", type::fromHostLong(0));
+TEST(SemanticAnalyzer, fileScopeEnumeratorConflictsWithFileScopeObject) {
+    TypeSpecifier enumSpec { type::signedInteger(), "" };
+    enumSpec.setEnumerators({ Enumerator { "E", type::fromHostLong(0) } });
 
-    auto tree = fileScopeInt("E");
+    std::vector<std::unique_ptr<InitializedDeclarator>> objects;
+    objects.push_back(std::make_unique<InitializedDeclarator>(
+            std::make_unique<Declarator>(std::make_unique<Identifier>(
+                    TerminalSymbol { "E", { "t.c", 2 } }))));
+
+    std::vector<ExternalDeclaration> translationUnit;
+    translationUnit.push_back(ExternalDeclaration {
+            std::make_unique<Declaration>(DeclarationSpecifiers { enumSpec }) });
+    translationUnit.push_back(ExternalDeclaration { std::make_unique<Declaration>(
+            DeclarationSpecifiers { TypeSpecifier { type::signedInteger(), "int" } },
+            std::move(objects)) });
+    auto tree = std::make_unique<AbstractSyntaxTree>(std::move(translationUnit));
+    tree->setVlaExpressions(std::make_shared<VlaExpressionTable>());
+
+    scanner::LexicalSession session;
     semantic_analyzer::SemanticAnalyzer analyzer { false };
     std::ostringstream ignored;
     diag::Sink sink(ignored);
@@ -76,15 +90,6 @@ TEST(SemanticAnalyzer, fileScopeObjectWithoutSessionEnumeratorIsOk) {
     diag::Sink sink(ignored);
     EXPECT_TRUE(analyzer.analyze(*tree, session, sink));
     EXPECT_FALSE(sink.hasErrors());
-}
-
-TEST(SemanticAnalyzer, missingSessionIsInternalError) {
-    auto tree = fileScopeInt("E");
-    semantic_analyzer::SemanticAnalysisVisitor visitor;
-    visitor.setGnuExtensions(false);
-    visitor.setAnnotationStore(tree->annotations());
-    visitor.setVlaExpressions(tree->vlaExpressions());
-    EXPECT_THROW(tree->accept(visitor), std::logic_error);
 }
 
 TEST(SemanticAnalyzer, functionDesignatorKeepsVariadic) {

@@ -196,7 +196,8 @@ void SemanticAnalysisVisitor::visit(ast::FunctionCall& functionCall) {
     }
 
     for (std::size_t i { 0 }; i < declaredArguments.size(); ++i) {
-        if (!arguments.at(i)->hasResultSymbol(annotations())) {
+        if (!arguments.at(i)->hasResultSymbol(annotations())
+                && !arguments.at(i)->isVoidValue()) {
             return;
         }
         type::Type actual = arguments.at(i)->getResultSymbol(annotations())->getType();
@@ -226,44 +227,29 @@ void SemanticAnalysisVisitor::visit(ast::FunctionCall& functionCall) {
     annotations().setCallPlan(&functionCall, callee.plan);
 
     auto returnType = callee.type.getReturnType();
-    functionCall.setTypeAndResult(annotations(), symbolTable.createTemporarySymbol(returnType));
+    if (returnType.isVoid()) {
+        functionCall.setType(returnType);
+    } else {
+        functionCall.setTypeAndResult(annotations(), symbolTable.createTemporarySymbol(returnType));
+    }
 }
 
 void SemanticAnalysisVisitor::visit(ast::IdentifierExpression& identifier) {
     const std::string& name = identifier.getIdentifier();
 
-    // Nearest wins: block scope, then the parse-time fold, then file scope.
-    auto bindTo = [&](const symbols::ValueEntry& entry) {
-        if (type::isBareFunction(entry.getType())) {
+    if (const auto* entry = symbolTable.find(name)) {
+        if (entry->isEnumerator()) {
+            identifier.setFoldedConstant(*entry->enumeratorValue());
+            identifier.setTypeAndResult(annotations(),
+                    symbolTable.createTemporarySymbol(entry->getType()));
+            return;
+        }
+        identifier.clearFoldedConstant();
+        if (type::isBareFunction(entry->getType())) {
             setFunctionDesignator(identifier, symbolTable, annotations());
             return;
         }
-        identifier.setTypeAndResult(annotations(), entry);
-    };
-
-    const auto binding = symbolTable.findBlockName(name);
-    if (binding.enumerator) {
-        identifier.setFoldedConstant(*binding.enumerator);
-        identifier.setTypeAndResult(annotations(),
-                symbolTable.createTemporarySymbol(binding.enumerator->type));
-        return;
-    }
-    if (binding.value) {
-        identifier.clearFoldedConstant();
-        bindTo(*binding.value);
-        return;
-    }
-
-    type::IntegerConstant ice;
-    if (identifier.evaluateConstant(ice)) {
-        identifier.setTypeAndResult(annotations(),
-                symbolTable.createTemporarySymbol(ice.type));
-        return;
-    }
-
-    // The block scopes are already known to be empty, so only file scope is left.
-    if (const auto* entry = symbolTable.findFileScope(name)) {
-        bindTo(*entry);
+        identifier.setTypeAndResult(annotations(), *entry);
         return;
     }
 

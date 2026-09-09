@@ -46,6 +46,7 @@ IncompleteArrayBound incompleteArrayBoundFromInitializer(ast::Expression* init);
 void visitVariableBounds(const type::Type& t, ast::AbstractSyntaxTreeVisitor& visitor,
         const ast::VlaExpressionTable& vlas);
 void finalizeRecordDefinition(type::Type& record, SemanticAnalysisVisitor& visitor);
+void resolveSpecifierType(ast::TypeSpecifier& spec, SemanticAnalysisVisitor& visitor);
 void finalizeSpecifierType(ast::TypeSpecifier& spec, SemanticAnalysisVisitor& visitor);
 
 inline bool staticFollowsNonStatic(bool existingInternal, bool incomingInternal) {

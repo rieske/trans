@@ -23,14 +23,6 @@ enum class ObjectBind {
     NonStaticAfterStatic
 };
 
-// C: ordinary identifiers and enumeration constants share one namespace, so a name
-// binds to whichever was declared in the nearest enclosing scope. Both fields null
-// means the name is not bound in any open block scope.
-struct NameBinding {
-    const symbols::ValueEntry* value { nullptr };
-    const type::IntegerConstant* enumerator { nullptr };
-};
-
 class SymbolTable {
 public:
     bool insertSymbol(std::string name, const type::Type& type, translation_unit::Context context,
@@ -49,11 +41,8 @@ public:
     bool isFunctionDefined(const std::string& name) const;
     void markFunctionDefined(const std::string& name);
     const symbols::ValueEntry* find(const std::string& name) const;
-    // Innermost binding among the open block scopes; file scope is not consulted.
-    NameBinding findBlockName(const std::string& name) const;
     const symbols::ValueEntry* findFileScope(const std::string& name) const;
-    // File-scope enumerators keep their parse-time fold; only block scopes need a home.
-    void insertEnumerator(const std::string& name, type::IntegerConstant value);
+    bool insertEnumerator(const std::string& name, type::IntegerConstant value);
     const symbols::ValueEntry& lookup(const std::string& name) const;
     symbols::ValueEntry createTemporarySymbol(type::Type type);
     symbols::LabelEntry newLabel();
@@ -75,7 +64,7 @@ public:
     symbols::FunctionEntry currentFunctionEntry() const;
 
 private:
-    NameBinding walkBlockScopes(const std::string& name, bool withEnumerators) const;
+    const symbols::ValueEntry* walkBlockScopes(const std::string& name) const;
     void insertFunctionArgument(std::string name, type::Type type, translation_unit::Context context);
     // Block-scope extern is the file-scope object of that name (create if missing).
     // The block sees the composite type; file scope keeps its own.
@@ -88,7 +77,6 @@ private:
     // Block ids are monotonic across the whole unit: siblings never reuse an id.
     struct FunctionScope {
         ValueScope values;
-        std::map<SymbolKey, type::IntegerConstant> enumerators;
         std::vector<unsigned> blockIds;
         symbols::FunctionEntry function;
     };

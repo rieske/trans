@@ -388,8 +388,7 @@ void enumerationConstant(AbstractSyntaxTreeBuilderContext& context) {
 void identifierExpression(AbstractSyntaxTreeBuilderContext& context) {
     auto identifier = context.popTerminal();
     type::IntegerConstant ice;
-    const bool folded = context.environment().lookupEnumConstant(identifier.value, ice)
-            && !context.environment().lookupObject(identifier.value);
+    const bool folded = context.environment().lookupInnermostEnumerator(identifier.value, ice);
     auto expr = std::make_unique<IdentifierExpression>(std::move(identifier.value), identifier.context);
     if (folded) {
         expr->setFoldedConstant(std::move(ice));
@@ -548,10 +547,12 @@ void sizeofTypeExpression(AbstractSyntaxTreeBuilderContext& context) {
         context.error(sizeofKw.context, "cannot determine type of typeof operand");
         return;
     }
-    if (auto bytes = type::sizeofObject(typeSpec.getType(), context.environment().gnuExtensions())) {
-        context.pushExpression(std::make_unique<ConstantExpression>(
-                Constant { std::to_string(*bytes), type::signedInteger(), sizeofKw.context }));
-        return;
+    if (typeSpec.enumerators().empty()) {
+        if (auto bytes = type::sizeofObject(typeSpec.getType(), context.environment().gnuExtensions())) {
+            context.pushExpression(std::make_unique<ConstantExpression>(
+                    Constant { std::to_string(*bytes), type::signedInteger(), sizeofKw.context }));
+            return;
+        }
     }
     context.pushExpression(std::make_unique<UnaryExpression>(
             type::UnaryOp::Sizeof,

@@ -182,6 +182,48 @@ TEST(ParseEnvironment, innerBlockMayReuseOuterEnumeratorName) {
     EXPECT_EQ(type::toHostLong(v), 1);
 }
 
+TEST(ParseEnvironment, nestedEnumBodyKeepsItsOwnEnumeratorsAndRange) {
+    using scanner::BraceFrame;
+    LexicalSession session;
+    ParseEnvironment env{session};
+    session.openBrace(BraceFrame::EnumBody);
+    ASSERT_TRUE(env.addEnumerator("A", type::fromHostLong(1)));
+    session.openBrace(BraceFrame::EnumBody);
+    ASSERT_TRUE(env.addEnumerator("C", type::fromHostLong(3)));
+    session.closeBrace();
+    auto inner = env.endEnumDefinition("F");
+    EXPECT_TRUE(inner.equivalentTo(type::signedInteger()));
+    auto innerEnums = env.takeEnumerators();
+    ASSERT_EQ(innerEnums.size(), 1u);
+    EXPECT_EQ(innerEnums[0].name, "C");
+    EXPECT_EQ(type::toHostLong(innerEnums[0].value), 3);
+    ASSERT_TRUE(env.addEnumerator("B", type::fromHostLong(4)));
+    session.closeBrace();
+    auto outer = env.endEnumDefinition("E");
+    EXPECT_TRUE(outer.equivalentTo(type::signedInteger()));
+    auto outerEnums = env.takeEnumerators();
+    ASSERT_EQ(outerEnums.size(), 2u);
+    EXPECT_EQ(outerEnums[0].name, "A");
+    EXPECT_EQ(type::toHostLong(outerEnums[0].value), 1);
+    EXPECT_EQ(outerEnums[1].name, "B");
+    EXPECT_EQ(type::toHostLong(outerEnums[1].value), 4);
+}
+
+TEST(ParseEnvironment, lookupValueTypePrefersTheInnerEnumeratorOverAnOuterObject) {
+    LexicalSession session;
+    ParseEnvironment env{session};
+    env.defineObject("A", type::signedLong());
+    session.enterBlock();
+    env.addEnumerator("A", type::fromLiteralBits(1, type::signedInteger()));
+    auto found = env.lookupValueType("A");
+    ASSERT_TRUE(found.has_value());
+    EXPECT_TRUE(found->equivalentTo(type::signedInteger()));
+    session.leaveBlock();
+    auto outer = env.lookupValueType("A");
+    ASSERT_TRUE(outer.has_value());
+    EXPECT_TRUE(outer->equivalentTo(type::signedLong()));
+}
+
 TEST(ParseEnvironment, registerInitializedDeclarationDefinesTypedef) {
     LexicalSession session;
     ParseEnvironment env{session};

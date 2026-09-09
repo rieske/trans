@@ -2,11 +2,10 @@
 #define AST_PARSEENVIRONMENT_H_
 
 #include <map>
-#include <optional>
-#include <utility>
-#include <string>
-
 #include <memory>
+#include <optional>
+#include <string>
+#include <vector>
 
 #include "DeclarationSpecifiers.h"
 #include "Declarator.h"
@@ -41,7 +40,7 @@ public:
 
     void defineObject(const std::string& name, type::Type type);
     std::optional<type::Type> lookupObject(const std::string& name) const;
-    // Objects, statement-expression locals, then enumerators.
+    // Innermost ordinary binding: transients, then object vs enumerator by scope.
     std::optional<type::Type> lookupValueType(const std::string& name) const;
     void defineTransient(const std::string& name, type::Type type);
     void bindBlockDeclarations(const Block& block);
@@ -61,11 +60,16 @@ public:
     bool addEnumerator(std::string name);
     bool addEnumerator(std::string name, type::IntegerConstant value);
     bool lookupEnumConstant(const std::string& name, type::IntegerConstant& value) const;
-    // The enumerators of the definition just closed; the caller takes ownership.
+    // True when the innermost ordinary binding of name is an enumerator.
+    bool lookupInnermostEnumerator(const std::string& name, type::IntegerConstant& value) const;
+    // Enumerators of the definition just closed by endEnumDefinition.
     std::vector<Enumerator> takeEnumerators();
-    // Finishes the open enum body; returns the underlying type. Non-empty tag is registered.
+    // Finishes the innermost open enum body; returns the underlying type. Non-empty tag is registered.
     type::Type endEnumDefinition(const std::string& tag = {});
     std::optional<type::Type> lookupEnumTag(const std::string& tag) const;
+    void beginRecordEnumerators();
+    void addRecordEnumerators(std::vector<Enumerator> enumerators);
+    std::vector<Enumerator> takeRecordEnumerators();
 
     VlaExpressionTable& vlaExpressions() { return *vlas_; }
     const VlaExpressionTable& vlaExpressions() const { return *vlas_; }
@@ -85,9 +89,15 @@ private:
     std::map<std::string, type::Type> transients_;
     std::map<std::string, type::Type> structTags_;
     std::map<std::string, type::Type> enumTags_;
-    std::optional<EnumBody> enumBody_;
-    // One frame per open enum body; enum bodies nest.
-    std::vector<std::vector<Enumerator>> enumerators_;
+    struct EnumFrame {
+        std::vector<Enumerator> enumerators;
+        std::optional<EnumBody> body;
+    };
+    std::vector<EnumFrame> enumFrames_;
+    std::vector<Enumerator> lastClosedEnumerators_;
+    std::vector<std::vector<Enumerator>> recordEnumerators_;
+
+    void ensureEnumFrame();
 };
 
 } // namespace ast

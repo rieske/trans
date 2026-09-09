@@ -302,6 +302,7 @@ bool AbstractSyntaxTreeBuilderContext::popIsUnion() {
 
 void AbstractSyntaxTreeBuilderContext::newStructMemberList() {
     structMemberLists.push({});
+    environment_.beginRecordEnumerators();
 }
 
 void AbstractSyntaxTreeBuilderContext::addStructMember(std::string name, type::Type memberType,

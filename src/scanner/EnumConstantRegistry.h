@@ -2,6 +2,7 @@
 #define ENUMCONSTANTREGISTRY_H_
 
 #include <map>
+#include <optional>
 #include <string>
 #include <string_view>
 #include <vector>
@@ -16,6 +17,7 @@ class EnumConstantRegistry {
 public:
     void add(const std::string& name, type::IntegerConstant value);
     bool lookup(std::string_view name, type::IntegerConstant& value) const;
+    std::optional<int> bindingDepth(std::string_view name) const;
     bool contains(std::string_view name) const;
     bool containsInCurrentScope(std::string_view name) const;
 

@@ -1,11 +1,13 @@
 #ifndef SYMBOLS_VALUEENTRY_H_
 #define SYMBOLS_VALUEENTRY_H_
 
+#include <optional>
 #include <string>
 #include <vector>
 
 #include "StaticInit.h"
 #include "translation_unit/Context.h"
+#include "types/IntegerConstant.h"
 #include "types/Type.h"
 
 namespace symbols {
@@ -47,6 +49,11 @@ public:
 
     bool isExpressionTemp() const { return expressionTemp_; }
     void markExpressionTemp() { expressionTemp_ = true; }
+    bool isEnumerator() const { return enumeratorValue_.has_value(); }
+    void markEnumerator(type::IntegerConstant value) { enumeratorValue_ = std::move(value); }
+    const type::IntegerConstant* enumeratorValue() const {
+        return enumeratorValue_ ? &*enumeratorValue_ : nullptr;
+    }
 
 private:
     std::string name;
@@ -59,6 +66,7 @@ private:
     bool definingInitializer { false };
     bool functionDefined_ { false };
     bool expressionTemp_ { false };
+    std::optional<type::IntegerConstant> enumeratorValue_;
     std::vector<StaticInitValue> staticInitWords;
 };
 
