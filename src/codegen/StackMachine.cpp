@@ -1,4 +1,6 @@
 #include "StackMachine.h"
+
+#include "Liveness.h"
 #include "codegen/InternalError.h"
 
 #include "SysVCallConv.h"
@@ -89,6 +91,8 @@ void StackMachine::startProcedure(const Procedure& procedure) {
     frameHomes.clear();
     sretId_ = kNoSymbol;
     variadicFrame.reset();
+    liveInAtLabel_ = computeLabelLiveIns(procedure).atLabel;
+    haveEdgeLiveness_ = true;
     hasFrame_ = true;
     frameLayout_ = {};
     instructionOrdinal = 0;
@@ -227,21 +231,21 @@ void StackMachine::endProcedure() {
     calleeSavedRegisters.clear();
     sretId_ = kNoSymbol;
     variadicFrame.reset();
+    haveEdgeLiveness_ = false;
+    liveInAtLabel_.clear();
     hasFrame_ = false;
     frameLayout_ = {};
 }
 
 void StackMachine::label(int name) {
-    spillGeneralPurposeRegisters();
+    spillAcrossEdge(name);
+    dropDeadBindings();
     assembly.label(instructionSet->label(text(name)));
 }
 
 void StackMachine::jump(JumpCondition jumpCondition, int label, bool signedRel) {
-    // Spill on every outgoing edge. Conditional jumps used to skip this, so a branch
-    // to a join label could skip the spill that label() emits only on fall-through —
-    // leaving live values (e.g. argument registers) in regs while later code reloads
-    // them from unsaved stack slots. Repro: `int f(int a){ if(0); return a; }`.
-    spillGeneralPurposeRegisters();
+    // Taken edges skip the stores label() emits in front of the join.
+    spillAcrossEdge(label);
     const std::string& labelName = text(label);
     switch (jumpCondition) {
     case JumpCondition::IF_EQUAL:
@@ -271,6 +275,34 @@ void StackMachine::jump(JumpCondition jumpCondition, int label, bool signedRel) 
 void StackMachine::spillGeneralPurposeRegisters() {
     for (auto& reg : registers->getGeneralPurposeRegisters()) {
         storeRegisterValue(*reg);
+    }
+}
+
+void StackMachine::spillAcrossEdge(int label) {
+    if (!haveEdgeLiveness_) {
+        spillGeneralPurposeRegisters();
+        return;
+    }
+    const auto it = liveInAtLabel_.find(label);
+    if (it == liveInAtLabel_.end()) {
+        spillGeneralPurposeRegisters();
+        return;
+    }
+    for (auto& reg : registers->getGeneralPurposeRegisters()) {
+        if (!reg->containsUnstoredValue()) {
+            continue;
+        }
+        if (it->second.count(reg->getValue()->id()) != 0) {
+            storeRegisterValue(*reg);
+        }
+    }
+}
+
+void StackMachine::dropDeadBindings() {
+    for (auto& reg : registers->getGeneralPurposeRegisters()) {
+        if (reg->containsUnstoredValue()) {
+            reg->free();
+        }
     }
 }
 

@@ -7,6 +7,8 @@
 #include <ostream>
 #include <set>
 #include <string>
+#include <unordered_map>
+#include <unordered_set>
 #include <vector>
 
 #include "Address.h"
@@ -209,6 +211,8 @@ private:
 
     void storeRegisterValue(Register& reg);
     void spillGeneralPurposeRegisters();
+    void spillAcrossEdge(int label);
+    void dropDeadBindings();
     void spillCallerSavedRegisters();
     void emptyGeneralPurposeRegisters();
 
@@ -292,6 +296,8 @@ private:
     int sretId_ { kNoSymbol };
 
     bool hasFrame_ { false };
+    bool haveEdgeLiveness_ { false };
+    std::unordered_map<int, std::unordered_set<int>> liveInAtLabel_;
     type::object_abi::FrameLayout frameLayout_ {};
     int instructionOrdinal { 0 };
 

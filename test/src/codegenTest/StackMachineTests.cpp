@@ -633,7 +633,7 @@ TEST_F(StackMachineTest, intelFloat32AddUsesAddss) {
     EXPECT_THAT(code, testing::Not(testing::HasSubstr("addsd")));
 }
 
-TEST_F(StackMachineTest, condJumpDiamondSpillsDirtyArgAndTemp) {
+TEST_F(StackMachineTest, condJumpDiamondSpillsLiveArgNotDeadTemp) {
     Value a = intValue("a");
     Value t = intValue("t");
     t.markExpressionTemp();
@@ -656,7 +656,6 @@ TEST_F(StackMachineTest, condJumpDiamondSpillsDirtyArgAndTemp) {
 
     expectCode("\tmov rax, rdi\n"
             "\tadd rax, rdi\n"
-            "\tmov [rbp + -16], rax\n"
             "\tmov [rbp + -8], rdi\n"
             "\tje $else\n");
 }
