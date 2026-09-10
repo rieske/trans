@@ -33,7 +33,7 @@ void CodeGeneratingVisitor::emitBitFieldInsert(int addr, int value,
     const int shamt = addScratchValue(word);
     const int tmp = addScratchValue(word);
     const int mask = addScratchValue(word);
-    emit(ir::dereference(addr, addr, cur));
+    emit(ir::dereference(addr, cur));
     const unsigned long long fieldMask = type::bitFieldMask(bits.width);
     emit(ir::assignConstant(id(util::hexImmediate(fieldMask)), mask));
     emit(ir::andOp(value, mask, tmp));

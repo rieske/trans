@@ -207,7 +207,7 @@ IntermediateRepresentation memorySequence() {
     IrN n { ir.strings };
     ir.procedures.push_back(makeProc(ir.strings, "main", {
             ir::addressOf(n("x"), n("p")),
-            ir::dereference(n("p"), n("lv"), n("v")),
+            ir::dereference(n("p"), n("v")),
             ir::lvalueAssign(n("v"), n("p")),
             ir::assign(n("v"), n("w")),
             ir::assignLabelAddress(n("str0"), n("s")),
@@ -309,7 +309,7 @@ TEST(Instruction, buildersHaveNoUnusedFields) {
     validateInstruction(ir::widen(0, 1, true));
     validateInstruction(ir::assignConstant(0, 1));
     validateInstruction(ir::assignConstant(0, 1, 2));
-    validateInstruction(ir::dereference(0, 1, 2));
+    validateInstruction(ir::dereference(0, 1));
     validateInstruction(ir::indexAddress(0, 1, 4, 2, symbols::AddressBaseMode::PointerValue));
     validateInstruction(ir::fieldAddress(0, 8, 1));
     validateInstruction(ir::pointerOffset(0, 1, 4, 2, true));
@@ -417,14 +417,16 @@ TEST(InstructionIr, frameNamesResolveAfterGenerateIrMove) {
     EXPECT_THAT(ir.strings.get(ir.procedures[0].frame.arguments[0].id()), Eq("n"));
 }
 
-TEST(InstructionIr, dereferencePreservesLvalue) {
+TEST(InstructionIr, dereferenceIsPointerAndResult) {
     IntermediateRepresentation ir;
     IrN n { ir.strings };
-    Instruction i = ir::dereference(n("p"), n("lvalue_tmp"), n("v"));
+    Instruction i = ir::dereference(n("p"), n("v"));
     EXPECT_THAT(i.op, Eq(Op::Dereference));
     EXPECT_THAT(ir.strings.get(i.arg0), Eq("p"));
-    EXPECT_THAT(ir.strings.get(i.arg1), Eq("lvalue_tmp"));
+    EXPECT_THAT(i.arg1, Eq(kNoSymbol));
     EXPECT_THAT(ir.strings.get(i.result), Eq("v"));
+    i.arg1 = n("scratch");
+    EXPECT_THROW(validateInstruction(i), std::logic_error);
 }
 
 TEST(InstructionIr, callIndirectAndPointerSubtractAreSeparate) {

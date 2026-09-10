@@ -42,7 +42,7 @@ void CodeGeneratingVisitor::visit(ast::ArrayAccess& arrayAccess) {
             index->baseMode));
     if (!arrayAccess.holdsAggregateAddress()) {
         const int addr = id(*arrayAccess.getLvalueSymbol(store_));
-        emit(ir::dereference(addr, addr, id(*arrayAccess.getResultSymbol(store_))));
+        emit(ir::dereference(addr, id(*arrayAccess.getResultSymbol(store_))));
     }
 }
 
@@ -77,7 +77,7 @@ void CodeGeneratingVisitor::visit(ast::MemberAccess& memberAccess) {
             baseMode));
     if (!memberAccess.holdsAggregateAddress()) {
         const int resultName = id(*memberAccess.getResultSymbol(store_));
-        emit(ir::dereference(addrTemp, addrTemp, resultName));
+        emit(ir::dereference(addrTemp, resultName));
         if (field->isBitField()) {
             emitBitFieldExtract(resultName, resultName, *field->bitField);
         }
@@ -248,12 +248,12 @@ void CodeGeneratingVisitor::visit(ast::UnaryExpression& expression) {
             if (lvalue && id(*result) == id(*lvalue)) {
                 emitAssignUnlessSame(id(*operand), id(*result));
             } else {
-                emitPointerLoad(*operand, id(*result));
+                emit(ir::dereference(id(*operand), id(*result)));
             }
         } else if (expression.operandType().isArray()) {
             emitArrayObjectAddress(*operand, id(*lvalue));
             if (id(*result) != id(*lvalue)) {
-                emitPointerLoad(*lvalue, id(*result));
+                emit(ir::dereference(id(*lvalue), id(*result)));
             }
         }
         break;

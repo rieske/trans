@@ -42,10 +42,6 @@ void CodeGeneratingVisitor::emitAssignUnlessSame(int src, int dest) {
     }
 }
 
-void CodeGeneratingVisitor::emitPointerLoad(const symbols::ValueEntry& pointer, int result) {
-    emit(ir::dereference(id(pointer), addScratchValue(pointer.getType()), result));
-}
-
 void CodeGeneratingVisitor::emitBooleanConvert(int source, int dest) {
     const int one = id("__bc" + std::to_string(convertLabel_++) + "t");
     const int done = id("__bc" + std::to_string(convertLabel_++) + "d");

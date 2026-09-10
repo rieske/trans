@@ -96,7 +96,6 @@ OpContract opContract(Op op) {
     case Op::Xor:
     case Op::Shl:
     case Op::AssignConstant:
-    case Op::Dereference:
         return { InstructionClass::Ordinary, FArg0 | FArg1 | FResult };
     case Op::Div:
     case Op::Mod:
@@ -107,6 +106,7 @@ OpContract opContract(Op op) {
     case Op::UnaryNot:
     case Op::Assign:
     case Op::LvalueAssign:
+    case Op::Dereference:
     case Op::AddressOf:
     case Op::AssignLabelAddress:
     case Op::FunctionAddress:
