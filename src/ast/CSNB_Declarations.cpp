@@ -59,10 +59,6 @@ void arrayDesignator(AbstractSyntaxTreeBuilderContext& context) {
     context.pushArrayIndexDesignator(std::move(indexExpression));
 }
 
-void designatorListSingle(AbstractSyntaxTreeBuilderContext& context) {
-    (void)context;
-}
-
 void designatorListAppend(AbstractSyntaxTreeBuilderContext& context) {
     // Nested designators (.a.b or .a[0] or [0].x): stack top is the newest segment.
     std::vector<DesignatorStep> suffix;

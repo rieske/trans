@@ -2,6 +2,7 @@
 
 #include "util/ImmediateFormat.h"
 #include "util/FloatingLiteral.h"
+#include "util/IntegerLiteral.h"
 
 TEST(ImmediateFormat, wordImmediateUsesHexAboveSigned32) {
     EXPECT_EQ(util::wordImmediate(42), "42");
@@ -9,36 +10,41 @@ TEST(ImmediateFormat, wordImmediateUsesHexAboveSigned32) {
     EXPECT_EQ(util::wordImmediate(0x80000000ull), "0x80000000");
 }
 
-TEST(ImmediateFormat, integerLiteralImmediateStripsCSuffixes) {
-    std::string imm;
-    ASSERT_TRUE(util::integerLiteralImmediate("0xff00000000000000ULL", imm));
-    EXPECT_EQ(imm, "0xff00000000000000");
-    ASSERT_TRUE(util::integerLiteralImmediate("18446744073709551615UL", imm));
-    EXPECT_EQ(imm, "0xffffffffffffffff");
-    ASSERT_TRUE(util::integerLiteralImmediate("42u", imm));
-    EXPECT_EQ(imm, "42");
-    EXPECT_FALSE(util::integerLiteralImmediate("not-an-int", imm));
-}
-
-TEST(FloatingLiteral, immediateIsDoubleBitsHex) {
-    std::string imm;
-    ASSERT_TRUE(util::floatingLiteralImmediate("1.0", imm));
-    EXPECT_EQ(imm, "0x3ff0000000000000");
-    ASSERT_TRUE(util::floatingLiteralImmediate("2.5e1", imm));
-    EXPECT_EQ(imm, util::hexImmediate(0x4039000000000000ull));
-    EXPECT_FALSE(util::floatingLiteralImmediate("not-a-float", imm));
-}
-
 TEST(FloatingLiteral, floatSuffixIs32Bit) {
-    std::string imm;
-    ASSERT_TRUE(util::floatingLiteralImmediate("1.0f", imm));
-    EXPECT_EQ(imm, "0x3f800000");
-    EXPECT_FALSE(util::floatingLiteralImmediate("1.0L", imm));
-    EXPECT_FALSE(util::floatingLiteralImmediate("42.5l", imm));
     util::FloatingBits parsed;
     ASSERT_TRUE(util::floatingLiteralBits("2.5f", parsed));
     EXPECT_EQ(parsed.sizeBytes, 4);
     EXPECT_EQ(parsed.bits, 0x40200000ull);
+}
+
+TEST(FloatingLiteral, rejectsANonFloatingLexeme) {
+    util::FloatingBits parsed;
+    EXPECT_FALSE(util::floatingLiteralBits("not-a-float", parsed));
+}
+
+TEST(IntegerLiteral, stripsCSuffixes) {
+    util::IntegerLiteral lit;
+    ASSERT_TRUE(util::parseIntegerLiteral("42u", lit));
+    EXPECT_EQ(static_cast<unsigned long long>(lit.value), 42ull);
+    ASSERT_TRUE(util::parseIntegerLiteral("18446744073709551615UL", lit));
+    EXPECT_EQ(static_cast<unsigned long long>(lit.value), 0xffffffffffffffffull);
+}
+
+TEST(IntegerLiteral, recordsTheBaseOfAHexOrOctalLexeme) {
+    util::IntegerLiteral lit;
+    ASSERT_TRUE(util::parseIntegerLiteral("0xff00000000000000ULL", lit));
+    EXPECT_EQ(lit.base, 16);
+    EXPECT_EQ(static_cast<unsigned long long>(lit.value), 0xff00000000000000ull);
+    ASSERT_TRUE(util::parseIntegerLiteral("010", lit));
+    EXPECT_EQ(lit.base, 8);
+    EXPECT_EQ(static_cast<unsigned long long>(lit.value), 8ull);
+    ASSERT_TRUE(util::parseIntegerLiteral("42", lit));
+    EXPECT_EQ(lit.base, 10);
+}
+
+TEST(IntegerLiteral, rejectsANonIntegerLexeme) {
+    util::IntegerLiteral lit;
+    EXPECT_FALSE(util::parseIntegerLiteral("not-an-int", lit));
 }
 
 TEST(FloatingLiteral, encodeDecodeRoundTrip) {

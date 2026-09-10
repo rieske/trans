@@ -860,7 +860,7 @@ TEST(Compiler, reportsWhenSourceCannotBeOpened) {
     std::stringstream outputStream;
     std::stringstream errorStream;
     std::optional<std::string> result;
-    LogManager::withOutputStreams(outputStream, errorStream, [&]() {
+    LogManager::withOutputStreamsForTesting(outputStream, errorStream, [&]() {
         result = compiler.compile("no_such_compile_input.c");
     });
     EXPECT_FALSE(result.has_value());
@@ -876,7 +876,7 @@ TEST(Compiler, assembleFailureReportsFromCompile) {
     std::stringstream outputStream;
     std::stringstream errorStream;
     std::optional<std::string> result;
-    LogManager::withOutputStreams(outputStream, errorStream, [&]() {
+    LogManager::withOutputStreamsForTesting(outputStream, errorStream, [&]() {
         result = compiler.compile(sourcePath.string());
     });
     EXPECT_FALSE(result.has_value());

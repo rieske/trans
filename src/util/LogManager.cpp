@@ -20,15 +20,21 @@ LogManager& LogManager::getInstance() {
 	return *instance;
 }
 
-void LogManager::withOutputStreams(std::ostream& outputStream, std::ostream& errorStream, const std::function<void()>& action) {
+void LogManager::withOutputStreamsForTesting(std::ostream& outputStream, std::ostream& errorStream, const std::function<void()>& action) {
 	LogManager& logManager = LogManager::getInstance();
+    struct Restore {
+        LogManager& manager;
+        Logger output;
+        Logger error;
+        ~Restore() {
+            manager.outputLogger = output;
+            manager.errorLogger = error;
+        }
+    } restore { logManager, logManager.outputLogger, logManager.errorLogger };
+
     logManager.outputLogger = Logger(&outputStream);
     logManager.errorLogger = Logger(&errorStream);
-
     action();
-
-    logManager.outputLogger = Logger(&std::cout);
-    logManager.errorLogger = Logger(&std::cerr);
 }
 
 Logger& LogManager::getOutputLogger() {

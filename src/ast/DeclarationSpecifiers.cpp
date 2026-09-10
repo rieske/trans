@@ -83,9 +83,6 @@ std::optional<type::Type> DeclarationSpecifiers::typeAtParseTime(const ParseEnvi
     if (!parsed) {
         return std::nullopt;
     }
-    if (typeQualifiers.empty()) {
-        return parsed;
-    }
     return parsed->withQualifiers(typeQualifiers);
 }
 
@@ -201,44 +198,32 @@ type::Type DeclarationSpecifiers::getResolvedType() const {
     bool hasInt128 = false;
     type::Type compoundType = type::voidType();
     bool hasCompound = false;
+    bool anyKeyword = false;
     bool hasComplexSpec = false;
 
-    // Tokenize each TypeSpecifier name so multi-word packages from type_name
-    // combine (e.g. "unsigned int") still contribute bare keywords in any order.
     for (const auto& ts : typeSpecifiers) {
-        const std::string& n = ts.getName();
-        if (n.empty()) {
+        const std::string& name = ts.getName();
+        bool compound = name.empty();
+        if (!compound) {
+            std::istringstream names { name };
+            for (std::string tok; names >> tok;) {
+                const bool keyword = applyKeywordToken(tok, hasUnsigned, hasSigned, hasChar,
+                        hasShort, hasInt, longCount, hasFloat, hasDouble, hasVoid, hasInt128,
+                        hasComplexSpec);
+                anyKeyword |= keyword;
+                compound |= !keyword;
+            }
+        }
+        if (compound) {
             hasCompound = true;
             if (ts.hasType()) {
                 compoundType = ts.getType();
             }
-            continue;
         }
-        std::istringstream iss { n };
-        std::string tok;
-        bool anyKeyword = false;
-        while (iss >> tok) {
-            if (applyKeywordToken(tok, hasUnsigned, hasSigned, hasChar, hasShort, hasInt, longCount,
-                        hasFloat, hasDouble, hasVoid, hasInt128, hasComplexSpec)) {
-                anyKeyword = true;
-            } else {
-                // Non-keyword token (tag / typedef name / "struct" etc.): use stored Type.
-                hasCompound = true;
-                if (ts.hasType()) {
-                    compoundType = ts.getType();
-                }
-            }
-        }
-        (void)anyKeyword;
     }
 
     // Struct/union/enum/typedef without keyword mix: return stored type.
-    if (hasCompound && !hasUnsigned && !hasSigned && !hasChar && !hasShort && !hasInt
-            && longCount == 0 && !hasFloat && !hasDouble && !hasVoid && !hasInt128
-            && !hasComplexSpec) {
-        if (typeQualifiers.empty()) {
-            return compoundType;
-        }
+    if (hasCompound && !anyKeyword) {
         return compoundType.withQualifiers(typeQualifiers);
     }
     // Keyword + compound together (e.g. invalid "unsigned struct S"): prefer keyword path;

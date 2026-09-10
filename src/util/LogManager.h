@@ -15,7 +15,7 @@ class LogManager {
 public:
 	virtual ~LogManager();
 
-    static void withOutputStreams(std::ostream& outputStream, std::ostream& errorStream, const std::function<void()>& action);
+    static void withOutputStreamsForTesting(std::ostream& outputStream, std::ostream& errorStream, const std::function<void()>& action);
 
     static Logger& getOutputLogger();
     static Logger& getErrorLogger();

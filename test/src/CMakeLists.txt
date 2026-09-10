@@ -153,6 +153,7 @@ add_executable(utilTest
         utilTest/ImmediateFormatTest.cpp
         utilTest/SourcePathTest.cpp
         utilTest/DiagnosticTest.cpp
+        utilTest/LogManagerTest.cpp
         )
 target_link_libraries(utilTest PRIVATE GTest::gmock_main util)
 add_test(NAME utilTest COMMAND utilTest)

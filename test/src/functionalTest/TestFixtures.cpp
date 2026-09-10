@@ -127,7 +127,7 @@ int Program::compileOnce(bool verbose) {
     std::stringstream errorStream;
     int exitCode = 0;
 
-    LogManager::withOutputStreams(outputStream, errorStream, [&argv, &exitCode]() {
+    LogManager::withOutputStreamsForTesting(outputStream, errorStream, [&argv, &exitCode]() {
         Driver transDriver{};
         exitCode = transDriver.run((int)argv.size() - 1, argv.data());
     });
