@@ -12,9 +12,7 @@ TEST(TypeQuery, bareAndPointerToFunction) {
     type::Type pfn = type::pointer(fn);
     type::Type ppfn = type::pointer(pfn);
 
-    EXPECT_TRUE(type::isBareFunction(fn));
-    EXPECT_FALSE(type::isBareFunction(pfn));
-    // Recursive Type: pointer kind is not function (no payload bleed from pointer()).
+    EXPECT_TRUE(fn.isFunction());
     EXPECT_FALSE(pfn.isFunction());
     EXPECT_TRUE(type::isPointerToFunction(pfn));
     // pointer-to-pointer-to-function is not pointer-to-function (old bag model lied here).

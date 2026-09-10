@@ -15,7 +15,7 @@ ValueEntry::ValueEntry(std::string name, const type::Type& type, translation_uni
 {
 }
 
-type::Type ValueEntry::getType() const {
+const type::Type& ValueEntry::getType() const {
     return type;
 }
 

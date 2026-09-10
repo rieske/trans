@@ -11,12 +11,8 @@
 
 namespace type {
 
-// Prefer these over raw isFunction()/isPointer() combinations.
-// Recursive Type: pointer is its own kind; bare function is Function and not a pointer.
-
-inline bool isBareFunction(const Type& t) {
-    return t.isFunction();
-}
+// Pointer/function combinations (isPointerToFunction, …). A function type is
+// Type::isFunction(); a pointer is its own kind and does not bleed Function.
 
 // Non-floating, non-complex primitive scalar (not a pointer — isPrimitive already excludes indirection).
 inline bool isIntegralScalar(const Type& t) {
@@ -140,7 +136,7 @@ inline std::optional<int> sizeofObject(const Type& t, bool gnu) {
     if (t.isVoid()) {
         return gnu ? std::optional<int> { 1 } : std::nullopt;
     }
-    if (isBareFunction(t)) {
+    if (t.isFunction()) {
         if (gnu) {
             return 1;
         }

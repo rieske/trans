@@ -39,7 +39,7 @@ public:
     void applyFunctionSpecs(bool isInline, bool isNoreturn, bool isExtern);
     bool isNoreturn() const;
     bool providesExternalDefinition() const;
-    type::Type getType() const;
+    const type::Type& getType() const;
     // File-scope redecl: replace with the C 6.2.7 composite type.
     void refineType(const type::Type& refined);
     void setContext(translation_unit::Context context);
