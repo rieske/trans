@@ -28,7 +28,6 @@
 #include "util/FloatingLiteral.h"
 #include "util/IntegerLiteral.h"
 
-#include <stdexcept>
 #include <string>
 
 namespace ast {
@@ -70,13 +69,6 @@ void floatConstant(AbstractSyntaxTreeBuilderContext& context) {
         t = type::longDoubleFloating();
     }
     context.pushConstant( { constant.value, t, constant.context });
-}
-
-void enumerationConstant(AbstractSyntaxTreeBuilderContext& context) {
-    // Grammar reserves enumeration_const; the scanner emits plain id for
-    // enumerators, so this reduction is not used on the product path.
-    (void)context;
-    throw std::logic_error { "enumeration_const reduction is unused (scanner emits id)" };
 }
 
 void identifierExpression(AbstractSyntaxTreeBuilderContext& context) {

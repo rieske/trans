@@ -57,10 +57,9 @@ void CodeGeneratingVisitor::visit(ast::FunctionDeclarator& declarator) {
     declarator.visitFormalArguments(*this);
 }
 
-void CodeGeneratingVisitor::visit(ast::ArrayDeclarator& declaration) {
+void CodeGeneratingVisitor::visit(ast::ArrayDeclarator&) {
     // Size is folded in semantic analysis; visiting the bound would emit into no procedure
     // for file-scope prototypes such as `char[20]`.
-    (void)declaration;
 }
 
 void CodeGeneratingVisitor::visit(ast::FormalArgument& parameter) {

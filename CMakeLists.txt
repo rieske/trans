@@ -29,7 +29,7 @@ add_library(trans_common INTERFACE)
 target_compile_features(trans_common INTERFACE cxx_std_20)
 target_compile_options(trans_common INTERFACE
   $<$<COMPILE_LANG_AND_ID:CXX,GNU,Clang,AppleClang>:
-    -Wall;-Wextra;-Wno-unused-parameter;-Werror;-pedantic;-fno-rtti
+    -Wall;-Wextra;-Werror;-pedantic;-fno-rtti
   >
 )
 

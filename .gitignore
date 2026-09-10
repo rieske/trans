@@ -4,12 +4,6 @@
 /output
 /logs
 /fuzz_out
-/fibb.c.S
-/fibb.c.out
-/swap.c.S
-/swap.c.out
-/simpleOutput.c.S
-/simpleOutput.c.out
 CMakeCache.txt
 /compile_commands.json
 /test/programs/**/*.o

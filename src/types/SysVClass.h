@@ -143,12 +143,6 @@ inline bool isComplexX87(const Classification& c) {
     return !c.memory && c.count > 0 && c.eightbytes[0] == Class::ComplexX87;
 }
 
-inline Classification memoryClass() {
-    Classification c;
-    c.memory = true;
-    return c;
-}
-
 } // namespace sysv
 } // namespace type
 

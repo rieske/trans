@@ -1,8 +1,6 @@
 #ifndef UTIL_FLOATINGLITERAL_H_
 #define UTIL_FLOATINGLITERAL_H_
 
-#include "ImmediateFormat.h"
-
 #include <cstring>
 #include <string>
 
@@ -200,16 +198,6 @@ inline bool floatingLiteralBits(const std::string& token, FloatingBits& out) {
     } catch (...) {
         return false;
     }
-}
-
-// C floating lexeme (suffixes ok). False when the value does not fit in 64 bits.
-inline bool floatingLiteralImmediate(const std::string& token, std::string& immediateOut) {
-    FloatingBits parsed;
-    if (!floatingLiteralBits(token, parsed) || parsed.sizeBytes > 8) {
-        return false;
-    }
-    immediateOut = hexImmediate(parsed.bits);
-    return true;
 }
 
 } // namespace util

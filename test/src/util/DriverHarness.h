@@ -45,7 +45,7 @@ inline int runDriver(ArgvBuffer& args, std::string* errorOutput = nullptr,
     std::stringstream outputStream;
     std::stringstream errorStream;
     int exitCode = 0;
-    LogManager::withOutputStreams(outputStream, errorStream, [&]() {
+    LogManager::withOutputStreamsForTesting(outputStream, errorStream, [&]() {
         Driver driver {};
         exitCode = driver.run(args.argc(), args.argv());
     });

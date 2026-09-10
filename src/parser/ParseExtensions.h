@@ -26,10 +26,7 @@ public:
     // True when the current token is a type-spec extension spelled as `id`
     // (e.g. __int128). The LR driver may probe a FIRST(<type_spec>) terminal
     // reduce and retry when the pure-reduce FOLLOW set omits `id`.
-    virtual bool isTypeExtensionToken(const scanner::Token& token) const {
-        (void)token;
-        return false;
-    }
+    virtual bool isTypeExtensionToken(const scanner::Token& token) const = 0;
 };
 
 } // namespace parser

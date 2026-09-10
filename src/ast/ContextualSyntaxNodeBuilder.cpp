@@ -69,8 +69,8 @@ ContextualSyntaxNodeBuilder::ContextualSyntaxNodeBuilder(const parser::Grammar& 
     bind(s_type_specifier, { grammar.symbolId("bool") }, boolType);
     bind(s_type_specifier, { grammar.symbolId("_Complex") }, complexType);
     bind(s_type_specifier, { grammar.symbolId("typedef_name") }, typedefName);
-    bind(s_type_specifier, { grammar.symbolId("<struct_or_union_spec>") }, structOrUnionType);
-    bind(s_type_specifier, { grammar.symbolId("<enum_spec>") }, enumType);
+    bind(s_type_specifier, { grammar.symbolId("<struct_or_union_spec>") }, doNothing);
+    bind(s_type_specifier, { grammar.symbolId("<enum_spec>") }, doNothing);
 
     int s_type_qualifier = grammar.symbolId("<type_qualifier>");
     bind(s_type_qualifier, { grammar.symbolId("const") }, constQualifier);
@@ -174,7 +174,6 @@ ContextualSyntaxNodeBuilder::ContextualSyntaxNodeBuilder(const parser::Grammar& 
     bind(s_constant, { grammar.symbolId("int_const") }, integerConstant);
     bind(s_constant, { grammar.symbolId("char_const") }, characterConstant);
     bind(s_constant, { grammar.symbolId("float_const") }, floatConstant);
-    bind(s_constant, { grammar.symbolId("enumeration_const") }, enumerationConstant);
 
     int s_exp = grammar.symbolId("<exp>");
     int s_primary_exp = grammar.symbolId("<primary_exp>");
@@ -317,7 +316,7 @@ ContextualSyntaxNodeBuilder::ContextualSyntaxNodeBuilder(const parser::Grammar& 
     int s_designation = grammar.symbolId("<designation>");
     bind(s_designator, { grammar.symbolId("."), grammar.symbolId("id") }, memberDesignator);
     bind(s_designator, { grammar.symbolId("["), s_conditional_exp, grammar.symbolId("]") }, arrayDesignator);
-    bind(s_designator_list, { s_designator }, designatorListSingle);
+    bind(s_designator_list, { s_designator }, doNothing);
     bind(s_designator_list, { s_designator_list, s_designator }, designatorListAppend);
     bind(s_designation, { s_designator_list, grammar.symbolId("=") }, designation);
 

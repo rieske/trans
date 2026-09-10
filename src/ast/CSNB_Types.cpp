@@ -72,15 +72,6 @@ void typedefName(AbstractSyntaxTreeBuilderContext& context) {
     context.pushTypeSpecifier(TypeSpecifier { *type, name.value });
 }
 
-void structOrUnionType(AbstractSyntaxTreeBuilderContext& context) {
-    // type_spec -> struct_or_union_spec: TypeSpecifier already pushed.
-}
-
-void enumType(AbstractSyntaxTreeBuilderContext& context) {
-    // type_spec -> enum_spec: TypeSpecifier already pushed by enum_spec productions.
-    (void)context;
-}
-
 void constQualifier(AbstractSyntaxTreeBuilderContext& context) {
     context.popTerminal();
     context.pushTypeQualifier(type::Qualifier::CONST);

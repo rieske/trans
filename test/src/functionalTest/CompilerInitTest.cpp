@@ -33,7 +33,7 @@ TEST(Compiler, reportsMissingSourceFile) {
     std::stringstream outputStream;
     std::stringstream errorStream;
     std::optional<std::string> result;
-    LogManager::withOutputStreams(outputStream, errorStream, [&]() {
+    LogManager::withOutputStreamsForTesting(outputStream, errorStream, [&]() {
         result = compiler.compile(sourceFile);
     });
     EXPECT_FALSE(result.has_value());

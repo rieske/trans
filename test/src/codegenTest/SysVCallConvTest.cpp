@@ -78,7 +78,7 @@ TEST(SysVCallConv, zeroIntegerBudgetStacksIntsKeepsXmm) {
 
 TEST(SysVCallConv, memoryClassDoesNotSpendGp) {
     SysVArgCounts used;
-    EXPECT_TRUE(assignSysVArg(type::sysv::memoryClass(), used, kMaxGp).onStack);
+    EXPECT_TRUE(assignSysVArg(type::sysv::Classification { .memory = true }, used, kMaxGp).onStack);
     const SysVArgAssignment gp = assignSysVArg(integerScalar(), used, kMaxGp);
     ASSERT_FALSE(gp.onStack);
     EXPECT_EQ(gp.slots[0], SysVArgSlot::IntegerReg);

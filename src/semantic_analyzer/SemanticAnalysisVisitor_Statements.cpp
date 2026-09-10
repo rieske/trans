@@ -146,8 +146,7 @@ void SemanticAnalysisVisitor::visit(ast::ExpressionStatement& statement) {
     statement.expression->accept(*this);
 }
 
-void SemanticAnalysisVisitor::visit(ast::NullStatement& statement) {
-    (void)statement;
+void SemanticAnalysisVisitor::visit(ast::NullStatement&) {
 }
 
 void SemanticAnalysisVisitor::visit(ast::IfStatement& statement) {

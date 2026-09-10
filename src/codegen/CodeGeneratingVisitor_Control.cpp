@@ -75,8 +75,7 @@ void CodeGeneratingVisitor::visit(ast::ExpressionStatement& statement) {
     statement.expression->accept(*this);
 }
 
-void CodeGeneratingVisitor::visit(ast::NullStatement& statement) {
-    (void)statement;
+void CodeGeneratingVisitor::visit(ast::NullStatement&) {
 }
 
 void CodeGeneratingVisitor::visit(ast::IfStatement& statement) {
