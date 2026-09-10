@@ -20,6 +20,7 @@ add_library(backend
         InstructionSet.cpp
         IrGenerator.cpp
         IrPasses.cpp
+        Liveness.cpp
         IrStringTable.cpp
         SymbolRefs.cpp
         IntelInstructionSet.cpp

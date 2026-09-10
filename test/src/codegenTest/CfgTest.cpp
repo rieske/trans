@@ -296,6 +296,52 @@ TEST(Cfg, controlFlowShapeRoundTrips) {
     });
 }
 
+TEST(Cfg, successorsCondJumpAreTargetAndFallthrough) {
+    IntermediateRepresentation names;
+    IrN n { names.strings };
+    const Cfg cfg = buildCfg({
+            ir::zeroCompare(n("x")),
+            ir::jump(n("else"), JumpCondition::IF_EQUAL),
+            ir::assignConstant(n("1"), n("r")),
+            ir::jump(n("end")),
+            ir::label(n("else")),
+            ir::assignConstant(n("0"), n("r")),
+            ir::label(n("end")),
+            ir::voidReturn(),
+    });
+
+    EXPECT_THAT(cfgSuccessors(cfg, 0), ElementsAre(2, 1));
+    EXPECT_THAT(cfgSuccessors(cfg, 1), ElementsAre(3));
+    EXPECT_THAT(cfgSuccessors(cfg, 2), ElementsAre(3));
+    EXPECT_THAT(cfgSuccessors(cfg, 3), IsEmpty());
+}
+
+TEST(Cfg, successorsUncondJumpIsTargetOnly) {
+    IntermediateRepresentation names;
+    IrN n { names.strings };
+    const Cfg cfg = buildCfg({
+            ir::jump(n("L")),
+            ir::label(n("L")),
+            ir::voidReturn(),
+    });
+
+    EXPECT_THAT(cfgSuccessors(cfg, 0), ElementsAre(1));
+    EXPECT_THAT(cfgSuccessors(cfg, 1), IsEmpty());
+}
+
+TEST(Cfg, successorsEmptyLabelFallsThrough) {
+    IntermediateRepresentation names;
+    IrN n { names.strings };
+    const Cfg cfg = buildCfg({
+            ir::label(n("L1")),
+            ir::label(n("L2")),
+            ir::voidReturn(),
+    });
+
+    EXPECT_THAT(cfgSuccessors(cfg, 0), ElementsAre(1));
+    EXPECT_THAT(cfgSuccessors(cfg, 1), IsEmpty());
+}
+
 TEST(Cfg, validateRejectsUnlabeledAfterUncondTerminator) {
     IntermediateRepresentation names;
     IrN n { names.strings };

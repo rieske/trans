@@ -27,7 +27,9 @@ std::size_t blockIndexWithLabel(const Cfg& cfg, int label) {
     return cfg.size();
 }
 
-std::vector<std::size_t> successors(const Cfg& cfg, std::size_t i) {
+} // namespace
+
+std::vector<std::size_t> cfgSuccessors(const Cfg& cfg, std::size_t i) {
     std::vector<std::size_t> succs;
     auto addFallthrough = [&]() {
         if (i + 1 < cfg.size()) {
@@ -52,8 +54,6 @@ std::vector<std::size_t> successors(const Cfg& cfg, std::size_t i) {
     }
     return succs;
 }
-
-} // namespace
 
 Cfg buildCfg(const std::vector<Instruction>& body) {
     Cfg cfg;
@@ -147,7 +147,7 @@ Cfg eliminateUnreachable(Cfg cfg) {
     while (!work.empty()) {
         const std::size_t i = work.back();
         work.pop_back();
-        for (const std::size_t s : successors(cfg, i)) {
+        for (const std::size_t s : cfgSuccessors(cfg, i)) {
             if (!reachable[s]) {
                 reachable[s] = 1;
                 work.push_back(s);
