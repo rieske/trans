@@ -58,7 +58,7 @@ private:
     std::vector<int> nonterminalIDs;
     std::vector<int> terminalIDs;
     std::unordered_map<int, std::vector<Production>> rulesByDefiningSymbol;
-    std::unordered_map<int, Production> rulesById;
+    std::vector<Production> rulesById;
 
     int firstTerminalId;
     int startSymbol;

@@ -69,5 +69,11 @@ TEST(GrammarBuilder, buildsExpressionGrammar) {
     EXPECT_THAT(operandProductions, SizeIs(2));
     EXPECT_THAT(grammar.str(operandProductions.at(0)), Eq("<operand> ::= identifier"));
     EXPECT_THAT(grammar.str(operandProductions.at(1)), Eq("<operand> ::= constant"));
+
+    for (std::size_t i = 0; i < grammar.ruleCount(); ++i) {
+        const Production& rule = grammar.getRuleById(static_cast<int>(i));
+        EXPECT_THAT(rule.getId(), Eq(static_cast<int>(i)));
+        EXPECT_THAT(rule.size(), Ge(1u));
+    }
 }
 

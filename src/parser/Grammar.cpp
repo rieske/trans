@@ -42,9 +42,9 @@ Grammar::Grammar(std::map<std::string, int> symbolIDs,
     this->terminalIDs.push_back(endSymbol);
 
     rules.push_back(topRule);
-    for (const auto& production: rules) {
+    rulesById = std::move(rules);
+    for (const auto& production : rulesById) {
         rulesByDefiningSymbol.insert({production.getDefiningSymbol(), {}}).first->second.push_back(production);
-        rulesById.insert({production.getId(), production});
     }
 
     idToTerminalBit_.fill(-1);
