@@ -89,7 +89,7 @@ public:
     // Type of the Result symbol after SA (prefer for arithmetic / assign source value).
     type::Type valueType(const symbols::AnnotationStore& store) const;
 
-    virtual bool isLval() const;
+    bool isLval() const;
     // Address temp for this expression (ValueSlot::Lvalue on the store).
     void setLvalueSymbol(symbols::AnnotationStore& store, symbols::ValueEntry address);
     symbols::ValueEntry* getLvalueSymbol(symbols::AnnotationStore& store) const;
@@ -113,7 +113,8 @@ public:
             const type::Type& aggregateType);
     void setFunctionDesignatorResult(symbols::AnnotationStore& store, symbols::ValueEntry addressSymbol,
             const type::Type& functionType);
-    // Become src's value: C type, form, result, lvalue, address plan, value category.
+    // Become src's value: C type, form, result, lvalue symbol, address plan.
+    // Identifier / GenericSelection also copy value category.
     void takeValueFrom(Expression& src, symbols::AnnotationStore& store);
 
     bool hasResultSymbol(const symbols::AnnotationStore& store) const;
@@ -123,9 +124,6 @@ public:
 
     bool holdsAggregateAddress() const { return form == ValueForm::AggregateAddress; }
     bool holdsFunctionDesignator() const { return form == ValueForm::FunctionDesignator; }
-
-protected:
-    bool lval { false };
 
 private:
     std::optional<type::Type> type;

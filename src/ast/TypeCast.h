@@ -19,8 +19,6 @@ public:
     // Target type specifier of the cast (not Expression::expressionType()).
     const TypeSpecifier& getTypeSpecifier() const;
     TypeSpecifier& getTypeSpecifier();
-    // Casts are never lvalues in C (unlike the operand).
-    bool isLval() const override;
     bool evaluateConstant(type::IntegerConstant& value) const override;
 
 private:

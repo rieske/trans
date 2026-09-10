@@ -41,10 +41,12 @@ public:
     const Expression& selectedExpression() const;
 
 private:
+    friend class Expression;
     translation_unit::Context context_;
     std::unique_ptr<Expression> controlling_;
     std::vector<GenericAssociation> associations_;
     std::optional<std::size_t> selectedIndex_;
+    bool lval_ { false };
 };
 
 } // namespace ast

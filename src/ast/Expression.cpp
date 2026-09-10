@@ -1,9 +1,11 @@
 #include "Expression.h"
 
 #include "ConstantExpression.h"
+#include "GenericSelection.h"
 #include "IdentifierExpression.h"
 #include "InitializerListExpression.h"
 #include "StringLiteralExpression.h"
+#include "UnaryExpression.h"
 
 #include <cassert>
 #include <stdexcept>
@@ -75,7 +77,9 @@ void Expression::setFunctionDesignatorResult(symbols::AnnotationStore& store,
         symbols::ValueEntry addressSymbol, const type::Type& functionType) {
     setType(functionType);
     form = ValueForm::FunctionDesignator;
-    lval = false;
+    if (exprKind() == ExprKind::Identifier) {
+        static_cast<IdentifierExpression*>(this)->lval_ = false;
+    }
     store.setResult(this, std::move(addressSymbol));
 }
 
@@ -94,7 +98,11 @@ void Expression::takeValueFrom(Expression& src, symbols::AnnotationStore& store)
     if (const auto* plan = store.addressPlan(&src)) {
         store.setAddressPlan(this, *plan);
     }
-    lval = src.isLval();
+    if (exprKind() == ExprKind::Identifier) {
+        static_cast<IdentifierExpression*>(this)->lval_ = src.isLval();
+    } else if (exprKind() == ExprKind::GenericSelection) {
+        static_cast<GenericSelection*>(this)->lval_ = src.isLval();
+    }
 }
 
 bool Expression::hasResultSymbol(const symbols::AnnotationStore& store) const {
@@ -110,7 +118,21 @@ symbols::ValueEntry* Expression::getResultSymbol(symbols::AnnotationStore& store
 }
 
 bool Expression::isLval() const {
-    return lval;
+    switch (exprKind()) {
+    case ExprKind::Identifier:
+        return static_cast<const IdentifierExpression*>(this)->lval_;
+    case ExprKind::GenericSelection:
+        return static_cast<const GenericSelection*>(this)->lval_;
+    case ExprKind::ArrayAccess:
+    case ExprKind::MemberAccess:
+    case ExprKind::StringLiteral:
+    case ExprKind::CompoundLiteral:
+        return true;
+    case ExprKind::Unary:
+        return static_cast<const UnaryExpression*>(this)->op() == type::UnaryOp::Deref;
+    default:
+        return false;
+    }
 }
 
 void Expression::setLvalueSymbol(symbols::AnnotationStore& store, symbols::ValueEntry address) {

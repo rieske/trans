@@ -172,7 +172,8 @@ void SemanticAnalysisVisitor::visit(ast::PostfixExpression& expression) {
     expression.setTypeAndResult(annotations(),
             symbolTable.createTemporarySymbol(operandSymbol.getType()));
 
-    checkIncrementOperand(*this, expression.isLval(), expression.operandType(), expression.getContext());
+    checkIncrementOperand(*this, expression.getOperandExpression()->isLval(),
+            expression.operandType(), expression.getContext());
 }
 
 void SemanticAnalysisVisitor::visit(ast::PrefixExpression& expression) {
@@ -185,7 +186,8 @@ void SemanticAnalysisVisitor::visit(ast::PrefixExpression& expression) {
     expression.setType(expression.operandType());
     expression.setTypeAndResult(annotations(), *expression.operandSymbol(annotations()));
 
-    checkIncrementOperand(*this, expression.isLval(), expression.operandType(), expression.getContext());
+    checkIncrementOperand(*this, expression.getOperandExpression()->isLval(),
+            expression.operandType(), expression.getContext());
 }
 
 void SemanticAnalysisVisitor::visit(ast::UnaryExpression& expression) {
