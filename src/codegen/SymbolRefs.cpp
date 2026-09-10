@@ -61,7 +61,6 @@ void collectSymbolRefs(const Instruction& instruction, SymbolRefs& refs) {
         return;
     case Op::Dereference:
         refs.addUse(instruction.arg0);
-        refs.addUse(instruction.arg1);
         refs.addDef(instruction.result);
         return;
     case Op::FieldAddress:

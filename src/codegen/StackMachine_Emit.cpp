@@ -22,7 +22,7 @@ void StackMachine::emit(const Instruction& instruction) {
         addressOf(instruction.arg0, instruction.result);
         break;
     case Op::Dereference:
-        dereference(instruction.arg0, instruction.arg1, instruction.result);
+        dereference(instruction.arg0, instruction.result);
         break;
     case Op::IndexAddress:
         indexAddress(

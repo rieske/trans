@@ -50,7 +50,7 @@ public:
 
     void addressOf(int operandName, int resultName);
     void functionAddress(int functionName, int resultName);
-    void dereference(int operandName, int lvalueName, int resultName);
+    void dereference(int operandName, int resultName);
     void indexAddress(int baseName, int indexName, int elementSizeBytes, int resultName,
             symbols::AddressBaseMode baseMode = symbols::AddressBaseMode::LeaObject);
     // Pointer value +/- integer: result = base +/- index * elementSizeBytes.

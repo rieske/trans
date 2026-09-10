@@ -451,13 +451,13 @@ void rewriteValueUses(Instruction& inst, const std::unordered_map<int, int>& cop
     case Op::ValueCompare:
     case Op::PointerOffset:
     case Op::PointerDiff:
-    case Op::Dereference:
     case Op::VaStart:
     case Op::VaCopy:
         rewriteValueUse(inst.arg0, copy);
         rewriteValueUse(inst.arg1, copy);
         return;
     case Op::Assign:
+    case Op::Dereference:
     case Op::UnaryMinus:
     case Op::UnaryNot:
     case Op::CopyPart:

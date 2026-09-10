@@ -653,7 +653,7 @@ TEST(IrPasses, eliminateDeadTemps_keepsAddressTaken) {
             ir::assignConstant(n("1"), n("t0")),
             ir::addressOf(n("t0"), n("p")),
             ir::assignConstant(n("2"), n("t0")),
-            ir::dereference(n("p"), n("p"), n("t1")),
+            ir::dereference(n("p"), n("t1")),
             ir::ret(n("t1")),
     }, std::move(frame)));
 
@@ -729,9 +729,9 @@ TEST(IrPasses, eliminateDeadTemps_dropsUnusedDereference) {
     IntermediateRepresentation ir;
     IrN n { ir.strings };
     ir.procedures.push_back(makeProc(ir.strings, "f", {
-            ir::dereference(n("p"), n("s"), n("t")),
+            ir::dereference(n("p"), n("t")),
             ir::ret(n("x")),
-    }, exprTemps(ir.strings, { "p", "s", "t", "x" })));
+    }, exprTemps(ir.strings, { "p", "t", "x" })));
 
     eliminateDeadTemps(ir.procedures.front());
 
@@ -793,9 +793,9 @@ TEST(IrPasses, eliminateDeadTemps_keepsUsedDereference) {
     IntermediateRepresentation ir;
     IrN n { ir.strings };
     ir.procedures.push_back(makeProc(ir.strings, "f", {
-            ir::dereference(n("p"), n("s"), n("t")),
+            ir::dereference(n("p"), n("t")),
             ir::ret(n("t")),
-    }, exprTemps(ir.strings, { "p", "s", "t" })));
+    }, exprTemps(ir.strings, { "p", "t" })));
 
     eliminateDeadTemps(ir.procedures.front());
 
@@ -806,12 +806,12 @@ TEST(IrPasses, eliminateDeadTemps_dropsOuterLoadKeepsStoreAddress) {
     IntermediateRepresentation ir;
     IrN n { ir.strings };
     ir.procedures.push_back(makeProc(ir.strings, "f", {
-            ir::dereference(n("pp"), n("s0"), n("t0")),
-            ir::dereference(n("t0"), n("s1"), n("t1")),
+            ir::dereference(n("pp"), n("t0")),
+            ir::dereference(n("t0"), n("t1")),
             ir::assignConstant(n("9"), n("t2")),
             ir::lvalueAssign(n("t2"), n("t0")),
             ir::voidReturn(),
-    }, exprTemps(ir.strings, { "pp", "s0", "t0", "s1", "t1", "t2" })));
+    }, exprTemps(ir.strings, { "pp", "t0", "t1", "t2" })));
 
     eliminateDeadTemps(ir.procedures.front());
 

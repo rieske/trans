@@ -150,7 +150,7 @@ void StackMachine::functionAddress(int functionName, int resultName) {
     bindResult(resultRegister, resolve(resultName));
 }
 
-void StackMachine::dereference(int operandName, int lvalueName, int resultName) {
+void StackMachine::dereference(int operandName, int resultName) {
     auto& operand = resolve(operandName);
     auto& result = resolve(resultName);
     Register& pointerRegister = materialize(operand);
@@ -161,10 +161,6 @@ void StackMachine::dereference(int operandName, int lvalueName, int resultName) 
         loadPromotedFrom(MemoryOperand::at(pointerRegister, 0), result, resultRegister);
         bindResult(resultRegister, result);
     }
-
-    Register& lvalueRegister = get64BitRegisterExcluding(pointerRegister);
-    assembly << instructionSet->mov(pointerRegister, lvalueRegister);
-    lvalueRegister.assign(&resolve(lvalueName));
 }
 
 } // namespace codegen

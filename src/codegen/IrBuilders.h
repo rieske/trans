@@ -121,13 +121,8 @@ inline Instruction lvalueAssign(int operand, int result) {
 inline Instruction addressOf(int operand, int result) {
     return detail::unary(Op::AddressOf, operand, result);
 }
-inline Instruction dereference(int operand, int lvalue, int result) {
-    Instruction i;
-    i.op = Op::Dereference;
-    i.arg0 = operand;
-    i.arg1 = lvalue;
-    i.result = result;
-    return i;
+inline Instruction dereference(int operand, int result) {
+    return detail::unary(Op::Dereference, operand, result);
 }
 inline Instruction indexAddress(int base, int index, int elementSizeBytes, int result,
         symbols::AddressBaseMode baseMode = symbols::AddressBaseMode::LeaObject) {
