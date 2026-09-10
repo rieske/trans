@@ -3,6 +3,8 @@
 
 #include "Instruction.h"
 
+#include <cstddef>
+
 namespace codegen {
 
 // Transient mid-end form. Procedure::body stays linear.
@@ -14,6 +16,7 @@ struct BasicBlock {
 using Cfg = std::vector<BasicBlock>;
 
 Cfg buildCfg(const std::vector<Instruction>& body);
+std::vector<std::size_t> cfgSuccessors(const Cfg& cfg, std::size_t blockIndex);
 std::vector<Instruction> flattenCfg(const Cfg& cfg);
 Cfg threadJumps(Cfg cfg);
 Cfg eliminateUnreachable(Cfg cfg);

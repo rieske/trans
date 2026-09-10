@@ -376,6 +376,85 @@ int scanf(const char *, ...);
     program.runAndExpect("42");
 }
 
+TEST(Compiler, ifCondEmptyThenUsesArguments) {
+    SourceProgram program{R"prg(int printf(const char *, ...);
+        int add(int a, int b, int c) {
+            if (c) {
+                ;
+            }
+            return a + b;
+        }
+        int main() {
+            printf("%d %d", add(1, 2, 0), add(3, 4, 1));
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("3 7");
+}
+
+TEST(Compiler, incrementAfterAddressTakenSurvivesJoin) {
+    SourceProgram program{R"prg(int printf(const char *, ...);
+        int f(int c) {
+            int a;
+            int *p;
+            a = 1;
+            p = &a;
+            if (c)
+                ++a;
+            return *p;
+        }
+        int main() {
+            printf("%d %d", f(0), f(1));
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("1 2");
+}
+
+TEST(Compiler, compoundAssignAfterAddressTakenSurvivesJoin) {
+    SourceProgram program{R"prg(int printf(const char *, ...);
+        int f(int c) {
+            int a;
+            int *p;
+            a = 1;
+            p = &a;
+            if (c)
+                a += 1;
+            return *p;
+        }
+        int main() {
+            printf("%d %d", f(0), f(1));
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("1 2");
+}
+
+TEST(Compiler, compoundAssignBeforeEmptyIfSurvivesJoin) {
+    SourceProgram program{R"prg(int printf(const char *, ...);
+        int f(int c) {
+            int a;
+            int *p;
+            a = 1;
+            p = &a;
+            a += 1;
+            if (c) {
+                ;
+            }
+            return *p;
+        }
+        int main() {
+            printf("%d %d", f(0), f(1));
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("2 2");
+}
+
 TEST(Compiler, ifTrueReturnArgumentElseOther) {
     SourceProgram program{R"prg(int printf(const char *, ...);
 int scanf(const char *, ...);

@@ -4,7 +4,9 @@
 #include "codegen/StackMachine.h"
 #include "codegen/ATandTInstructionSet.h"
 #include "codegen/IntelInstructionSet.h"
+#include "codegen/IrBuilders.h"
 #include "codegen/IrStringTable.h"
+#include "codegen/JumpCondition.h"
 
 #include <memory>
 #include <stdexcept>
@@ -629,6 +631,34 @@ TEST_F(StackMachineTest, intelFloat32AddUsesAddss) {
     std::string code = assemblyCode.str();
     EXPECT_THAT(code, testing::HasSubstr("addss"));
     EXPECT_THAT(code, testing::Not(testing::HasSubstr("addsd")));
+}
+
+TEST_F(StackMachineTest, condJumpDiamondSpillsDirtyArgAndTemp) {
+    Value a = intValue("a");
+    Value t = intValue("t");
+    t.markExpressionTemp();
+    t.setLastUseOrdinal(2);
+    Procedure procedure = testProc("f", { t }, { a });
+    procedure.body = {
+            ir::add(n("a"), n("a"), n("t")),
+            ir::jump(n("else"), JumpCondition::IF_EQUAL),
+            ir::ret(n("t")),
+            ir::label(n("else")),
+            ir::ret(n("a")),
+    };
+    StackMachine stackMachine { &assemblyCode, intel, extraRegs, names };
+    stackMachine.startProcedure(procedure);
+    assemblyCode.str("");
+    assemblyCode.clear();
+
+    stackMachine.emit(procedure.body[0]);
+    stackMachine.emit(procedure.body[1]);
+
+    expectCode("\tmov rax, rdi\n"
+            "\tadd rax, rdi\n"
+            "\tmov [rbp + -16], rax\n"
+            "\tmov [rbp + -8], rdi\n"
+            "\tje $else\n");
 }
 
 }
