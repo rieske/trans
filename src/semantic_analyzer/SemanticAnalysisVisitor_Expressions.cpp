@@ -253,7 +253,7 @@ void SemanticAnalysisVisitor::visit(ast::UnaryExpression& expression) {
         // Value already a pointer (e.g. multi-dim a[i] decayed row, or int(*)[N]).
         if (valueType.isPointer()) {
             type::Type pointee = valueType.dereference();
-            if (type::isBareFunction(pointee)) {
+            if (pointee.isFunction()) {
                 expression.setFunctionDesignatorResult(annotations(),
                         *expression.operandSymbol(annotations()), pointee);
                 symbols::FunctionDesignatorPlan plan;
@@ -438,7 +438,7 @@ void SemanticAnalysisVisitor::visit(ast::TypeCast& expression) {
     }
 
     type::Type target = expression.getTypeSpecifier().getType();
-    if (target.isArray() || type::isBareFunction(target)) {
+    if (target.isArray() || target.isFunction()) {
         semanticError("cast to array or function type ‘" + target.to_string() + "’", expression.getContext());
         return;
     }

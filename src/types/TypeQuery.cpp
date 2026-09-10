@@ -8,7 +8,7 @@ Type productDecay(Type t) {
     if (t.isArray()) {
         return t.decayArray();
     }
-    if (isBareFunction(t)) {
+    if (t.isFunction()) {
         return pointer(t);
     }
     return t;
@@ -30,7 +30,7 @@ bool productAssignFrom(const Type& dest, const Type& source) {
     if (dest.isVoid()) {
         return source.isVoid();
     }
-    if (isBareFunction(dest)) {
+    if (dest.isFunction()) {
         return false;
     }
     if (dest.isIncompleteRecord()) {
@@ -54,7 +54,7 @@ bool productAssignFrom(const Type& dest, const Type& source) {
     }
 
     if (isPointerToFunction(dest)) {
-        if (isBareFunction(src) || isPointerToFunction(src)) {
+        if (src.isFunction() || isPointerToFunction(src)) {
             return true;
         }
         // Integer 0 only at type-only gate; (void*)0 / NULL need sourceExpr in SA.
@@ -66,7 +66,7 @@ bool productAssignFrom(const Type& dest, const Type& source) {
         }
         return isNullConstantCandidate(src);
     }
-    if (isBareFunction(src) || isPointerToFunction(src)) {
+    if (src.isFunction() || isPointerToFunction(src)) {
         return false;
     }
     if (dest.isRecord() || src.isRecord()) {
@@ -80,7 +80,7 @@ bool productArithmeticCompatible(const Type& a, const Type& b) {
 }
 
 std::string productAssignFailureMessage(const Type& dest, const Type& source) {
-    if ((isBareFunction(source) || isPointerToFunction(source)) && !isPointerToFunction(dest)) {
+    if ((source.isFunction() || isPointerToFunction(source)) && !isPointerToFunction(dest)) {
         return "function designator used as a value is not supported";
     }
     return "type mismatch: can't convert " + source.to_string() + " to " + dest.to_string();

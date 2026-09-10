@@ -490,7 +490,7 @@ void SemanticAnalysisVisitor::declareEnumerators(const ast::TypeSpecifier& speci
 }
 
 void SemanticAnalysisVisitor::rejectFunctionValue(const type::Type& type, const translation_unit::Context& context) {
-    if (type::isBareFunction(type)) {
+    if (type.isFunction()) {
         semanticError("function designator used as a value is not supported", context);
     }
 }

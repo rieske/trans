@@ -30,7 +30,7 @@ std::optional<type::Type> UnaryExpression::typeAtParseTime(const ParseEnvironmen
         return type::signedInteger();
     case type::UnaryOp::LogicalNot: {
         const type::Type converted = type::afterLvalueConversion(*inner);
-        if (!type::isProductScalar(converted) && !type::isBareFunction(*inner)) {
+        if (!type::isProductScalar(converted) && !inner->isFunction()) {
             return std::nullopt;
         }
         return type::signedInteger();

@@ -239,7 +239,7 @@ void SemanticAnalysisVisitor::visit(ast::IdentifierExpression& identifier) {
             return;
         }
         identifier.clearFoldedConstant();
-        if (type::isBareFunction(entry->getType())) {
+        if (entry->getType().isFunction()) {
             setFunctionDesignator(identifier, symbolTable, annotations());
             return;
         }
