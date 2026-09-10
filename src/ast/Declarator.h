@@ -31,6 +31,7 @@ public:
 
     void forEachArrayDeclarator(const std::function<void(ArrayDeclarator&)>& fn);
     void forEachFormalArgument(const std::function<void(const FormalArgument&)>& fn) const;
+    bool hasArrayDeclarator() const { return declarator->hasArrayDeclarator(); }
 
     const FunctionDeclarator* innermostFunctionDeclarator() const;
     const char* arrayConstraintError(const type::Type& built) const;

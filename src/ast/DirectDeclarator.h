@@ -28,6 +28,7 @@ public:
 
     virtual void forEachArrayDeclarator(const std::function<void(ArrayDeclarator&)>&) {}
     virtual void forEachFormalArgument(const std::function<void(const FormalArgument&)>&) const {}
+    virtual bool hasArrayDeclarator() const { return false; }
 
     // FunctionDeclarator closest to the identifier, or nullptr if this is not a function.
     virtual const FunctionDeclarator* innermostFunctionDeclarator() const { return nullptr; }
