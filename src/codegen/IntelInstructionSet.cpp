@@ -21,8 +21,6 @@ std::string memoryReference(const codegen::MemoryOperand& operand, const codegen
 
 namespace codegen {
 
-IntelInstructionSet::~IntelInstructionSet() = default;
-
 std::string IntelInstructionSet::asmSymbol(const std::string& name) const {
     // $foo is the symbol foo; $ does not change the ELF name.
     if (name.empty() || name[0] == '$') {

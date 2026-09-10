@@ -29,7 +29,6 @@ public:
             Amd64Registers& registers, const IrStringTable& strings);
     StackMachine(const StackMachine&) = delete;
     StackMachine(StackMachine&&) = default;
-    virtual ~StackMachine() = default;
 
     StackMachine& operator=(const StackMachine&) = delete;
     StackMachine& operator=(StackMachine&&) = default;

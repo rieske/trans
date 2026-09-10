@@ -9,8 +9,6 @@ namespace codegen {
 
 class Amd64Registers {
 public:
-    virtual ~Amd64Registers();
-
     Register& getBasePointer();
     Register& getStackPointer();
     std::vector<Register*> getGeneralPurposeRegisters();

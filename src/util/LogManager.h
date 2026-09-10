@@ -2,7 +2,6 @@
 #define LOGMANAGER_H_
 
 #include <map>
-#include <memory>
 #include <functional>
 
 #include "Logger.h"
@@ -13,8 +12,6 @@ enum class Component {
 
 class LogManager {
 public:
-	virtual ~LogManager();
-
     static void withOutputStreamsForTesting(std::ostream& outputStream, std::ostream& errorStream, const std::function<void()>& action);
 
     static Logger& getOutputLogger();
@@ -25,8 +22,6 @@ public:
 private:
 	LogManager();
 	static LogManager& getInstance();
-
-	static std::unique_ptr<LogManager> instance;
 
 	std::map<Component, Logger> componentLoggers;
     Logger outputLogger;

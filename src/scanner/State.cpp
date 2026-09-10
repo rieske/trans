@@ -52,14 +52,12 @@ bool State::isFinal() const {
 }
 
 IdentifierState::IdentifierState(std::string stateName, std::string tokenId): State { stateName, tokenId } {}
-IdentifierState::~IdentifierState() = default;
 
 bool IdentifierState::needsKeywordLookup() const {
     return true;
 }
 
 StringLiteralState::StringLiteralState(std::string stateName, std::string tokenId): State { stateName, tokenId } {}
-StringLiteralState::~StringLiteralState() = default;
 
 const State* StringLiteralState::nextStateForCharacter(char c) const {
     if (c == ' ') {
@@ -72,7 +70,6 @@ const State* StringLiteralState::nextStateForCharacter(char c) const {
 }
 
 EOLCommentState::EOLCommentState(std::string stateName): State { stateName, "" } {}
-EOLCommentState::~EOLCommentState() = default;
 
 const State* EOLCommentState::nextStateForCharacter(char c) const {
     return (c != '\n') ? this : State::nextStateForCharacter(c);

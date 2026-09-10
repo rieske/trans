@@ -29,7 +29,6 @@ private:
 class IdentifierState: public State {
 public:
     IdentifierState(std::string stateName, std::string tokenId);
-    virtual ~IdentifierState();
 
     bool needsKeywordLookup() const override;
 };
@@ -37,7 +36,6 @@ public:
 class StringLiteralState: public State {
 public:
     StringLiteralState(std::string stateName, std::string tokenId);
-    virtual ~StringLiteralState();
 
     const State* nextStateForCharacter(char c) const override;
 };
@@ -45,7 +43,6 @@ public:
 class EOLCommentState: public State {
 public:
     EOLCommentState(std::string stateName);
-    virtual ~EOLCommentState();
 
     const State* nextStateForCharacter(char c) const override;
 };

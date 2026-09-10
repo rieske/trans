@@ -11,9 +11,6 @@ LogicalExpression::LogicalExpression(std::unique_ptr<Expression> leftHandSide,
     setType(type::signedInteger());
 }
 
-LogicalExpression::~LogicalExpression() {
-}
-
 std::optional<type::Type> LogicalExpression::typeAtParseTime(const ParseEnvironment& environment) const {
     return intIfOperandsType(environment);
 }

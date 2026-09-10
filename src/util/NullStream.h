@@ -2,7 +2,6 @@
 #define NULLSTREAM_H_
 
 #include <iostream>
-#include <memory>
 
 class NullBuffer: public std::streambuf {
 public:
@@ -16,8 +15,6 @@ public:
 private:
 	NullStream();
 	NullBuffer nullBuffer;
-
-	static std::unique_ptr<NullStream> instance;
 };
 
 #endif // NULLSTREAM_H_

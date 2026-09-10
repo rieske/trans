@@ -31,7 +31,6 @@ class CodeGeneratingVisitor: public ast::AbstractSyntaxTreeVisitor {
 public:
     explicit CodeGeneratingVisitor(symbols::AnnotationStore& store,
             const ast::VlaExpressionTable* vlas = nullptr);
-    virtual ~CodeGeneratingVisitor();
 
     void visit(ast::DeclarationSpecifiers& declarationSpecifiers) override;
     void visit(ast::Declaration& declaration) override;

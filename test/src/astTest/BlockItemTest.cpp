@@ -27,7 +27,6 @@ TEST(BlockItem, holdsDeclaration) {
     ast::BlockItem item { std::move(declaration) };
     EXPECT_EQ(item.asDeclaration(), raw);
     EXPECT_EQ(item.asExpression(), nullptr);
-    EXPECT_EQ(item.asStatement(), nullptr);
     const ast::BlockItem& asConst = item;
     EXPECT_EQ(asConst.asDeclaration(), raw);
     EXPECT_EQ(asConst.asExpression(), nullptr);
@@ -39,7 +38,6 @@ TEST(BlockItem, holdsExpression) {
     ast::BlockItem item { std::move(expression) };
     EXPECT_EQ(item.asExpression(), raw);
     EXPECT_EQ(item.asDeclaration(), nullptr);
-    EXPECT_EQ(item.asStatement(), nullptr);
     const ast::BlockItem& asConst = item;
     EXPECT_EQ(asConst.asExpression(), raw);
     EXPECT_EQ(asConst.asDeclaration(), nullptr);
@@ -69,9 +67,8 @@ TEST(BlockItem, holdsStatement) {
     ast::BlockItem item { std::move(statement) };
     EXPECT_EQ(item.asDeclaration(), nullptr);
     EXPECT_EQ(item.asExpression(), nullptr);
-    EXPECT_EQ(item.asStatement(), raw);
-    const ast::BlockItem& asConst = item;
-    EXPECT_EQ(asConst.asStatement(), raw);
+    auto taken = item.takeStatement();
+    EXPECT_EQ(taken.get(), raw);
 }
 
 TEST(BlockItem, blockHoldsMixedItemsInOrder) {

@@ -11,7 +11,6 @@ namespace ast {
 class TypeCast: public SingleOperandExpression {
 public:
     TypeCast(TypeSpecifier typeSpecifier, std::unique_ptr<Expression> castExpression);
-    virtual ~TypeCast();
 
     void accept(AbstractSyntaxTreeVisitor& visitor) override;
     ExprKind exprKind() const override { return ExprKind::TypeCast; }

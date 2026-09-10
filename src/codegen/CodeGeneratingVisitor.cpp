@@ -14,9 +14,6 @@ CodeGeneratingVisitor::CodeGeneratingVisitor(symbols::AnnotationStore& store,
         const ast::VlaExpressionTable* vlas) : store_ { store }, vlas_ { vlas } {
 }
 
-CodeGeneratingVisitor::~CodeGeneratingVisitor() {
-}
-
 void CodeGeneratingVisitor::emit(Instruction instruction) {
     if (!currentBody_) {
         throw std::logic_error { "CodeGeneratingVisitor: emit outside of a procedure body" };

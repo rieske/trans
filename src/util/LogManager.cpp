@@ -2,22 +2,15 @@
 
 #include <stdexcept>
 
-std::unique_ptr<LogManager> LogManager::instance;
-
 LogManager::LogManager():
     outputLogger{&std::cout},
     errorLogger{&std::cerr}
 {
 }
 
-LogManager::~LogManager() {
-}
-
 LogManager& LogManager::getInstance() {
-	if (!instance) {
-		instance = std::unique_ptr<LogManager>(new LogManager());
-	}
-	return *instance;
+	static LogManager instance;
+	return instance;
 }
 
 void LogManager::withOutputStreamsForTesting(std::ostream& outputStream, std::ostream& errorStream, const std::function<void()>& action) {
