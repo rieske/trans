@@ -1,7 +1,9 @@
 add_library(types
         Type.cpp
+        TypeCompatibility.cpp
         TypeLayout.cpp
         TypeQuery.cpp
+        TypeRecords.cpp
         IntegerConstant.cpp
         Operator.cpp
         SysVClassify.cpp
