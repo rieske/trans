@@ -60,10 +60,13 @@ const char* Declarator::arrayConstraintError(const type::Type& built) const {
     if (const char* error = type::arrayTypeError(built)) {
         return error;
     }
+    if (!innermostFunctionDeclarator()) {
+        return nullptr;
+    }
     const char* error = nullptr;
     forEachFormalArgument([&](const FormalArgument& argument) {
         if (!error) {
-            error = type::arrayTypeError(argument.declaredType());
+            error = argument.arrayConstraintError();
         }
     });
     return error;

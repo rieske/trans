@@ -49,9 +49,10 @@ type::Type FormalArgument::getType() const {
 }
 
 const char* FormalArgument::arrayConstraintError() const {
-    return declarator
-            ? declarator->arrayConstraintError(declaredType())
-            : type::arrayTypeError(declaredType());
+    if (declarator && !declarator->hasArrayDeclarator()) {
+        return nullptr;
+    }
+    return type::arrayTypeError(declaredType());
 }
 
 void FormalArgument::forEachFormalArgument(const std::function<void(const FormalArgument&)>& fn) const {

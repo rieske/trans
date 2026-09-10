@@ -600,6 +600,33 @@ TEST(Compiler, voidArrayPrototypeReportsSemanticErrorWithoutAbort) {
     program.assertCompilationErrors("error:");
 }
 
+TEST(Compiler, voidArrayParamStillDiagnosedAmongPointerParams) {
+    SourceProgram program{R"prg(
+        int f(int *p, void a[3], char *q) { return 0; }
+        int main() { return 0; }
+    )prg"};
+    program.compile();
+    program.assertCompilationErrors("array of incomplete type");
+}
+
+TEST(Compiler, voidArrayInNestedFunctionParamIsSemanticError) {
+    SourceProgram program{R"prg(
+        int f(int g(void a[3]));
+        int main() { return 0; }
+    )prg"};
+    program.compile();
+    program.assertCompilationErrors("array of incomplete type");
+}
+
+TEST(Compiler, pointerToVoidArrayParamIsSemanticError) {
+    SourceProgram program{R"prg(
+        int f(void (*p)[3]) { return 0; }
+        int main() { return 0; }
+    )prg"};
+    program.compile();
+    program.assertCompilationErrors("array of incomplete type");
+}
+
 TEST(Compiler, sizeofConstIntType) {
     SourceProgram program{R"prg(int printf(const char *, ...);
         int main() {

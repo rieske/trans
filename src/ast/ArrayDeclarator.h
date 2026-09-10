@@ -30,6 +30,7 @@ public:
 
     void forEachArrayDeclarator(const std::function<void(ArrayDeclarator&)>& fn) override;
     void forEachFormalArgument(const std::function<void(const FormalArgument&)>& fn) const override;
+    bool hasArrayDeclarator() const override { return true; }
     const FunctionDeclarator* innermostFunctionDeclarator() const override;
     ArrayBoundFold foldOwnBound();
 
