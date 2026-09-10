@@ -32,9 +32,11 @@ public:
     const std::string* rodataLabel(const symbols::AnnotationStore& store) const;
 
 private:
+    friend class Expression;
     std::string identifier;
     translation_unit::Context context;
     std::optional<type::IntegerConstant> foldedConstant;
+    bool lval_ { true };
 };
 
 } // namespace ast

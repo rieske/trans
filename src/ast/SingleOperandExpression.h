@@ -21,8 +21,6 @@ public:
     symbols::ValueEntry* operandLvalueSymbol(symbols::AnnotationStore& store) const;
     Expression* getOperandExpression() const;
 
-    bool isLval() const override;
-
     translation_unit::Context getContext() const override;
 
 protected:

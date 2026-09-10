@@ -54,11 +54,6 @@ std::optional<type::Type> UnaryExpression::typeAtParseTime(const ParseEnvironmen
     return std::nullopt;
 }
 
-bool UnaryExpression::isLval() const {
-    // Only dereference yields an lvalue; +a, -a, !a, &a are rvalues.
-    return op() == type::UnaryOp::Deref;
-}
-
 void UnaryExpression::setSizeofValue(symbols::AnnotationStore& store, int bytes) {
     store.setSizeofValue(this, bytes);
 }

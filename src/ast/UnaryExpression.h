@@ -18,7 +18,6 @@ public:
     ExprKind exprKind() const override { return ExprKind::Unary; }
     std::optional<type::Type> typeAtParseTime(const ParseEnvironment& environment) const override;
 
-    bool isLval() const override;
     bool evaluateConstant(type::IntegerConstant& value) const override;
 
     void setTruthyLabel(symbols::AnnotationStore& store, symbols::LabelEntry truthyLabel);

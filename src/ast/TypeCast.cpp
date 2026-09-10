@@ -28,10 +28,6 @@ TypeSpecifier& TypeCast::getTypeSpecifier() {
     return typeSpecifier;
 }
 
-bool TypeCast::isLval() const {
-    return false;
-}
-
 bool TypeCast::evaluateConstant(type::IntegerConstant& value) const {
     if (!_operand || !_operand->evaluateConstant(value)) {
         return false;

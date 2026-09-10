@@ -44,9 +44,5 @@ translation_unit::Context SingleOperandExpression::getContext() const {
     return _operand->getContext();
 }
 
-bool SingleOperandExpression::isLval() const {
-    return _operand->isLval();
-}
-
 } // namespace ast
 

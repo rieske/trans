@@ -14,8 +14,6 @@ public:
 
     void accept(AbstractSyntaxTreeVisitor& visitor) override;
     ExprKind exprKind() const override { return ExprKind::Comma; }
-    // C: the comma operator's result is never an lvalue, whatever its operands are.
-    bool isLval() const override { return false; }
     std::optional<type::Type> typeAtParseTime(const ParseEnvironment& environment) const override;
 };
 

@@ -10,7 +10,6 @@ IdentifierExpression::IdentifierExpression(std::string identifier, translation_u
         identifier { identifier },
         context { context }
 {
-    lval = true;
 }
 
 IdentifierExpression::~IdentifierExpression() {
@@ -34,12 +33,12 @@ std::string IdentifierExpression::getIdentifier() const {
 
 void IdentifierExpression::setFoldedConstant(type::IntegerConstant value) {
     foldedConstant = std::move(value);
-    lval = false;
+    lval_ = false;
 }
 
 void IdentifierExpression::clearFoldedConstant() {
     foldedConstant.reset();
-    lval = true;
+    lval_ = true;
 }
 
 bool IdentifierExpression::evaluateConstant(type::IntegerConstant& value) const {
@@ -52,7 +51,7 @@ bool IdentifierExpression::evaluateConstant(type::IntegerConstant& value) const 
 
 void IdentifierExpression::setRodataLabel(symbols::AnnotationStore& store, std::string label) {
     store.setRodataLabel(this, std::move(label));
-    lval = false;
+    lval_ = false;
 }
 
 const std::string* IdentifierExpression::rodataLabel(const symbols::AnnotationStore& store) const {

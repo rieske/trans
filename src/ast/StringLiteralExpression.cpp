@@ -9,7 +9,6 @@ StringLiteralExpression::StringLiteralExpression(std::string value, translation_
     context {context}
 {
     setType(type::array(type::signedCharacter(), util::stringLiteralArrayLength(value)));
-    lval = true;
 }
 
 StringLiteralExpression::~StringLiteralExpression() = default;

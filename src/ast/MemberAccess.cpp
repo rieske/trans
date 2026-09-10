@@ -12,7 +12,6 @@ MemberAccess::MemberAccess(std::unique_ptr<Expression> base, std::string memberN
         memberName { std::move(memberName) },
         arrow { arrow },
         context { std::move(context) } {
-    lval = true;
 }
 
 void MemberAccess::accept(AbstractSyntaxTreeVisitor& visitor) {
