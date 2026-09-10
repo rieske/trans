@@ -128,7 +128,7 @@ public:
     bool isPointer() const;
     bool isFunction() const;
     // Throws std::domain_error unless kind is Function.
-    Function getFunction() const;
+    const Function& getFunction() const;
     bool isArray() const;
     bool isIncompleteArray() const;
     bool isVariableArray() const;

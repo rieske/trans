@@ -18,7 +18,8 @@ public:
     explicit FunctionEntry(const ValueEntry& value);
 
     const std::string& getName() const;
-    type::Type getType() const;
+    const type::Type& getType() const;
+    const type::Function& function() const;
     translation_unit::Context getContext() const;
     bool hasInternalLinkage() const;
     bool isNoreturn() const;

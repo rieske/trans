@@ -459,7 +459,7 @@ bool Type::isFunction() const {
     return kind() == TypeKind::Function;
 }
 
-Function Type::getFunction() const {
+const Function& Type::getFunction() const {
     if (const auto* f = std::get_if<FunctionPayload>(&_payload)) {
         return f->value;
     }

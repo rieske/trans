@@ -14,7 +14,7 @@ TEST(FunctionEntry, storesNameTypeArgumentsAndContext) {
     symbols::FunctionEntry entry { "add", fnType, ctx };
     EXPECT_EQ(entry.getName(), "add");
     EXPECT_EQ(entry.arguments().size(), 1u);
-    EXPECT_EQ(&entry.arguments(), &entry.getType().getFunction().getArguments());
+    EXPECT_EQ(&entry.arguments(), &entry.function().getArguments());
     EXPECT_EQ(entry.getContext().getSourceName(), "t.c");
     EXPECT_EQ(entry.getContext().getOffset(), 7u);
     EXPECT_TRUE(entry.returnType().isPrimitive());
@@ -24,7 +24,7 @@ TEST(FunctionEntry, storesNameTypeArgumentsAndContext) {
     EXPECT_TRUE(args[0].isPrimitive());
     EXPECT_EQ(args[0].getSize(), 4);
     EXPECT_TRUE(entry.getType().isFunction());
-    EXPECT_TRUE(entry.getType().getFunction().getReturnType().isPrimitive());
+    EXPECT_TRUE(entry.function().getReturnType().isPrimitive());
     EXPECT_FALSE(entry.hasInternalLinkage());
 }
 
@@ -32,8 +32,8 @@ TEST(FunctionEntry, argumentsAndReturnAliasFunctionPayload) {
     translation_unit::Context ctx { "t.c", 1 };
     type::Type fnType = type::function(type::signedInteger(), { type::signedLong() });
     symbols::FunctionEntry entry { "f", fnType, ctx };
-    EXPECT_EQ(&entry.arguments(), &entry.getType().getFunction().getArguments());
-    EXPECT_EQ(&entry.returnType(), &entry.getType().getFunction().getReturnType());
+    EXPECT_EQ(&entry.arguments(), &entry.function().getArguments());
+    EXPECT_EQ(&entry.returnType(), &entry.function().getReturnType());
 }
 
 TEST(FunctionEntry, rejectsNonFunctionType) {

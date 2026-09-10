@@ -47,20 +47,24 @@ const std::string& FunctionEntry::getName() const {
     return name;
 }
 
-type::Type FunctionEntry::getType() const {
+const type::Type& FunctionEntry::getType() const {
     return type;
 }
 
+const type::Function& FunctionEntry::function() const {
+    return type.getFunction();
+}
+
 const std::vector<type::Type>& FunctionEntry::arguments() const {
-    return type.getFunction().getArguments();
+    return function().getArguments();
 }
 
 const type::Type& FunctionEntry::returnType() const {
-    return type.getFunction().getReturnType();
+    return function().getReturnType();
 }
 
 bool FunctionEntry::isVariadic() const {
-    return type.getFunction().isVariadic();
+    return function().isVariadic();
 }
 
 } // namespace symbols
