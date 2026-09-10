@@ -213,6 +213,8 @@ private:
     void spillGeneralPurposeRegisters();
     void spillAcrossEdge(int label);
     void dropDeadBindings();
+    bool mayAliasStore(int id) const;
+    void spillMayAliasRegisters(int storeAddrId);
     void spillCallerSavedRegisters();
     void emptyGeneralPurposeRegisters();
 
@@ -298,6 +300,7 @@ private:
     bool hasFrame_ { false };
     bool haveEdgeLiveness_ { false };
     std::unordered_map<int, std::unordered_set<int>> liveInAtLabel_;
+    std::unordered_set<int> addressTaken_;
     type::object_abi::FrameLayout frameLayout_ {};
     int instructionOrdinal { 0 };
 

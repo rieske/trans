@@ -1,6 +1,7 @@
 #include "StackMachine.h"
 
 #include "Liveness.h"
+#include "SymbolRefs.h"
 #include "codegen/InternalError.h"
 
 #include "SysVCallConv.h"
@@ -93,6 +94,14 @@ void StackMachine::startProcedure(const Procedure& procedure) {
     variadicFrame.reset();
     liveInAtLabel_ = computeLabelLiveIns(procedure).atLabel;
     haveEdgeLiveness_ = true;
+    addressTaken_.clear();
+    for (const auto& inst : procedure.body) {
+        SymbolRefs refs;
+        collectSymbolRefs(inst, refs);
+        if (refs.addressOfBase != kNoSymbol) {
+            addressTaken_.insert(refs.addressOfBase);
+        }
+    }
     hasFrame_ = true;
     frameLayout_ = {};
     instructionOrdinal = 0;
@@ -233,6 +242,7 @@ void StackMachine::endProcedure() {
     variadicFrame.reset();
     haveEdgeLiveness_ = false;
     liveInAtLabel_.clear();
+    addressTaken_.clear();
     hasFrame_ = false;
     frameLayout_ = {};
 }
@@ -303,6 +313,26 @@ void StackMachine::dropDeadBindings() {
         if (reg->containsUnstoredValue()) {
             reg->free();
         }
+    }
+}
+
+bool StackMachine::mayAliasStore(int id) const {
+    return addressTaken_.count(id) != 0 || globalHomes.count(id) != 0;
+}
+
+void StackMachine::spillMayAliasRegisters(int storeAddrId) {
+    for (auto& reg : registers->getGeneralPurposeRegisters()) {
+        if (!reg->containsUnstoredValue()) {
+            continue;
+        }
+        const int id = reg->getValue()->id();
+        if (id == storeAddrId) {
+            continue;
+        }
+        if (reg->getValue()->isExpressionTemp() && !mayAliasStore(id)) {
+            continue;
+        }
+        storeRegisterValue(*reg);
     }
 }
 
