@@ -2,8 +2,6 @@
 
 namespace codegen {
 
-Amd64Registers::~Amd64Registers() = default;
-
 Register& codegen::Amd64Registers::getBasePointer() {
     return basePointer;
 }

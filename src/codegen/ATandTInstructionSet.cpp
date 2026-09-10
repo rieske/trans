@@ -54,8 +54,6 @@ std::string immediate(const std::string& constant) {
 
 namespace codegen {
 
-ATandTInstructionSet::~ATandTInstructionSet() = default;
-
 std::string ATandTInstructionSet::globl(const std::string& name) const {
     return ".globl " + name;
 }

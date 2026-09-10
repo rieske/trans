@@ -7,8 +7,6 @@ namespace codegen {
 
 class ATandTInstructionSet: public InstructionSet {
 public:
-    virtual ~ATandTInstructionSet();
-
     std::string globl(const std::string& name) const override;
     std::string externDirective(const std::string& name) const override;
 

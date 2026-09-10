@@ -5,6 +5,3 @@ Logger::Logger(std::ostream* outputStream):
 {
 }
 
-Logger::~Logger() {
-}
-

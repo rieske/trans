@@ -22,7 +22,6 @@ public:
     const Declaration* asDeclaration() const;
     const Expression* asExpression() const;
     Expression* asExpression();
-    const Statement* asStatement() const;
 
     std::unique_ptr<Expression> takeExpression();
     std::unique_ptr<Statement> takeStatement();

@@ -36,13 +36,6 @@ Expression* BlockItem::asExpression() {
             static_cast<const BlockItem*>(this)->asExpression());
 }
 
-const Statement* BlockItem::asStatement() const {
-    if (const auto* held = std::get_if<std::unique_ptr<Statement>>(&item_)) {
-        return held->get();
-    }
-    return nullptr;
-}
-
 std::unique_ptr<Expression> BlockItem::takeExpression() {
     if (auto* held = std::get_if<std::unique_ptr<Expression>>(&item_)) {
         return std::move(*held);

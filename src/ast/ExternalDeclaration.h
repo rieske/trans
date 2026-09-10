@@ -16,9 +16,6 @@ public:
     explicit ExternalDeclaration(std::unique_ptr<Declaration> declaration);
     explicit ExternalDeclaration(std::unique_ptr<FunctionDefinition> function);
 
-    const Declaration* asDeclaration() const;
-    const FunctionDefinition* asFunctionDefinition() const;
-
     void accept(AbstractSyntaxTreeVisitor& visitor) const;
 
 private:

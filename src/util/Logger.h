@@ -8,7 +8,6 @@
 class Logger {
 public:
 	Logger(std::ostream* outputStream = &NullStream::getInstance());
-	virtual ~Logger();
 
 	template<typename T>
 	Logger& operator<<(const T& dataToLog);

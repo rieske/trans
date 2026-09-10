@@ -11,7 +11,6 @@ namespace ast {
 class LoopStatement: public Statement {
 public:
     LoopStatement(std::unique_ptr<LoopHeader> header, std::unique_ptr<Statement> body);
-    virtual ~LoopStatement();
 
     void accept(AbstractSyntaxTreeVisitor& visitor) override;
 
