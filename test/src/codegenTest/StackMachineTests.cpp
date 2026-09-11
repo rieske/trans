@@ -660,4 +660,60 @@ TEST_F(StackMachineTest, condJumpDiamondSpillsLiveArgNotDeadTemp) {
             "\tje $else\n");
 }
 
+TEST_F(StackMachineTest, storeThroughPointerDoesNotSpillNonEscapedTemp) {
+    Value a = intValue("a");
+    Value t = intValue("t");
+    Value p = intValue("p");
+    t.markExpressionTemp();
+    t.setLastUseOrdinal(1);
+    Procedure procedure = testProc("f", { t, p }, { a });
+    procedure.body = {
+            ir::add(n("a"), n("a"), n("t")),
+            ir::lvalueAssign(n("t"), n("p")),
+    };
+    StackMachine stackMachine { &assemblyCode, intel, extraRegs, names };
+    stackMachine.startProcedure(procedure);
+    assemblyCode.str("");
+    assemblyCode.clear();
+
+    stackMachine.emit(procedure.body[0]);
+    stackMachine.emit(procedure.body[1]);
+
+    expectCode("\tmov rax, rdi\n"
+            "\tadd rax, rdi\n"
+            "\tmov [rbp + -8], rdi\n"
+            "\tmov rbx, [rbp + -16]\n"
+            "\tmov [rbx], rax\n");
+}
+
+TEST_F(StackMachineTest, storeThroughPointerSpillsAddressTakenObject) {
+    Value a = intValue("a");
+    Value t = intValue("t");
+    Value p = intValue("p");
+    t.markExpressionTemp();
+    t.setLastUseOrdinal(2);
+    Procedure procedure = testProc("f", { t, p }, { a });
+    procedure.body = {
+            ir::addressOf(n("a"), n("p")),
+            ir::add(n("a"), n("a"), n("t")),
+            ir::lvalueAssign(n("t"), n("p")),
+    };
+    StackMachine stackMachine { &assemblyCode, intel, extraRegs, names };
+    stackMachine.startProcedure(procedure);
+    assemblyCode.str("");
+    assemblyCode.clear();
+
+    stackMachine.emit(procedure.body[0]);
+    stackMachine.emit(procedure.body[1]);
+    stackMachine.emit(procedure.body[2]);
+
+    expectCode("\tmov [rbp + -8], rdi\n"
+            "\tlea rax, [rbp + -8]\n"
+            "\tmov rbx, [rbp + -8]\n"
+            "\tmov rcx, [rbp + -8]\n"
+            "\tadd rbx, rcx\n"
+            "\tmov [rbp + -8], rcx\n"
+            "\tmov [rax], rbx\n");
+}
+
 }

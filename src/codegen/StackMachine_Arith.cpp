@@ -341,8 +341,8 @@ void StackMachine::lvalueAssign(int operandName, int resultName) {
     auto& operand = resolve(operandName);
     auto& result = resolve(resultName);
 
-    // Anything cached in a register is stale after this store; write it back first.
-    spillGeneralPurposeRegisters();
+    // Named objects and escaped temps may alias *result. Other temps stay.
+    spillMayAliasRegisters(resultName);
 
     const int storeSize = operand.getSizeInBytes();
     if (!nativeMoveSize(storeSize)) {
