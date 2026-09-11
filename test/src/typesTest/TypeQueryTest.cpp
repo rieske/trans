@@ -18,8 +18,6 @@ TEST(TypeQuery, bareAndPointerToFunction) {
     // pointer-to-pointer-to-function is not pointer-to-function (old bag model lied here).
     EXPECT_FALSE(type::isPointerToFunction(ppfn));
     EXPECT_TRUE(type::isPointerToFunction(ppfn.dereference()));
-    EXPECT_TRUE(type::isPointerToBareFunction(pfn));
-    EXPECT_FALSE(type::isPointerToBareFunction(ppfn));
 }
 
 TEST(TypeQuery, incompleteObjectType) {

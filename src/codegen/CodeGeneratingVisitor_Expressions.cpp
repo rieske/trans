@@ -241,7 +241,7 @@ void CodeGeneratingVisitor::visit(ast::UnaryExpression& expression) {
         const symbols::ValueEntry* result = expression.getResultSymbol(store_);
         const symbols::ValueEntry* lvalue = expression.getLvalueSymbol(store_);
         if (operand->getType().isPointer()) {
-            if (type::isPointerToBareFunction(operand->getType())) {
+            if (type::isPointerToFunction(operand->getType())) {
                 emitAssignUnlessSame(id(*operand), id(*result));
                 break;
             }

@@ -53,7 +53,7 @@ std::optional<Callee> resolveCallee(ast::FunctionCall& functionCall, SymbolTable
         }
     }
 
-    if (type::isPointerToBareFunction(operandType)) {
+    if (type::isPointerToFunction(operandType)) {
         type::Type pointee = operandType.dereference();
         return Callee {
             symbols::IndirectCallPlan { operandSym->getName() },

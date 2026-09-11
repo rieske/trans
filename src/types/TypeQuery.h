@@ -4,6 +4,7 @@
 #include <cstddef>
 #include <optional>
 #include <string>
+#include <vector>
 
 #include "Operator.h"
 #include "Type.h"
@@ -42,51 +43,11 @@ struct PointerArithmeticInfo {
 };
 
 // Classify `left op right` for Add/Sub. Result type is the pointer type or int (ptrdiff).
-inline PointerArithmeticInfo classifyPointerArithmetic(const Type& left, const Type& right,
-        ArithmeticOp op) {
-    PointerArithmeticInfo info;
-    if (op != ArithmeticOp::Add && op != ArithmeticOp::Sub) {
-        return info;
-    }
-    if (!left.isPointer() && !right.isPointer()) {
-        return info;
-    }
-    if (op == ArithmeticOp::Add && left.isPointer() && isIntegralScalar(right)) {
-        info.form = PointerArithmeticForm::PtrPlusInt;
-        info.resultType = left;
-        info.strideBytes = pointerElementStride(left);
-        return info;
-    }
-    if (op == ArithmeticOp::Add && isIntegralScalar(left) && right.isPointer()) {
-        info.form = PointerArithmeticForm::IntPlusPtr;
-        info.resultType = right;
-        info.strideBytes = pointerElementStride(right);
-        return info;
-    }
-    if (op == ArithmeticOp::Sub && left.isPointer() && isIntegralScalar(right)) {
-        info.form = PointerArithmeticForm::PtrMinusInt;
-        info.resultType = left;
-        info.strideBytes = pointerElementStride(left);
-        return info;
-    }
-    if (op == ArithmeticOp::Sub && left.isPointer() && right.isPointer()) {
-        info.form = PointerArithmeticForm::PtrMinusPtr;
-        info.resultType = signedInteger();
-        info.strideBytes = pointerElementStride(left);
-        return info;
-    }
-    info.form = PointerArithmeticForm::Invalid;
-    return info;
-}
+PointerArithmeticInfo classifyPointerArithmetic(const Type& left, const Type& right,
+        ArithmeticOp op);
 
 inline bool isPointerToFunction(const Type& t) {
     return t.isPointer() && t.dereference().isFunction();
-}
-
-// After recursive Type, pointer-to-function is just Pointer with Function pointee;
-// this name is kept as an alias for existing call sites.
-inline bool isPointerToBareFunction(const Type& t) {
-    return isPointerToFunction(t);
 }
 
 // Void, bare function, incomplete record, or incomplete array (not pointer-to-incomplete).
@@ -132,21 +93,7 @@ inline bool hasComputableRuntimeSize(const Type& t) {
 // Sizeof of an object type when it is an ICE. GNU sizeof(function) and sizeof(void)
 // are 1; ISO treats both as incomplete. VM types are complete but not an ICE
 // (nullopt, not an error).
-inline std::optional<int> sizeofObject(const Type& t, bool gnu) {
-    if (t.isVoid()) {
-        return gnu ? std::optional<int> { 1 } : std::nullopt;
-    }
-    if (t.isFunction()) {
-        if (gnu) {
-            return 1;
-        }
-        return std::nullopt;
-    }
-    if (isIncompleteObjectType(t) || hasRuntimeSize(t)) {
-        return std::nullopt;
-    }
-    return t.getSize();
-}
+std::optional<int> sizeofObject(const Type& t, bool gnu);
 
 // Same predicate as isIncompleteObjectType; name documents member/element sites.
 inline bool isIncompleteMemberOrElementType(const Type& t) {
@@ -263,69 +210,21 @@ inline Type adjustedParameterType(Type t) {
 }
 
 // Record type for `.` / `->` (arrow base is lvalue-converted first).
-inline std::optional<Type> memberAccessRecordType(const Type& baseType, bool arrow) {
-    if (arrow) {
-        const Type converted = afterLvalueConversion(baseType);
-        if (!converted.isPointer()) {
-            return std::nullopt;
-        }
-        const Type pointee = converted.dereference();
-        if (!pointee.isRecord()) {
-            return std::nullopt;
-        }
-        return pointee;
-    }
-    if (!baseType.isRecord()) {
-        return std::nullopt;
-    }
-    return baseType;
-}
+std::optional<Type> memberAccessRecordType(const Type& baseType, bool arrow);
 
 // Member type of `base.member` / `base->member`, or nullopt if ill-formed / unknown member.
-inline std::optional<Type> memberAccessResult(const Type& baseType, bool arrow,
-        const std::string& memberName) {
-    const auto record = memberAccessRecordType(baseType, arrow);
-    if (!record) {
-        return std::nullopt;
-    }
-    const auto found = lookupMember(*record, memberName);
-    if (!found) {
-        return std::nullopt;
-    }
-    return found->type;
-}
+std::optional<Type> memberAccessResult(const Type& baseType, bool arrow,
+        const std::string& memberName);
 
 // Integer promotions (C 6.3.1.1): types narrower than int convert to int.
-inline Type integerPromote(const Type& t) {
-    if (!isIntegral(t)) {
-        return t;
-    }
-    if (t.getSize() > 0 && t.getSize() < 4) {
-        return signedInteger();
-    }
-    return t;
-}
+Type integerPromote(const Type& t);
 
 // C 6.5.2.2: integer promotions, then float -> double. Other types unchanged.
-inline Type defaultArgPromote(const Type& t) {
-    if (isFloat(t)) {
-        return doubleFloating();
-    }
-    return integerPromote(t);
-}
+Type defaultArgPromote(const Type& t);
 
 // Assignment RHS convert dest. <<= >>=: integer-promote the count, not the LHS type.
 // Pointer +=/-=: the integer stays an integer (C 6.5.16.2); do not convert it to the pointer type.
-inline Type assignmentConvertTarget(AssignOp op, const Type& dest, const Type& source) {
-    if (op == AssignOp::ShlAssign || op == AssignOp::ShrAssign) {
-        return integerPromote(source);
-    }
-    if ((op == AssignOp::AddAssign || op == AssignOp::SubAssign)
-            && dest.isPointer() && isIntegralScalar(source)) {
-        return integerPromote(source);
-    }
-    return dest;
-}
+Type assignmentConvertTarget(AssignOp op, const Type& dest, const Type& source);
 
 inline bool needsIntegerWiden(const Type& from, const Type& to) {
     return isIntegral(from) && isIntegral(to)
@@ -361,95 +260,19 @@ inline bool needsNumericConvert(const Type& from, const Type& to) {
 // Usual arithmetic conversions: if either side is complex, convert both to
 // complex of the UAC of the corresponding reals. Otherwise long double wins;
 // else double; else float; else integer promotions and wider (unsigned-over-signed).
-inline Type usualArithmeticResult(const Type& left, const Type& right) {
-    if (isComplex(left) || isComplex(right)) {
-        return complexOfReal(usualArithmeticResult(correspondingReal(left), correspondingReal(right)));
-    }
-    if (isFloating(left) || isFloating(right)) {
-        if (isLongDouble(left) || isLongDouble(right)) {
-            return longDoubleFloating();
-        }
-        if (isDouble(left) || isDouble(right)) {
-            return doubleFloating();
-        }
-        return floating();
-    }
-    Type leftP = integerPromote(left);
-    Type rightP = integerPromote(right);
-    if (rightP.getSize() > leftP.getSize()) {
-        return rightP;
-    }
-    if (rightP.getSize() == leftP.getSize()
-            && isIntegral(rightP) && isIntegral(leftP)
-            && !valueIsSigned(rightP) && valueIsSigned(leftP)) {
-        return rightP;
-    }
-    return leftP;
-}
+Type usualArithmeticResult(const Type& left, const Type& right);
 
 // Result type of `left op right` after lvalue conversion of both operands.
 // Pointer forms use classifyPointerArithmetic; pure arithmetic uses UAC.
 // nullopt: invalid pointer arithmetic or non-arithmetic operands.
-inline std::optional<Type> arithmeticExpressionResult(const Type& leftRaw, const Type& rightRaw,
-        ArithmeticOp op) {
-    const Type left = afterLvalueConversion(leftRaw);
-    const Type right = afterLvalueConversion(rightRaw);
-    const PointerArithmeticInfo ptrArith = classifyPointerArithmetic(left, right, op);
-    if (ptrArith.form != PointerArithmeticForm::None) {
-        if (ptrArith.form == PointerArithmeticForm::Invalid) {
-            return std::nullopt;
-        }
-        return ptrArith.resultType;
-    }
-    if (isArithmeticType(left) && isArithmeticType(right)) {
-        return usualArithmeticResult(left, right);
-    }
-    return std::nullopt;
-}
+std::optional<Type> arithmeticExpressionResult(const Type& leftRaw, const Type& rightRaw,
+        ArithmeticOp op);
 
 // Result type of `cond ? a : b` after lvalue conversion of both arms (C 6.5.15).
 // Product-loose pointers: any two pointers are compatible; prefer void* when either
 // pointee is void. Integral 0 with a pointer yields the pointer type.
 // nullopt: arms have no product-compatible common type.
-inline std::optional<Type> conditionalResultType(const Type& trueRaw, const Type& falseRaw) {
-    const Type left = afterLvalueConversion(trueRaw);
-    const Type right = afterLvalueConversion(falseRaw);
-    if (left.isVoid() && right.isVoid()) {
-        return left;
-    }
-    if (isArithmeticType(left) && isArithmeticType(right)) {
-        return usualArithmeticResult(left, right);
-    }
-    if (left.isPointer() && right.isPointer()) {
-        // Function pointers do not mix with object void* as void*; keep the fnptr arm
-        // (gcc extension: `cond ? free : NULL` has function-pointer type).
-        if (isPointerToFunction(left)
-                && (isPointerToFunction(right) || right.dereference().isVoid())) {
-            return left;
-        }
-        if (isPointerToFunction(right)
-                && (isPointerToFunction(left) || left.dereference().isVoid())) {
-            return right;
-        }
-        if (left.dereference().isVoid()) {
-            return left;
-        }
-        if (right.dereference().isVoid()) {
-            return right;
-        }
-        return left;
-    }
-    if (left.isPointer() && isIntegral(right)) {
-        return left;
-    }
-    if (right.isPointer() && isIntegral(left)) {
-        return right;
-    }
-    if (left.isRecord() && right.isRecord()) {
-        return left;
-    }
-    return std::nullopt;
-}
+std::optional<Type> conditionalResultType(const Type& trueRaw, const Type& falseRaw);
 
 // Primitive or pointer (caller must decay arrays/functions if desired).
 inline bool isProductScalar(const Type& t) {
@@ -485,33 +308,8 @@ struct GenericSelectionChoice {
 };
 
 // First matching typed arm, else first default. Unresolved typed arms do not match.
-inline GenericSelectionChoice selectGenericAssociation(
-        const Type& convertedControlling, const std::vector<GenericArmView>& arms) {
-    std::optional<std::size_t> defaultIndex;
-    std::optional<std::size_t> match;
-    for (std::size_t i = 0; i < arms.size(); ++i) {
-        const GenericArmView& arm = arms[i];
-        if (arm.isDefault) {
-            if (!defaultIndex) {
-                defaultIndex = i;
-            }
-            continue;
-        }
-        if (arm.type && arm.type->sameQualifiedType(convertedControlling)) {
-            if (match) {
-                return GenericSelectionChoice { GenericSelectionStatus::MultipleMatches, {} };
-            }
-            match = i;
-        }
-    }
-    if (match) {
-        return GenericSelectionChoice { GenericSelectionStatus::Ok, match };
-    }
-    if (defaultIndex) {
-        return GenericSelectionChoice { GenericSelectionStatus::Ok, defaultIndex };
-    }
-    return GenericSelectionChoice { GenericSelectionStatus::NoMatch, {} };
-}
+GenericSelectionChoice selectGenericAssociation(
+        const Type& convertedControlling, const std::vector<GenericArmView>& arms);
 
 // Git-shaped assign gate on types alone (assignment / init / call args).
 // Dest arrays never assign; source arrays decay; incomplete dest rejected;
@@ -525,7 +323,9 @@ inline bool productCanAssignFrom(const Type& dest, const Type& source) {
 }
 
 // Scalar arithmetic (* / % and non-pointer +/-): both arithmetic types.
-bool productArithmeticCompatible(const Type& a, const Type& b);
+inline bool productArithmeticCompatible(const Type& a, const Type& b) {
+    return isArithmeticType(a) && isArithmeticType(b);
+}
 
 // Diagnostic text for a failed product assign (call only when canAssign is false).
 std::string productAssignFailureMessage(const Type& dest, const Type& source);
@@ -553,51 +353,11 @@ inline int objectStrideBytes(const Type& t) {
 }
 
 // Given the C type of the subscript base (array or pointer).
-inline ArraySubscriptInfo arraySubscriptInfo(const Type& baseType) {
-    ArraySubscriptInfo info;
-    if (baseType.isArray()) {
-        info.elementType = baseType.getElementType();
-        // Index steps by sizeof(element), not sizeof(the whole array).
-        info.elementStride = objectStrideBytes(info.elementType);
-        info.baseIsArray = true;
-        info.ok = true;
-    } else if (baseType.isPointer()) {
-        info.elementType = baseType.dereference();
-        // p is T(*)[N]: stride is sizeof(T[N]); otherwise sizeof(pointee).
-        info.elementStride = objectStrideBytes(info.elementType);
-        info.baseIsArray = false;
-        info.ok = true;
-    } else {
-        info.elementType = voidType();
-        info.elementStride = 0;
-        info.baseIsArray = false;
-        info.ok = false;
-    }
-    return info;
-}
+ArraySubscriptInfo arraySubscriptInfo(const Type& baseType);
 
 // Dual-type subscript: expression type may still be T[N] while value type is
 // already a decayed pointer.
-inline ArraySubscriptInfo arraySubscriptInfo(const Type& expressionType, const Type& valueType) {
-    if (expressionType.isArray() && valueType.isPointer()) {
-        ArraySubscriptInfo info;
-        info.elementType = expressionType.getElementType();
-        info.elementStride = objectStrideBytes(info.elementType);
-        info.baseIsArray = false;
-        info.ok = true;
-        return info;
-    }
-    ArraySubscriptInfo sub = arraySubscriptInfo(expressionType);
-    if (!sub.valid() && valueType.isPointer()) {
-        ArraySubscriptInfo info;
-        info.elementType = valueType.dereference();
-        info.elementStride = objectStrideBytes(info.elementType);
-        info.baseIsArray = false;
-        info.ok = true;
-        return info;
-    }
-    return sub;
-}
+ArraySubscriptInfo arraySubscriptInfo(const Type& expressionType, const Type& valueType);
 
 } // namespace type
 
