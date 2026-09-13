@@ -66,6 +66,46 @@ std::vector<BlockSets> genKill(const Cfg& cfg, const LinearPrep& prep) {
     return sets;
 }
 
+struct LiveSets {
+    std::vector<std::unordered_set<int>> liveIn;
+    std::vector<std::unordered_set<int>> liveOut;
+};
+
+LiveSets solveLiveness(const Cfg& cfg, const std::vector<BlockSets>& sets) {
+    LiveSets live;
+    live.liveIn.resize(cfg.size());
+    live.liveOut.resize(cfg.size());
+    bool changed = true;
+    while (changed) {
+        changed = false;
+        for (std::size_t i = cfg.size(); i-- > 0;) {
+            std::unordered_set<int> newOut;
+            for (const std::size_t s : cfgSuccessors(cfg, i)) {
+                newOut.insert(live.liveIn[s].begin(), live.liveIn[s].end());
+            }
+            std::unordered_set<int> newIn = sets[i].gen;
+            for (int id : newOut) {
+                if (sets[i].kill.count(id) == 0) {
+                    newIn.insert(id);
+                }
+            }
+            if (newIn != live.liveIn[i] || newOut != live.liveOut[i]) {
+                live.liveIn[i] = std::move(newIn);
+                live.liveOut[i] = std::move(newOut);
+                changed = true;
+            }
+        }
+    }
+    return live;
+}
+
+void applyRefsBackward(std::unordered_set<int>& later, const SymbolRefs& refs) {
+    for (int id : refs.defs) {
+        later.erase(id);
+    }
+    later.insert(refs.uses.begin(), refs.uses.end());
+}
+
 } // namespace
 
 LabelLiveIns computeLabelLiveIns(const Procedure& procedure) {
@@ -75,41 +115,54 @@ LabelLiveIns computeLabelLiveIns(const Procedure& procedure) {
         return out;
     }
     const LinearPrep prep = prepare(procedure.body);
-    const std::vector<BlockSets> sets = genKill(cfg, prep);
-
-    std::vector<std::unordered_set<int>> liveIn(cfg.size());
-    std::vector<std::unordered_set<int>> liveOut(cfg.size());
-    bool changed = true;
-    while (changed) {
-        changed = false;
-        for (std::size_t i = cfg.size(); i-- > 0;) {
-            std::unordered_set<int> newOut;
-            for (const std::size_t s : cfgSuccessors(cfg, i)) {
-                newOut.insert(liveIn[s].begin(), liveIn[s].end());
-            }
-            std::unordered_set<int> newIn = sets[i].gen;
-            for (int id : newOut) {
-                if (sets[i].kill.count(id) == 0) {
-                    newIn.insert(id);
-                }
-            }
-            if (newIn != liveIn[i] || newOut != liveOut[i]) {
-                liveIn[i] = std::move(newIn);
-                liveOut[i] = std::move(newOut);
-                changed = true;
-            }
-        }
-    }
+    const LiveSets live = solveLiveness(cfg, genKill(cfg, prep));
 
     for (std::size_t i = 0; i < cfg.size(); ++i) {
         if (cfg[i].label == kNoSymbol) {
             continue;
         }
         auto& dest = out.atLabel[cfg[i].label];
-        dest = liveIn[i];
+        dest = live.liveIn[i];
         dest.insert(prep.addressTaken.begin(), prep.addressTaken.end());
     }
     return out;
+}
+
+std::unordered_map<int, std::unordered_set<int>> computeLiveAfterCalls(const Procedure& procedure) {
+    std::unordered_map<int, std::unordered_set<int>> after;
+    const Cfg cfg = buildCfg(procedure.body);
+    if (cfg.empty()) {
+        return after;
+    }
+    const LinearPrep prep = prepare(procedure.body);
+    const LiveSets live = solveLiveness(cfg, genKill(cfg, prep));
+
+    std::size_t bodyIndex = 0;
+    for (std::size_t b = 0; b < cfg.size(); ++b) {
+        if (cfg[b].label != kNoSymbol) {
+            ++bodyIndex;
+        }
+        std::vector<std::size_t> instIndex;
+        instIndex.reserve(cfg[b].insts.size());
+        for (std::size_t n = 0; n < cfg[b].insts.size(); ++n) {
+            instIndex.push_back(bodyIndex++);
+        }
+        std::unordered_set<int> later = live.liveOut[b];
+        for (std::size_t n = cfg[b].insts.size(); n-- > 0;) {
+            SymbolRefs refs;
+            collectSymbolRefs(cfg[b].insts[n], refs);
+            if (refs.isCall && instIndex[n] < prep.extraCallUses.size()) {
+                after[static_cast<int>(instIndex[n])] = later;
+                for (int id : prep.extraCallUses[instIndex[n]]) {
+                    refs.addUse(id);
+                }
+            } else if (refs.isCall) {
+                after[static_cast<int>(instIndex[n])] = later;
+            }
+            applyRefsBackward(later, refs);
+        }
+    }
+    return after;
 }
 
 } // namespace codegen

@@ -13,6 +13,7 @@ struct LabelLiveIns {
 };
 
 LabelLiveIns computeLabelLiveIns(const Procedure& procedure);
+std::unordered_map<int, std::unordered_set<int>> computeLiveAfterCalls(const Procedure& procedure);
 
 } // namespace codegen
 

@@ -216,6 +216,7 @@ private:
     bool mayAliasStore(int id) const;
     void spillMayAliasRegisters(int storeAddrId);
     void spillCallerSavedRegisters();
+    void dropCallerSavedBindings();
     void emptyGeneralPurposeRegisters();
 
     void pushCalleeSavedRegisters();
@@ -299,7 +300,9 @@ private:
 
     bool hasFrame_ { false };
     bool haveEdgeLiveness_ { false };
+    bool haveCallLiveness_ { false };
     std::unordered_map<int, std::unordered_set<int>> liveInAtLabel_;
+    std::unordered_map<int, std::unordered_set<int>> liveAfterCall_;
     std::unordered_set<int> addressTaken_;
     type::object_abi::FrameLayout frameLayout_ {};
     int instructionOrdinal { 0 };
