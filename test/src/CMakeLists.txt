@@ -12,6 +12,7 @@ endif()
 add_executable(astTest
         astTest/DeclarationSpecifiersTest.cpp
         astTest/DeclarationTest.cpp
+    astTest/DirectDeclaratorTest.cpp
     astTest/CSNBCreatorsStubTest.cpp
     astTest/GnuExtensionsTryGotoTest.cpp
     astTest/FunctionDefinitionTest.cpp
