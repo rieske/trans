@@ -1,4 +1,5 @@
 #include "Instruction.h"
+#include "codegen/InternalError.h"
 
 #include "SysVCallConv.h"
 #include "ValueKind.h"
@@ -7,7 +8,6 @@
 #include "types/SysVClassify.h"
 #include "types/TypeQuery.h"
 
-#include <stdexcept>
 #include <string>
 
 namespace codegen {
@@ -151,13 +151,13 @@ OpContract opContract(Op op) {
     case Op::VaCopy:
         return { InstructionClass::Ordinary, FArg0 | FArg1 };
     }
-    throw std::logic_error { "opContract: unhandled Op" };
+    internalError("opContract: unhandled Op");
 }
 
 template<typename T>
 void rejectIfUnused(unsigned live, unsigned bit, const T& value, const T& def) {
     if (!(live & bit) && value != def) {
-        throw std::logic_error { "unused Instruction field set" };
+        internalError("unused Instruction field set");
     }
 }
 

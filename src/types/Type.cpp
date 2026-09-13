@@ -1,4 +1,5 @@
 #include "Type.h"
+#include "TypeIce.h"
 #include "TypeQuery.h"
 
 #include <sstream>
@@ -169,7 +170,7 @@ void Type::applyQualifiers(const std::vector<Qualifier>& qualifiers) {
             case Qualifier::RESTRICT:
                 break;
             default:
-                throw std::logic_error { "Unsupported type qualifier" };
+                ice("Unsupported type qualifier");
         }
     }
 }
@@ -267,7 +268,7 @@ Primitive Type::getPrimitive() const {
     if (const auto* p = std::get_if<PrimitivePayload>(&_payload)) {
         return p->value;
     }
-    throw std::domain_error { "getPrimitive on non-primitive type" };
+    ice("getPrimitive on non-primitive type");
 }
 
 bool Type::isConst() const {
@@ -303,7 +304,7 @@ const Function& Type::getFunction() const {
     if (const auto* f = std::get_if<FunctionPayload>(&_payload)) {
         return f->value;
     }
-    throw std::domain_error { "getFunction on non-function type" };
+    ice("getFunction on non-function type");
 }
 
 bool Type::isArray() const {
@@ -332,19 +333,19 @@ Type Type::getElementType() const {
     if (const auto* a = arrayPayload()) {
         return *a->element;
     }
-    throw std::domain_error { "not an array type" };
+    ice("not an array type");
 }
 
 int Type::getArraySize() const {
     if (const auto* a = arrayPayload()) {
         return a->count;
     }
-    throw std::domain_error { "not an array type" };
+    ice("not an array type");
 }
 
 Type Type::decayArray() const {
     if (!isArray()) {
-        throw std::domain_error { "not an array type" };
+        ice("not an array type");
     }
     return pointer(getElementType());
 }
@@ -353,7 +354,7 @@ int Type::getElementStride() const {
     if (const auto* a = arrayPayload()) {
         return a->element->getSize();
     }
-    throw std::domain_error { "not an array type" };
+    ice("not an array type");
 }
 
 Type Type::dereference() const {
@@ -362,7 +363,7 @@ Type Type::dereference() const {
             return *p->pointee;
         }
     }
-    throw std::domain_error { "can not dereference non-pointer type" };
+    ice("can not dereference non-pointer type");
 }
 
 std::optional<Type> Type::indexElement() const {

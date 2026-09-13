@@ -1,6 +1,5 @@
 #include "StackMachine.h"
-
-#include <stdexcept>
+#include "codegen/InternalError.h"
 
 namespace codegen {
 
@@ -148,7 +147,7 @@ void StackMachine::emit(const Instruction& instruction) {
         allocaBytes(instruction.arg0, instruction.result);
         break;
     default:
-        throw std::logic_error { "StackMachine::emit: unhandled Op" };
+        internalError("StackMachine::emit: unhandled Op");
     }
     finishInstruction();
 }

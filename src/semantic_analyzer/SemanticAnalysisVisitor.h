@@ -99,7 +99,7 @@ public:
     diag::Sink& sink() const;
     symbols::AnnotationStore& annotations() {
         if (!store_) {
-            throw std::runtime_error { "AnnotationStore not set on SemanticAnalysisVisitor" };
+            throw std::logic_error { "internal compiler error: AnnotationStore not set on SemanticAnalysisVisitor" };
         }
         return *store_;
     }

@@ -1,8 +1,8 @@
 #include "CodeGeneratingVisitor.h"
+#include "codegen/InternalError.h"
 #include "ast/AstNodes.h"
 #include "codegen/IrBuilders.h"
 
-#include <stdexcept>
 #include <string>
 
 #include "types/TypeQuery.h"
@@ -45,7 +45,7 @@ void CodeGeneratingVisitor::emitSizeofProduct(const type::Type& measured, int re
             auto boundId = t.vlaBound();
             if (boundId && !boundId->unspecified) {
                 if (!vlas_) {
-                    throw std::logic_error { "missing VLA expression table" };
+                    internalError("missing VLA expression table");
                 }
                 auto bound = vlas_->require(boundId.get());
                 bound->accept(*this);

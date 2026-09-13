@@ -1,6 +1,5 @@
 #include "Primitive.h"
-
-#include <stdexcept>
+#include "TypeIce.h"
 
 namespace type {
 
@@ -106,7 +105,7 @@ int Primitive::getSize() const {
     case PrimitiveKind::ComplexLongDouble:
         return 32;
     }
-    throw std::runtime_error { "unknown primitive kind" };
+    ice("unknown primitive kind");
 }
 
 int Primitive::getAlignment() const {
@@ -144,7 +143,7 @@ bool Primitive::isSigned() const {
     case PrimitiveKind::ComplexLongDouble:
         return true;
     }
-    throw std::runtime_error { "unknown primitive kind" };
+    ice("unknown primitive kind");
 }
 
 bool Primitive::isFloating() const {
@@ -208,7 +207,7 @@ std::string Primitive::to_string() const {
     case PrimitiveKind::ComplexLongDouble:
         return "_Complex long double";
     }
-    throw std::runtime_error { "unknown primitive kind" };
+    ice("unknown primitive kind");
 }
 
 } // namespace type

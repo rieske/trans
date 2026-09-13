@@ -2,8 +2,6 @@
 #include "ast/AstNodes.h"
 #include "codegen/InternalError.h"
 
-#include <stdexcept>
-
 #include "codegen/IrBuilders.h"
 #include "types/TypeQuery.h"
 
@@ -27,7 +25,7 @@ const char* complexLibgcc(type::ArithmeticOp op, const type::Type& real) {
     if (type::isFloat(real)) {
         return div ? "__divsc3" : "__mulsc3";
     }
-    throw std::logic_error { "complexLibgcc: corresponding real is not float, double, or long double" };
+    internalError("complexLibgcc: corresponding real is not float, double, or long double");
 }
 
 } // namespace

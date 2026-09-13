@@ -1,8 +1,6 @@
 #include "Value.h"
 #include "codegen/InternalError.h"
 
-#include <stdexcept>
-
 namespace codegen {
 
 Value::Value(int id, int index, Type type, int sizeInBytes) :
@@ -22,7 +20,7 @@ Value::Value(int id, int index, Type type, int sizeInBytes,
         classification { classification }
 {
     if (id_ < 0) {
-        throw std::logic_error { "Value requires a valid intern id" };
+        internalError("Value requires a valid intern id");
     }
 }
 

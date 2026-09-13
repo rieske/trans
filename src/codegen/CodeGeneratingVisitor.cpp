@@ -1,8 +1,8 @@
 #include "CodeGeneratingVisitor.h"
+#include "codegen/InternalError.h"
 #include "ast/Expression.h"
 #include "codegen/IrBuilders.h"
 
-#include <stdexcept>
 #include <utility>
 
 #include "symbols/ValueEntry.h"
@@ -16,7 +16,7 @@ CodeGeneratingVisitor::CodeGeneratingVisitor(symbols::AnnotationStore& store,
 
 void CodeGeneratingVisitor::emit(Instruction instruction) {
     if (!currentBody_) {
-        throw std::logic_error { "CodeGeneratingVisitor: emit outside of a procedure body" };
+        internalError("CodeGeneratingVisitor: emit outside of a procedure body");
     }
     currentBody_->push_back(std::move(instruction));
 }
@@ -80,7 +80,7 @@ void CodeGeneratingVisitor::emitIntegerMulDiv(type::ArithmeticOp op, int left,
             break;
         case type::ArithmeticOp::Add:
         case type::ArithmeticOp::Sub:
-            throw std::logic_error("emitIntegerMulDiv: additive op");
+            internalError("emitIntegerMulDiv: additive op");
         }
         emit(ir::argument(left));
         emit(ir::argument(right));
@@ -100,7 +100,7 @@ void CodeGeneratingVisitor::emitIntegerMulDiv(type::ArithmeticOp op, int left,
         break;
     case type::ArithmeticOp::Add:
     case type::ArithmeticOp::Sub:
-        throw std::logic_error("emitIntegerMulDiv: additive op");
+        internalError("emitIntegerMulDiv: additive op");
     }
 }
 

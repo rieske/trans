@@ -1,15 +1,14 @@
 #include "CodeGeneratingVisitor.h"
 #include "ast/AstNodes.h"
 
-#include <stdexcept>
-
+#include "codegen/InternalError.h"
 #include "codegen/IrBuilders.h"
 
 namespace codegen {
 
 void CodeGeneratingVisitor::visit(ast::JumpStatement& statement) {
     if (!statement.getJumpTo(store_)) {
-        throw std::runtime_error { "JumpStatement has no target label" };
+        internalError("JumpStatement has no target label");
     }
     emit(ir::jump(id(*statement.getJumpTo(store_))));
 }
@@ -49,14 +48,14 @@ void CodeGeneratingVisitor::visit(ast::DefaultLabel& statement) {
 
 void CodeGeneratingVisitor::visit(ast::GotoStatement& statement) {
     if (!statement.getTarget(store_)) {
-        throw std::runtime_error { "GotoStatement has no target label" };
+        internalError("GotoStatement has no target label");
     }
     emit(ir::jump(id(*statement.getTarget(store_))));
 }
 
 void CodeGeneratingVisitor::visit(ast::LabeledStatement& statement) {
     if (!statement.getLabel(store_)) {
-        throw std::runtime_error { "LabeledStatement has no label" };
+        internalError("LabeledStatement has no label");
     }
     emit(ir::label(id(*statement.getLabel(store_))));
     statement.statement->accept(*this);
