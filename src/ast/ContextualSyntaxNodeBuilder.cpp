@@ -23,24 +23,61 @@ std::vector<Enumerator> specEnumerators(const DeclarationSpecifiers& specs) {
 
 enum class ForInitKind { None, Expression, Declaration };
 
-template<ForInitKind Init, bool HasClause, bool HasIncrement>
-void forLoopStatement(AbstractSyntaxTreeBuilderContext& context) {
-    const int terminalCount = (Init == ForInitKind::Declaration) ? 4 : 5;
+void forLoop(AbstractSyntaxTreeBuilderContext& context, ForInitKind init,
+        bool hasClause, bool hasIncrement) {
+    const int terminalCount = (init == ForInitKind::Declaration) ? 4 : 5;
     for (int i = 0; i < terminalCount; ++i) {
         context.popTerminal();
     }
-    auto increment = HasIncrement ? context.popExpression() : nullptr;
-    auto clause = HasClause ? context.popExpression() : nullptr;
+    auto increment = hasIncrement ? context.popExpression() : nullptr;
+    auto clause = hasClause ? context.popExpression() : nullptr;
     ForInit initialization;
-    if (Init == ForInitKind::Expression) {
+    if (init == ForInitKind::Expression) {
         initialization = ForInit { context.popExpression() };
-    } else if (Init == ForInitKind::Declaration) {
+    } else if (init == ForInitKind::Declaration) {
         initialization = ForInit { context.popDeclaration() };
     }
     auto loopHeader = std::make_unique<ForLoopHeader>(
             std::move(initialization), std::move(clause), std::move(increment));
     auto body = context.popAsStatement();
     context.pushStatement(std::make_unique<LoopStatement>(std::move(loopHeader), std::move(body)));
+}
+
+void forExpClauseInc(AbstractSyntaxTreeBuilderContext& c) {
+    forLoop(c, ForInitKind::Expression, true, true);
+}
+void forExpClause(AbstractSyntaxTreeBuilderContext& c) {
+    forLoop(c, ForInitKind::Expression, true, false);
+}
+void forExpInc(AbstractSyntaxTreeBuilderContext& c) {
+    forLoop(c, ForInitKind::Expression, false, true);
+}
+void forExp(AbstractSyntaxTreeBuilderContext& c) {
+    forLoop(c, ForInitKind::Expression, false, false);
+}
+void forNoneClauseInc(AbstractSyntaxTreeBuilderContext& c) {
+    forLoop(c, ForInitKind::None, true, true);
+}
+void forNoneClause(AbstractSyntaxTreeBuilderContext& c) {
+    forLoop(c, ForInitKind::None, true, false);
+}
+void forNoneInc(AbstractSyntaxTreeBuilderContext& c) {
+    forLoop(c, ForInitKind::None, false, true);
+}
+void forNone(AbstractSyntaxTreeBuilderContext& c) {
+    forLoop(c, ForInitKind::None, false, false);
+}
+void forDeclClauseInc(AbstractSyntaxTreeBuilderContext& c) {
+    forLoop(c, ForInitKind::Declaration, true, true);
+}
+void forDeclClause(AbstractSyntaxTreeBuilderContext& c) {
+    forLoop(c, ForInitKind::Declaration, true, false);
+}
+void forDeclInc(AbstractSyntaxTreeBuilderContext& c) {
+    forLoop(c, ForInitKind::Declaration, false, true);
+}
+void forDecl(AbstractSyntaxTreeBuilderContext& c) {
+    forLoop(c, ForInitKind::Declaration, false, false);
 }
 
 int foldBitFieldWidth(AbstractSyntaxTreeBuilderContext& context) {
@@ -461,31 +498,31 @@ ContextualSyntaxNodeBuilder::ContextualSyntaxNodeBuilder(const parser::Grammar& 
         bind(s_iteration_stat_unmatched, unmatchedProd, creator);
     };
     registerFor({ s_for, s_open_paren, s_exp, s_semicolon, s_exp, s_semicolon, s_exp, s_close_paren, s_matched },
-            forLoopStatement<ForInitKind::Expression, true, true>);
+            forExpClauseInc);
     registerFor({ s_for, s_open_paren, s_exp, s_semicolon, s_exp, s_semicolon, s_close_paren, s_matched },
-            forLoopStatement<ForInitKind::Expression, true, false>);
+            forExpClause);
     registerFor({ s_for, s_open_paren, s_exp, s_semicolon, s_semicolon, s_exp, s_close_paren, s_matched },
-            forLoopStatement<ForInitKind::Expression, false, true>);
+            forExpInc);
     registerFor({ s_for, s_open_paren, s_exp, s_semicolon, s_semicolon, s_close_paren, s_matched },
-            forLoopStatement<ForInitKind::Expression, false, false>);
+            forExp);
     registerFor({ s_for, s_open_paren, s_semicolon, s_exp, s_semicolon, s_exp, s_close_paren, s_matched },
-            forLoopStatement<ForInitKind::None, true, true>);
+            forNoneClauseInc);
     registerFor({ s_for, s_open_paren, s_semicolon, s_exp, s_semicolon, s_close_paren, s_matched },
-            forLoopStatement<ForInitKind::None, true, false>);
+            forNoneClause);
     registerFor({ s_for, s_open_paren, s_semicolon, s_semicolon, s_exp, s_close_paren, s_matched },
-            forLoopStatement<ForInitKind::None, false, true>);
+            forNoneInc);
     registerFor({ s_for, s_open_paren, s_semicolon, s_semicolon, s_close_paren, s_matched },
-            forLoopStatement<ForInitKind::None, false, false>);
+            forNone);
 
     int s_decl_for = grammar.symbolId("<decl>");
     registerFor({ s_for, s_open_paren, s_decl_for, s_exp, s_semicolon, s_exp, s_close_paren, s_matched },
-            forLoopStatement<ForInitKind::Declaration, true, true>);
+            forDeclClauseInc);
     registerFor({ s_for, s_open_paren, s_decl_for, s_exp, s_semicolon, s_close_paren, s_matched },
-            forLoopStatement<ForInitKind::Declaration, true, false>);
+            forDeclClause);
     registerFor({ s_for, s_open_paren, s_decl_for, s_semicolon, s_exp, s_close_paren, s_matched },
-            forLoopStatement<ForInitKind::Declaration, false, true>);
+            forDeclInc);
     registerFor({ s_for, s_open_paren, s_decl_for, s_semicolon, s_close_paren, s_matched },
-            forLoopStatement<ForInitKind::Declaration, false, false>);
+            forDecl);
 
     // --- enum ---
     int s_enum_spec = grammar.symbolId("<enum_spec>");
