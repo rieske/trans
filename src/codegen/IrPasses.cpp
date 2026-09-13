@@ -647,27 +647,35 @@ void copyPropagate(Procedure& procedure) {
         }
     }
 
+    const auto preds = labelPredCounts(procedure.body);
     std::unordered_map<int, int> copy;
+    bool fall = true;
     for (auto& inst : procedure.body) {
         if (inst.op == Op::Label) {
-            copy.clear();
+            const bool keepCopy = fall && preds.count(inst.arg0) && preds.at(inst.arg0) == 1;
+            if (!keepCopy) {
+                copy.clear();
+            }
+            fall = true;
             continue;
         }
         rewriteValueUses(inst, copy);
         if (inst.op == Op::Call) {
             copy.clear();
-            continue;
-        }
-        if (isEligibleCopy(inst, procedure, addressTaken)) {
+        } else if (isEligibleCopy(inst, procedure, addressTaken)) {
             killCopy(copy, inst.result);
             const auto src = copy.find(inst.arg0);
             copy[inst.result] = src == copy.end() ? inst.arg0 : src->second;
-            continue;
+        } else {
+            SymbolRefs refs;
+            collectSymbolRefs(inst, refs);
+            for (int def : refs.defs) {
+                killCopy(copy, def);
+            }
         }
-        SymbolRefs refs;
-        collectSymbolRefs(inst, refs);
-        for (int def : refs.defs) {
-            killCopy(copy, def);
+        if (instructionTransfersControl(inst)
+                && (inst.op != Op::Jump || inst.cond == JumpCondition::UNCONDITIONAL)) {
+            fall = false;
         }
     }
 }

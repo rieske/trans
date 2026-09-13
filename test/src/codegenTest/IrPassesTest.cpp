@@ -1087,13 +1087,50 @@ TEST(IrPasses, copyPropagate_clearsAtCall) {
     EXPECT_THAT(toString(ir), HasSubstr("t4 := t2 + x"));
 }
 
-TEST(IrPasses, copyPropagate_clearsAtLabel) {
+TEST(IrPasses, copyPropagate_keepsAcrossSinglePredFallthroughLabel) {
     IntermediateRepresentation ir;
     IrN n { ir.strings };
     ProcedureFrame frame = exprTemps(ir.strings, { "t1", "t2", "t3" });
     frame.locals.push_back(integral(ir.strings, "x"));
     ir.procedures.push_back(makeProc(ir.strings, "f", {
             ir::assign(n("t1"), n("t2")),
+            ir::label(n("L")),
+            ir::add(n("t2"), n("x"), n("t3")),
+            ir::ret(n("t3")),
+    }, std::move(frame)));
+
+    copyPropagate(ir.procedures.front());
+
+    EXPECT_THAT(toString(ir), HasSubstr("t3 := t1 + x"));
+}
+
+TEST(IrPasses, copyPropagate_clearsAtJoinLabel) {
+    IntermediateRepresentation ir;
+    IrN n { ir.strings };
+    ProcedureFrame frame = exprTemps(ir.strings, { "t1", "t2", "t3", "t4" });
+    frame.locals.push_back(integral(ir.strings, "x"));
+    ir.procedures.push_back(makeProc(ir.strings, "f", {
+            ir::assign(n("t1"), n("t2")),
+            ir::jump(n("L"), JumpCondition::IF_EQUAL),
+            ir::assign(n("t4"), n("t2")),
+            ir::label(n("L")),
+            ir::add(n("t2"), n("x"), n("t3")),
+            ir::ret(n("t3")),
+    }, std::move(frame)));
+
+    copyPropagate(ir.procedures.front());
+
+    EXPECT_THAT(toString(ir), HasSubstr("t3 := t2 + x"));
+}
+
+TEST(IrPasses, copyPropagate_clearsAtJumpOnlySinglePredLabel) {
+    IntermediateRepresentation ir;
+    IrN n { ir.strings };
+    ProcedureFrame frame = exprTemps(ir.strings, { "t1", "t2", "t3" });
+    frame.locals.push_back(integral(ir.strings, "x"));
+    ir.procedures.push_back(makeProc(ir.strings, "f", {
+            ir::assign(n("t1"), n("t2")),
+            ir::jump(n("L")),
             ir::label(n("L")),
             ir::add(n("t2"), n("x"), n("t3")),
             ir::ret(n("t3")),
