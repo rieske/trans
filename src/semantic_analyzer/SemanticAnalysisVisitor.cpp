@@ -314,12 +314,6 @@ void SemanticAnalysisVisitor::analyzeInitializedDeclarator(ast::InitializedDecla
     }
 }
 
-void SemanticAnalysisVisitor::visit(ast::Pointer&) {
-}
-
-void SemanticAnalysisVisitor::visit(ast::Identifier&) {
-}
-
 void SemanticAnalysisVisitor::visit(ast::ArrayDeclarator& declaration) {
     declaration.visitBaseDeclarator(*this);
     if (declaration.foldOwnBound() == ast::ArrayBoundFold::TooLarge) {

@@ -95,7 +95,8 @@ void CodeGeneratingVisitor::visit(ast::IfStatement& statement) {
 }
 
 void CodeGeneratingVisitor::visit(ast::LoopStatement& loop) {
-    if (loop.header->bodyBeforeTest()) {
+    switch (loop.header->loopKind()) {
+    case ast::LoopKind::DoWhile:
         // do { body } while (cond); - header visit emits the trailing test + branch.
         emit(ir::label(id(*loop.header->getLoopEntry(store_))));
         loop.body->accept(*this);
@@ -103,21 +104,23 @@ void CodeGeneratingVisitor::visit(ast::LoopStatement& loop) {
         loop.header->accept(*this);
         emit(ir::label(id(*loop.header->getLoopExit(store_))));
         return;
+    case ast::LoopKind::While:
+    case ast::LoopKind::For:
+        loop.header->accept(*this);
+        loop.body->accept(*this);
+        // continue target: for-loops place a label before the increment; while reuses entry.
+        if (loop.header->getLoopContinue(store_)
+                && loop.header->getLoopContinue(store_)->getName()
+                        != loop.header->getLoopEntry(store_)->getName()) {
+            emit(ir::label(id(*loop.header->getLoopContinue(store_))));
+        }
+        if (loop.header->increment) {
+            loop.header->increment->accept(*this);
+        }
+        emit(ir::jump(id(*loop.header->getLoopEntry(store_))));
+        emit(ir::label(id(*loop.header->getLoopExit(store_))));
+        return;
     }
-
-    loop.header->accept(*this);
-    loop.body->accept(*this);
-    // continue target: for-loops place a label before the increment; while reuses entry.
-    if (loop.header->getLoopContinue(store_)
-            && loop.header->getLoopContinue(store_)->getName() != loop.header->getLoopEntry(store_)->getName()) {
-        emit(ir::label(id(*loop.header->getLoopContinue(store_))));
-    }
-    if (loop.header->increment) {
-        loop.header->increment->accept(*this);
-    }
-
-    emit(ir::jump(id(*loop.header->getLoopEntry(store_))));
-    emit(ir::label(id(*loop.header->getLoopExit(store_))));
 }
 
 void CodeGeneratingVisitor::visit(ast::ForLoopHeader& loopHeader) {

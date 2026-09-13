@@ -15,9 +15,8 @@ public:
             std::unique_ptr<Expression> increment);
     virtual ~ForLoopHeader();
 
+    LoopKind loopKind() const override { return LoopKind::For; }
     void accept(AbstractSyntaxTreeVisitor& visitor) override;
-
-    bool opensBlockScope() const override { return initialization.asDeclaration() != nullptr; }
 
     const ForInit initialization;
     const std::unique_ptr<Expression> clause;

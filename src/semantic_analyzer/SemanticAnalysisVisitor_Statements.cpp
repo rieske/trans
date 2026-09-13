@@ -161,17 +161,34 @@ void SemanticAnalysisVisitor::visit(ast::IfStatement& statement) {
 }
 
 void SemanticAnalysisVisitor::visit(ast::LoopStatement& loop) {
-    const bool declScope = loop.header->opensBlockScope();
+    const ast::LoopKind kind = loop.header->loopKind();
+    bool declScope = false;
+    switch (kind) {
+    case ast::LoopKind::For:
+        declScope = static_cast<ast::ForLoopHeader*>(loop.header.get())
+                ->initialization.asDeclaration() != nullptr;
+        break;
+    case ast::LoopKind::While:
+    case ast::LoopKind::DoWhile:
+        break;
+    }
     if (declScope) {
         symbolTable.enterBlockScope();
     }
     loop.header->accept(*this);
-    // for-with-increment: continue before increment. while: continue → entry.
-    // do-while: header preassigns continue (before the test); leave it alone.
-    if (loop.header->increment) {
-        loop.header->setLoopContinue(annotations(), symbolTable.newLabel());
-    } else if (loop.header->continueTargetsEntry()) {
-        loop.header->setLoopContinue(annotations(), *loop.header->getLoopEntry(annotations()));
+    switch (kind) {
+    case ast::LoopKind::For:
+    case ast::LoopKind::While:
+        // for-with-increment: continue before increment. while: continue → entry.
+        if (loop.header->increment) {
+            loop.header->setLoopContinue(annotations(), symbolTable.newLabel());
+        } else {
+            loop.header->setLoopContinue(annotations(), *loop.header->getLoopEntry(annotations()));
+        }
+        break;
+    case ast::LoopKind::DoWhile:
+        // header preassigns continue (before the test).
+        break;
     }
     loopStack.push_back({ loop.header->getLoopEntry(annotations()), loop.header->getLoopContinue(annotations()), loop.header->getLoopExit(annotations()) });
     loop.body->accept(*this);
