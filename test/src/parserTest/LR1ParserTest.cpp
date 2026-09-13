@@ -25,6 +25,28 @@ using namespace parser;
 
 namespace {
 
+bool parseSource(const std::string& name, const std::string& source) {
+    Configuration configuration;
+    configuration.setResourcesBasePath(getResourcesBaseDir());
+
+    BNFFileReader reader;
+    Grammar grammar = reader.readGrammar(getResourcePath("configuration/grammar.bnf"));
+    ParsingTable parsingTable { &grammar };
+
+    LR1Parser parser { parsingTable };
+    scanner::LexicalSession session;
+    scanner::LexFileScannerReader scannerReader;
+    const std::string path = writeTempSource(name, source);
+    auto scanner = std::make_unique<scanner::Scanner>(
+            path, scannerReader.fromConfiguration(configuration.getLexPath()), session);
+    auto builder = ast::SyntaxTreeBuilder::create(
+            &grammar, session, configuration.gnuExtensions());
+    std::ostringstream logged;
+    diag::Sink sink { logged };
+    builder->setSink(&sink);
+    return parser.parse(*scanner, *builder) && !builder->hasError();
+}
+
 TEST(LR1Parser, parsesTestProgram) {
     Configuration configuration;
     configuration.setResourcesBasePath(getResourcesBaseDir());
@@ -70,6 +92,21 @@ TEST(LR1Parser, unexpectedTokenSetsErrorAndWritesSink) {
     EXPECT_TRUE(builder->hasError());
     EXPECT_TRUE(sink.hasErrors());
     EXPECT_THAT(logged.str(), HasSubstr("unexpected token"));
+}
+
+TEST(LR1Parser, parsesKeywordHeavyTranslationUnit) {
+    EXPECT_TRUE(parseSource("lr1_keywords.c",
+            "int f(void) { int x; x = 1; if (x) return x; return 0; }\n"));
+}
+
+TEST(LR1Parser, parsesGnuStatementExpression) {
+    EXPECT_TRUE(parseSource("lr1_stmt_expr.c",
+            "int f(void) { return ({ int y; y = 1; y; }); }\n"));
+}
+
+TEST(LR1Parser, parsesGnuInt128) {
+    EXPECT_TRUE(parseSource("lr1_int128.c",
+            "__int128 f(__int128 x) { return x; }\n"));
 }
 
 }
