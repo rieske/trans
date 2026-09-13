@@ -9,7 +9,7 @@
 #include "parser/ParsingTable.h"
 #include "parser/CanonicalCollection.h"
 #include "parser/FirstTable.h"
-#include "ast/AbstractSyntaxTreeBuilder.h"
+#include "ast/SyntaxTreeBuilder.h"
 #include "driver/Configuration.h"
 #include "scanner/LexFileScannerReader.h"
 #include "scanner/Scanner.h"
@@ -39,7 +39,7 @@ void generateAndParseExample(AutomatonKind kind) {
     auto scanner = std::make_unique<scanner::Scanner>(
             getTestResourcePath("programs/example_prog.c"),
             scannerReader.fromConfiguration(configuration.getLexPath()), session);
-    auto syntaxTreeBuilder = ast::AbstractSyntaxTreeBuilder::create(
+    auto syntaxTreeBuilder = ast::SyntaxTreeBuilder::create(
             &grammar, session, configuration.gnuExtensions());
     ASSERT_TRUE(parser.parse(*scanner, *syntaxTreeBuilder));
 }

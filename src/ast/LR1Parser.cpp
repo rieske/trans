@@ -1,14 +1,14 @@
-#include "LR1Parser.h"
+#include "parser/LR1Parser.h"
 
 #include <string>
 #include <utility>
 #include <vector>
 
-#include "ParseExtensions.h"
-#include "ParsingTable.h"
-#include "Production.h"
-#include "SyntaxTreeBuilder.h"
-#include "TokenStream.h"
+#include "ast/SyntaxTreeBuilder.h"
+#include "parser/ParseExtensions.h"
+#include "parser/ParsingTable.h"
+#include "parser/Production.h"
+#include "parser/TokenStream.h"
 #include "scanner/Scanner.h"
 #include "scanner/Token.h"
 #include "scanner/TokenFilter.h"
@@ -29,14 +29,14 @@ namespace {
 constexpr const char* kTypeSpecFirstProbe = "int";
 
 void applyShift(std::vector<parse_state>& stack, parse_state next, TokenStream& tokenStream,
-        SyntaxTreeBuilder& syntaxTreeBuilder) {
+        ast::SyntaxTreeBuilder& syntaxTreeBuilder) {
     stack.push_back(next);
     scanner::Token token = tokenStream.consume();
     syntaxTreeBuilder.makeTerminalNode(std::move(token.lexeme), token.context);
 }
 
 bool applyReduce(std::vector<parse_state>& stack, const Production& production,
-        const ParsingTable& parsingTable, SyntaxTreeBuilder& syntaxTreeBuilder) {
+        const ParsingTable& parsingTable, ast::SyntaxTreeBuilder& syntaxTreeBuilder) {
     stack.resize(stack.size() - production.size());
     stack.push_back(parsingTable.go_to(stack.back(), production.getDefiningSymbol()));
     syntaxTreeBuilder.makeNonterminalNode(production);
@@ -46,7 +46,7 @@ bool applyReduce(std::vector<parse_state>& stack, const Production& production,
 } // namespace
 
 LrFinish runLrParse(const ParsingTable& parsingTable, TokenStream& tokenStream,
-        SyntaxTreeBuilder& syntaxTreeBuilder, ParseExtensions* extensions,
+        ast::SyntaxTreeBuilder& syntaxTreeBuilder, ParseExtensions* extensions,
         std::optional<LrStop> stop) {
     std::vector<parse_state> parsingStack { 0 };
     int nest = 0;
@@ -118,13 +118,14 @@ LrFinish runLrParse(const ParsingTable& parsingTable, TokenStream& tokenStream,
             }
             break;
         default:
-            parsingTable.reportError(state, current, syntaxTreeBuilder);
+            syntaxTreeBuilder.err();
+            parsingTable.reportError(state, current, syntaxTreeBuilder.sink());
             return LrFinish::Complete;
         }
     }
 }
 
-bool LR1Parser::parse(scanner::Scanner& scanner, SyntaxTreeBuilder& syntaxTreeBuilder) const {
+bool LR1Parser::parse(scanner::Scanner& scanner, ast::SyntaxTreeBuilder& syntaxTreeBuilder) const {
     ParseExtensions* extensions = syntaxTreeBuilder.parseExtensions();
     scanner::TokenFilter filter { [&scanner]() {
         return scanner.nextToken();

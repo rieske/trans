@@ -8,12 +8,10 @@ add_library(parser_core
         GrammarBuilder.cpp
         LookaheadActionTable.cpp
         LR1Item.cpp
-        LR1Parser.cpp
         ParsingTable.cpp
         CompileParsingTable.cpp
         Production.cpp
-        TokenStream.cpp
-        SyntaxTreeBuilder.cpp)
+        TokenStream.cpp)
 
 trans_target_defaults(parser_core)
 target_link_libraries(parser_core PUBLIC scanner util)

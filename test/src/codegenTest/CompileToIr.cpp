@@ -2,7 +2,7 @@
 
 #include "ResourceHelpers.h"
 #include "ast/AbstractSyntaxTree.h"
-#include "ast/AbstractSyntaxTreeBuilder.h"
+#include "ast/SyntaxTreeBuilder.h"
 #include "codegen/Cfg.h"
 #include "codegen/Instruction.h"
 #include "codegen/IrGenerator.h"
@@ -78,7 +78,7 @@ std::string compileToIr(const std::string& source, int optLevel) {
     scanner::LexFileScannerReader scannerReader;
     auto scanner = std::make_unique<scanner::Scanner>(
             path, scannerReader.fromConfiguration(configuration.getLexPath()), session);
-    auto builder = ast::AbstractSyntaxTreeBuilder::create(
+    auto builder = ast::SyntaxTreeBuilder::create(
             &frontEnd->grammar(), session, configuration.gnuExtensions());
     std::ostringstream ignored;
     diag::Sink sink { ignored };

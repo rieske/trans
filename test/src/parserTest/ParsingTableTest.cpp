@@ -2,8 +2,6 @@
 #include "parser/GrammarBuilder.h"
 #include "parser/LookaheadActionTable.h"
 #include "parser/ParsingTable.h"
-#include "parser/SyntaxTreeBuilder.h"
-
 #include "gtest/gtest.h"
 #include "gmock/gmock.h"
 
@@ -35,20 +33,9 @@ scanner::Token tokenFor(const Grammar& grammar, int symbolId) {
     return { grammar.getSymbolById(symbolId), grammar.getSymbolById(symbolId), { "t.c", 1 }, symbolId };
 }
 
-class NullSyntaxTreeBuilder: public SyntaxTreeBuilder {
-public:
-    void makeTerminalNode(std::string, const translation_unit::Context&) override {}
-    void makeNonterminalNode(const Production&) override {}
-};
-
 struct ErrorReport {
-    NullSyntaxTreeBuilder treeBuilder;
     std::ostringstream logged;
     diag::Sink sink { logged };
-
-    ErrorReport() {
-        treeBuilder.setSink(&sink);
-    }
 };
 
 TEST(ParsingTable, missingExplicitCellUsesStoredErrorCandidates) {
@@ -98,9 +85,8 @@ TEST(ParsingTable, reportErrorListsExpectedTerminals) {
     ParsingTable table = compileParsingTable(actions, {}, grammar);
 
     ErrorReport report;
-    table.reportError(0, { "x", "x", { "t.c", 1 }, grammar.getEndSymbol() }, report.treeBuilder);
+    table.reportError(0, { "x", "x", { "t.c", 1 }, grammar.getEndSymbol() }, report.sink);
 
-    EXPECT_TRUE(report.treeBuilder.hasError());
     EXPECT_TRUE(report.sink.hasErrors());
     EXPECT_THAT(report.logged.str(), HasSubstr("t.c:1: error: unexpected token: x expected:"));
     EXPECT_THAT(report.logged.str(), HasSubstr(grammar.getSymbolById(expected)));
@@ -111,9 +97,8 @@ TEST(ParsingTable, reportErrorWithNoCandidates) {
     ParsingTable table = emptyTable(grammar);
 
     ErrorReport report;
-    table.reportError(0, { "x", "x", { "t.c", 1 }, grammar.getEndSymbol() }, report.treeBuilder);
+    table.reportError(0, { "x", "x", { "t.c", 1 }, grammar.getEndSymbol() }, report.sink);
 
-    EXPECT_TRUE(report.treeBuilder.hasError());
     EXPECT_TRUE(report.sink.hasErrors());
     EXPECT_THAT(report.logged.str(), HasSubstr("t.c:1: error: unexpected token: x expected:"));
 }

@@ -13,7 +13,6 @@ namespace parser {
 class Grammar;
 class ParsingTable;
 class TokenStream;
-class SyntaxTreeBuilder;
 }
 
 namespace scanner {
@@ -23,7 +22,7 @@ class Token;
 
 namespace ast {
 
-class AbstractSyntaxTreeBuilder;
+class SyntaxTreeBuilder;
 class Block;
 class Expression;
 
@@ -34,29 +33,29 @@ public:
     std::optional<std::size_t> tryGoto(std::size_t state, parser::TokenStream& tokenStream,
             const parser::ParsingTable& parsingTable) override;
     bool accept(parser::TokenStream& tokenStream, const parser::ParsingTable& parsingTable,
-            parser::SyntaxTreeBuilder& syntaxTreeBuilder) override;
+            SyntaxTreeBuilder& syntaxTreeBuilder) override;
     bool isTypeExtensionToken(const scanner::Token& token) const override;
 
 private:
     bool acceptStatementPrimary(parser::TokenStream& tokenStream,
-            const parser::ParsingTable& parsingTable, AbstractSyntaxTreeBuilder& builder);
+            const parser::ParsingTable& parsingTable, SyntaxTreeBuilder& builder);
     bool acceptVaArg(parser::TokenStream& tokenStream, const parser::ParsingTable& parsingTable,
-            AbstractSyntaxTreeBuilder& builder);
+            SyntaxTreeBuilder& builder);
     bool acceptTypesCompatibleP(parser::TokenStream& tokenStream, const parser::ParsingTable& parsingTable,
-            AbstractSyntaxTreeBuilder& builder);
+            SyntaxTreeBuilder& builder);
     bool acceptOffsetof(parser::TokenStream& tokenStream, const parser::ParsingTable& parsingTable,
-            AbstractSyntaxTreeBuilder& builder);
-    bool acceptInt128(parser::TokenStream& tokenStream, AbstractSyntaxTreeBuilder& builder);
+            SyntaxTreeBuilder& builder);
+    bool acceptInt128(parser::TokenStream& tokenStream, SyntaxTreeBuilder& builder);
 
     std::unique_ptr<Block> parseCompoundBlock(parser::TokenStream& outer,
-            const parser::ParsingTable& table, AbstractSyntaxTreeBuilder& parent);
+            const parser::ParsingTable& table, SyntaxTreeBuilder& parent);
     std::unique_ptr<Expression> parseAssignmentExpression(parser::TokenStream& outer,
-            const parser::ParsingTable& table, AbstractSyntaxTreeBuilder& parent);
+            const parser::ParsingTable& table, SyntaxTreeBuilder& parent);
     std::optional<TypeSpecifier> parseTypeName(parser::TokenStream& outer,
-            const parser::ParsingTable& table, AbstractSyntaxTreeBuilder& parent,
+            const parser::ParsingTable& table, SyntaxTreeBuilder& parent,
             const std::string& stopLookahead = ")");
 
-    bool consumeToStop(AbstractSyntaxTreeBuilder& parent, AbstractSyntaxTreeBuilder& nested,
+    bool consumeToStop(SyntaxTreeBuilder& parent, SyntaxTreeBuilder& nested,
             parser::TokenStream& outer,
             const parser::ParsingTable& table, const scanner::Token* prefix, std::size_t prefixCount,
             int stopSymbol, const std::string& stopLookahead, bool endAfterMatchedBrace,
