@@ -11,11 +11,8 @@ class DoWhileLoopHeader: public LoopHeader {
 public:
     explicit DoWhileLoopHeader(std::unique_ptr<Expression> clause);
 
+    LoopKind loopKind() const override { return LoopKind::DoWhile; }
     void accept(AbstractSyntaxTreeVisitor& visitor) override;
-
-    // Body runs before the condition; continue jumps to the test, not the body entry.
-    bool bodyBeforeTest() const override { return true; }
-    bool continueTargetsEntry() const override { return false; }
 
     const std::unique_ptr<Expression> clause;
 };

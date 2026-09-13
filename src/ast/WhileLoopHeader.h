@@ -11,6 +11,7 @@ class WhileLoopHeader: public LoopHeader {
 public:
 	WhileLoopHeader(std::unique_ptr<Expression> clause);
 
+	LoopKind loopKind() const override { return LoopKind::While; }
 	void accept(AbstractSyntaxTreeVisitor& visitor) override;
 
 	const std::unique_ptr<Expression> clause;

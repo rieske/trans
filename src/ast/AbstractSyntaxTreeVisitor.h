@@ -104,9 +104,8 @@ public:
     virtual void visit(WhileLoopHeader& loopHeader) = 0;
     virtual void visit(DoWhileLoopHeader& loopHeader) = 0;
 
-    virtual void visit(Pointer& pointer) = 0;
-
-    virtual void visit(Identifier& identifier) = 0;
+    virtual void visit(Pointer&) {}
+    virtual void visit(Identifier&) {}
     virtual void visit(FunctionDeclarator& declaration) = 0;
     virtual void visit(ArrayDeclarator& declaration) = 0;
 

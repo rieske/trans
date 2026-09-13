@@ -10,8 +10,15 @@
 
 namespace ast {
 
+enum class LoopKind {
+    While,
+    For,
+    DoWhile
+};
+
 class LoopHeader: public AbstractSyntaxTreeNode {
 public:
+    virtual LoopKind loopKind() const = 0;
 
     void setLoopEntry(symbols::AnnotationStore& store, symbols::LabelEntry loopEntry);
     symbols::LabelEntry* getLoopEntry(symbols::AnnotationStore& store) const;
@@ -19,14 +26,6 @@ public:
     symbols::LabelEntry* getLoopExit(symbols::AnnotationStore& store) const;
     void setLoopContinue(symbols::AnnotationStore& store, symbols::LabelEntry loopContinue);
     symbols::LabelEntry* getLoopContinue(symbols::AnnotationStore& store) const;
-
-    // C99 for-with-declaration scopes the header declaration over the loop body.
-    virtual bool opensBlockScope() const { return false; }
-
-    // do-while: body before condition. while/for: test before body.
-    virtual bool bodyBeforeTest() const { return false; }
-    // while (and for without increment): continue → entry. do-while: continue → test.
-    virtual bool continueTargetsEntry() const { return !increment; }
 
     const std::unique_ptr<Expression> increment;
 

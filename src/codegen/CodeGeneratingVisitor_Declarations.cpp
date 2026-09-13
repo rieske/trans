@@ -47,12 +47,6 @@ void CodeGeneratingVisitor::visit(ast::InitializedDeclarator& declarator) {
     }
 }
 
-void CodeGeneratingVisitor::visit(ast::Pointer&) {
-}
-
-void CodeGeneratingVisitor::visit(ast::Identifier&) {
-}
-
 void CodeGeneratingVisitor::visit(ast::FunctionDeclarator& declarator) {
     declarator.visitFormalArguments(*this);
 }
