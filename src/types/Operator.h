@@ -1,8 +1,9 @@
 #ifndef TYPES_OPERATOR_H_
 #define TYPES_OPERATOR_H_
 
+#include "TypeIce.h"
+
 #include <optional>
-#include <stdexcept>
 #include <string_view>
 
 namespace type {
@@ -174,7 +175,7 @@ inline const char* spelling(BitwiseOp op) {
 template<typename Op>
 Op requireOp(std::optional<Op> parsed) {
     if (!parsed) {
-        throw std::logic_error { "internal compiler error: operator lexeme is not a known operator" };
+        ice("operator lexeme is not a known operator");
     }
     return *parsed;
 }

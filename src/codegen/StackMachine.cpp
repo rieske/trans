@@ -7,9 +7,6 @@
 #include "SysVCallConv.h"
 #include "types/ObjectAbi.h"
 
-#include <cassert>
-#include <stdexcept>
-
 namespace {
 const int MACHINE_WORD_SIZE = type::object_abi::MACHINE_WORD_SIZE;
 
@@ -35,13 +32,13 @@ const std::string& StackMachine::text(int id) const {
 void StackMachine::put(std::deque<Value>& storage, std::vector<Value*>& byId, Value value) {
     const int id = value.id();
     if (id < 0) {
-        throw std::logic_error { "StackMachine::put: Value has no intern id" };
+        internalError("StackMachine::put: Value has no intern id");
     }
     if (id >= static_cast<int>(byId.size())) {
         byId.resize(static_cast<std::size_t>(id) + 1, nullptr);
     }
     if (byId[static_cast<std::size_t>(id)] != nullptr) {
-        throw std::logic_error { "StackMachine::put: duplicate intern id `" + strings_.get(id) + "`" };
+        internalError("StackMachine::put: duplicate intern id `" + strings_.get(id) + "`");
     }
     storage.push_back(std::move(value));
     byId[static_cast<std::size_t>(id)] = &storage.back();
@@ -525,7 +522,7 @@ Register& StackMachine::get64BitRegisterExcluding(const std::vector<Register*>& 
             return *reg;
         }
     }
-    throw std::runtime_error{"unable to get a free register"};
+    internalError("unable to get a free register");
 }
 
 Register& StackMachine::getCounterRegister() {
@@ -567,8 +564,8 @@ Value& StackMachine::resolve(int id) {
     if (id >= 0 && id < static_cast<int>(globalById.size()) && globalById[static_cast<std::size_t>(id)] != nullptr) {
         return *globalById[static_cast<std::size_t>(id)];
     }
-    throw std::runtime_error { "codegen: no storage for symbol `" + text(id)
-            + "` (function designator or missing global?)" };
+    internalError("no storage for symbol `" + text(id)
+            + "` (function designator or missing global?)");
 }
 
 } // namespace codegen

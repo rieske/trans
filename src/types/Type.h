@@ -123,21 +123,23 @@ public:
 
     bool isVoid() const;
     bool isPrimitive() const;
-    // Throws std::domain_error unless kind is Primitive.
+    // Internal compiler error unless kind is Primitive.
     Primitive getPrimitive() const;
     bool isPointer() const;
     bool isFunction() const;
-    // Throws std::domain_error unless kind is Function.
+    // Internal compiler error unless kind is Function.
     const Function& getFunction() const;
     bool isArray() const;
     bool isIncompleteArray() const;
     bool isVariableArray() const;
     std::shared_ptr<VlaBound> vlaBound() const;
+    // Internal compiler error unless kind is Array.
     Type getElementType() const;
     int getArraySize() const;
-    // Parameter arrays decay to pointer-to-element.
+    // Parameter arrays decay to pointer-to-element. Internal compiler error unless Array.
     Type decayArray() const;
     // Storage stride of one element (0 allowed for empty complete records).
+    // Internal compiler error unless Array.
     int getElementStride() const;
 
     // Struct or union (has member layout at this type; not through a pointer).
@@ -170,6 +172,7 @@ public:
     // Add top-level const/volatile onto a copy. restrict is ignored.
     Type withQualifiers(const std::vector<Qualifier>& qualifiers) const;
 
+    // Internal compiler error unless kind is Pointer.
     Type dereference() const;
     // Type of *p or a[i]. Empty if this is not a pointer or array.
     std::optional<Type> indexElement() const;

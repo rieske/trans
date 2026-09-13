@@ -1,7 +1,7 @@
 #include "Cfg.h"
+#include "codegen/InternalError.h"
 #include "codegen/IrBuilders.h"
 
-#include <stdexcept>
 #include <unordered_map>
 #include <unordered_set>
 
@@ -186,7 +186,7 @@ Cfg eliminateJumpToNext(Cfg cfg) {
 void validateCfg(const Cfg& cfg) {
     for (std::size_t i = 1; i < cfg.size(); ++i) {
         if (endsWithUnconditionalTerminator(cfg[i - 1]) && cfg[i].label == kNoSymbol) {
-            throw std::logic_error { "procedure body is not implicit blocks" };
+            internalError("procedure body is not implicit blocks");
         }
     }
 }

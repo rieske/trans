@@ -1,6 +1,5 @@
 #include "SymbolRefs.h"
-
-#include <stdexcept>
+#include "codegen/InternalError.h"
 
 namespace codegen {
 
@@ -113,7 +112,7 @@ void collectSymbolRefs(const Instruction& instruction, SymbolRefs& refs) {
         refs.addUse(instruction.arg1);
         return;
     }
-    throw std::logic_error { "collectSymbolRefs: unhandled Op" };
+    internalError("collectSymbolRefs: unhandled Op");
 }
 
 } // namespace codegen

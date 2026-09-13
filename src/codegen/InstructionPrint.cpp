@@ -1,7 +1,7 @@
 #include "Instruction.h"
+#include "codegen/InternalError.h"
 
 #include <sstream>
-#include <stdexcept>
 #include <string_view>
 
 namespace codegen {
@@ -40,7 +40,7 @@ void printJump(std::ostream& stream, const Instruction& instruction, const IrStr
         stream << "GOTO ";
         break;
     default:
-        throw std::logic_error { "printJump: unhandled JumpCondition" };
+        internalError("printJump: unhandled JumpCondition");
     }
     stream << name(strings, instruction.arg0) << "\n";
 }
@@ -239,7 +239,7 @@ void print(std::ostream& stream, const Instruction& instruction, const IrStringT
                << name(strings, instruction.result) << "\n";
         return;
     }
-    throw std::logic_error { "print(Instruction): unhandled Op" };
+    internalError("print(Instruction): unhandled Op");
 }
 
 void print(std::ostream& stream, const Procedure& procedure, const IrStringTable& strings) {

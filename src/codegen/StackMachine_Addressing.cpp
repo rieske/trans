@@ -1,8 +1,7 @@
 #include "StackMachine.h"
 
+#include "codegen/InternalError.h"
 #include "types/ObjectAbi.h"
-
-#include <stdexcept>
 
 namespace codegen {
 
@@ -91,7 +90,7 @@ void StackMachine::pointerDifference(int leftName, int rightName, int elementSiz
         }
     }
     if (!divisor) {
-        throw std::runtime_error { "no free register for pointer difference divisor" };
+        internalError("no free register for pointer difference divisor");
     }
     assembly << instructionSet->mov(std::to_string(elementSizeBytes), *divisor);
     assembly << instructionSet->idiv(*divisor);

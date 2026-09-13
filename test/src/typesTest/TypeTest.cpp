@@ -375,8 +375,17 @@ TEST(Type, pointerToArrayIsPointerNotArray) {
 
 TEST(Type, getElementTypeOnNonArrayThrows) {
     using namespace type;
-    EXPECT_THROW(signedInteger().getElementType(), std::domain_error);
-    EXPECT_THROW(signedInteger().getArraySize(), std::domain_error);
+    EXPECT_THROW(signedInteger().getElementType(), std::logic_error);
+    EXPECT_THROW(signedInteger().getArraySize(), std::logic_error);
+}
+
+TEST(Type, wrongKindAccessorsAreInternalErrors) {
+    using namespace type;
+    auto ice = testing::ThrowsMessage<std::logic_error>(
+            testing::HasSubstr("internal compiler error"));
+    EXPECT_THAT([] { voidType().getPrimitive(); }, ice);
+    EXPECT_THAT([] { signedInteger().getFunction(); }, ice);
+    EXPECT_THAT([] { signedInteger().dereference(); }, ice);
 }
 
 TEST(Type, memberCopySharesPayload) {

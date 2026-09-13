@@ -1,9 +1,9 @@
 #include "InstructionSet.h"
+#include "codegen/InternalError.h"
 
 #include "util/ImmediateFormat.h"
 
 #include <sstream>
-#include <stdexcept>
 #include <type_traits>
 #include <variant>
 
@@ -64,7 +64,7 @@ std::string InstructionSet::dataOperandText(const symbols::StaticInitValue& valu
             }
             return symbol + std::to_string(arm.addend);
         } else {
-            throw std::logic_error { "dataOperandText expects a storage word or address" };
+            internalError("dataOperandText expects a storage word or address");
         }
     }, value);
 }

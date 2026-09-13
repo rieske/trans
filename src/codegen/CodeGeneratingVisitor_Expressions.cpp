@@ -3,7 +3,6 @@
 #include "codegen/InternalError.h"
 #include "codegen/IrBuilders.h"
 
-#include <cassert>
 #include <stdexcept>
 
 #include "symbols/AddressPlan.h"
@@ -86,14 +85,18 @@ void CodeGeneratingVisitor::visit(ast::MemberAccess& memberAccess) {
 
 void CodeGeneratingVisitor::visit(ast::IdentifierExpression& identifier) {
     if (const auto* label = identifier.rodataLabel(store_)) {
-        assert(identifier.hasResultSymbol(store_) && "__func__ needs Result temp");
+        if (!identifier.hasResultSymbol(store_)) {
+            internalError("__func__ needs Result temp");
+        }
         emit(ir::assignLabelAddress(
                 id(*label), id(*identifier.getResultSymbol(store_))));
         return;
     }
     type::IntegerConstant ice;
     if (identifier.evaluateConstant(ice)) {
-        assert(identifier.hasResultSymbol(store_) && "folded enumerator needs Result temp");
+        if (!identifier.hasResultSymbol(store_)) {
+            internalError("folded enumerator needs Result temp");
+        }
         emitIntegerConstant(ice, id(*identifier.getResultSymbol(store_)));
         return;
     }
@@ -101,7 +104,9 @@ void CodeGeneratingVisitor::visit(ast::IdentifierExpression& identifier) {
     if (const auto* plan = store_.addressPlan(&identifier)) {
         if (const auto* d = symbols::get_if<symbols::FunctionDesignatorPlan>(plan)) {
             if (d->functionName) {
-                assert(identifier.hasResultSymbol(store_) && "designator Result required for FunctionAddress");
+                if (!identifier.hasResultSymbol(store_)) {
+                    internalError("designator Result required for FunctionAddress");
+                }
                 emit(ir::functionAddress(
                         id(*d->functionName), id(*identifier.getResultSymbol(store_))));
                 return;
@@ -399,7 +404,7 @@ void CodeGeneratingVisitor::emitAdditive(type::ArithmeticOp op, const type::Type
         return;
     }
     case type::PointerArithmeticForm::Invalid:
-        throw std::logic_error("pointer arithmetic Invalid should not reach codegen");
+        internalError("pointer arithmetic Invalid should not reach codegen");
     }
     switch (op) {
     case type::ArithmeticOp::Add:
@@ -411,7 +416,7 @@ void CodeGeneratingVisitor::emitAdditive(type::ArithmeticOp op, const type::Type
     case type::ArithmeticOp::Mul:
     case type::ArithmeticOp::Div:
     case type::ArithmeticOp::Mod:
-        throw std::logic_error("emitAdditive: mul/div op");
+        internalError("emitAdditive: mul/div op");
     }
 }
 

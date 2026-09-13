@@ -2,9 +2,8 @@
 
 #include "InstructionSet.h"
 #include "MemoryOperand.h"
+#include "codegen/InternalError.h"
 #include "types/SysVClass.h"
-
-#include <stdexcept>
 
 namespace codegen {
 namespace {
@@ -20,7 +19,7 @@ int complexPartBytes(const Value& v) {
     if (cls.count == 1 && type::sysv::isSse(cls.eightbytes[0])) {
         return 4;
     }
-    throw std::runtime_error { "complexPartBytes: value is not a classified complex" };
+    internalError("complexPartBytes: value is not a classified complex");
 }
 
 int realX87Bytes(const Value& v) {
@@ -37,10 +36,10 @@ int realX87Bytes(const Value& v) {
         if (isSseFloat32(v)) {
             return 4;
         }
-        throw std::runtime_error { "realX87Bytes: unknown floating width" };
+        internalError("realX87Bytes: unknown floating width");
     }
     if (v.getType() != Type::INTEGRAL) {
-        throw std::runtime_error { "realX87Bytes: not a numeric value" };
+        internalError("realX87Bytes: not a numeric value");
     }
     return v.getSizeInBytes() >= 8 ? 8 : 4;
 }

@@ -1,8 +1,7 @@
 #include "StackMachine.h"
 
-#include <stdexcept>
-
 #include "InstructionSet.h"
+#include "codegen/InternalError.h"
 #include "types/ObjectAbi.h"
 
 namespace codegen {
@@ -70,7 +69,7 @@ void StackMachine::mul(int leftOperandName, int rightOperandName, int resultName
     }
 
     if (result.getType() != Type::INTEGRAL) {
-        throw std::runtime_error{"multiplication of non integers is not implemented"};
+        internalError("multiplication of non integers is not implemented");
     }
 
     Register& rax = registers->getMultiplicationRegister();
@@ -114,7 +113,7 @@ void StackMachine::div(int leftOperandName, int rightOperandName, int resultName
     }
 
     if (result.getType() != Type::INTEGRAL) {
-        throw std::runtime_error{"division of non integer types is not implemented"};
+        internalError("division of non integer types is not implemented");
     }
 
     emitIntegerDivide(leftOperand, rightOperand, signedDiv);
@@ -136,7 +135,7 @@ void StackMachine::mod(int leftOperandName, int rightOperandName, int resultName
     Value& result = resolve(resultName);
 
     if (result.getType() != Type::INTEGRAL) {
-        throw std::runtime_error{"modular division of non integer types is not implemented"};
+        internalError("modular division of non integer types is not implemented");
     }
 
     emitIntegerDivide(leftOperand, rightOperand, signedDiv);

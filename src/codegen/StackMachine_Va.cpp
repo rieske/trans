@@ -1,9 +1,9 @@
 #include "StackMachine.h"
+#include "codegen/InternalError.h"
 
 #include "SysVCallConv.h"
 #include "types/ObjectAbi.h"
 
-#include <stdexcept>
 #include <string>
 
 namespace codegen {
@@ -54,7 +54,7 @@ void StackMachine::loadVaListTagPointer(int apName, Register& dest) {
 
 void StackMachine::vaStart(int apName, int lastStorageName) {
     if (!variadicFrame) {
-        throw std::logic_error { "va_start in non-variadic procedure" };
+        internalError("va_start in non-variadic procedure");
     }
     const VariadicFrame& frame = *variadicFrame;
     if (lastStorageName < 0) {
