@@ -167,6 +167,109 @@ std::optional<unsigned long long> evalUnary(Op op, unsigned long long operand, i
     }
 }
 
+std::optional<unsigned long long> knownBits(
+        const std::unordered_map<int, unsigned long long>& known, int id) {
+    const auto it = known.find(id);
+    if (it == known.end()) {
+        return std::nullopt;
+    }
+    return it->second;
+}
+
+std::optional<Instruction> tryAlgebraicIdentity(const Instruction& inst,
+        const std::unordered_map<int, unsigned long long>& known, IrStringTable& strings) {
+    const auto isZero = [&](int id) {
+        const auto bits = knownBits(known, id);
+        return bits && *bits == 0;
+    };
+    const auto isOne = [&](int id) {
+        const auto bits = knownBits(known, id);
+        return bits && *bits == 1;
+    };
+    const auto same = inst.arg0 == inst.arg1;
+    const auto asAssign = [&](int src) { return ir::assign(src, inst.result); };
+    const auto asZero = [&] {
+        return ir::assignConstant(strings.intern(util::wordImmediate(0)), inst.result);
+    };
+    switch (inst.op) {
+    case Op::Add:
+        if (isZero(inst.arg1)) {
+            return asAssign(inst.arg0);
+        }
+        if (isZero(inst.arg0)) {
+            return asAssign(inst.arg1);
+        }
+        return std::nullopt;
+    case Op::Sub:
+        if (isZero(inst.arg1)) {
+            return asAssign(inst.arg0);
+        }
+        if (same) {
+            return asZero();
+        }
+        return std::nullopt;
+    case Op::Mul:
+        if (isZero(inst.arg0) || isZero(inst.arg1)) {
+            return asZero();
+        }
+        if (isOne(inst.arg1)) {
+            return asAssign(inst.arg0);
+        }
+        if (isOne(inst.arg0)) {
+            return asAssign(inst.arg1);
+        }
+        return std::nullopt;
+    case Op::Div:
+        if (isOne(inst.arg1)) {
+            return asAssign(inst.arg0);
+        }
+        return std::nullopt;
+    case Op::Mod:
+        if (isOne(inst.arg1)) {
+            return asZero();
+        }
+        return std::nullopt;
+    case Op::And:
+        if (same) {
+            return asAssign(inst.arg0);
+        }
+        if (isZero(inst.arg0) || isZero(inst.arg1)) {
+            return asZero();
+        }
+        return std::nullopt;
+    case Op::Or:
+        if (same) {
+            return asAssign(inst.arg0);
+        }
+        if (isZero(inst.arg1)) {
+            return asAssign(inst.arg0);
+        }
+        if (isZero(inst.arg0)) {
+            return asAssign(inst.arg1);
+        }
+        return std::nullopt;
+    case Op::Xor:
+        if (same) {
+            return asZero();
+        }
+        if (isZero(inst.arg1)) {
+            return asAssign(inst.arg0);
+        }
+        if (isZero(inst.arg0)) {
+            return asAssign(inst.arg1);
+        }
+        return std::nullopt;
+    case Op::Shl:
+    case Op::Shr:
+        if (isZero(inst.arg1)) {
+            return asAssign(inst.arg0);
+        }
+        return std::nullopt;
+    default:
+        return std::nullopt;
+    }
+}
+
 std::optional<Instruction> tryFold(const Instruction& inst,
         const std::unordered_map<int, unsigned long long>& known, const Procedure& procedure,
         IrStringTable& strings) {
@@ -194,19 +297,17 @@ std::optional<Instruction> tryFold(const Instruction& inst,
     case Op::Shr: {
         const auto left = known.find(inst.arg0);
         const auto right = known.find(inst.arg1);
-        if (left == known.end() || right == known.end()) {
-            return std::nullopt;
+        if (left != known.end() && right != known.end()) {
+            const Value* lhs = findValue(procedure, inst.arg0);
+            const Value* rhs = findValue(procedure, inst.arg1);
+            if (isFoldableInteger(lhs) && isFoldableInteger(rhs)) {
+                const auto bits = evalBinary(inst.op, left->second, right->second, destBytes, inst.imm);
+                if (bits) {
+                    return folded(*bits);
+                }
+            }
         }
-        const Value* lhs = findValue(procedure, inst.arg0);
-        const Value* rhs = findValue(procedure, inst.arg1);
-        if (!isFoldableInteger(lhs) || !isFoldableInteger(rhs)) {
-            return std::nullopt;
-        }
-        const auto bits = evalBinary(inst.op, left->second, right->second, destBytes, inst.imm);
-        if (!bits) {
-            return std::nullopt;
-        }
-        return folded(*bits);
+        return tryAlgebraicIdentity(inst, known, strings);
     }
     case Op::UnaryMinus:
     case Op::UnaryNot:

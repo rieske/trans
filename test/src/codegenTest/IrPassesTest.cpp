@@ -390,6 +390,93 @@ TEST(IrPasses, foldConstants_skipsMixedWithNonConst) {
             "ENDPROC f\n"));
 }
 
+TEST(IrPasses, foldConstants_addZeroBecomesAssign) {
+    IntermediateRepresentation ir;
+    IrN n { ir.strings };
+    ir.procedures.push_back(makeProc(ir.strings, "f", {
+            ir::assignConstant(n("0"), n("z")),
+            ir::add(n("x"), n("z"), n("t")),
+            ir::ret(n("t")),
+    }, ints(ir.strings, { "z", "x", "t" })));
+
+    foldConstants(ir.procedures.front(), ir.strings);
+
+    EXPECT_THAT(toString(ir), StrEq(
+            "PROC f\n"
+            "\tz := 0\n"
+            "\tt := x\n"
+            "\tRETURN t\n"
+            "ENDPROC f\n"));
+}
+
+TEST(IrPasses, foldConstants_mulOneBecomesAssign) {
+    IntermediateRepresentation ir;
+    IrN n { ir.strings };
+    ir.procedures.push_back(makeProc(ir.strings, "f", {
+            ir::assignConstant(n("1"), n("one")),
+            ir::mul(n("one"), n("x"), n("t")),
+            ir::ret(n("t")),
+    }, ints(ir.strings, { "one", "x", "t" })));
+
+    foldConstants(ir.procedures.front(), ir.strings);
+
+    EXPECT_THAT(toString(ir), HasSubstr("\tt := x\n"));
+}
+
+TEST(IrPasses, foldConstants_mulZeroBecomesConstant) {
+    IntermediateRepresentation ir;
+    IrN n { ir.strings };
+    ir.procedures.push_back(makeProc(ir.strings, "f", {
+            ir::assignConstant(n("0"), n("z")),
+            ir::mul(n("x"), n("z"), n("t")),
+            ir::ret(n("t")),
+    }, ints(ir.strings, { "z", "x", "t" })));
+
+    foldConstants(ir.procedures.front(), ir.strings);
+
+    EXPECT_THAT(toString(ir), HasSubstr("\tt := 0\n"));
+}
+
+TEST(IrPasses, foldConstants_andSelfBecomesAssign) {
+    IntermediateRepresentation ir;
+    IrN n { ir.strings };
+    ir.procedures.push_back(makeProc(ir.strings, "f", {
+            ir::andOp(n("x"), n("x"), n("t")),
+            ir::ret(n("t")),
+    }, ints(ir.strings, { "x", "t" })));
+
+    foldConstants(ir.procedures.front(), ir.strings);
+
+    EXPECT_THAT(toString(ir), HasSubstr("\tt := x\n"));
+}
+
+TEST(IrPasses, foldConstants_xorSelfBecomesZero) {
+    IntermediateRepresentation ir;
+    IrN n { ir.strings };
+    ir.procedures.push_back(makeProc(ir.strings, "f", {
+            ir::xorOp(n("x"), n("x"), n("t")),
+            ir::ret(n("t")),
+    }, ints(ir.strings, { "x", "t" })));
+
+    foldConstants(ir.procedures.front(), ir.strings);
+
+    EXPECT_THAT(toString(ir), HasSubstr("\tt := 0\n"));
+}
+
+TEST(IrPasses, foldConstants_shiftZeroBecomesAssign) {
+    IntermediateRepresentation ir;
+    IrN n { ir.strings };
+    ir.procedures.push_back(makeProc(ir.strings, "f", {
+            ir::assignConstant(n("0"), n("z")),
+            ir::shl(n("x"), n("z"), n("t")),
+            ir::ret(n("t")),
+    }, ints(ir.strings, { "z", "x", "t" })));
+
+    foldConstants(ir.procedures.front(), ir.strings);
+
+    EXPECT_THAT(toString(ir), HasSubstr("\tt := x\n"));
+}
+
 TEST(IrPasses, foldConstants_unaryMinusAndNot) {
     IntermediateRepresentation ir;
     IrN n { ir.strings };
