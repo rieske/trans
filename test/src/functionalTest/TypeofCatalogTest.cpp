@@ -208,6 +208,31 @@ TEST(Compiler, typeofUnknownIdentifierIsError) {
     )prg"};
     program.compile();
     program.assertCompilationErrors("cannot determine type of typeof operand");
+    EXPECT_THAT(program.getCompilationErrors(),
+            HasSubstr(":3: error: cannot determine type of typeof operand"));
+}
+
+TEST(Compiler, typedefTypeofUnknownIdentifierIsError) {
+    SourceProgram program{R"prg(
+        typedef typeof(nope) T;
+        int main() { return 0; }
+    )prg"};
+    program.compile();
+    program.assertCompilationErrors("cannot determine type of typeof operand");
+    EXPECT_THAT(program.getCompilationErrors(),
+            HasSubstr(":2: error: cannot determine type of typeof operand"));
+}
+
+TEST(Compiler, typeofConstOnlyIsErrorWithLocation) {
+    SourceProgram program{R"prg(
+        int main() {
+            return (int)sizeof(typeof(const));
+        }
+    )prg"};
+    program.compile();
+    program.assertCompilationErrors("cannot determine type of spec-qualifier-list");
+    EXPECT_THAT(program.getCompilationErrors(),
+            Not(HasSubstr(":0: error: cannot determine type of spec-qualifier-list")));
 }
 
 } // namespace

@@ -476,13 +476,6 @@ bool SemanticAnalysisVisitor::checkAssign(const type::Type& dest, const type::Ty
     return false;
 }
 
-bool SemanticAnalysisVisitor::checkOperandTypes(const type::Type& left, const type::Type& right,
-        const translation_unit::Context& context)
-{
-    // Historical product gate: accept when right can accept left (type-only).
-    return checkAssign(right, left, context, nullptr);
-}
-
 void SemanticAnalysisVisitor::declareEnumerators(const ast::TypeSpecifier& specifier) {
     for (const auto& enumerator : specifier.enumerators()) {
         symbolTable.insertEnumerator(enumerator.name, enumerator.value);

@@ -158,12 +158,12 @@ void typeofExpression(AbstractSyntaxTreeBuilderContext& context) {
     context.popTerminal(); // )
     auto expr = context.popExpression();
     context.popTerminal(); // (
-    context.popTerminal(); // typeof
+    auto typeofKw = context.popTerminal();
     if (auto parsed = context.environment().typeOf(*expr)) {
-        context.pushTypeSpecifier(TypeSpecifier { *parsed, "" });
+        context.pushTypeSpecifier(TypeSpecifier { *parsed, "", typeofKw.context });
         return;
     }
-    context.pushTypeSpecifier(TypeSpecifier { std::move(expr) });
+    context.pushTypeSpecifier(TypeSpecifier { std::move(expr), typeofKw.context });
 }
 
 void genericAssociationTyped(AbstractSyntaxTreeBuilderContext& context) {

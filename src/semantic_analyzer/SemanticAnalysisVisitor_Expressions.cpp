@@ -547,7 +547,10 @@ void SemanticAnalysisVisitor::visit(ast::ComparisonExpression& expression) {
     if (!pointerCompare) {
         rejectFunctionValue(leftRaw, expression.getContext());
         rejectFunctionValue(rightRaw, expression.getContext());
-        checkOperandTypes(leftRaw, rightRaw, expression.getContext());
+        if (!type::isArithmeticType(left) || !type::isArithmeticType(right)) {
+            semanticError("invalid operands to relational operator", expression.getContext());
+            return;
+        }
         const type::Type uac = applyUsualArithmeticConversions(
                 *expression.getLeftOperand(), *expression.getRightOperand(),
                 symbolTable, annotations());
@@ -570,18 +573,21 @@ void SemanticAnalysisVisitor::visit(ast::BitwiseExpression& expression) {
     if (!expression.hasLeftOperandSymbol(annotations()) || !expression.hasRightOperandSymbol(annotations())) {
         return;
     }
-    const type::Type left = expression.leftOperandSymbol(annotations())->getType();
-    const type::Type right = expression.rightOperandSymbol(annotations())->getType();
+    decayArrayValue(*expression.getLeftOperand(), symbolTable, annotations());
+    decayArrayValue(*expression.getRightOperand(), symbolTable, annotations());
+    const type::Type left = type::afterLvalueConversion(
+            expression.leftOperandSymbol(annotations())->getType());
+    const type::Type right = type::afterLvalueConversion(
+            expression.rightOperandSymbol(annotations())->getType());
     rejectFunctionValue(left, expression.getContext());
     rejectFunctionValue(right, expression.getContext());
-    checkOperandTypes(left, right, expression.getContext());
+    if (!type::isIntegral(left) || !type::isIntegral(right)) {
+        semanticError("invalid operands to bitwise operator", expression.getContext());
+        return;
+    }
     const type::Type resultType = applyUsualArithmeticConversions(
             *expression.getLeftOperand(), *expression.getRightOperand(),
             symbolTable, annotations());
-    if (type::isComplex(resultType)) {
-        semanticError("invalid operands to bitwise operator (complex type)", expression.getContext());
-        return;
-    }
     expression.setType(resultType);
     expression.setTypeAndResult(annotations(), symbolTable.createTemporarySymbol(resultType));
 }

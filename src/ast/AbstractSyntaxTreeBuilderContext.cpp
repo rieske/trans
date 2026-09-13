@@ -66,7 +66,9 @@ void AbstractSyntaxTreeBuilderContext::pushTerminal(TerminalSymbol terminal) {
 }
 
 TerminalSymbol AbstractSyntaxTreeBuilderContext::popTerminal() {
-    return popFrom(terminalSymbols, "terminal");
+    TerminalSymbol terminal = popFrom(terminalSymbols, "terminal");
+    lastTerminalContext_ = terminal.context;
+    return terminal;
 }
 
 void AbstractSyntaxTreeBuilderContext::pushTypeSpecifier(TypeSpecifier typeSpecifier) {

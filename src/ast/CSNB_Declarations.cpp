@@ -121,7 +121,8 @@ void initializedDeclaration(AbstractSyntaxTreeBuilderContext& context) {
     auto initializedDeclarators = context.popInitializedDeclarators();
     if (!declarationSpecifiers.resolveTypeofAtParseTime(context.environment())
             && declarationSpecifiers.isTypedef()) {
-        context.error({ "", 0 }, "cannot determine type of typeof operand");
+        context.error(declarationSpecifiers.getTypeSpecifiers().front().getContext(),
+                "cannot determine type of typeof operand");
         return;
     }
     for (const auto& declarator : initializedDeclarators) {
