@@ -3,13 +3,12 @@
 
 #include "DeclarationSpecifiers.h"
 
-#include <functional>
-
 namespace ast {
 
 class AbstractSyntaxTreeBuilderContext;
 
-std::function<void(AbstractSyntaxTreeBuilderContext&)> notImplementedYet(const char* feature);
+void knrIdentifierParameterLists(AbstractSyntaxTreeBuilderContext& context);
+void knrStyleFunctionDefinitions(AbstractSyntaxTreeBuilderContext& context);
 
 void abstractArrayDeclarator(AbstractSyntaxTreeBuilderContext& context);
 void abstractArrayDeclaratorQualified(AbstractSyntaxTreeBuilderContext& context);

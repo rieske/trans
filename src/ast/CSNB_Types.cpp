@@ -2,19 +2,17 @@
 
 #include "AbstractSyntaxTreeBuilderContext.h"
 
-#include <string>
-
 namespace ast {
 
 void doNothing(AbstractSyntaxTreeBuilderContext&) {
 }
 
-// Grammar covers more of C than the AST builder implements. Register explicit stubs so
-// unsupported constructs fail with a clear message instead of "no AST creator defined".
-std::function<void(AbstractSyntaxTreeBuilderContext&)> notImplementedYet(const char* feature) {
-    return [feature](AbstractSyntaxTreeBuilderContext& context) {
-        context.error({ "", 0 }, std::string(feature) + " is not implemented yet");
-    };
+void knrIdentifierParameterLists(AbstractSyntaxTreeBuilderContext& context) {
+    context.error({ "", 0 }, "K&R identifier parameter lists is not implemented yet");
+}
+
+void knrStyleFunctionDefinitions(AbstractSyntaxTreeBuilderContext& context) {
+    context.error({ "", 0 }, "K&R style function definitions is not implemented yet");
 }
 
 void shortType(AbstractSyntaxTreeBuilderContext& context) {
