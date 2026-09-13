@@ -55,6 +55,7 @@ LrFinish runLrParse(const ParsingTable& parsingTable, TokenStream& tokenStream,
     const int lbracketId = grammar->trySymbolId("[").value_or(-2);
     const int rparenId = grammar->trySymbolId(")").value_or(-2);
     const int rbracketId = grammar->trySymbolId("]").value_or(-2);
+    const int idId = grammar->trySymbolId("id").value_or(-2);
     for (;;) {
         if (syntaxTreeBuilder.aborted()) {
             return LrFinish::Complete;
@@ -63,7 +64,8 @@ LrFinish runLrParse(const ParsingTable& parsingTable, TokenStream& tokenStream,
         const parse_state state = parsingStack.back();
         const ParsingTable::ActionCell cell = parsingTable.cell(state, current.symbolId);
         const bool live = !stop || stop->live == nullptr || *stop->live;
-        if (extensions && live) {
+        if (extensions && live
+                && (current.symbolId == lparenId || current.symbolId == idId)) {
             if (const auto nextState = extensions->tryGoto(state, tokenStream, parsingTable)) {
                 if (extensions->accept(tokenStream, parsingTable, syntaxTreeBuilder)) {
                     parsingStack.push_back(*nextState);
