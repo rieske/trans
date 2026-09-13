@@ -1,6 +1,6 @@
 #include "GnuExtensions.h"
 
-#include "AbstractSyntaxTreeBuilder.h"
+#include "SyntaxTreeBuilder.h"
 #include "Block.h"
 #include "Constant.h"
 #include "ConstantExpression.h"
@@ -29,7 +29,7 @@ namespace {
 
 // Exhaustive: new OffsetofStatus values fail to compile under -Wswitch-enum.
 bool failOffsetof(const translation_unit::Context& context, type::OffsetofStatus status,
-        const std::string& member, AbstractSyntaxTreeBuilder& builder) {
+        const std::string& member, SyntaxTreeBuilder& builder) {
     switch (status) {
     case type::OffsetofStatus::Incomplete:
         builder.sink().error(context, "offsetof on incomplete type");
@@ -47,7 +47,7 @@ bool failOffsetof(const translation_unit::Context& context, type::OffsetofStatus
     return false;
 }
 
-bool failGnu(AbstractSyntaxTreeBuilder& builder) {
+bool failGnu(SyntaxTreeBuilder& builder) {
     if (!builder.failed()) {
         builder.err();
     }
@@ -96,20 +96,19 @@ std::optional<std::size_t> GnuExtensions::tryGoto(std::size_t state, parser::Tok
 }
 
 bool GnuExtensions::accept(parser::TokenStream& tokenStream, const parser::ParsingTable& parsingTable,
-        parser::SyntaxTreeBuilder& syntaxTreeBuilder) {
+        SyntaxTreeBuilder& syntaxTreeBuilder) {
     cacheGrammarIds(*parsingTable.getGrammar());
-    auto& builder = static_cast<AbstractSyntaxTreeBuilder&>(syntaxTreeBuilder);
     const scanner::Token& current = tokenStream.getCurrentToken();
     if (current.symbolId == lparenId_) {
-        return acceptStatementPrimary(tokenStream, parsingTable, builder);
+        return acceptStatementPrimary(tokenStream, parsingTable, syntaxTreeBuilder);
     }
     if (current.symbolId == idId_ && isInt128Lexeme(current.lexeme)) {
-        return acceptInt128(tokenStream, builder);
+        return acceptInt128(tokenStream, syntaxTreeBuilder);
     }
     if (current.symbolId == idId_) {
-        return acceptVaArg(tokenStream, parsingTable, builder)
-                || acceptTypesCompatibleP(tokenStream, parsingTable, builder)
-                || acceptOffsetof(tokenStream, parsingTable, builder);
+        return acceptVaArg(tokenStream, parsingTable, syntaxTreeBuilder)
+                || acceptTypesCompatibleP(tokenStream, parsingTable, syntaxTreeBuilder)
+                || acceptOffsetof(tokenStream, parsingTable, syntaxTreeBuilder);
     }
     return false;
 }
@@ -118,7 +117,7 @@ bool GnuExtensions::isTypeExtensionToken(const scanner::Token& token) const {
     return token.id == "id" && isInt128Lexeme(token.lexeme);
 }
 
-bool GnuExtensions::consumeToStop(AbstractSyntaxTreeBuilder& parent, AbstractSyntaxTreeBuilder& nested,
+bool GnuExtensions::consumeToStop(SyntaxTreeBuilder& parent, SyntaxTreeBuilder& nested,
         parser::TokenStream& outer, const parser::ParsingTable& table, const scanner::Token* prefix,
         std::size_t prefixCount, int stopSymbol, const std::string& stopLookahead,
         bool endAfterMatchedBrace, const std::string& presentStopAs) {
@@ -178,7 +177,7 @@ bool GnuExtensions::consumeToStop(AbstractSyntaxTreeBuilder& parent, AbstractSyn
 }
 
 std::unique_ptr<Block> GnuExtensions::parseCompoundBlock(parser::TokenStream& outer,
-        const parser::ParsingTable& table, AbstractSyntaxTreeBuilder& parent) {
+        const parser::ParsingTable& table, SyntaxTreeBuilder& parent) {
     if (outer.getCurrentToken().id != "{") {
         return nullptr;
     }
@@ -195,7 +194,7 @@ std::unique_ptr<Block> GnuExtensions::parseCompoundBlock(parser::TokenStream& ou
             { "void", "void", ctx },
             { ")", ")", ctx },
     };
-    AbstractSyntaxTreeBuilder nested { grammar, parent };
+    SyntaxTreeBuilder nested { grammar, parent };
     if (!consumeToStop(parent, nested, outer, table, prefix, sizeof prefix / sizeof prefix[0],
             *compound, scanner::Token::END, true)) {
         return nullptr;
@@ -204,7 +203,7 @@ std::unique_ptr<Block> GnuExtensions::parseCompoundBlock(parser::TokenStream& ou
 }
 
 std::unique_ptr<Expression> GnuExtensions::parseAssignmentExpression(parser::TokenStream& outer,
-        const parser::ParsingTable& table, AbstractSyntaxTreeBuilder& parent) {
+        const parser::ParsingTable& table, SyntaxTreeBuilder& parent) {
     const parser::Grammar* grammar = table.getGrammar();
     const auto assignment = grammar->trySymbolId("<assignment_exp>");
     if (!assignment) {
@@ -216,7 +215,7 @@ std::unique_ptr<Expression> GnuExtensions::parseAssignmentExpression(parser::Tok
             { "id", "__gnu_x", ctx },
             { "=", "=", ctx },
     };
-    AbstractSyntaxTreeBuilder nested { grammar, parent };
+    SyntaxTreeBuilder nested { grammar, parent };
     if (!consumeToStop(parent, nested, outer, table, prefix, sizeof prefix / sizeof prefix[0],
             *assignment, ",", false)) {
         return nullptr;
@@ -225,7 +224,7 @@ std::unique_ptr<Expression> GnuExtensions::parseAssignmentExpression(parser::Tok
 }
 
 std::optional<TypeSpecifier> GnuExtensions::parseTypeName(parser::TokenStream& outer,
-        const parser::ParsingTable& table, AbstractSyntaxTreeBuilder& parent,
+        const parser::ParsingTable& table, SyntaxTreeBuilder& parent,
         const std::string& stopLookahead) {
     const parser::Grammar* grammar = table.getGrammar();
     const auto typeName = grammar->trySymbolId("<type_name>");
@@ -240,7 +239,7 @@ std::optional<TypeSpecifier> GnuExtensions::parseTypeName(parser::TokenStream& o
             { "sizeof", "sizeof", ctx },
             { "(", "(", ctx },
     };
-    AbstractSyntaxTreeBuilder nested { grammar, parent };
+    SyntaxTreeBuilder nested { grammar, parent };
     if (!consumeToStop(parent, nested, outer, table, prefix, sizeof prefix / sizeof prefix[0],
             *typeName, stopLookahead, false, ")")) {
         return std::nullopt;
@@ -249,7 +248,7 @@ std::optional<TypeSpecifier> GnuExtensions::parseTypeName(parser::TokenStream& o
 }
 
 bool GnuExtensions::acceptStatementPrimary(parser::TokenStream& tokenStream,
-        const parser::ParsingTable& parsingTable, AbstractSyntaxTreeBuilder& builder) {
+        const parser::ParsingTable& parsingTable, SyntaxTreeBuilder& builder) {
     if (tokenStream.getCurrentToken().id != "(" || tokenStream.peek().id != "{") {
         return false;
     }
@@ -267,7 +266,7 @@ bool GnuExtensions::acceptStatementPrimary(parser::TokenStream& tokenStream,
     return true;
 }
 
-bool GnuExtensions::acceptInt128(parser::TokenStream& tokenStream, AbstractSyntaxTreeBuilder& builder) {
+bool GnuExtensions::acceptInt128(parser::TokenStream& tokenStream, SyntaxTreeBuilder& builder) {
     const scanner::Token current = tokenStream.getCurrentToken();
     const bool unsigned128 = current.lexeme == "__uint128_t";
     tokenStream.nextToken();
@@ -281,7 +280,7 @@ bool GnuExtensions::acceptInt128(parser::TokenStream& tokenStream, AbstractSynta
 }
 
 bool GnuExtensions::acceptVaArg(parser::TokenStream& tokenStream,
-        const parser::ParsingTable& parsingTable, AbstractSyntaxTreeBuilder& builder) {
+        const parser::ParsingTable& parsingTable, SyntaxTreeBuilder& builder) {
     if (tokenStream.getCurrentToken().id != "id"
             || tokenStream.getCurrentToken().lexeme != "__builtin_va_arg") {
         return false;
@@ -322,7 +321,7 @@ bool GnuExtensions::acceptVaArg(parser::TokenStream& tokenStream,
 }
 
 bool GnuExtensions::acceptTypesCompatibleP(parser::TokenStream& tokenStream,
-        const parser::ParsingTable& parsingTable, AbstractSyntaxTreeBuilder& builder) {
+        const parser::ParsingTable& parsingTable, SyntaxTreeBuilder& builder) {
     if (tokenStream.getCurrentToken().id != "id"
             || tokenStream.getCurrentToken().lexeme != "__builtin_types_compatible_p") {
         return false;
@@ -361,7 +360,7 @@ bool GnuExtensions::acceptTypesCompatibleP(parser::TokenStream& tokenStream,
 }
 
 bool GnuExtensions::acceptOffsetof(parser::TokenStream& tokenStream,
-        const parser::ParsingTable& parsingTable, AbstractSyntaxTreeBuilder& builder) {
+        const parser::ParsingTable& parsingTable, SyntaxTreeBuilder& builder) {
     if (tokenStream.getCurrentToken().id != "id"
             || tokenStream.getCurrentToken().lexeme != "__builtin_offsetof") {
         return false;

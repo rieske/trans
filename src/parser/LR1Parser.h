@@ -8,11 +8,14 @@ namespace scanner {
 class Scanner;
 }
 
+namespace ast {
+class SyntaxTreeBuilder;
+}
+
 namespace parser {
 
 class ParsingTable;
 class TokenStream;
-class SyntaxTreeBuilder;
 class ParseExtensions;
 
 enum class LrFinish { Complete, Stopped };
@@ -24,7 +27,7 @@ struct LrStop {
 };
 
 LrFinish runLrParse(const ParsingTable& parsingTable, TokenStream& tokenStream,
-        SyntaxTreeBuilder& syntaxTreeBuilder, ParseExtensions* extensions = nullptr,
+        ast::SyntaxTreeBuilder& syntaxTreeBuilder, ParseExtensions* extensions = nullptr,
         std::optional<LrStop> stop = std::nullopt);
 
 class LR1Parser {
@@ -32,7 +35,7 @@ public:
 	explicit LR1Parser(const ParsingTable& parsingTable);
 	LR1Parser(const ParsingTable&&) = delete;
 
-	bool parse(scanner::Scanner& scanner, SyntaxTreeBuilder& syntaxTreeBuilder) const;
+	bool parse(scanner::Scanner& scanner, ast::SyntaxTreeBuilder& syntaxTreeBuilder) const;
 private:
 	const ParsingTable& parsingTable;
 };

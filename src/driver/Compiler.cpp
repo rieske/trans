@@ -10,7 +10,7 @@
 
 #include "parser/LR1Parser.h"
 #include "ast/AbstractSyntaxTree.h"
-#include "ast/AbstractSyntaxTreeBuilder.h"
+#include "ast/SyntaxTreeBuilder.h"
 #include "codegen/Amd64Registers.h"
 #include "codegen/AssemblyGenerator.h"
 #include "codegen/ATandTInstructionSet.h"
@@ -314,7 +314,7 @@ std::optional<std::string> Compiler::compile(std::string sourceFileName) const {
         return failIo(error);
     }
 
-    auto syntaxTreeBuilder = ast::AbstractSyntaxTreeBuilder::create(
+    auto syntaxTreeBuilder = ast::SyntaxTreeBuilder::create(
             &frontEnd->grammar(), session, configuration.gnuExtensions());
     syntaxTreeBuilder->setSink(&sink);
     const bool parsed = parser::LR1Parser { frontEnd->table() }.parse(*scanner, *syntaxTreeBuilder);

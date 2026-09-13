@@ -1,6 +1,5 @@
 #include "ParsingTable.h"
 
-#include "SyntaxTreeBuilder.h"
 #include "util/Diagnostic.h"
 #include "util/Logger.h"
 #include "util/LogManager.h"
@@ -101,8 +100,7 @@ Action ParsingTable::action(parse_state state, const scanner::Token& lookahead) 
 }
 
 void ParsingTable::reportError(parse_state state, const scanner::Token& current,
-        SyntaxTreeBuilder& syntaxTreeBuilder) const {
-    syntaxTreeBuilder.err();
+        diag::Sink& sink) const {
     std::ostringstream message;
     message << "unexpected token: " << current.lexeme << " expected:";
     if (state < stateCount_ && state + 1 < errorOffset_.size()) {
@@ -112,7 +110,7 @@ void ParsingTable::reportError(parse_state state, const scanner::Token& current,
             message << " " << grammar_->str(errorCandidates_[i]);
         }
     }
-    syntaxTreeBuilder.sink().error(current.context, message.str());
+    sink.error(current.context, message.str());
 }
 
 std::optional<parse_state> ParsingTable::tryGoTo(parse_state state, int nonterminal) const {

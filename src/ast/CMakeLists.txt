@@ -1,6 +1,7 @@
 add_library(ast
         AbstractSyntaxTree.cpp
-        AbstractSyntaxTreeBuilder.cpp
+        SyntaxTreeBuilder.cpp
+        LR1Parser.cpp
         AbstractSyntaxTreeBuilderContext.cpp
         ParseEnvironment.cpp
         VlaExpressionTable.cpp
