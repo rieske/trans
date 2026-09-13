@@ -317,17 +317,12 @@ GenericSelectionChoice selectGenericAssociation(
 // Expression-sensitive null forms ((void*)0) live in SA productAssignOk / checkAssign.
 bool productAssignFrom(const Type& dest, const Type& source);
 
-// Alias kept for existing call sites (same policy as productAssignFrom).
-inline bool productCanAssignFrom(const Type& dest, const Type& source) {
-    return productAssignFrom(dest, source);
-}
-
 // Scalar arithmetic (* / % and non-pointer +/-): both arithmetic types.
 inline bool productArithmeticCompatible(const Type& a, const Type& b) {
     return isArithmeticType(a) && isArithmeticType(b);
 }
 
-// Diagnostic text for a failed product assign (call only when canAssign is false).
+// Diagnostic text for a failed product assign (call only when productAssignFrom is false).
 std::string productAssignFailureMessage(const Type& dest, const Type& source);
 
 // Array subscript element info for SA (shared policy).

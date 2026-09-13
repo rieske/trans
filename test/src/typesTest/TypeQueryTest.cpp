@@ -85,26 +85,26 @@ TEST(TypeQuery, sizeofObjectGnuFunctionAndVoidAreOne) {
     EXPECT_EQ(type::sizeofObject(type::pointer(fn), true), 8);
 }
 
-TEST(TypeQuery, productCanAssignScalarsAndPointers) {
+TEST(TypeQuery, productAssignScalarsAndPointers) {
     type::Type i = type::signedInteger();
     type::Type pi = type::pointer(i);
-    EXPECT_TRUE(type::productCanAssignFrom(i, i));
-    EXPECT_TRUE(type::productCanAssignFrom(pi, pi));
-    EXPECT_TRUE(type::productCanAssignFrom(pi, i)); // null constant int → pointer
-    EXPECT_TRUE(type::productCanAssignFrom(i, pi)); // product-loose scalar
+    EXPECT_TRUE(type::productAssignFrom(i, i));
+    EXPECT_TRUE(type::productAssignFrom(pi, pi));
+    EXPECT_TRUE(type::productAssignFrom(pi, i)); // null constant int → pointer
+    EXPECT_TRUE(type::productAssignFrom(i, pi)); // product-loose scalar
 }
 
-TEST(TypeQuery, productCanAssignFunctionPointer) {
+TEST(TypeQuery, productAssignFunctionPointer) {
     type::Type fn = type::function(type::signedInteger(), {});
     type::Type pfn = type::pointer(fn);
     type::Type i = type::signedInteger();
-    EXPECT_TRUE(type::productCanAssignFrom(pfn, fn));
-    EXPECT_TRUE(type::productCanAssignFrom(pfn, pfn));
-    EXPECT_TRUE(type::productCanAssignFrom(pfn, i)); // null
-    EXPECT_FALSE(type::productCanAssignFrom(i, fn));
-    EXPECT_FALSE(type::productCanAssignFrom(i, pfn));
+    EXPECT_TRUE(type::productAssignFrom(pfn, fn));
+    EXPECT_TRUE(type::productAssignFrom(pfn, pfn));
+    EXPECT_TRUE(type::productAssignFrom(pfn, i)); // null
+    EXPECT_FALSE(type::productAssignFrom(i, fn));
+    EXPECT_FALSE(type::productAssignFrom(i, pfn));
     // Type-only gate: void* is not a null pointer constant (SA needs the expression).
-    EXPECT_FALSE(type::productCanAssignFrom(pfn, type::pointer(type::voidType())));
+    EXPECT_FALSE(type::productAssignFrom(pfn, type::pointer(type::voidType())));
     std::string msg = type::productAssignFailureMessage(i, fn);
     EXPECT_NE(msg.find("function"), std::string::npos);
 }
@@ -124,25 +124,25 @@ TEST(TypeQuery, adjustedParameterTypeArrayAndFunction) {
     EXPECT_TRUE(type::adjustedParameterType(i).equivalentTo(i));
 }
 
-TEST(TypeQuery, productCanAssignStructures) {
+TEST(TypeQuery, productAssignStructures) {
     auto s = type::structure({ { "x", type::signedInteger() } });
     auto t = type::structure({ { "y", type::signedInteger() } });
-    EXPECT_TRUE(type::productCanAssignFrom(s, s));
-    EXPECT_TRUE(type::productCanAssignFrom(s, t)); // product-loose structure-to-structure
-    EXPECT_FALSE(type::productCanAssignFrom(s, type::signedInteger()));
-    EXPECT_FALSE(type::productCanAssignFrom(type::signedInteger(), s));
+    EXPECT_TRUE(type::productAssignFrom(s, s));
+    EXPECT_TRUE(type::productAssignFrom(s, t)); // product-loose structure-to-structure
+    EXPECT_FALSE(type::productAssignFrom(s, type::signedInteger()));
+    EXPECT_FALSE(type::productAssignFrom(type::signedInteger(), s));
 }
 
 TEST(TypeQuery, productRejectsArrayAndVoidAndIncomplete) {
     type::Type arr = type::array(type::signedInteger(), 3);
     type::Type i = type::signedInteger();
     type::Type pi = type::pointer(i);
-    EXPECT_FALSE(type::productCanAssignFrom(arr, i));
-    EXPECT_TRUE(type::productCanAssignFrom(pi, arr));
-    EXPECT_TRUE(type::productCanAssignFrom(i, arr));
-    EXPECT_FALSE(type::productCanAssignFrom(type::voidType(), i));
-    EXPECT_TRUE(type::productCanAssignFrom(type::voidType(), type::voidType()));
-    EXPECT_FALSE(type::productCanAssignFrom(type::incompleteRecord(), i));
+    EXPECT_FALSE(type::productAssignFrom(arr, i));
+    EXPECT_TRUE(type::productAssignFrom(pi, arr));
+    EXPECT_TRUE(type::productAssignFrom(i, arr));
+    EXPECT_FALSE(type::productAssignFrom(type::voidType(), i));
+    EXPECT_TRUE(type::productAssignFrom(type::voidType(), type::voidType()));
+    EXPECT_FALSE(type::productAssignFrom(type::incompleteRecord(), i));
 }
 
 TEST(TypeQuery, arraySubscriptInfoArrayAndPointer) {

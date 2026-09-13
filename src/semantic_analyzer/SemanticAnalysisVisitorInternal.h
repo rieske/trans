@@ -135,12 +135,12 @@ inline bool foldsToIntegerZero(const ast::Expression& expr) {
     return expr.evaluateConstant(value) && type::isZero(value);
 }
 
-// Full product assign gate (dest, source order matches productAssignFrom / canAssignFrom).
+// Full product assign gate (dest, source order matches productAssignFrom).
 // Type-only productAssignFrom, plus foldable zero into any pointer destination
 // (including pointer-to-function) when sourceExpr is provided.
 inline bool productAssignOk(const type::Type& dest, const type::Type& source,
         const ast::Expression* sourceExpr = nullptr) {
-    if (dest.canAssignFrom(source)) {
+    if (type::productAssignFrom(dest, source)) {
         return true;
     }
     return sourceExpr && dest.isPointer() && foldsToIntegerZero(*sourceExpr);

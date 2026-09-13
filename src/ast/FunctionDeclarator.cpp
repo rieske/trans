@@ -69,7 +69,7 @@ type::Type FunctionDeclarator::getFundamentalType(std::vector<Pointer> indirecti
     }
     std::vector<type::Type> argumentTypes;
     for (const auto& argument : formalArguments) {
-        argumentTypes.push_back(argument.getType());
+        argumentTypes.push_back(argument.adjustedType());
     }
     type::Type functionType = type::function(actualReturn, argumentTypes, variadic);
     // Nested declarator may wrap further (e.g. `int (*f)()` → pointer to function).
