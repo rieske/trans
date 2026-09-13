@@ -666,7 +666,7 @@ TEST(ParseEnvironment, parameterArrayDecaysToPointer) {
             std::make_unique<Declarator>(std::make_unique<ArrayDeclarator>(
                     std::make_unique<Identifier>(TerminalSymbol { "a", ctx }),
                     nullptr)) };
-    EXPECT_TRUE(arg.getType().isPointer());
+    EXPECT_TRUE(arg.adjustedType().isPointer());
     env.maybeDefineParameter(arg);
     auto t = env.typeOf(IdentifierExpression { "a", ctx });
     ASSERT_TRUE(t.has_value());
@@ -685,7 +685,7 @@ TEST(ParseEnvironment, parameterIncompleteArrayIsSkipped) {
                     std::make_unique<ConstantExpression>(
                             Constant { "3", type::signedInteger(), ctx }))) };
     EXPECT_TRUE(arg.declaredType().isArray());
-    EXPECT_TRUE(arg.getType().isPointer());
+    EXPECT_TRUE(arg.adjustedType().isPointer());
     EXPECT_NO_THROW(env.maybeDefineParameter(arg));
     EXPECT_FALSE(env.lookupObject("a").has_value());
 }

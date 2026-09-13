@@ -368,7 +368,7 @@ void SemanticAnalysisVisitor::visit(ast::FormalArgument& argument) {
                 argument.getDeclarationContext());
     }
     argument.visitDeclarator(*this);
-    type::Type type = argument.getType();
+    type::Type type = argument.adjustedType();
     if (type.isVoid()) {
         semanticError("function argument ‘" + argument.getName() + "’ declared void", argument.getDeclarationContext());
     }

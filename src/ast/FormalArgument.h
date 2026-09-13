@@ -22,7 +22,7 @@ public:
     void visitDeclarator(AbstractSyntaxTreeVisitor& visitor);
 
     type::Type declaredType() const;
-    type::Type getType() const;
+    type::Type adjustedType() const;
     const char* arrayConstraintError() const;
     void forEachFormalArgument(const std::function<void(const FormalArgument&)>& fn) const;
     DeclarationSpecifiers& getSpecifiers() { return specifiers; }

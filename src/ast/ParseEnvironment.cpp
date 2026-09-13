@@ -56,7 +56,7 @@ void ParseEnvironment::maybeDefineParameter(const FormalArgument& argument) {
     if (argument.arrayConstraintError()) {
         return;
     }
-    session_.types.addPending(argument.getName(), argument.getType());
+    session_.types.addPending(argument.getName(), argument.adjustedType());
 }
 
 std::optional<type::Type> ParseEnvironment::lookupObject(const std::string& name) const {

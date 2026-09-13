@@ -44,7 +44,7 @@ type::Type FormalArgument::declaredType() const {
     return baseType;
 }
 
-type::Type FormalArgument::getType() const {
+type::Type FormalArgument::adjustedType() const {
     return type::adjustedParameterType(declaredType());
 }
 

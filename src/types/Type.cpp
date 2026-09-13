@@ -1,6 +1,6 @@
 #include "Type.h"
+#include "TypeConstraint.h"
 #include "TypeIce.h"
-#include "TypeQuery.h"
 
 #include <sstream>
 #include <stdexcept>
@@ -229,10 +229,6 @@ int Type::getSize() const {
 
 int Type::getAlignment() const {
     return typeAlignment(*this);
-}
-
-bool Type::canAssignFrom(const Type& other) const {
-    return productCanAssignFrom(*this, other);
 }
 
 TypeKind Type::kind() const {
