@@ -97,6 +97,24 @@ TEST(IrDumpFromC, foldsLocalIntegerAddAtO1) {
             "ENDPROC f\n"));
 }
 
+TEST(IrDumpFromC, foldsAddZeroAtO1) {
+    const char* src = "int f(int a) { return a + 0; }\n";
+    EXPECT_THAT(compileToIr(src, 1), StrEq(
+            "PROC f\n"
+            "\t$t0 := L$loc1_a\n"
+            "\tRETURN $t0\n"
+            "ENDPROC f\n"));
+}
+
+TEST(IrDumpFromC, foldsAndSelfAtO1) {
+    const char* src = "int f(int a) { return a & a; }\n";
+    EXPECT_THAT(compileToIr(src, 1), StrEq(
+            "PROC f\n"
+            "\t$t0 := L$loc1_a\n"
+            "\tRETURN $t0\n"
+            "ENDPROC f\n"));
+}
+
 TEST(IrDumpFromC, dumpsAreStableAcrossCalls) {
     const char* src = "int add(int a, int b) { return a + b; }\n";
     EXPECT_EQ(compileToIr(src), compileToIr(src));
