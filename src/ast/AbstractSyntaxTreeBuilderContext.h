@@ -51,6 +51,7 @@ public:
 
     void pushTerminal(TerminalSymbol terminal);
     TerminalSymbol popTerminal();
+    const translation_unit::Context& lastTerminalContext() const { return lastTerminalContext_; }
 
     void pushTypeSpecifier(TypeSpecifier typeSpecifier);
     bool hasTypeSpecifier() const;
@@ -167,6 +168,7 @@ public:
     void takePendingDesignator(std::vector<DesignatorStep>& steps);
 
 private:
+    translation_unit::Context lastTerminalContext_ { "", 0 };
     std::stack<TerminalSymbol> terminalSymbols;
 
     std::stack<TypeSpecifier> typeSpecifiers;

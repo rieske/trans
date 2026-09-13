@@ -112,9 +112,6 @@ public:
     // Returns true on success; emits a diagnostic and returns false on failure.
     bool checkAssign(const type::Type& dest, const type::Type& source, const translation_unit::Context& context,
             const ast::Expression* sourceExpr = nullptr);
-    // Binary / ternary operands: type-only product assign of left into right (legacy gate).
-    bool checkOperandTypes(const type::Type& left, const type::Type& right,
-            const translation_unit::Context& context);
     void semanticError(std::string message, const translation_unit::Context& context);
     // Enumerators of an enum definition become visible in the scope holding it.
     void declareEnumerators(const ast::TypeSpecifier& specifier);

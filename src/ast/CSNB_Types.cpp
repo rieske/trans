@@ -141,14 +141,29 @@ void addDeclarationTypeSpecifier(AbstractSyntaxTreeBuilderContext& context) {
     context.pushDeclarationSpecifiers(std::move(specs));
 }
 
+namespace {
+
+translation_unit::Context specErrorContext(const DeclarationSpecifiers& specs,
+        AbstractSyntaxTreeBuilderContext& context) {
+    if (!specs.getTypeSpecifiers().empty()) {
+        const auto& where = specs.getTypeSpecifiers().front().getContext();
+        if (!where.getSourceName().empty() || where.getOffset() != 0) {
+            return where;
+        }
+    }
+    return context.lastTerminalContext();
+}
+
+} // namespace
+
 DeclarationSpecifiers popResolvedSpecQualifiers(AbstractSyntaxTreeBuilderContext& context) {
     auto specs = context.popDeclarationSpecifiers();
     if (!specs.resolveTypeofAtParseTime(context.environment())) {
-        context.error({ "", 0 }, "cannot determine type of typeof operand");
+        context.error(specErrorContext(specs, context), "cannot determine type of typeof operand");
         return specs;
     }
     if (specs.getTypeSpecifiers().empty()) {
-        context.error({ "", 0 }, "cannot determine type of spec-qualifier-list");
+        context.error(specErrorContext(specs, context), "cannot determine type of spec-qualifier-list");
         return specs;
     }
     return specs;

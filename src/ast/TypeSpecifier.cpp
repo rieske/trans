@@ -21,7 +21,9 @@ TypeSpecifier::TypeSpecifier(type::Type type, std::string name, translation_unit
 {
 }
 
-TypeSpecifier::TypeSpecifier(std::unique_ptr<Expression> typeofOperand) :
+TypeSpecifier::TypeSpecifier(std::unique_ptr<Expression> typeofOperand,
+        translation_unit::Context context) :
+        context_ { std::move(context) },
         typeofOperand_ { std::move(typeofOperand) }
 {
 }

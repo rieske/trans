@@ -28,7 +28,8 @@ public:
     TypeSpecifier(type::Type type, std::string name,
             translation_unit::Context context = translation_unit::Context { "", 0 },
             bool definesRecord = false);
-    explicit TypeSpecifier(std::unique_ptr<Expression> typeofOperand);
+    explicit TypeSpecifier(std::unique_ptr<Expression> typeofOperand,
+            translation_unit::Context context = translation_unit::Context { "", 0 });
     ~TypeSpecifier();
     TypeSpecifier(TypeSpecifier&&) noexcept;
     TypeSpecifier& operator=(TypeSpecifier&&) noexcept;

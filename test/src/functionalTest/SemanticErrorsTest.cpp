@@ -998,6 +998,49 @@ INSTANTIATE_TEST_SUITE_P(Compiler, SemanticErrorCatalog, testing::Values(
         "invalid operands to %",
     },
     SemanticErrorCase{
+        "compareStructAndInt",
+        R"prg(
+            struct S { int x; };
+            int main(void) {
+                struct S s;
+                return s == 1;
+            }
+        )prg",
+        "invalid operands to relational operator",
+    },
+    SemanticErrorCase{
+        "compareIntAndStruct",
+        R"prg(
+            struct S { int x; };
+            int main(void) {
+                struct S s;
+                return 1 == s;
+            }
+        )prg",
+        "invalid operands to relational operator",
+    },
+    SemanticErrorCase{
+        "bitwiseStructAndInt",
+        R"prg(
+            struct S { int x; };
+            int main(void) {
+                struct S s;
+                return s & 1;
+            }
+        )prg",
+        "invalid operands to bitwise operator",
+    },
+    SemanticErrorCase{
+        "bitwiseFloatAndInt",
+        R"prg(
+            int main(void) {
+                float f;
+                return (int)(f & 1);
+            }
+        )prg",
+        "invalid operands to bitwise operator",
+    },
+    SemanticErrorCase{
         "complexBitwiseAnd",
         R"prg(
             int main() {
