@@ -19,6 +19,7 @@ add_library(backend
         InstructionPrint.cpp
         InstructionSet.cpp
         IrGenerator.cpp
+        IrInline.cpp
         IrPasses.cpp
         Liveness.cpp
         IrStringTable.cpp
