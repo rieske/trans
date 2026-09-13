@@ -28,6 +28,35 @@ TEST(IrDumpFromC, ifElse) {
             "ENDPROC sel\n"));
 }
 
+TEST(IrDumpFromC, staticHelperAdd1StillCallsAtO0AndO1) {
+    const char* src = "static int add1(int x) { return x + 1; } int f(int y) { return add1(y); }\n";
+    EXPECT_THAT(compileToIr(src, 0), StrEq(
+            "PROC add1\n"
+            "\t$t0 := 1\n"
+            "\t$t1 := L$loc1_x + $t0\n"
+            "\tRETURN $t1\n"
+            "ENDPROC add1\n"
+            "PROC f\n"
+            "\t$t2 := &add1 (function)\n"
+            "\tPARAM L$loc2_y\n"
+            "\tCALL add1\n"
+            "\tRETRIEVE $t3\n"
+            "\tRETURN $t3\n"
+            "ENDPROC f\n"));
+    EXPECT_THAT(compileToIr(src, 1), StrEq(
+            "PROC add1\n"
+            "\t$t0 := 1\n"
+            "\t$t1 := L$loc1_x + $t0\n"
+            "\tRETURN $t1\n"
+            "ENDPROC add1\n"
+            "PROC f\n"
+            "\tPARAM L$loc2_y\n"
+            "\tCALL add1\n"
+            "\tRETRIEVE $t2\n"
+            "\tRETURN $t2\n"
+            "ENDPROC f\n"));
+}
+
 TEST(IrDumpFromC, call) {
     EXPECT_THAT(compileToIr("int g(int x); int f(int x) { return g(x); }\n"), StrEq(
             "PROC f\n"

@@ -187,6 +187,20 @@ int scanf(const char *, ...);
     program.runAndExpect("1 2 3 4 5 6 7 8\n");
 }
 
+TEST(Compiler, staticHelperAdd1StillComputes) {
+    SourceProgram program{R"prg(int printf(const char *, ...);
+        static int add1(int x) {
+            return x + 1;
+        }
+        int main() {
+            printf("%d", add1(41));
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("42");
+}
+
 TEST(Compiler, nestedFunctionCalls) {
     SourceProgram program{R"prg(int printf(const char *, ...);
 int scanf(const char *, ...);
