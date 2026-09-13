@@ -76,17 +76,18 @@ TEST(CSNBCreators, productGrammarRegistersKnownProductions) {
     EXPECT_THAT(logged.str(), testing::HasSubstr("error: language construct not implemented yet"));
 }
 
-TEST(CSNBCreators, notImplementedYetReportsOnSink) {
+TEST(CSNBCreators, knrStubsReportOnSink) {
     scanner::LexicalSession session;
     ast::AbstractSyntaxTreeBuilderContext context{session};
     std::ostringstream logged;
     diag::Sink sink { logged };
     context.setSink(&sink);
-    auto stub = ast::notImplementedYet("feature X");
-    EXPECT_NO_THROW(stub(context));
+    EXPECT_NO_THROW(ast::knrIdentifierParameterLists(context));
+    EXPECT_THAT(logged.str(), testing::HasSubstr("K&R identifier parameter lists is not implemented yet"));
+    EXPECT_NO_THROW(ast::knrStyleFunctionDefinitions(context));
+    EXPECT_THAT(logged.str(), testing::HasSubstr("K&R style function definitions is not implemented yet"));
     EXPECT_TRUE(context.failed());
     EXPECT_TRUE(sink.hasErrors());
-    EXPECT_THAT(logged.str(), testing::HasSubstr("error: feature X is not implemented yet"));
 }
 
 TEST(CSNBCreators, doNothingIsNoOp) {

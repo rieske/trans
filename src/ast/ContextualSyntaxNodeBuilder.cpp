@@ -21,6 +21,65 @@ std::vector<Enumerator> specEnumerators(const DeclarationSpecifiers& specs) {
     return {};
 }
 
+enum class ForInitKind { None, Expression, Declaration };
+
+void forLoop(AbstractSyntaxTreeBuilderContext& context, ForInitKind init,
+        bool hasClause, bool hasIncrement) {
+    const int terminalCount = (init == ForInitKind::Declaration) ? 4 : 5;
+    for (int i = 0; i < terminalCount; ++i) {
+        context.popTerminal();
+    }
+    auto increment = hasIncrement ? context.popExpression() : nullptr;
+    auto clause = hasClause ? context.popExpression() : nullptr;
+    ForInit initialization;
+    if (init == ForInitKind::Expression) {
+        initialization = ForInit { context.popExpression() };
+    } else if (init == ForInitKind::Declaration) {
+        initialization = ForInit { context.popDeclaration() };
+    }
+    auto loopHeader = std::make_unique<ForLoopHeader>(
+            std::move(initialization), std::move(clause), std::move(increment));
+    auto body = context.popAsStatement();
+    context.pushStatement(std::make_unique<LoopStatement>(std::move(loopHeader), std::move(body)));
+}
+
+void forExpClauseInc(AbstractSyntaxTreeBuilderContext& c) {
+    forLoop(c, ForInitKind::Expression, true, true);
+}
+void forExpClause(AbstractSyntaxTreeBuilderContext& c) {
+    forLoop(c, ForInitKind::Expression, true, false);
+}
+void forExpInc(AbstractSyntaxTreeBuilderContext& c) {
+    forLoop(c, ForInitKind::Expression, false, true);
+}
+void forExp(AbstractSyntaxTreeBuilderContext& c) {
+    forLoop(c, ForInitKind::Expression, false, false);
+}
+void forNoneClauseInc(AbstractSyntaxTreeBuilderContext& c) {
+    forLoop(c, ForInitKind::None, true, true);
+}
+void forNoneClause(AbstractSyntaxTreeBuilderContext& c) {
+    forLoop(c, ForInitKind::None, true, false);
+}
+void forNoneInc(AbstractSyntaxTreeBuilderContext& c) {
+    forLoop(c, ForInitKind::None, false, true);
+}
+void forNone(AbstractSyntaxTreeBuilderContext& c) {
+    forLoop(c, ForInitKind::None, false, false);
+}
+void forDeclClauseInc(AbstractSyntaxTreeBuilderContext& c) {
+    forLoop(c, ForInitKind::Declaration, true, true);
+}
+void forDeclClause(AbstractSyntaxTreeBuilderContext& c) {
+    forLoop(c, ForInitKind::Declaration, true, false);
+}
+void forDeclInc(AbstractSyntaxTreeBuilderContext& c) {
+    forLoop(c, ForInitKind::Declaration, false, true);
+}
+void forDecl(AbstractSyntaxTreeBuilderContext& c) {
+    forLoop(c, ForInitKind::Declaration, false, false);
+}
+
 int foldBitFieldWidth(AbstractSyntaxTreeBuilderContext& context) {
     auto widthExpr = context.popExpression();
     context.popTerminal();
@@ -166,9 +225,9 @@ ContextualSyntaxNodeBuilder::ContextualSyntaxNodeBuilder(const parser::Grammar& 
 
     // K&R identifier parameter list: `f(a, b)` — not the modern `f(int a, int b)`.
     int s_id_list = grammar.symbolId("<id_list>");
-    bind(s_id_list, { s_identifier }, notImplementedYet("K&R identifier parameter lists"));
-    bind(s_id_list, { s_id_list, s_comma, s_identifier }, notImplementedYet("K&R identifier parameter lists"));
-    bind(s_direct_declarator, { s_direct_declarator, s_open_paren, s_id_list, s_close_paren }, notImplementedYet("K&R identifier parameter lists"));
+    bind(s_id_list, { s_identifier }, knrIdentifierParameterLists);
+    bind(s_id_list, { s_id_list, s_comma, s_identifier }, knrIdentifierParameterLists);
+    bind(s_direct_declarator, { s_direct_declarator, s_open_paren, s_id_list, s_close_paren }, knrIdentifierParameterLists);
 
     int s_constant = grammar.symbolId("<const>");
     bind(s_constant, { grammar.symbolId("int_const") }, integerConstant);
@@ -406,8 +465,8 @@ ContextualSyntaxNodeBuilder::ContextualSyntaxNodeBuilder(const parser::Grammar& 
     bind(s_function_definition, { s_decl_specs, s_declarator, s_compound_stat }, functionDefinition);
     bind(s_function_definition, { s_declarator, s_compound_stat }, defaultReturnTypeFunctionDefinition);
     // K&R definitions: `int f(a) int a; { ... }` (parameter decls between declarator and body).
-    bind(s_function_definition, { s_decl_specs, s_declarator, s_decl_list, s_compound_stat }, notImplementedYet("K&R style function definitions"));
-    bind(s_function_definition, { s_declarator, s_decl_list, s_compound_stat }, notImplementedYet("K&R style function definitions"));
+    bind(s_function_definition, { s_decl_specs, s_declarator, s_decl_list, s_compound_stat }, knrStyleFunctionDefinitions);
+    bind(s_function_definition, { s_declarator, s_decl_list, s_compound_stat }, knrStyleFunctionDefinitions);
 
     int s_external_decl = grammar.symbolId("<external_decl>");
     bind(s_external_decl, { s_function_definition }, doNothing);
@@ -432,47 +491,38 @@ ContextualSyntaxNodeBuilder::ContextualSyntaxNodeBuilder(const parser::Grammar& 
 
     // for-init: none / expression / declaration. Decl form has one fewer terminal because
     // <decl> already consumes its terminating ';'.
-    enum class ForInitKind { None, Expression, Declaration };
-    auto forLoop = [](ForInitKind initKind, bool hasClause, bool hasIncrement) {
-        return [=](AbstractSyntaxTreeBuilderContext& context) {
-            const int terminalCount = (initKind == ForInitKind::Declaration) ? 4 : 5;
-            for (int i = 0; i < terminalCount; ++i) {
-                context.popTerminal(); // for ( ; ; ) or for ( ; )
-            }
-            auto increment = hasIncrement ? context.popExpression() : nullptr;
-            auto clause = hasClause ? context.popExpression() : nullptr;
-            ForInit initialization;
-            if (initKind == ForInitKind::Expression) {
-                initialization = ForInit { context.popExpression() };
-            } else if (initKind == ForInitKind::Declaration) {
-                initialization = ForInit { context.popDeclaration() };
-            }
-            auto loopHeader = std::make_unique<ForLoopHeader>(
-                    std::move(initialization), std::move(clause), std::move(increment));
-            auto body = context.popAsStatement();
-            context.pushStatement(std::make_unique<LoopStatement>(std::move(loopHeader), std::move(body)));
-        };
-    };
     auto registerFor = [&](const std::vector<int>& prod, Creator creator) {
         bind(s_iteration_stat_matched, prod, creator);
         auto unmatchedProd = prod;
-        unmatchedProd.back() = s_unmatched;
+        unmatchedProd[unmatchedProd.size() - 1] = s_unmatched;
         bind(s_iteration_stat_unmatched, unmatchedProd, creator);
     };
-    registerFor({ s_for, s_open_paren, s_exp, s_semicolon, s_exp, s_semicolon, s_exp, s_close_paren, s_matched }, forLoop(ForInitKind::Expression, true,  true));
-    registerFor({ s_for, s_open_paren, s_exp, s_semicolon, s_exp, s_semicolon, s_close_paren, s_matched }, forLoop(ForInitKind::Expression, true,  false));
-    registerFor({ s_for, s_open_paren, s_exp, s_semicolon, s_semicolon, s_exp, s_close_paren, s_matched }, forLoop(ForInitKind::Expression, false, true));
-    registerFor({ s_for, s_open_paren, s_exp, s_semicolon, s_semicolon, s_close_paren, s_matched }, forLoop(ForInitKind::Expression, false, false));
-    registerFor({ s_for, s_open_paren, s_semicolon, s_exp, s_semicolon, s_exp, s_close_paren, s_matched }, forLoop(ForInitKind::None, true,  true));
-    registerFor({ s_for, s_open_paren, s_semicolon, s_exp, s_semicolon, s_close_paren, s_matched }, forLoop(ForInitKind::None, true,  false));
-    registerFor({ s_for, s_open_paren, s_semicolon, s_semicolon, s_exp, s_close_paren, s_matched }, forLoop(ForInitKind::None, false, true));
-    registerFor({ s_for, s_open_paren, s_semicolon, s_semicolon, s_close_paren, s_matched }, forLoop(ForInitKind::None, false, false));
+    registerFor({ s_for, s_open_paren, s_exp, s_semicolon, s_exp, s_semicolon, s_exp, s_close_paren, s_matched },
+            forExpClauseInc);
+    registerFor({ s_for, s_open_paren, s_exp, s_semicolon, s_exp, s_semicolon, s_close_paren, s_matched },
+            forExpClause);
+    registerFor({ s_for, s_open_paren, s_exp, s_semicolon, s_semicolon, s_exp, s_close_paren, s_matched },
+            forExpInc);
+    registerFor({ s_for, s_open_paren, s_exp, s_semicolon, s_semicolon, s_close_paren, s_matched },
+            forExp);
+    registerFor({ s_for, s_open_paren, s_semicolon, s_exp, s_semicolon, s_exp, s_close_paren, s_matched },
+            forNoneClauseInc);
+    registerFor({ s_for, s_open_paren, s_semicolon, s_exp, s_semicolon, s_close_paren, s_matched },
+            forNoneClause);
+    registerFor({ s_for, s_open_paren, s_semicolon, s_semicolon, s_exp, s_close_paren, s_matched },
+            forNoneInc);
+    registerFor({ s_for, s_open_paren, s_semicolon, s_semicolon, s_close_paren, s_matched },
+            forNone);
 
     int s_decl_for = grammar.symbolId("<decl>");
-    registerFor({ s_for, s_open_paren, s_decl_for, s_exp, s_semicolon, s_exp, s_close_paren, s_matched }, forLoop(ForInitKind::Declaration, true, true));
-    registerFor({ s_for, s_open_paren, s_decl_for, s_exp, s_semicolon, s_close_paren, s_matched }, forLoop(ForInitKind::Declaration, true, false));
-    registerFor({ s_for, s_open_paren, s_decl_for, s_semicolon, s_exp, s_close_paren, s_matched }, forLoop(ForInitKind::Declaration, false, true));
-    registerFor({ s_for, s_open_paren, s_decl_for, s_semicolon, s_close_paren, s_matched }, forLoop(ForInitKind::Declaration, false, false));
+    registerFor({ s_for, s_open_paren, s_decl_for, s_exp, s_semicolon, s_exp, s_close_paren, s_matched },
+            forDeclClauseInc);
+    registerFor({ s_for, s_open_paren, s_decl_for, s_exp, s_semicolon, s_close_paren, s_matched },
+            forDeclClause);
+    registerFor({ s_for, s_open_paren, s_decl_for, s_semicolon, s_exp, s_close_paren, s_matched },
+            forDeclInc);
+    registerFor({ s_for, s_open_paren, s_decl_for, s_semicolon, s_close_paren, s_matched },
+            forDecl);
 
     // --- enum ---
     int s_enum_spec = grammar.symbolId("<enum_spec>");
