@@ -716,4 +716,73 @@ TEST_F(StackMachineTest, storeThroughPointerSpillsAddressTakenObject) {
             "\tmov [rax], rbx\n");
 }
 
+TEST_F(StackMachineTest, callStoresLiveArgNotDeadTemp) {
+    Value a = intValue("a");
+    Value t { names.intern("t"), 0, Type::INTEGRAL, 8 };
+    Value junk1 { names.intern("j1"), 1, Type::INTEGRAL, 8 };
+    Value junk2 { names.intern("j2"), 2, Type::INTEGRAL, 8 };
+    t.markExpressionTemp();
+    t.setLastUseOrdinal(1);
+    Procedure procedure = testProc("f", { t, junk1, junk2 }, { a });
+    procedure.body = {
+            ir::add(n("a"), n("a"), n("t")),
+            ir::call(n("foo")),
+            ir::ret(n("a")),
+    };
+    StackMachine stackMachine { &assemblyCode, intel, extraRegs, names };
+    stackMachine.registerDefinedProcedure(n("foo"));
+    stackMachine.startProcedure(procedure);
+    stackMachine.functionAddress(n("foo"), n("j1"));
+    stackMachine.functionAddress(n("foo"), n("j2"));
+    assemblyCode.str("");
+    assemblyCode.clear();
+
+    stackMachine.emit(procedure.body[0]);
+    stackMachine.emit(procedure.body[1]);
+
+    expectCode("\tmov rcx, rdi\n"
+            "\tadd rcx, rdi\n"
+            "\tmov [rbp + -24], rax\n"
+            "\tmov [rbp + -8], rdi\n"
+            "\txor rax, rax\n"
+            "\tcall $foo\n");
+}
+
+TEST_F(StackMachineTest, callStoresLoopCarriedTemp) {
+    Value t { names.intern("t"), 0, Type::INTEGRAL, 8 };
+    Value junk1 { names.intern("j1"), 1, Type::INTEGRAL, 8 };
+    Value junk2 { names.intern("j2"), 2, Type::INTEGRAL, 8 };
+    t.markExpressionTemp();
+    t.setLastUseOrdinal(2);
+    Procedure procedure = testProc("f", { t, junk1, junk2 }, {});
+    procedure.body = {
+            ir::label(n("L")),
+            ir::add(n("t"), n("t"), n("t")),
+            ir::call(n("foo")),
+            ir::jump(n("L")),
+    };
+    StackMachine stackMachine { &assemblyCode, intel, extraRegs, names };
+    stackMachine.registerDefinedProcedure(n("foo"));
+    stackMachine.startProcedure(procedure);
+    assemblyCode.str("");
+    assemblyCode.clear();
+
+    stackMachine.emit(procedure.body[0]);
+    stackMachine.functionAddress(n("foo"), n("j1"));
+    stackMachine.functionAddress(n("foo"), n("j2"));
+    stackMachine.emit(procedure.body[1]);
+    stackMachine.emit(procedure.body[2]);
+
+    expectCode("$L:\n"
+            "\tlea rax, [rel $foo]\n"
+            "\tlea rbx, [rel $foo]\n"
+            "\tmov rcx, [rbp + -32]\n"
+            "\tmov rdx, [rbp + -32]\n"
+            "\tadd rcx, rdx\n"
+            "\tmov [rbp + -24], rax\n"
+            "\tmov [rbp + -32], rcx\n"
+            "\txor rax, rax\n"
+            "\tcall $foo\n");
+}
+
 }

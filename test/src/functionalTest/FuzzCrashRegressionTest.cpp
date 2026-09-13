@@ -376,6 +376,22 @@ int scanf(const char *, ...);
     program.runAndExpect("42");
 }
 
+TEST(Compiler, callKeepsLiveArgument) {
+    SourceProgram program{R"prg(int printf(const char *, ...);
+        int g(int x) { return x; }
+        int f(int a, int b) {
+            g(b);
+            return a;
+        }
+        int main() {
+            printf("%d", f(3, 9));
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("3");
+}
+
 TEST(Compiler, ifCondEmptyThenUsesArguments) {
     SourceProgram program{R"prg(int printf(const char *, ...);
         int add(int a, int b, int c) {

@@ -91,6 +91,8 @@ void StackMachine::startProcedure(const Procedure& procedure) {
     variadicFrame.reset();
     liveInAtLabel_ = computeLabelLiveIns(procedure).atLabel;
     haveEdgeLiveness_ = true;
+    liveAfterCall_ = computeLiveAfterCalls(procedure);
+    haveCallLiveness_ = true;
     addressTaken_.clear();
     for (const auto& inst : procedure.body) {
         SymbolRefs refs;
@@ -238,7 +240,9 @@ void StackMachine::endProcedure() {
     sretId_ = kNoSymbol;
     variadicFrame.reset();
     haveEdgeLiveness_ = false;
+    haveCallLiveness_ = false;
     liveInAtLabel_.clear();
+    liveAfterCall_.clear();
     addressTaken_.clear();
     hasFrame_ = false;
     frameLayout_ = {};
@@ -334,8 +338,27 @@ void StackMachine::spillMayAliasRegisters(int storeAddrId) {
 }
 
 void StackMachine::spillCallerSavedRegisters() {
+    const auto liveIt = haveCallLiveness_ ? liveAfterCall_.find(instructionOrdinal) : liveAfterCall_.end();
+    const bool filtered = liveIt != liveAfterCall_.end();
+    const std::unordered_set<int>* live = filtered ? &liveIt->second : nullptr;
     for (auto& reg : registers->getCallerSavedRegisters()) {
-        storeRegisterValue(*reg);
+        if (!reg->containsUnstoredValue()) {
+            continue;
+        }
+        const int id = reg->getValue()->id();
+        Value* held = reg->getValue();
+        if (!live || live->count(id) != 0 || mayAliasStore(id)
+                || !held->isExpressionTemp()) {
+            storeRegisterValue(*reg);
+        }
+    }
+}
+
+void StackMachine::dropCallerSavedBindings() {
+    for (auto& reg : registers->getCallerSavedRegisters()) {
+        if (reg->getValue()) {
+            reg->free();
+        }
     }
 }
 

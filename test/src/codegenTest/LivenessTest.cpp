@@ -153,4 +153,44 @@ TEST(Liveness, addressTakenIsLiveInAtJoinAfterInc) {
     EXPECT_THAT(live.atLabel.at(n("join")), UnorderedElementsAre(n("p"), n("a")));
 }
 
+TEST(Liveness, liveAfterCallExcludesDeadTemp) {
+    IntermediateRepresentation ir;
+    IrN n { ir.strings };
+    const auto after = computeLiveAfterCalls(makeProc(ir.strings, {
+            ir::add(n("a"), n("a"), n("t")),
+            ir::call(n("foo")),
+            ir::ret(n("a")),
+    }));
+
+    ASSERT_THAT(after.count(1), Eq(1u));
+    EXPECT_THAT(after.at(1), UnorderedElementsAre(n("a")));
+}
+
+TEST(Liveness, liveAfterCallIncludesTempUsedLater) {
+    IntermediateRepresentation ir;
+    IrN n { ir.strings };
+    const auto after = computeLiveAfterCalls(makeProc(ir.strings, {
+            ir::add(n("a"), n("a"), n("t")),
+            ir::call(n("foo")),
+            ir::ret(n("t")),
+    }));
+
+    ASSERT_THAT(after.count(1), Eq(1u));
+    EXPECT_THAT(after.at(1), UnorderedElementsAre(n("t")));
+}
+
+TEST(Liveness, liveAfterCallKeepsValueUsedBeforeCallInLoop) {
+    IntermediateRepresentation ir;
+    IrN n { ir.strings };
+    const auto after = computeLiveAfterCalls(makeProc(ir.strings, {
+            ir::label(n("L")),
+            ir::add(n("a"), n("a"), n("t")),
+            ir::call(n("foo")),
+            ir::jump(n("L")),
+    }));
+
+    ASSERT_THAT(after.count(2), Eq(1u));
+    EXPECT_THAT(after.at(2), UnorderedElementsAre(n("a")));
+}
+
 } // namespace

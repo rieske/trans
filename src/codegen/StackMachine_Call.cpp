@@ -336,6 +336,7 @@ void StackMachine::emitCall(bool indirect, int target, int memoryReturnDest) {
     if (argumentOffset) {
         assembly << instructionSet->add(registers->getStackPointer(), argumentOffset);
     }
+    dropCallerSavedBindings();
 }
 
 void StackMachine::callProcedure(int procedureName, int memoryReturnDest) {
