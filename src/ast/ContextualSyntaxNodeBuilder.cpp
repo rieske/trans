@@ -25,6 +25,7 @@ enum class ForInitKind { None, Expression, Declaration };
 
 void forLoop(AbstractSyntaxTreeBuilderContext& context, ForInitKind init,
         bool hasClause, bool hasIncrement) {
+    // <decl> already includes the terminating ';'.
     const int terminalCount = (init == ForInitKind::Declaration) ? 4 : 5;
     for (int i = 0; i < terminalCount; ++i) {
         context.popTerminal();
@@ -43,41 +44,12 @@ void forLoop(AbstractSyntaxTreeBuilderContext& context, ForInitKind init,
     context.pushStatement(std::make_unique<LoopStatement>(std::move(loopHeader), std::move(body)));
 }
 
-void forExpClauseInc(AbstractSyntaxTreeBuilderContext& c) {
-    forLoop(c, ForInitKind::Expression, true, true);
-}
-void forExpClause(AbstractSyntaxTreeBuilderContext& c) {
-    forLoop(c, ForInitKind::Expression, true, false);
-}
-void forExpInc(AbstractSyntaxTreeBuilderContext& c) {
-    forLoop(c, ForInitKind::Expression, false, true);
-}
-void forExp(AbstractSyntaxTreeBuilderContext& c) {
-    forLoop(c, ForInitKind::Expression, false, false);
-}
-void forNoneClauseInc(AbstractSyntaxTreeBuilderContext& c) {
-    forLoop(c, ForInitKind::None, true, true);
-}
-void forNoneClause(AbstractSyntaxTreeBuilderContext& c) {
-    forLoop(c, ForInitKind::None, true, false);
-}
-void forNoneInc(AbstractSyntaxTreeBuilderContext& c) {
-    forLoop(c, ForInitKind::None, false, true);
-}
-void forNone(AbstractSyntaxTreeBuilderContext& c) {
-    forLoop(c, ForInitKind::None, false, false);
-}
-void forDeclClauseInc(AbstractSyntaxTreeBuilderContext& c) {
-    forLoop(c, ForInitKind::Declaration, true, true);
-}
-void forDeclClause(AbstractSyntaxTreeBuilderContext& c) {
-    forLoop(c, ForInitKind::Declaration, true, false);
-}
-void forDeclInc(AbstractSyntaxTreeBuilderContext& c) {
-    forLoop(c, ForInitKind::Declaration, false, true);
-}
-void forDecl(AbstractSyntaxTreeBuilderContext& c) {
-    forLoop(c, ForInitKind::Declaration, false, false);
+template<ForInitKind Init, bool HasClause, bool HasIncrement, typename Register, typename Rhs>
+void bindForLoop(Register&& registerFor, Rhs&& forRhs) {
+    registerFor(forRhs(Init, HasClause, HasIncrement),
+            [](AbstractSyntaxTreeBuilderContext& context) {
+                forLoop(context, Init, HasClause, HasIncrement);
+            });
 }
 
 int foldBitFieldWidth(AbstractSyntaxTreeBuilderContext& context) {
@@ -489,40 +461,46 @@ ContextualSyntaxNodeBuilder::ContextualSyntaxNodeBuilder(const parser::Grammar& 
     bind(s_iteration_stat_matched, { s_do, s_matched, s_while, s_open_paren, s_exp, s_close_paren, s_semicolon }, doWhileLoopStatement);
     bind(s_iteration_stat_unmatched, { s_do, s_unmatched, s_while, s_open_paren, s_exp, s_close_paren, s_semicolon }, doWhileLoopStatement);
 
-    // for-init: none / expression / declaration. Decl form has one fewer terminal because
-    // <decl> already consumes its terminating ';'.
     auto registerFor = [&](const std::vector<int>& prod, Creator creator) {
         bind(s_iteration_stat_matched, prod, creator);
         auto unmatchedProd = prod;
         unmatchedProd[unmatchedProd.size() - 1] = s_unmatched;
         bind(s_iteration_stat_unmatched, unmatchedProd, creator);
     };
-    registerFor({ s_for, s_open_paren, s_exp, s_semicolon, s_exp, s_semicolon, s_exp, s_close_paren, s_matched },
-            forExpClauseInc);
-    registerFor({ s_for, s_open_paren, s_exp, s_semicolon, s_exp, s_semicolon, s_close_paren, s_matched },
-            forExpClause);
-    registerFor({ s_for, s_open_paren, s_exp, s_semicolon, s_semicolon, s_exp, s_close_paren, s_matched },
-            forExpInc);
-    registerFor({ s_for, s_open_paren, s_exp, s_semicolon, s_semicolon, s_close_paren, s_matched },
-            forExp);
-    registerFor({ s_for, s_open_paren, s_semicolon, s_exp, s_semicolon, s_exp, s_close_paren, s_matched },
-            forNoneClauseInc);
-    registerFor({ s_for, s_open_paren, s_semicolon, s_exp, s_semicolon, s_close_paren, s_matched },
-            forNoneClause);
-    registerFor({ s_for, s_open_paren, s_semicolon, s_semicolon, s_exp, s_close_paren, s_matched },
-            forNoneInc);
-    registerFor({ s_for, s_open_paren, s_semicolon, s_semicolon, s_close_paren, s_matched },
-            forNone);
-
     int s_decl_for = grammar.symbolId("<decl>");
-    registerFor({ s_for, s_open_paren, s_decl_for, s_exp, s_semicolon, s_exp, s_close_paren, s_matched },
-            forDeclClauseInc);
-    registerFor({ s_for, s_open_paren, s_decl_for, s_exp, s_semicolon, s_close_paren, s_matched },
-            forDeclClause);
-    registerFor({ s_for, s_open_paren, s_decl_for, s_semicolon, s_exp, s_close_paren, s_matched },
-            forDeclInc);
-    registerFor({ s_for, s_open_paren, s_decl_for, s_semicolon, s_close_paren, s_matched },
-            forDecl);
+    auto forRhs = [&](ForInitKind init, bool clause, bool increment) {
+        std::vector<int> rhs { s_for, s_open_paren };
+        if (init == ForInitKind::Expression) {
+            rhs.push_back(s_exp);
+            rhs.push_back(s_semicolon);
+        } else if (init == ForInitKind::None) {
+            rhs.push_back(s_semicolon);
+        } else {
+            rhs.push_back(s_decl_for);
+        }
+        if (clause) {
+            rhs.push_back(s_exp);
+        }
+        rhs.push_back(s_semicolon);
+        if (increment) {
+            rhs.push_back(s_exp);
+        }
+        rhs.push_back(s_close_paren);
+        rhs.push_back(s_matched);
+        return rhs;
+    };
+    bindForLoop<ForInitKind::Expression, true, true>(registerFor, forRhs);
+    bindForLoop<ForInitKind::Expression, true, false>(registerFor, forRhs);
+    bindForLoop<ForInitKind::Expression, false, true>(registerFor, forRhs);
+    bindForLoop<ForInitKind::Expression, false, false>(registerFor, forRhs);
+    bindForLoop<ForInitKind::None, true, true>(registerFor, forRhs);
+    bindForLoop<ForInitKind::None, true, false>(registerFor, forRhs);
+    bindForLoop<ForInitKind::None, false, true>(registerFor, forRhs);
+    bindForLoop<ForInitKind::None, false, false>(registerFor, forRhs);
+    bindForLoop<ForInitKind::Declaration, true, true>(registerFor, forRhs);
+    bindForLoop<ForInitKind::Declaration, true, false>(registerFor, forRhs);
+    bindForLoop<ForInitKind::Declaration, false, true>(registerFor, forRhs);
+    bindForLoop<ForInitKind::Declaration, false, false>(registerFor, forRhs);
 
     // --- enum ---
     int s_enum_spec = grammar.symbolId("<enum_spec>");
