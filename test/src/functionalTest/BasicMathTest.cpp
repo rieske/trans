@@ -74,6 +74,22 @@ TEST(Compiler, multiplicationLeavesBothOperandsUsable) {
     program.runAndExpect("3 5 15 10");
 }
 
+TEST(Compiler, algebraicIdentitiesPreserveValue) {
+    SourceProgram program{R"prg(int printf(const char *, ...);
+int scanf(const char *, ...);
+        int main() {
+            int x;
+            scanf("%ld", &x);
+            printf("%d %d %d", x + 0, x * 1, x - 0);
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("0", "0 0 0");
+    program.runAndExpect("7", "7 7 7");
+    program.runAndExpect("-3", "-3 -3 -3");
+}
+
 // FIXME: %ld - ints treated as longs for now
 TEST(Compiler, simpleDivision) {
     SourceProgram program{R"prg(int printf(const char *, ...);
