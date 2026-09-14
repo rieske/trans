@@ -108,13 +108,14 @@ void applyRefsBackward(std::unordered_set<int>& later, const SymbolRefs& refs) {
 
 } // namespace
 
-LabelLiveIns computeLabelLiveIns(const Procedure& procedure) {
-    LabelLiveIns out;
+ProcedureLiveness computeProcedureLiveness(const Procedure& procedure) {
+    ProcedureLiveness out;
     const Cfg cfg = buildCfg(procedure.body);
     if (cfg.empty()) {
         return out;
     }
     const LinearPrep prep = prepare(procedure.body);
+    out.addressTaken = prep.addressTaken;
     const LiveSets live = solveLiveness(cfg, genKill(cfg, prep));
 
     for (std::size_t i = 0; i < cfg.size(); ++i) {
@@ -125,17 +126,6 @@ LabelLiveIns computeLabelLiveIns(const Procedure& procedure) {
         dest = live.liveIn[i];
         dest.insert(prep.addressTaken.begin(), prep.addressTaken.end());
     }
-    return out;
-}
-
-std::unordered_map<int, std::unordered_set<int>> computeLiveAfterCalls(const Procedure& procedure) {
-    std::unordered_map<int, std::unordered_set<int>> after;
-    const Cfg cfg = buildCfg(procedure.body);
-    if (cfg.empty()) {
-        return after;
-    }
-    const LinearPrep prep = prepare(procedure.body);
-    const LiveSets live = solveLiveness(cfg, genKill(cfg, prep));
 
     std::size_t bodyIndex = 0;
     for (std::size_t b = 0; b < cfg.size(); ++b) {
@@ -152,17 +142,27 @@ std::unordered_map<int, std::unordered_set<int>> computeLiveAfterCalls(const Pro
             SymbolRefs refs;
             collectSymbolRefs(cfg[b].insts[n], refs);
             if (refs.isCall && instIndex[n] < prep.extraCallUses.size()) {
-                after[static_cast<int>(instIndex[n])] = later;
+                out.afterCall[static_cast<int>(instIndex[n])] = later;
                 for (int id : prep.extraCallUses[instIndex[n]]) {
                     refs.addUse(id);
                 }
             } else if (refs.isCall) {
-                after[static_cast<int>(instIndex[n])] = later;
+                out.afterCall[static_cast<int>(instIndex[n])] = later;
             }
             applyRefsBackward(later, refs);
         }
     }
-    return after;
+    return out;
+}
+
+LabelLiveIns computeLabelLiveIns(const Procedure& procedure) {
+    LabelLiveIns out;
+    out.atLabel = std::move(computeProcedureLiveness(procedure).atLabel);
+    return out;
+}
+
+std::unordered_map<int, std::unordered_set<int>> computeLiveAfterCalls(const Procedure& procedure) {
+    return computeProcedureLiveness(procedure).afterCall;
 }
 
 } // namespace codegen

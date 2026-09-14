@@ -37,6 +37,20 @@ int scanf(const char *, ...);
     program.runAndExpect("1\n2", "1 2");
 }
 
+TEST(Compiler, sumOfTwoCallsKeepsFirstResult) {
+    SourceProgram program{R"prg(int printf(const char *, ...);
+        int inc(int x) {
+            return x + 1;
+        }
+        int main() {
+            printf("%d", inc(1) + inc(2));
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("5");
+}
+
 // 7 total args: 6 in registers, 1 on the stack (odd stack-arg count must keep RSP 16-byte aligned)
 TEST(Compiler, callWithSevenArguments) {
     SourceProgram program{R"prg(int printf(const char *, ...);

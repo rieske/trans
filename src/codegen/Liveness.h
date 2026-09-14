@@ -8,10 +8,17 @@
 
 namespace codegen {
 
+struct ProcedureLiveness {
+    std::unordered_map<int, std::unordered_set<int>> atLabel;
+    std::unordered_map<int, std::unordered_set<int>> afterCall;
+    std::unordered_set<int> addressTaken;
+};
+
 struct LabelLiveIns {
     std::unordered_map<int, std::unordered_set<int>> atLabel;
 };
 
+ProcedureLiveness computeProcedureLiveness(const Procedure& procedure);
 LabelLiveIns computeLabelLiveIns(const Procedure& procedure);
 std::unordered_map<int, std::unordered_set<int>> computeLiveAfterCalls(const Procedure& procedure);
 

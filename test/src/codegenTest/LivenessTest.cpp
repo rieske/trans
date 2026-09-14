@@ -193,4 +193,58 @@ TEST(Liveness, liveAfterCallKeepsValueUsedBeforeCallInLoop) {
     EXPECT_THAT(after.at(2), UnorderedElementsAre(n("a")));
 }
 
+TEST(Liveness, procedureLivenessEmptyBodyHasEmptySets) {
+    IntermediateRepresentation ir;
+    const ProcedureLiveness live = computeProcedureLiveness(makeProc(ir.strings, {}));
+
+    EXPECT_THAT(live.atLabel, IsEmpty());
+    EXPECT_THAT(live.afterCall, IsEmpty());
+    EXPECT_THAT(live.addressTaken, IsEmpty());
+}
+
+TEST(Liveness, procedureLivenessLoneCallHasEmptyAfterCallSet) {
+    IntermediateRepresentation ir;
+    IrN n { ir.strings };
+    const ProcedureLiveness live = computeProcedureLiveness(makeProc(ir.strings, {
+            ir::call(n("foo")),
+    }));
+
+    EXPECT_THAT(live.afterCall.size(), Eq(1u));
+    ASSERT_THAT(live.afterCall.count(0), Eq(1u));
+    EXPECT_THAT(live.afterCall.at(0), IsEmpty());
+}
+
+TEST(Liveness, procedureLivenessNoCallLeavesAfterCallEmpty) {
+    IntermediateRepresentation ir;
+    IrN n { ir.strings };
+    const ProcedureLiveness live = computeProcedureLiveness(makeProc(ir.strings, {
+            ir::label(n("L")),
+            ir::ret(n("x")),
+    }));
+
+    EXPECT_THAT(live.afterCall, IsEmpty());
+    EXPECT_THAT(live.addressTaken, IsEmpty());
+    ASSERT_THAT(live.atLabel.count(n("L")), Eq(1u));
+    EXPECT_THAT(live.atLabel.at(n("L")), UnorderedElementsAre(n("x")));
+}
+
+TEST(Liveness, procedureLivenessCallKeepsTempAndAddressTaken) {
+    IntermediateRepresentation ir;
+    IrN n { ir.strings };
+    const ProcedureLiveness live = computeProcedureLiveness(makeProc(ir.strings, {
+            ir::addressOf(n("a"), n("p")),
+            ir::add(n("a"), n("a"), n("t")),
+            ir::call(n("foo")),
+            ir::label(n("L")),
+            ir::ret(n("t")),
+    }));
+
+    EXPECT_THAT(live.addressTaken, UnorderedElementsAre(n("a")));
+    ASSERT_THAT(live.atLabel.count(n("L")), Eq(1u));
+    EXPECT_THAT(live.atLabel.at(n("L")), UnorderedElementsAre(n("t"), n("a")));
+    EXPECT_THAT(live.afterCall.size(), Eq(1u));
+    ASSERT_THAT(live.afterCall.count(2), Eq(1u));
+    EXPECT_THAT(live.afterCall.at(2), UnorderedElementsAre(n("t")));
+}
+
 } // namespace
