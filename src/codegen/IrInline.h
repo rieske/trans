@@ -28,6 +28,19 @@ bool callIsEligible(const Instruction& call,
         int inlinesInTu,
         bool calleeFinished);
 
+bool formalCanShareActual(const Procedure& callee, int formalId, int actualId,
+        const Procedure& caller);
+
+// Does not splice. Pushes clones onto caller.frame.locals.
+std::vector<Instruction> cloneCalleeBody(
+        Procedure& caller,
+        const Procedure& callee,
+        const std::vector<int>& actuals,
+        int retrieveResult,
+        int memoryReturnDest,
+        int siteId,
+        IrStringTable& strings);
+
 } // namespace codegen
 
 #endif

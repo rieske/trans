@@ -27,10 +27,10 @@ bool isDigit(char c) {
     return c >= '0' && c <= '9';
 }
 
-// $t / __L / L$str / L$cl counters are process-wide in the compiler.
+// $t / __L / L$str / L$cl / L$inl counters are process-wide in the compiler.
 // Remap each prefix to first-seen ordinals so dumps are order-stable.
 std::string normalizeIrDump(const std::string& dump) {
-    static const char* prefixes[] = { "L$str", "L$cl", "__L", "$t" };
+    static const char* prefixes[] = { "L$str", "L$cl", "L$inl", "__L", "$t" };
     std::map<std::string, std::string> mapped;
     std::map<std::string, int> next;
     std::string out;
