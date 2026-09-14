@@ -2,6 +2,7 @@
 #include "ResourcesLocation.h"
 
 #include <charconv>
+#include <cstdlib>
 #include <optional>
 #include <sstream>
 #include <string>

@@ -10,7 +10,7 @@ public:
     Assembly(std::ostream* ostream);
     Assembly(const Assembly&) = default;
     Assembly(Assembly&&) = default;
-    virtual ~Assembly() = default;
+    ~Assembly() = default;
 
     Assembly& operator=(const Assembly&) = delete;
     Assembly& operator=(Assembly&&) = default;
