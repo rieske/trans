@@ -201,6 +201,45 @@ TEST(Compiler, staticHelperAdd1StillComputes) {
     program.runAndExpect("42");
 }
 
+TEST(Compiler, twoXHelperKeepsBothSlots) {
+    SourceProgram program{R"prg(int printf(const char *, ...);
+        static int mix(int a, int b) {
+            int x;
+            int saved;
+            x = a;
+            {
+                int x;
+                x = b;
+                saved = x;
+            }
+            return x + saved;
+        }
+        int main() {
+            printf("%d", mix(10, 3));
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("13");
+}
+
+TEST(Compiler, add1OfGlobalKeepsOldValue) {
+    SourceProgram program{R"prg(int printf(const char *, ...);
+        int g;
+        static int add1(int x) {
+            g = 0;
+            return x + 1;
+        }
+        int main() {
+            g = 41;
+            printf("%d %d", add1(g), g);
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("42 0");
+}
+
 TEST(Compiler, nestedFunctionCalls) {
     SourceProgram program{R"prg(int printf(const char *, ...);
 int scanf(const char *, ...);
