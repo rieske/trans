@@ -436,13 +436,13 @@ std::optional<PendingCompare> pendingFromCompare(const Instruction& inst, std::s
 // eliminateDeadTemps. Sound because facts only flow forward: a symbol cannot be aliased
 // before its AddressOf is reached, and `known` is dropped at any label not entered solely
 // by fallthrough, so nothing survives a back edge into a later AddressOf.
-bool foldConstants(Procedure& procedure, IrStringTable& strings) {
+FoldResult foldConstants(Procedure& procedure, IrStringTable& strings) {
     const auto preds = labelPredCounts(procedure.body);
     std::unordered_map<int, unsigned long long> known;
     std::unordered_set<int> escaped;
     std::optional<PendingCompare> pending;
     std::vector<char> drop(procedure.body.size(), 0);
-    bool changed = false;
+    FoldResult result;
     bool fall = true;
 
     for (std::size_t i = 0; i < procedure.body.size(); ++i) {
@@ -458,7 +458,7 @@ bool foldConstants(Procedure& procedure, IrStringTable& strings) {
         }
         if (auto repl = tryFold(inst, known, procedure, strings)) {
             inst = *repl;
-            changed = true;
+            result.changed = true;
         }
         SymbolRefs refs;
         collectSymbolRefs(inst, refs);
@@ -500,7 +500,8 @@ bool foldConstants(Procedure& procedure, IrStringTable& strings) {
                 } else {
                     drop[i] = 1;
                 }
-                changed = true;
+                result.changed = true;
+                result.controlFlow = true;
             }
             pending.reset();
         } else if (auto next = pendingFromCompare(inst, i, known, procedure)) {
@@ -515,7 +516,7 @@ bool foldConstants(Procedure& procedure, IrStringTable& strings) {
         }
     }
 
-    if (changed) {
+    if (result.changed) {
         std::vector<Instruction> kept;
         kept.reserve(procedure.body.size());
         for (std::size_t i = 0; i < procedure.body.size(); ++i) {
@@ -525,7 +526,7 @@ bool foldConstants(Procedure& procedure, IrStringTable& strings) {
         }
         procedure.body = std::move(kept);
     }
-    return changed;
+    return result;
 }
 
 namespace {
@@ -793,14 +794,16 @@ IntermediateRepresentation runIrPasses(IntermediateRepresentation ir, int optLev
     ir = applyCfgPasses(std::move(ir), optLevel);
     if (optLevel >= 1) {
         for (int iter = 0; iter < 8; ++iter) {
-            bool folded = false;
+            FoldResult fold;
             for (auto& procedure : ir.procedures) {
-                if (foldConstants(procedure, ir.strings)) {
-                    folded = true;
-                }
+                const FoldResult one = foldConstants(procedure, ir.strings);
+                fold.changed = fold.changed || one.changed;
+                fold.controlFlow = fold.controlFlow || one.controlFlow;
             }
-            ir = applyCfgPasses(std::move(ir), optLevel);
-            if (!folded) {
+            if (fold.controlFlow) {
+                ir = applyCfgPasses(std::move(ir), optLevel);
+            }
+            if (!fold.changed) {
                 break;
             }
         }

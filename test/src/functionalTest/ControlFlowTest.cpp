@@ -48,6 +48,34 @@ int scanf(const char *, ...);
     program.runAndExpect("1 1", "3");
 }
 
+TEST(Compiler, ifConstantConditionSelectsArm) {
+    SourceProgram program{R"prg(int printf(const char *, ...);
+        int main() {
+            if (0) {
+                printf("%d", 9);
+            } else {
+                printf("%d", 1);
+            }
+            if (1) {
+                printf("%d", 2);
+            } else {
+                printf("%d", 8);
+            }
+            if (2 < 1) {
+                printf("%d", 7);
+            } else {
+                printf("%d", 3);
+            }
+            if (1 < 2) {
+                printf("%d", 4);
+            }
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("1234");
+}
+
 TEST(Compiler, ifEmptyThenBranch) {
     SourceProgram program{R"prg(int printf(const char *, ...);
 int scanf(const char *, ...);
