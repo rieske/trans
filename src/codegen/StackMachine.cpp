@@ -1,7 +1,6 @@
 #include "StackMachine.h"
 
 #include "Liveness.h"
-#include "SymbolRefs.h"
 #include "codegen/InternalError.h"
 
 #include "SysVCallConv.h"
@@ -89,18 +88,12 @@ void StackMachine::startProcedure(const Procedure& procedure) {
     frameHomes.clear();
     sretId_ = kNoSymbol;
     variadicFrame.reset();
-    liveInAtLabel_ = computeLabelLiveIns(procedure).atLabel;
+    const ProcedureLiveness live = computeProcedureLiveness(procedure);
+    liveInAtLabel_ = live.atLabel;
     haveEdgeLiveness_ = true;
-    liveAfterCall_ = computeLiveAfterCalls(procedure);
+    liveAfterCall_ = live.afterCall;
     haveCallLiveness_ = true;
-    addressTaken_.clear();
-    for (const auto& inst : procedure.body) {
-        SymbolRefs refs;
-        collectSymbolRefs(inst, refs);
-        if (refs.addressOfBase != kNoSymbol) {
-            addressTaken_.insert(refs.addressOfBase);
-        }
-    }
+    addressTaken_ = live.addressTaken;
     hasFrame_ = true;
     frameLayout_ = {};
     instructionOrdinal = 0;

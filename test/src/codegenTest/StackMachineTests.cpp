@@ -198,6 +198,26 @@ TEST_F(StackMachineTest, procedureCall_storesAllDirtyCallerSavedRegisters) {
             "\tcall procedure@plt\n");
 }
 
+TEST_F(StackMachineTest, callDoesNotStoreDeadExpressionTempInCallerSaved) {
+    Value temp { names.intern("t"), 0, Type::INTEGRAL, 8 };
+    temp.markExpressionTemp();
+    Procedure procedure = testProc("proc", { temp }, { });
+    procedure.body = { ir::call(n("foo")) };
+
+    StackMachine stackMachine { &assemblyCode, att, *registers, names };
+    stackMachine.startProcedure(procedure);
+    assemblyCode.str("");
+    rcx->assign(&temp);
+    ASSERT_TRUE(rcx->containsUnstoredValue());
+    ASSERT_EQ(rcx->getValue()->id(), temp.id());
+
+    stackMachine.emit(ir::call(n("foo")));
+
+    EXPECT_THAT(assemblyCode.str(), testing::HasSubstr("call"));
+    EXPECT_THAT(assemblyCode.str(), testing::Not(testing::HasSubstr("rcx")));
+    EXPECT_THAT(assemblyCode.str(), testing::Not(testing::HasSubstr("ecx")));
+}
+
 // Variadic ABI: AL must be 0 when no vector args are passed (e.g. printf with integers only)
 TEST_F(StackMachineTest, procedureCall_clearsRaxForVariadicAlRequirement) {
     StackMachine stackMachine { &assemblyCode, att, extraRegs, names };
