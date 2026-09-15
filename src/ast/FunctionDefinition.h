@@ -26,7 +26,7 @@ public:
     // Visit body block contents without Block::accept (no extra scope enter).
     void visitBodyChildren(AbstractSyntaxTreeVisitor& visitor);
 
-    std::string getName() const;
+    const std::string& getName() const;
     const DeclarationSpecifiers& getReturnTypeSpecifiers() const;
     type::Type getDeclaratorType(const type::Type& baseType) const;
     const Declarator& getDeclarator() const;

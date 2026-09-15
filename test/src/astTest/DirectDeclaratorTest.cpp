@@ -19,6 +19,12 @@ TEST(DirectDeclarator, identifierHasNoArray) {
     EXPECT_FALSE(id.hasArrayDeclarator());
 }
 
+TEST(DirectDeclarator, identifierNameIsStored) {
+    Identifier id { name("foo") };
+    EXPECT_EQ(id.getName(), "foo");
+    EXPECT_EQ(&id.getName(), &id.getName());
+}
+
 TEST(DirectDeclarator, functionDeclaratorHasNoArray) {
     FunctionDeclarator fn { std::make_unique<Identifier>(name("f")) };
     EXPECT_FALSE(fn.hasArrayDeclarator());

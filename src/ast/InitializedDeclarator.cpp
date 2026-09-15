@@ -29,7 +29,7 @@ void InitializedDeclarator::visitInitializer(AbstractSyntaxTreeVisitor& visitor)
     }
 }
 
-std::string ast::InitializedDeclarator::getName() const {
+const std::string& ast::InitializedDeclarator::getName() const {
     return declarator->getName();
 }
 

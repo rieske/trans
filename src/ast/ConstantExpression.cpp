@@ -1,5 +1,7 @@
 #include "ConstantExpression.h"
 
+#include <utility>
+
 #include "AbstractSyntaxTreeVisitor.h"
 #include "types/IntegerConstant.h"
 #include "util/IntegerLiteral.h"
@@ -8,9 +10,9 @@
 namespace ast {
 
 ConstantExpression::ConstantExpression(Constant constant) :
-        constant { constant }
+        constant { std::move(constant) }
 {
-    setType(constant.getType());
+    setType(this->constant.getType());
 }
 
 ConstantExpression::~ConstantExpression() {
@@ -28,7 +30,7 @@ translation_unit::Context ConstantExpression::getContext() const {
     return constant.getContext();
 }
 
-std::string ConstantExpression::getValue() const {
+const std::string& ConstantExpression::getValue() const {
     return constant.getValue();
 }
 

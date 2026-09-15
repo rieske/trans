@@ -16,7 +16,7 @@ public:
     Register& operator=(const Register&) = delete;
     Register& operator=(Register&&) = delete;
 
-    std::string getName() const;
+    const std::string& getName() const;
 
     bool containsUnstoredValue() const;
     Value* getValue() const;

@@ -38,7 +38,7 @@ void FunctionDefinition::visitBodyChildren(AbstractSyntaxTreeVisitor& visitor) {
     body->visitChildren(visitor);
 }
 
-std::string FunctionDefinition::getName() const {
+const std::string& FunctionDefinition::getName() const {
     return declarator->getName();
 }
 

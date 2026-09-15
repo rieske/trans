@@ -20,7 +20,7 @@ public:
     void visitDeclarator(AbstractSyntaxTreeVisitor& visitor);
     void visitInitializer(AbstractSyntaxTreeVisitor& visitor);
 
-    std::string getName() const;
+    const std::string& getName() const;
     Declarator& getDeclarator() { return *declarator; }
     const Declarator& getDeclarator() const { return *declarator; }
     type::Type getFundamentalType(const type::Type& baseType) const;

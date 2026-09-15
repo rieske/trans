@@ -2,13 +2,15 @@
 #include "ast/AbstractSyntaxTreeVisitor.h"
 #include "util/StringLiteralDecode.h"
 
+#include <utility>
+
 namespace ast {
 
 StringLiteralExpression::StringLiteralExpression(std::string value, translation_unit::Context context):
-    value {value},
+    value { std::move(value) },
     context {context}
 {
-    setType(type::array(type::signedCharacter(), util::stringLiteralArrayLength(value)));
+    setType(type::array(type::signedCharacter(), util::stringLiteralArrayLength(this->value)));
 }
 
 StringLiteralExpression::~StringLiteralExpression() = default;
@@ -17,7 +19,7 @@ translation_unit::Context StringLiteralExpression::getContext() const {
     return context;
 }
 
-std::string StringLiteralExpression::getValue() const {
+const std::string& StringLiteralExpression::getValue() const {
     return value;
 }
 

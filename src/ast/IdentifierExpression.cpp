@@ -4,10 +4,12 @@
 #include "ParseEnvironment.h"
 #include "types/IntegerConstant.h"
 
+#include <utility>
+
 namespace ast {
 
 IdentifierExpression::IdentifierExpression(std::string identifier, translation_unit::Context context) :
-        identifier { identifier },
+        identifier { std::move(identifier) },
         context { context }
 {
 }
@@ -27,7 +29,7 @@ translation_unit::Context IdentifierExpression::getContext() const {
     return context;
 }
 
-std::string IdentifierExpression::getIdentifier() const {
+const std::string& IdentifierExpression::getIdentifier() const {
     return identifier;
 }
 

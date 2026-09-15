@@ -15,7 +15,7 @@ public:
 
     translation_unit::Context getContext() const override;
     ExprKind exprKind() const override { return ExprKind::StringLiteral; }
-    std::string getValue() const;
+    const std::string& getValue() const;
 
     void setRodataLabel(symbols::AnnotationStore& store, std::string label);
     const std::string* rodataLabel(const symbols::AnnotationStore& store) const;

@@ -24,7 +24,7 @@ void Declarator::visitChildren(AbstractSyntaxTreeVisitor& visitor) {
     declarator->accept(visitor);
 }
 
-std::string Declarator::getName() const {
+const std::string& Declarator::getName() const {
     return declarator->getName();
 }
 

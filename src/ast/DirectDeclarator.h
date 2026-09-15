@@ -20,7 +20,7 @@ public:
     virtual ~DirectDeclarator() = default;
 
 
-    std::string getName() const;
+    const std::string& getName() const;
 
     translation_unit::Context getContext() const;
 
