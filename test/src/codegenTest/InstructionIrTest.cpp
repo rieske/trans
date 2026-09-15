@@ -400,6 +400,38 @@ TEST(InstructionIr, addFrameTempPushesDistinctExpressionTemps) {
     EXPECT_THAT(ir.strings.get(b), Eq("__t1"));
 }
 
+TEST(InstructionIr, addFrameTempSkipsAlreadyInternedName) {
+    IntermediateRepresentation ir;
+    Procedure p;
+    p.name = ir.strings.intern("f");
+    ir.strings.intern("__t0");
+    const int a = addFrameTemp(ir.strings, p, type::signedInteger());
+    EXPECT_THAT(ir.strings.get(a), Eq("__t1"));
+}
+
+TEST(InstructionIr, addFrameTempSharesCounterAcrossProcedures) {
+    IntermediateRepresentation ir;
+    Procedure f;
+    f.name = ir.strings.intern("f");
+    Procedure g;
+    g.name = ir.strings.intern("g");
+    const int a = addFrameTemp(ir.strings, f, type::signedInteger());
+    const int b = addFrameTemp(ir.strings, g, type::signedInteger());
+    EXPECT_THAT(ir.strings.get(a), Eq("__t0"));
+    EXPECT_THAT(ir.strings.get(b), Eq("__t1"));
+}
+
+TEST(InstructionIr, addFrameTempSkipsInternedHole) {
+    IntermediateRepresentation ir;
+    Procedure p;
+    p.name = ir.strings.intern("f");
+    ir.strings.intern("__t1");
+    const int a = addFrameTemp(ir.strings, p, type::signedInteger());
+    const int b = addFrameTemp(ir.strings, p, type::signedInteger());
+    EXPECT_THAT(ir.strings.get(a), Eq("__t0"));
+    EXPECT_THAT(ir.strings.get(b), Eq("__t2"));
+}
+
 TEST(InstructionIr, procedurePreservesFrame) {
     auto ir = callReturnSequence();
     ASSERT_THAT(ir.procedures, SizeIs(1));

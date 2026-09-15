@@ -19,6 +19,14 @@ int IrStringTable::intern(std::string_view text) {
     return id;
 }
 
+int IrStringTable::internFrameTemp() {
+    std::string name;
+    do {
+        name = "__t" + std::to_string(nextFrameTemp_++);
+    } while (find(name) != kNoSymbol);
+    return intern(name);
+}
+
 int IrStringTable::find(std::string_view text) const {
     if (text.empty()) {
         return kNoSymbol;
