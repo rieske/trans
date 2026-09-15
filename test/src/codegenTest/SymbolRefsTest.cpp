@@ -100,6 +100,40 @@ TEST(SymbolRefs, argumentIsParamUse) {
     EXPECT_TRUE(refs.defs.empty());
 }
 
+TEST(SymbolRefs, addIsTwoUsesOneDef) {
+    IrStringTable strings;
+    const int a = strings.intern("a");
+    const int b = strings.intern("b");
+    const int t = strings.intern("t");
+    Instruction op = ir::add(a, b, t);
+    SymbolRefs refs;
+    collectSymbolRefs(op, refs);
+    ASSERT_EQ(refs.uses.size(), 2u);
+    EXPECT_EQ(refs.uses[0], a);
+    EXPECT_EQ(refs.uses[1], b);
+    ASSERT_EQ(refs.defs.size(), 1u);
+    EXPECT_EQ(refs.defs[0], t);
+}
+
+TEST(SymbolRefs, callWithMemoryReturnUsesDestNotArgs) {
+    IrStringTable strings;
+    const int foo = strings.intern("foo");
+    const int dest = strings.intern("dest");
+    const int arg = strings.intern("arg");
+    SymbolRefs args;
+    collectSymbolRefs(ir::argument(arg), args);
+    EXPECT_TRUE(args.isParam);
+    ASSERT_EQ(args.uses.size(), 1u);
+    EXPECT_EQ(args.uses[0], arg);
+
+    SymbolRefs call;
+    collectSymbolRefs(ir::call(foo, false, dest), call);
+    EXPECT_TRUE(call.isCall);
+    ASSERT_EQ(call.uses.size(), 1u);
+    EXPECT_EQ(call.uses[0], dest);
+    EXPECT_TRUE(call.defs.empty());
+}
+
 TEST(SymbolRefs, callIsCallIndirectUsesTarget) {
     IrStringTable strings;
     const int foo = strings.intern("foo");

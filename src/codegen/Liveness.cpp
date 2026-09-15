@@ -49,7 +49,9 @@ std::vector<BlockSets> genKill(const Cfg& cfg, const LinearPrep& prep) {
             collectSymbolRefs(inst, refs);
             if (refs.isCall && bodyIndex < prep.extraCallUses.size()) {
                 for (int id : prep.extraCallUses[bodyIndex]) {
-                    refs.addUse(id);
+                    if (sets[b].kill.count(id) == 0) {
+                        sets[b].gen.insert(id);
+                    }
                 }
             }
             for (int id : refs.uses) {
@@ -141,15 +143,14 @@ ProcedureLiveness computeProcedureLiveness(const Procedure& procedure) {
         for (std::size_t n = cfg[b].insts.size(); n-- > 0;) {
             SymbolRefs refs;
             collectSymbolRefs(cfg[b].insts[n], refs);
-            if (refs.isCall && instIndex[n] < prep.extraCallUses.size()) {
-                out.afterCall[static_cast<int>(instIndex[n])] = later;
-                for (int id : prep.extraCallUses[instIndex[n]]) {
-                    refs.addUse(id);
-                }
-            } else if (refs.isCall) {
+            if (refs.isCall) {
                 out.afterCall[static_cast<int>(instIndex[n])] = later;
             }
             applyRefsBackward(later, refs);
+            if (refs.isCall && instIndex[n] < prep.extraCallUses.size()) {
+                later.insert(prep.extraCallUses[instIndex[n]].begin(),
+                        prep.extraCallUses[instIndex[n]].end());
+            }
         }
     }
     return out;
