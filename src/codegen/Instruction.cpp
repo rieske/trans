@@ -30,13 +30,8 @@ void internProcedureTemps(IrStringTable& strings, Procedure& procedure) {
 }
 
 int addFrameTemp(IrStringTable& strings, Procedure& procedure, const type::Type& type) {
-    int n = 0;
-    std::string name;
-    do {
-        name = "__t" + std::to_string(n++);
-    } while (strings.find(name) != kNoSymbol);
     Value scratch {
-            strings.intern(name),
+            strings.internFrameTemp(),
             0,
             valueKindFromCType(type),
             type.getSize(),
