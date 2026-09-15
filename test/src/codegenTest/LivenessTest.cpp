@@ -153,6 +153,37 @@ TEST(Liveness, addressTakenIsLiveInAtJoinAfterInc) {
     EXPECT_THAT(live.atLabel.at(n("join")), UnorderedElementsAre(n("p"), n("a")));
 }
 
+TEST(Liveness, liveAfterCallKeepsArgUsedAfterNotSiblings) {
+    IntermediateRepresentation ir;
+    IrN n { ir.strings };
+    const auto after = computeLiveAfterCalls(makeProc(ir.strings, {
+            ir::argument(n("a")),
+            ir::argument(n("b")),
+            ir::argument(n("c")),
+            ir::call(n("foo")),
+            ir::ret(n("a")),
+    }));
+
+    ASSERT_THAT(after.count(3), Eq(1u));
+    EXPECT_THAT(after.at(3), UnorderedElementsAre(n("a")));
+}
+
+TEST(Liveness, threePendingArgsStayLiveAtLabelBeforeCall) {
+    IntermediateRepresentation ir;
+    IrN n { ir.strings };
+    const LabelLiveIns live = computeLabelLiveIns(makeProc(ir.strings, {
+            ir::argument(n("a")),
+            ir::argument(n("b")),
+            ir::argument(n("c")),
+            ir::label(n("L")),
+            ir::call(n("foo")),
+            ir::voidReturn(),
+    }));
+
+    ASSERT_THAT(live.atLabel.count(n("L")), Eq(1u));
+    EXPECT_THAT(live.atLabel.at(n("L")), UnorderedElementsAre(n("a"), n("b"), n("c")));
+}
+
 TEST(Liveness, liveAfterCallExcludesDeadTemp) {
     IntermediateRepresentation ir;
     IrN n { ir.strings };
