@@ -31,6 +31,14 @@ bool callIsEligible(const Instruction& call,
 bool formalCanShareActual(const Procedure& callee, int formalId, int actualId,
         const Procedure& caller);
 
+struct InlineStats {
+    int sitesConsidered { 0 };
+    int sitesInlined { 0 };
+    int refusedSize { 0 };
+    int refusedRecursion { 0 };
+    int refusedOther { 0 };
+};
+
 // Does not splice. Pushes clones onto caller.frame.locals.
 std::vector<Instruction> cloneCalleeBody(
         Procedure& caller,
@@ -40,6 +48,8 @@ std::vector<Instruction> cloneCalleeBody(
         int memoryReturnDest,
         int siteId,
         IrStringTable& strings);
+
+InlineStats inlineProcedures(IntermediateRepresentation& ir, InlineCaps caps = {});
 
 } // namespace codegen
 
