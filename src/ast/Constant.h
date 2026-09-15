@@ -14,8 +14,8 @@ public:
     virtual ~Constant() = default;
 
     translation_unit::Context getContext() const;
-    std::string getValue() const;
-    type::Type getType() const;
+    const std::string& getValue() const;
+    const type::Type& getType() const;
 
 private:
     std::string value;

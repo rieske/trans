@@ -18,7 +18,7 @@ public:
 
     std::optional<type::Type> typeAtParseTime(const ParseEnvironment& environment) const override;
     translation_unit::Context getContext() const override;
-    std::string getIdentifier() const;
+    const std::string& getIdentifier() const;
 
     // Parse-time const-fold residual for enumerators (not AnnotationStore).
     // SA may clear when an ordinary object shadows the name, or re-set from

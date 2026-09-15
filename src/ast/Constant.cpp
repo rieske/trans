@@ -1,10 +1,12 @@
 #include "Constant.h"
 
+#include <utility>
+
 namespace ast {
 
 Constant::Constant(std::string value, type::Type type, translation_unit::Context context) :
-        value { value },
-        type { type },
+        value { std::move(value) },
+        type { std::move(type) },
         context { context }
 {
 }
@@ -13,11 +15,11 @@ translation_unit::Context Constant::getContext() const {
     return context;
 }
 
-std::string Constant::getValue() const {
+const std::string& Constant::getValue() const {
     return value;
 }
 
-type::Type Constant::getType() const {
+const type::Type& Constant::getType() const {
     return type;
 }
 

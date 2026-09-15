@@ -18,6 +18,12 @@ namespace {
 using testing::StrEq;
 using namespace codegen;
 
+TEST(Register, getNameIsStored) {
+    Register r { "rax" };
+    EXPECT_EQ(r.getName(), "rax");
+    EXPECT_EQ(&r.getName(), &r.getName());
+}
+
 class StackMachineTest: public testing::Test {
 public:
     StackMachineTest() :

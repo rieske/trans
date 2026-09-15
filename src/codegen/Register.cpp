@@ -2,14 +2,16 @@
 
 #include "Value.h"
 
+#include <utility>
+
 namespace codegen {
 
 Register::Register(std::string name) :
-        name { name }
+        name { std::move(name) }
 {
 }
 
-std::string Register::getName() const {
+const std::string& Register::getName() const {
     return name;
 }
 

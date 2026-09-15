@@ -61,8 +61,9 @@ void FormalArgument::forEachFormalArgument(const std::function<void(const Formal
     }
 }
 
-std::string FormalArgument::getName() const {
-    return declarator ? declarator->getName() : "";
+const std::string& FormalArgument::getName() const {
+    static const std::string empty;
+    return declarator ? declarator->getName() : empty;
 }
 
 translation_unit::Context FormalArgument::getDeclarationContext() const {

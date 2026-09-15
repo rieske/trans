@@ -1,15 +1,17 @@
 #include "DirectDeclarator.h"
 #include "ArrayDeclarator.h"
 
+#include <utility>
+
 namespace ast {
 
 DirectDeclarator::DirectDeclarator(std::string name, const translation_unit::Context& context) :
-        name { name },
+        name { std::move(name) },
         context { context }
 {
 }
 
-std::string DirectDeclarator::getName() const {
+const std::string& DirectDeclarator::getName() const {
     return name;
 }
 

@@ -70,6 +70,22 @@ TEST(FunctionDefinition, noArgFunctionHasEmptyParameterNames) {
     EXPECT_TRUE(def.definedFunctionParameterNames().empty());
 }
 
+TEST(FunctionDefinition, getNameIsDeclaratorName) {
+    FunctionDefinition def {
+            intSpecs(),
+            std::make_unique<Declarator>(std::make_unique<FunctionDeclarator>(
+                    std::make_unique<Identifier>(id("f")))),
+            emptyBody() };
+    EXPECT_EQ(def.getName(), "f");
+    EXPECT_EQ(&def.getName(), &def.getName());
+}
+
+TEST(FunctionDefinition, formalArgumentNames) {
+    FormalArgument unnamed { intSpecs() };
+    EXPECT_EQ(unnamed.getName(), "");
+    EXPECT_EQ(namedIntParam("x").getName(), "x");
+}
+
 TEST(FunctionDefinition, nonFunctionDeclaratorIsNotADefinedFunction) {
     FunctionDefinition def {
             intSpecs(),

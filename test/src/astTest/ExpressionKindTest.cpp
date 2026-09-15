@@ -158,4 +158,24 @@ TEST(ExpressionKind, typedAccessors) {
     EXPECT_EQ(strAsExpr.asInitList(), nullptr);
 }
 
+TEST(Expression, storedLexemes) {
+    ast::IdentifierExpression name("foo", ctx());
+    EXPECT_EQ(name.getIdentifier(), "foo");
+    EXPECT_EQ(&name.getIdentifier(), &name.getIdentifier());
+
+    ast::Constant c("42", type::signedInteger(), ctx());
+    EXPECT_EQ(c.getValue(), "42");
+    EXPECT_EQ(&c.getValue(), &c.getValue());
+    EXPECT_TRUE(c.getType().equivalentTo(type::signedInteger()));
+    EXPECT_EQ(&c.getType(), &c.getType());
+
+    ast::ConstantExpression ce { ast::Constant("7", type::signedInteger(), ctx()) };
+    EXPECT_EQ(ce.getValue(), "7");
+    EXPECT_EQ(&ce.getValue(), &ce.getValue());
+
+    ast::StringLiteralExpression s("\"hi\"", ctx());
+    EXPECT_EQ(s.getValue(), "\"hi\"");
+    EXPECT_EQ(&s.getValue(), &s.getValue());
+}
+
 } // namespace

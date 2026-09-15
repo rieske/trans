@@ -27,7 +27,7 @@ public:
     void forEachFormalArgument(const std::function<void(const FormalArgument&)>& fn) const;
     DeclarationSpecifiers& getSpecifiers() { return specifiers; }
     const DeclarationSpecifiers& getSpecifiers() const { return specifiers; }
-    std::string getName() const;
+    const std::string& getName() const;
     translation_unit::Context getDeclarationContext() const;
 
     bool isVoid() const;

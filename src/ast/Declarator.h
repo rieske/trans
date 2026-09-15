@@ -22,7 +22,7 @@ public:
     void accept(AbstractSyntaxTreeVisitor& visitor) override;
     void visitChildren(AbstractSyntaxTreeVisitor& visitor);
 
-    std::string getName() const;
+    const std::string& getName() const;
     translation_unit::Context getContext() const;
 
     type::Type getFundamentalType(const type::Type& baseType) const;
