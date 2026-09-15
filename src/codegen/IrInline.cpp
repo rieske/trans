@@ -246,6 +246,7 @@ bool formalCanShareActual(const Procedure& callee, int formalId, int actualId,
     bool calleeHasLvalueAssign = false;
     bool calleeHasCall = false;
     bool calleeHasExternalDef = false;
+    bool calleeHasLabel = false;
     for (const auto& inst : callee.body) {
         SymbolRefs refs;
         collectSymbolRefs(inst, refs);
@@ -262,6 +263,9 @@ bool formalCanShareActual(const Procedure& callee, int formalId, int actualId,
         if (inst.op == Op::Call) {
             calleeHasCall = true;
         }
+        if (inst.op == Op::Label) {
+            calleeHasLabel = true;
+        }
         for (int def : refs.defs) {
             if (privateValues.count(def) == 0) {
                 calleeHasExternalDef = true;
@@ -272,6 +276,9 @@ bool formalCanShareActual(const Procedure& callee, int formalId, int actualId,
         return false;
     }
     const Value* actual = findValue(caller, actualId);
+    if (actual && actual->isExpressionTemp() && calleeHasLabel) {
+        return false;
+    }
     const bool c1 = actual && actual->isExpressionTemp() && !addressTakenIn(caller.body, actualId);
     const bool c2 = !calleeHasLvalueAssign && !calleeHasCall && !calleeHasExternalDef;
     return c1 || c2;
@@ -297,8 +304,7 @@ std::vector<Instruction> cloneCalleeBody(
             continue;
         }
         const int cloned = remapPrivateValue(strings, siteId, formal.id());
-        const bool asTemp = !addressTakenIn(callee.body, formal.id());
-        pushClone(caller, formal, cloned, asTemp);
+        pushClone(caller, formal, cloned, false);
         remap[formal.id()] = cloned;
         if (actual != kNoSymbol) {
             out.push_back(ir::assign(actual, cloned));
@@ -352,6 +358,211 @@ std::vector<Instruction> cloneCalleeBody(
     }
     out.push_back(ir::label(cont));
     return out;
+}
+
+namespace {
+
+int countNonLabels(const std::vector<Instruction>& body, int begin, int end) {
+    int n = 0;
+    for (int i = begin; i < end; ++i) {
+        if (body[static_cast<std::size_t>(i)].op != Op::Label) {
+            ++n;
+        }
+    }
+    return n;
+}
+
+void visitPostOrder(int i,
+        const IntermediateRepresentation& ir,
+        const std::unordered_map<int, int>& index,
+        std::vector<char>& color,
+        std::vector<int>& order) {
+    color[static_cast<std::size_t>(i)] = 1;
+    for (const auto& inst : ir.procedures[static_cast<std::size_t>(i)].body) {
+        if (inst.op != Op::Call || inst.callIndirect) {
+            continue;
+        }
+        const auto it = index.find(inst.arg0);
+        if (it != index.end() && color[static_cast<std::size_t>(it->second)] == 0) {
+            visitPostOrder(it->second, ir, index, color, order);
+        }
+    }
+    color[static_cast<std::size_t>(i)] = 2;
+    order.push_back(i);
+}
+
+bool calleeIsEmpty(const Procedure& callee) {
+    for (const auto& inst : callee.body) {
+        if (inst.op == Op::Label) {
+            continue;
+        }
+        if (inst.op == Op::VoidReturn || (inst.op == Op::Return && inst.arg0 == kNoSymbol)) {
+            continue;
+        }
+        return false;
+    }
+    return true;
+}
+
+bool hasIntraTuCall(const IntermediateRepresentation& ir,
+        const std::unordered_map<int, int>& index) {
+    for (const auto& procedure : ir.procedures) {
+        for (const auto& inst : procedure.body) {
+            if (inst.op == Op::Call && !inst.callIndirect && index.count(inst.arg0) != 0) {
+                return true;
+            }
+        }
+    }
+    return false;
+}
+
+void inlineInto(Procedure& caller,
+        IntermediateRepresentation& ir,
+        const std::unordered_map<int, int>& index,
+        const std::unordered_set<int>& finished,
+        const InlineCaps& caps,
+        int& inlinesInTu,
+        int& siteId,
+        InlineStats& stats) {
+    struct Site {
+        int begin;
+        int end;
+        int call;
+    };
+    std::vector<Site> sites;
+    for (int i = 0; i < static_cast<int>(caller.body.size()); ++i) {
+        if (caller.body[static_cast<std::size_t>(i)].op != Op::Call) {
+            continue;
+        }
+        int begin = i;
+        while (begin > 0 && caller.body[static_cast<std::size_t>(begin) - 1].op == Op::Argument) {
+            --begin;
+        }
+        int end = i + 1;
+        if (end < static_cast<int>(caller.body.size())
+                && caller.body[static_cast<std::size_t>(end)].op == Op::Retrieve) {
+            ++end;
+        }
+        sites.push_back({ begin, end, i });
+    }
+    if (sites.empty()) {
+        return;
+    }
+    bool anyTuCall = false;
+    for (const Site& site : sites) {
+        const Instruction& call = caller.body[static_cast<std::size_t>(site.call)];
+        if (!call.callIndirect && index.count(call.arg0) != 0) {
+            anyTuCall = true;
+            break;
+        }
+    }
+    if (!anyTuCall) {
+        stats.sitesConsidered += static_cast<int>(sites.size());
+        return;
+    }
+
+    int inlinesOnCaller = 0;
+    int callerNonLabels = nonLabelCount(caller.body);
+    std::vector<Instruction> out;
+    int cursor = 0;
+    for (const Site& site : sites) {
+        out.insert(out.end(), caller.body.begin() + cursor, caller.body.begin() + site.begin);
+        std::vector<int> actuals;
+        for (int k = site.begin; k < site.call; ++k) {
+            actuals.push_back(caller.body[static_cast<std::size_t>(k)].arg0);
+        }
+        const Instruction& call = caller.body[static_cast<std::size_t>(site.call)];
+        int retrieveResult = kNoSymbol;
+        if (site.end == site.call + 2) {
+            retrieveResult = caller.body[static_cast<std::size_t>(site.call) + 1].result;
+        }
+        ++stats.sitesConsidered;
+
+        bool inlined = false;
+        const auto it = index.find(call.arg0);
+        if (it != index.end() && !call.callIndirect) {
+            Procedure& callee = ir.procedures[static_cast<std::size_t>(it->second)];
+            const bool calleeFinished = finished.count(callee.name) != 0;
+            const int calleeNonLabels = nonLabelCount(callee.body);
+            bool skipEmpty = calleeIsEmpty(callee);
+            if (!skipEmpty) {
+                for (const auto& inst : callee.body) {
+                    if (inst.op != Op::Call || inst.callIndirect) {
+                        continue;
+                    }
+                    const auto inner = index.find(inst.arg0);
+                    if (inner != index.end()
+                            && calleeIsEmpty(ir.procedures[static_cast<std::size_t>(inner->second)])) {
+                        skipEmpty = true;
+                        break;
+                    }
+                }
+            }
+            if (!skipEmpty && callIsEligible(call, caller, callee, ir.strings, caps,
+                    static_cast<int>(actuals.size()), inlinesOnCaller, inlinesInTu, calleeFinished)
+                    && callerNonLabels + calleeNonLabels <= caps.maxCallerInsts) {
+                auto cloned = cloneCalleeBody(caller, callee, actuals, retrieveResult,
+                        call.memoryReturnDest, siteId, ir.strings);
+                const int removed = countNonLabels(caller.body, site.begin, site.end);
+                callerNonLabels += nonLabelCount(cloned) - removed;
+                out.insert(out.end(), cloned.begin(), cloned.end());
+                ++siteId;
+                ++inlinesOnCaller;
+                ++inlinesInTu;
+                ++stats.sitesInlined;
+                inlined = true;
+            } else if (!calleeFinished || callee.name == caller.name) {
+                ++stats.refusedRecursion;
+            } else if (calleeNonLabels > caps.maxCalleeInsts
+                    || callerNonLabels + calleeNonLabels > caps.maxCallerInsts
+                    || inlinesOnCaller >= caps.maxInlinesPerCaller
+                    || inlinesInTu >= caps.maxTotalInlines) {
+                ++stats.refusedSize;
+            } else {
+                ++stats.refusedOther;
+            }
+        }
+        if (!inlined) {
+            out.insert(out.end(), caller.body.begin() + site.begin, caller.body.begin() + site.end);
+        }
+        cursor = site.end;
+    }
+    out.insert(out.end(), caller.body.begin() + cursor, caller.body.end());
+    if (inlinesOnCaller != 0) {
+        caller.body = std::move(out);
+    }
+}
+
+} // namespace
+
+InlineStats inlineProcedures(IntermediateRepresentation& ir, InlineCaps caps) {
+    InlineStats stats;
+    const int n = static_cast<int>(ir.procedures.size());
+    std::unordered_map<int, int> index;
+    for (int i = 0; i < n; ++i) {
+        index[ir.procedures[static_cast<std::size_t>(i)].name] = i;
+    }
+    if (!hasIntraTuCall(ir, index)) {
+        return stats;
+    }
+    std::vector<char> color(static_cast<std::size_t>(n), 0);
+    std::vector<int> order;
+    order.reserve(static_cast<std::size_t>(n));
+    for (int i = 0; i < n; ++i) {
+        if (color[static_cast<std::size_t>(i)] == 0) {
+            visitPostOrder(i, ir, index, color, order);
+        }
+    }
+
+    std::unordered_set<int> finished;
+    int inlinesInTu = 0;
+    int siteId = 0;
+    for (int i : order) {
+        inlineInto(ir.procedures[static_cast<std::size_t>(i)], ir, index, finished, caps,
+                inlinesInTu, siteId, stats);
+        finished.insert(ir.procedures[static_cast<std::size_t>(i)].name);
+    }
+    return stats;
 }
 
 } // namespace codegen

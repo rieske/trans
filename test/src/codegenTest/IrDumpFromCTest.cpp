@@ -3,9 +3,34 @@
 
 #include "CompileToIr.h"
 
+#include <string>
+#include <string_view>
+
 namespace {
 
 using namespace testing;
+
+std::string procedureDump(const std::string& dump, std::string_view name) {
+    const std::string start = "PROC " + std::string(name) + "\n";
+    const std::string end = "ENDPROC " + std::string(name) + "\n";
+    const auto i = dump.find(start);
+    if (i == std::string::npos) {
+        return {};
+    }
+    const auto j = dump.find(end, i);
+    if (j == std::string::npos || j < i) {
+        return {};
+    }
+    return dump.substr(i, j - i);
+}
+
+int countSubstr(const std::string& text, std::string_view needle) {
+    int n = 0;
+    for (std::size_t i = 0; (i = text.find(needle, i)) != std::string::npos; ++i) {
+        ++n;
+    }
+    return n;
+}
 
 TEST(IrDumpFromC, fileScopeArithmetic) {
     EXPECT_THAT(compileToIr("int add(int a, int b) { return a + b; }\n"), StrEq(
@@ -43,18 +68,59 @@ TEST(IrDumpFromC, staticHelperAdd1StillCallsAtO0AndO1) {
             "\tRETRIEVE $t3\n"
             "\tRETURN $t3\n"
             "ENDPROC f\n"));
-    EXPECT_THAT(compileToIr(src, 1), StrEq(
-            "PROC add1\n"
-            "\t$t0 := 1\n"
-            "\t$t1 := L$loc1_x + $t0\n"
-            "\tRETURN $t1\n"
-            "ENDPROC add1\n"
-            "PROC f\n"
-            "\tPARAM L$loc2_y\n"
-            "\tCALL add1\n"
-            "\tRETRIEVE $t2\n"
-            "\tRETURN $t2\n"
-            "ENDPROC f\n"));
+    const std::string o1 = compileToIr(src, 1);
+    EXPECT_THAT(o1, HasSubstr("PROC add1\n"));
+    EXPECT_THAT(o1, HasSubstr("ENDPROC add1\n"));
+    EXPECT_THAT(o1, Not(HasSubstr("CALL add1")));
+    EXPECT_THAT(o1, Not(HasSubstr("PARAM")));
+    const std::string f = procedureDump(o1, "f");
+    EXPECT_THAT(f, Not(HasSubstr("GOTO")));
+    EXPECT_THAT(f, HasSubstr("L$loc2_y"));
+}
+
+TEST(IrDumpFromC, add1OfConstantFoldsTo42AtO1) {
+    const char* src = "static int add1(int x) { return x + 1; } int f(void) { return add1(41); }\n";
+    EXPECT_THAT(compileToIr(src, 0), HasSubstr("CALL add1"));
+    const std::string o1 = compileToIr(src, 1);
+    EXPECT_THAT(o1, Not(HasSubstr("CALL")));
+    EXPECT_THAT(o1, HasSubstr("42"));
+}
+
+TEST(IrDumpFromC, twoNextCallsShareStaticLocal) {
+    const char* src = "static int next(void) { static int n; return ++n; }"
+            " int f(void) { return next() + next(); }\n";
+    const std::string o1 = compileToIr(src, 1);
+    EXPECT_THAT(o1, Not(HasSubstr("CALL next")));
+    EXPECT_THAT(countSubstr(procedureDump(o1, "f"), "INC L$st1_n"), Eq(2));
+}
+
+TEST(IrDumpFromC, twoAdd1SitesFoldIndependently) {
+    const char* src = "static int add1(int x) { return x + 1; }"
+            " int f(void) { return add1(1) + add1(2); }\n";
+    const std::string o1 = compileToIr(src, 1);
+    EXPECT_THAT(o1, Not(HasSubstr("CALL add1")));
+    EXPECT_THAT(o1, AnyOf(HasSubstr(":= 5"), HasSubstr("RETURN 5")));
+}
+
+TEST(IrDumpFromC, selfRecursionKeepsCall) {
+    const char* src = "static int fact(int n) { if (n <= 1) return 1; return n * fact(n - 1); }"
+            " int f(int n) { return fact(n); }\n";
+    EXPECT_THAT(compileToIr(src, 0), HasSubstr("CALL fact"));
+    EXPECT_THAT(procedureDump(compileToIr(src, 1), "fact"), HasSubstr("CALL fact"));
+}
+
+TEST(IrDumpFromC, mutualRecursionKeepsBackEdge) {
+    const char* src = "static int b(int n);"
+            " static int a(int n) { if (n) return b(n - 1); return 0; }"
+            " static int b(int n) { if (n) return a(n - 1); return 1; }"
+            " int f(int n) { return a(n); }\n";
+    const std::string o1 = compileToIr(src, 1);
+    EXPECT_THAT(o1, HasSubstr("PROC a\n"));
+    EXPECT_THAT(o1, HasSubstr("PROC b\n"));
+    const std::string a = procedureDump(o1, "a");
+    const std::string b = procedureDump(o1, "b");
+    EXPECT_TRUE(a.find("CALL a") != std::string::npos || a.find("CALL b") != std::string::npos
+            || b.find("CALL a") != std::string::npos || b.find("CALL b") != std::string::npos);
 }
 
 TEST(IrDumpFromC, call) {

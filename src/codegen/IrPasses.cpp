@@ -1,5 +1,6 @@
 #include "IrPasses.h"
 #include "codegen/IrBuilders.h"
+#include "IrInline.h"
 
 #include "Cfg.h"
 #include "SymbolRefs.h"
@@ -793,6 +794,10 @@ IntermediateRepresentation runIrPasses(IntermediateRepresentation ir, int optLev
     ir = sealProcedures(std::move(ir));
     ir = applyCfgPasses(std::move(ir), optLevel);
     if (optLevel >= 1) {
+        const InlineStats stats = inlineProcedures(ir);
+        if (stats.sitesInlined != 0) {
+            ir = applyCfgPasses(std::move(ir), optLevel);
+        }
         for (int iter = 0; iter < 8; ++iter) {
             FoldResult fold;
             for (auto& procedure : ir.procedures) {

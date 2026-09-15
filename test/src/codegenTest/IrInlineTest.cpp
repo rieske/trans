@@ -124,6 +124,73 @@ TEST(IrInline, callIsEligibleRefusesSetjmpFamilyCallee) {
     EXPECT_FALSE(callIsEligible(ir::call(n("wrap")), caller, callee, ir.strings, {}, 0, 0, 0, true));
 }
 
+TEST(IrInline, callIsEligibleDoesNotTreatEmptyAsUnsafe) {
+    IntermediateRepresentation ir;
+    IrN n { ir.strings };
+    Procedure caller = smallCaller(ir.strings, n);
+    Procedure callee = makeProc(ir.strings, "die", { ir::voidReturn() });
+    EXPECT_FALSE(calleeLooksUnsafe(callee, ir.strings));
+    EXPECT_TRUE(callIsEligible(ir::call(n("die")), caller, callee, ir.strings, {}, 0, 0, 0, true));
+}
+
+TEST(IrInline, inlineProceduresRefusesEmptyCallee) {
+    IntermediateRepresentation ir;
+    IrN n { ir.strings };
+    ir.procedures.push_back(makeProc(ir.strings, "die", { ir::voidReturn() }));
+    ir.procedures.push_back(makeProc(ir.strings, "f", {
+            ir::call(n("die")),
+            ir::assignConstant(n("1"), n("r")),
+            ir::ret(n("r")),
+    }));
+    const InlineStats stats = inlineProcedures(ir);
+    EXPECT_THAT(stats.sitesInlined, Eq(0));
+    bool fCallsDie = false;
+    for (const auto& inst : ir.procedures.back().body) {
+        if (inst.op == Op::Call && inst.arg0 == n("die")) {
+            fCallsDie = true;
+        }
+    }
+    EXPECT_TRUE(fCallsDie);
+}
+
+TEST(IrInline, callIsEligibleAcceptsIdentityReturn) {
+    IntermediateRepresentation ir;
+    IrN n { ir.strings };
+    Procedure caller = smallCaller(ir.strings, n);
+    Procedure callee = makeProc(ir.strings, "id", {
+            ir::ret(n("x")),
+    }, oneFormal(ir.strings, "x"));
+    EXPECT_TRUE(callIsEligible(ir::call(n("id")), caller, callee, ir.strings, {}, 1, 0, 0, true));
+}
+
+TEST(IrInline, inlineProceduresRefusesWrapperAroundEmptyDie) {
+    IntermediateRepresentation ir;
+    IrN n { ir.strings };
+    ir.procedures.push_back(makeProc(ir.strings, "die", { ir::voidReturn() }));
+    ir.procedures.push_back(makeProc(ir.strings, "wrap", {
+            ir::call(n("die")),
+            ir::voidReturn(),
+    }));
+    ir.procedures.push_back(makeProc(ir.strings, "f", {
+            ir::call(n("wrap")),
+            ir::assignConstant(n("1"), n("r")),
+            ir::ret(n("r")),
+    }));
+    inlineProcedures(ir);
+    bool fCallsWrap = false;
+    for (const auto& procedure : ir.procedures) {
+        if (procedure.name != n("f")) {
+            continue;
+        }
+        for (const auto& inst : procedure.body) {
+            if (inst.op == Op::Call && inst.arg0 == n("wrap")) {
+                fCallsWrap = true;
+            }
+        }
+    }
+    EXPECT_TRUE(fCallsWrap);
+}
+
 TEST(IrInline, callIsEligibleRefusesVaOpInCallee) {
     IntermediateRepresentation ir;
     IrN n { ir.strings };
@@ -288,6 +355,21 @@ TEST(IrInline, cloneSharesSafeTempActual) {
         }
     }
     EXPECT_TRUE(sawAdd);
+}
+
+TEST(IrInline, formalCanShareActualRefusesTempWhenCalleeHasLabel) {
+    IntermediateRepresentation ir;
+    IrN n { ir.strings };
+    Procedure caller = smallCaller(ir.strings, n);
+    codegen::Value temp { n("t0"), 0, Type::INTEGRAL, 4 };
+    temp.markExpressionTemp();
+    caller.frame.locals.push_back(temp);
+    Procedure callee = makeProc(ir.strings, "add1", {
+            ir::label(n("L")),
+            ir::add(n("x"), n("c"), n("t")),
+            ir::ret(n("t")),
+    }, oneFormal(ir.strings, "x"));
+    EXPECT_FALSE(formalCanShareActual(callee, n("x"), n("t0"), caller));
 }
 
 TEST(IrInline, formalCanShareActualRefusesGlobalAlias) {
@@ -507,6 +589,13 @@ TEST(IrInline, cloneCopiesFailedShareFormal) {
         }
     }
     EXPECT_TRUE(onFrame);
+    bool exprTemp = true;
+    for (const auto& local : caller.frame.locals) {
+        if (local.id() == copied) {
+            exprTemp = local.isExpressionTemp();
+        }
+    }
+    EXPECT_FALSE(exprTemp);
     bool sawAdd = false;
     for (const auto& inst : cloned) {
         if (inst.op == Op::Add) {
@@ -663,6 +752,105 @@ TEST(IrInline, cloneRemapsSretWhenDestMissing) {
     EXPECT_THAT(firstSret, Ne(n("__sret")));
     EXPECT_THAT(secondSret, Ne(n("__sret")));
     EXPECT_THAT(firstSret, Ne(secondSret));
+}
+
+TEST(IrInline, inlineProceduresLeavesExternalOnlyTuUntouched) {
+    IntermediateRepresentation ir;
+    IrN n { ir.strings };
+    ir.procedures.push_back(makeProc(ir.strings, "f", {
+            ir::argument(n("y")),
+            ir::call(n("printf")),
+            ir::retrieve(n("r")),
+            ir::ret(n("r")),
+    }, oneFormal(ir.strings, "y")));
+    const Instruction* before = ir.procedures.front().body.data();
+    const InlineStats stats = inlineProcedures(ir);
+    EXPECT_THAT(stats.sitesInlined, Eq(0));
+    EXPECT_THAT(ir.procedures.front().body.data(), Eq(before));
+}
+
+TEST(IrInline, inlineProceduresSplicesEligibleCall) {
+    IntermediateRepresentation ir;
+    IrN n { ir.strings };
+    ir.procedures.push_back(smallCallee(ir.strings, n));
+    ir.procedures.push_back(smallCaller(ir.strings, n));
+    const InlineStats stats = inlineProcedures(ir);
+    EXPECT_THAT(stats.sitesInlined, Eq(1));
+    bool callerHasCall = false;
+    bool calleeRemains = false;
+    bool sawAdd = false;
+    bool sawAssignToR = false;
+    for (const auto& procedure : ir.procedures) {
+        if (procedure.name == n("add1")) {
+            calleeRemains = true;
+        }
+        if (procedure.name == n("f")) {
+            for (const auto& inst : procedure.body) {
+                if (inst.op == Op::Call) {
+                    callerHasCall = true;
+                }
+                if (inst.op == Op::Add) {
+                    sawAdd = true;
+                }
+                if (inst.op == Op::Assign && inst.result == n("r")) {
+                    sawAssignToR = true;
+                }
+            }
+        }
+    }
+    EXPECT_TRUE(calleeRemains);
+    EXPECT_FALSE(callerHasCall);
+    EXPECT_TRUE(sawAdd);
+    EXPECT_TRUE(sawAssignToR);
+}
+
+TEST(IrInline, inlineProceduresKeepsSelfRecursiveCall) {
+    IntermediateRepresentation ir;
+    IrN n { ir.strings };
+    ir.procedures.push_back(makeProc(ir.strings, "fact", {
+            ir::argument(n("t")),
+            ir::call(n("fact")),
+            ir::retrieve(n("r")),
+            ir::ret(n("r")),
+    }, oneFormal(ir.strings, "n")));
+    const InlineStats stats = inlineProcedures(ir);
+    EXPECT_THAT(stats.sitesInlined, Eq(0));
+    EXPECT_THAT(stats.refusedRecursion, Ge(1));
+    bool sawCall = false;
+    for (const auto& inst : ir.procedures.front().body) {
+        if (inst.op == Op::Call && inst.arg0 == n("fact")) {
+            sawCall = true;
+        }
+    }
+    EXPECT_TRUE(sawCall);
+}
+
+TEST(IrInline, inlineProceduresKeepsMutualBackEdge) {
+    IntermediateRepresentation ir;
+    IrN n { ir.strings };
+    ir.procedures.push_back(makeProc(ir.strings, "a", {
+            ir::argument(n("x")),
+            ir::call(n("b")),
+            ir::retrieve(n("r")),
+            ir::ret(n("r")),
+    }, oneFormal(ir.strings, "x")));
+    ir.procedures.push_back(makeProc(ir.strings, "b", {
+            ir::argument(n("y")),
+            ir::call(n("a")),
+            ir::retrieve(n("s")),
+            ir::ret(n("s")),
+    }, oneFormal(ir.strings, "y")));
+    const InlineStats stats = inlineProcedures(ir);
+    EXPECT_THAT(stats.sitesInlined, Ge(1));
+    bool sawBackEdge = false;
+    for (const auto& procedure : ir.procedures) {
+        for (const auto& inst : procedure.body) {
+            if (inst.op == Op::Call && (inst.arg0 == n("a") || inst.arg0 == n("b"))) {
+                sawBackEdge = true;
+            }
+        }
+    }
+    EXPECT_TRUE(sawBackEdge);
 }
 
 } // namespace
