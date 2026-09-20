@@ -24,6 +24,24 @@ TEST(Register, getNameIsStored) {
     EXPECT_EQ(&r.getName(), &r.getName());
 }
 
+TEST(Amd64Registers, classListsHaveFixedSizes) {
+    Amd64Registers regs;
+    EXPECT_EQ(regs.getGeneralPurposeRegisters().size(), 14u);
+    EXPECT_EQ(regs.getCallerSavedRegisters().size(), 8u);
+    EXPECT_EQ(regs.getCalleeSavedRegisters().size(), 5u);
+    EXPECT_EQ(regs.getIntegerArgumentRegisters().size(), 6u);
+    EXPECT_EQ(regs.getGeneralPurposeRegisters()[0], &regs.getRetrievalRegister());
+    EXPECT_EQ(regs.getIntegerArgumentRegisters()[0]->getName(), "rdi");
+}
+
+TEST(Amd64Registers, classListsAreStored) {
+    Amd64Registers regs;
+    EXPECT_EQ(&regs.getGeneralPurposeRegisters(), &regs.getGeneralPurposeRegisters());
+    EXPECT_EQ(&regs.getCallerSavedRegisters(), &regs.getCallerSavedRegisters());
+    EXPECT_EQ(&regs.getCalleeSavedRegisters(), &regs.getCalleeSavedRegisters());
+    EXPECT_EQ(&regs.getIntegerArgumentRegisters(), &regs.getIntegerArgumentRegisters());
+}
+
 class StackMachineTest: public testing::Test {
 public:
     StackMachineTest() :

@@ -10,19 +10,19 @@ Register& Amd64Registers::getStackPointer() {
     return stackPointer;
 }
 
-std::vector<Register*> Amd64Registers::getGeneralPurposeRegisters() {
+const std::vector<Register*>& Amd64Registers::getGeneralPurposeRegisters() const {
     return generalPurposeRegisters;
 }
 
-std::vector<Register*> Amd64Registers::getCallerSavedRegisters() {
+const std::vector<Register*>& Amd64Registers::getCallerSavedRegisters() const {
     return callerSavedRegisters;
 }
 
-std::vector<Register*> Amd64Registers::getCalleeSavedRegisters() {
+const std::vector<Register*>& Amd64Registers::getCalleeSavedRegisters() const {
     return calleeSavedRegisters;
 }
 
-std::vector<Register*> Amd64Registers::getIntegerArgumentRegisters() {
+const std::vector<Register*>& Amd64Registers::getIntegerArgumentRegisters() const {
     return integerArgumentRegisters;
 }
 
