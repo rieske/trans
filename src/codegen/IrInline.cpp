@@ -414,6 +414,7 @@ void inlineInto(Procedure& caller,
         const InlineCaps& caps,
         int& inlinesInTu,
         int& siteId,
+        int callerIndex,
         InlineStats& stats) {
     struct Site {
         int begin;
@@ -521,6 +522,7 @@ void inlineInto(Procedure& caller,
     out.insert(out.end(), caller.body.begin() + cursor, caller.body.end());
     if (inlinesOnCaller != 0) {
         caller.body = std::move(out);
+        stats.dirtyCallers.push_back(callerIndex);
     }
 }
 
@@ -550,7 +552,7 @@ InlineStats inlineProcedures(IntermediateRepresentation& ir, InlineCaps caps) {
     int siteId = 0;
     for (int i : order) {
         inlineInto(ir.procedures[static_cast<std::size_t>(i)], ir, index, finished, caps,
-                inlinesInTu, siteId, stats);
+                inlinesInTu, siteId, i, stats);
         finished.insert(ir.procedures[static_cast<std::size_t>(i)].name);
     }
     return stats;
