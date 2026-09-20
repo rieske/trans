@@ -80,7 +80,7 @@ std::optional<std::size_t> GnuExtensions::tryGoto(std::size_t state, parser::Tok
         const parser::ParsingTable& parsingTable) {
     cacheGrammarIds(*parsingTable.getGrammar());
     const scanner::Token& current = tokenStream.getCurrentToken();
-    if (current.symbolId == lparenId_ && tokenStream.peek().id == "{") {
+    if (current.symbolId == lparenId_ && tokenStream.peek().lexeme == "{") {
         return parsingTable.tryGoTo(state, primaryExpId_);
     }
     if (current.symbolId == idId_ && isInt128Lexeme(current.lexeme)) {
@@ -114,7 +114,7 @@ bool GnuExtensions::accept(parser::TokenStream& tokenStream, const parser::Parsi
 }
 
 bool GnuExtensions::isTypeExtensionToken(const scanner::Token& token) const {
-    return token.id == "id" && isInt128Lexeme(token.lexeme);
+    return token.cls == scanner::TokenClass::Id && isInt128Lexeme(token.lexeme);
 }
 
 bool GnuExtensions::consumeToStop(SyntaxTreeBuilder& parent, SyntaxTreeBuilder& nested,
@@ -140,23 +140,23 @@ bool GnuExtensions::consumeToStop(SyntaxTreeBuilder& parent, SyntaxTreeBuilder& 
         }
         if (!endAfterMatchedBrace) {
             scanner::Token token = outer.getCurrentToken();
-            if (depth == 0 && token.id == stopLookahead) {
+            if (depth == 0 && token.lexeme == stopLookahead) {
                 if (!presentStopAs.empty()) {
                     return scanner::Token { presentStopAs, presentStopAs, token.context };
                 }
                 return token;
             }
-            if (token.id == "(" || token.id == "[") {
+            if (token.lexeme == "(" || token.lexeme == "[") {
                 ++depth;
-            } else if (token.id == ")" || token.id == "]") {
+            } else if (token.lexeme == ")" || token.lexeme == "]") {
                 --depth;
             }
             return outer.takeRaw();
         }
         scanner::Token token = outer.takeRaw();
-        if (token.id == "{") {
+        if (token.lexeme == "{") {
             ++depth;
-        } else if (token.id == "}") {
+        } else if (token.lexeme == "}") {
             --depth;
             if (depth == 0) {
                 bodyDone = true;
@@ -178,7 +178,7 @@ bool GnuExtensions::consumeToStop(SyntaxTreeBuilder& parent, SyntaxTreeBuilder& 
 
 std::unique_ptr<Block> GnuExtensions::parseCompoundBlock(parser::TokenStream& outer,
         const parser::ParsingTable& table, SyntaxTreeBuilder& parent) {
-    if (outer.getCurrentToken().id != "{") {
+    if (outer.getCurrentToken().lexeme != "{") {
         return nullptr;
     }
     const parser::Grammar* grammar = table.getGrammar();
@@ -249,7 +249,7 @@ std::optional<TypeSpecifier> GnuExtensions::parseTypeName(parser::TokenStream& o
 
 bool GnuExtensions::acceptStatementPrimary(parser::TokenStream& tokenStream,
         const parser::ParsingTable& parsingTable, SyntaxTreeBuilder& builder) {
-    if (tokenStream.getCurrentToken().id != "(" || tokenStream.peek().id != "{") {
+    if (tokenStream.getCurrentToken().lexeme != "(" || tokenStream.peek().lexeme != "{") {
         return false;
     }
     const translation_unit::Context context = tokenStream.getCurrentToken().context;
@@ -258,7 +258,7 @@ bool GnuExtensions::acceptStatementPrimary(parser::TokenStream& tokenStream,
     if (!block) {
         return failGnu(builder);
     }
-    if (tokenStream.getCurrentToken().id != ")") {
+    if (tokenStream.getCurrentToken().lexeme != ")") {
         return failGnu(builder);
     }
     tokenStream.nextToken();
@@ -281,13 +281,13 @@ bool GnuExtensions::acceptInt128(parser::TokenStream& tokenStream, SyntaxTreeBui
 
 bool GnuExtensions::acceptVaArg(parser::TokenStream& tokenStream,
         const parser::ParsingTable& parsingTable, SyntaxTreeBuilder& builder) {
-    if (tokenStream.getCurrentToken().id != "id"
+    if (tokenStream.getCurrentToken().cls != scanner::TokenClass::Id
             || tokenStream.getCurrentToken().lexeme != "__builtin_va_arg") {
         return false;
     }
     const translation_unit::Context context = tokenStream.getCurrentToken().context;
     tokenStream.nextToken();
-    if (tokenStream.getCurrentToken().id != "(") {
+    if (tokenStream.getCurrentToken().lexeme != "(") {
         return failGnu(builder);
     }
     tokenStream.nextToken();
@@ -295,7 +295,7 @@ bool GnuExtensions::acceptVaArg(parser::TokenStream& tokenStream,
     if (!ap) {
         return failGnu(builder);
     }
-    if (tokenStream.getCurrentToken().id != ",") {
+    if (tokenStream.getCurrentToken().lexeme != ",") {
         return failGnu(builder);
     }
     tokenStream.nextToken();
@@ -303,7 +303,7 @@ bool GnuExtensions::acceptVaArg(parser::TokenStream& tokenStream,
     if (!typeSpec) {
         return failGnu(builder);
     }
-    if (tokenStream.getCurrentToken().id != ")") {
+    if (tokenStream.getCurrentToken().lexeme != ")") {
         return failGnu(builder);
     }
     tokenStream.nextToken();
@@ -322,13 +322,13 @@ bool GnuExtensions::acceptVaArg(parser::TokenStream& tokenStream,
 
 bool GnuExtensions::acceptTypesCompatibleP(parser::TokenStream& tokenStream,
         const parser::ParsingTable& parsingTable, SyntaxTreeBuilder& builder) {
-    if (tokenStream.getCurrentToken().id != "id"
+    if (tokenStream.getCurrentToken().cls != scanner::TokenClass::Id
             || tokenStream.getCurrentToken().lexeme != "__builtin_types_compatible_p") {
         return false;
     }
     const translation_unit::Context context = tokenStream.getCurrentToken().context;
     tokenStream.nextToken();
-    if (tokenStream.getCurrentToken().id != "(") {
+    if (tokenStream.getCurrentToken().lexeme != "(") {
         return failGnu(builder);
     }
     tokenStream.nextToken();
@@ -336,7 +336,7 @@ bool GnuExtensions::acceptTypesCompatibleP(parser::TokenStream& tokenStream,
     if (!type1) {
         return failGnu(builder);
     }
-    if (tokenStream.getCurrentToken().id != ",") {
+    if (tokenStream.getCurrentToken().lexeme != ",") {
         return failGnu(builder);
     }
     tokenStream.nextToken();
@@ -344,7 +344,7 @@ bool GnuExtensions::acceptTypesCompatibleP(parser::TokenStream& tokenStream,
     if (!type2) {
         return failGnu(builder);
     }
-    if (tokenStream.getCurrentToken().id != ")") {
+    if (tokenStream.getCurrentToken().lexeme != ")") {
         return failGnu(builder);
     }
     tokenStream.nextToken();
@@ -361,13 +361,13 @@ bool GnuExtensions::acceptTypesCompatibleP(parser::TokenStream& tokenStream,
 
 bool GnuExtensions::acceptOffsetof(parser::TokenStream& tokenStream,
         const parser::ParsingTable& parsingTable, SyntaxTreeBuilder& builder) {
-    if (tokenStream.getCurrentToken().id != "id"
+    if (tokenStream.getCurrentToken().cls != scanner::TokenClass::Id
             || tokenStream.getCurrentToken().lexeme != "__builtin_offsetof") {
         return false;
     }
     const translation_unit::Context context = tokenStream.getCurrentToken().context;
     tokenStream.nextToken();
-    if (tokenStream.getCurrentToken().id != "(") {
+    if (tokenStream.getCurrentToken().lexeme != "(") {
         return failGnu(builder);
     }
     tokenStream.nextToken();
@@ -375,16 +375,16 @@ bool GnuExtensions::acceptOffsetof(parser::TokenStream& tokenStream,
     if (!typeSpec) {
         return failGnu(builder);
     }
-    if (tokenStream.getCurrentToken().id != ",") {
+    if (tokenStream.getCurrentToken().lexeme != ",") {
         return failGnu(builder);
     }
     tokenStream.nextToken();
-    if (tokenStream.getCurrentToken().id != "id") {
+    if (tokenStream.getCurrentToken().cls != scanner::TokenClass::Id) {
         return failGnu(builder);
     }
     const std::string member { tokenStream.getCurrentToken().lexeme };
     tokenStream.nextToken();
-    if (tokenStream.getCurrentToken().id != ")") {
+    if (tokenStream.getCurrentToken().lexeme != ")") {
         return failGnu(builder);
     }
     tokenStream.nextToken();

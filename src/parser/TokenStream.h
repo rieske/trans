@@ -55,10 +55,15 @@ private:
     mutable unsigned classifiedRevision_ { 0 };
     int idId_ { -1 };
     int typedefNameId_ { -1 };
+    int stringId_ { -1 };
+    int intConstId_ { -1 };
+    int floatConstId_ { -1 };
+    int charConstId_ { -1 };
+    int endId_ { -1 };
 
     struct SpecifierLookahead {
         enum class Op { None, OpenBlock, OpenRecord, OpenEnumBody, Close, EndDeclarators };
-        Op consume(std::string_view id);
+        Op consume(const scanner::Token& token);
     private:
         enum class State { None, AfterEnum, AfterEnumTag, AfterRecord, AfterRecordTag };
         State state_ { State::None };

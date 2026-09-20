@@ -6,6 +6,7 @@
 #include "scanner/Scanner.h"
 #include "scanner/TokenFilter.h"
 #include "scanner/Token.h"
+#include "TokenMatcher.h"
 
 #include "ResourceHelpers.h"
 
@@ -27,10 +28,10 @@ std::vector<std::pair<std::string, std::string>> filterIds(const std::string& pa
     std::vector<std::pair<std::string, std::string>> out;
     for (;;) {
         Token t = filter.nextToken();
-        if (t.id == Token::END) {
+        if (t.cls == scanner::TokenClass::End) {
             break;
         }
-        out.push_back({ std::string { t.id }, std::string { t.lexeme } });
+        out.push_back({ std::string { tokenKindName(t) }, std::string { t.lexeme } });
     }
     return out;
 }
@@ -396,7 +397,7 @@ TEST(TokenFilter, packedAttributeAfterStructIsLatePacked) {
     bool sawStruct = false;
     for (;;) {
         Token t = filter.nextToken();
-        if (t.id == Token::END) {
+        if (t.cls == scanner::TokenClass::End) {
             break;
         }
         if (t.lexeme == "struct" || t.lexeme == "union") {
@@ -418,7 +419,7 @@ TEST(TokenFilter, packedDunderSpellingIsLatePacked) {
     Scanner scanner { path,
             reader.fromConfiguration(getResourcePath("configuration/scanner.lex")), session };
     TokenFilter filter { [&scanner]() { return scanner.nextToken(); }, true, &session };
-    while (filter.nextToken().id != Token::END) {
+    while (filter.nextToken().cls != scanner::TokenClass::End) {
     }
     EXPECT_TRUE(session.recordPacked.takeLatePacked());
 }
@@ -430,7 +431,7 @@ TEST(TokenFilter, asmSkipDoesNotCollectPacked) {
     Scanner scanner { path,
             reader.fromConfiguration(getResourcePath("configuration/scanner.lex")), session };
     TokenFilter filter { [&scanner]() { return scanner.nextToken(); }, true, &session };
-    while (filter.nextToken().id != Token::END) {
+    while (filter.nextToken().cls != scanner::TokenClass::End) {
     }
     EXPECT_FALSE(session.recordPacked.takeLatePacked());
 }

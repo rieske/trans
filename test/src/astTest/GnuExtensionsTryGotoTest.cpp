@@ -56,7 +56,7 @@ TEST(GnuExtensionsTryGoto, statementExpressionProbesPrimaryExpGoto) {
     parser::TokenStream stream = streamFor(tokens, index, session, grammar);
     EXPECT_EQ(extensions.tryGoto(0, stream, table),
             table.tryGoTo(0, *grammar.trySymbolId("<primary_exp>")));
-    EXPECT_EQ(stream.getCurrentToken().id, "(");
+    EXPECT_EQ(stream.getCurrentToken().lexeme, "(");
 }
 
 TEST(GnuExtensionsTryGoto, int128ProbesTypeSpecGoto) {
