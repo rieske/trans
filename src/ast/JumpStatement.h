@@ -8,16 +8,26 @@
 
 namespace ast {
 
+enum class JumpKind {
+    Break,
+    Continue
+};
+
 class JumpStatement: public Statement {
 public:
 	JumpStatement(TerminalSymbol jumpKeyword);
 
 	void accept(AbstractSyntaxTreeVisitor& visitor) override;
 
+	JumpKind jumpKind() const { return kind_; }
+
 	void setJumpTo(symbols::AnnotationStore& store, symbols::LabelEntry label);
 	symbols::LabelEntry* getJumpTo(symbols::AnnotationStore& store) const;
 
 	TerminalSymbol jumpKeyword;
+
+private:
+	JumpKind kind_;
 
 };
 

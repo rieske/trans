@@ -6,11 +6,23 @@
 
 namespace ast {
 
-JumpStatement::JumpStatement(TerminalSymbol jumpKeyword) :
-		jumpKeyword { jumpKeyword } {
-	if (jumpKeyword.value != "continue" && jumpKeyword.value != "break") {
-		throw std::runtime_error { "bad loop jump keyword: " + jumpKeyword.value };
+namespace {
+
+JumpKind kindFromKeyword(const std::string& value) {
+	if (value == "break") {
+		return JumpKind::Break;
 	}
+	if (value == "continue") {
+		return JumpKind::Continue;
+	}
+	throw std::runtime_error { "bad loop jump keyword: " + value };
+}
+
+}
+
+JumpStatement::JumpStatement(TerminalSymbol jumpKeyword) :
+		jumpKeyword { jumpKeyword },
+		kind_ { kindFromKeyword(this->jumpKeyword.value) } {
 }
 
 void JumpStatement::accept(AbstractSyntaxTreeVisitor& visitor) {
