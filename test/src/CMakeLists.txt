@@ -217,6 +217,7 @@ add_executable(functionalTest
         functionalTest/FactorialTest.cpp
         functionalTest/FibonacciTest.cpp
         functionalTest/FunctionCallTest.cpp
+        functionalTest/InlineTest.cpp
         functionalTest/GccESurfaceTest.cpp
         functionalTest/BuiltinBswapTest.cpp
         functionalTest/BuiltinCtzllTest.cpp
