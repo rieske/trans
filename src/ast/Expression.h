@@ -91,7 +91,7 @@ public:
 
     bool isLval() const;
     // Address temp for this expression (ValueSlot::Lvalue on the store).
-    void setLvalueSymbol(symbols::AnnotationStore& store, symbols::ValueEntry address);
+    void setLvalueSymbol(symbols::AnnotationStore& store, const symbols::ValueEntry& address);
     symbols::ValueEntry* getLvalueSymbol(symbols::AnnotationStore& store) const;
     // Live object location for addressing: pointer Result, else pointer Lvalue, else Result.
     symbols::ValueEntry* addressSymbol(symbols::AnnotationStore& store) const;
@@ -108,11 +108,11 @@ public:
     }
 
     // Result lives only on the store (no node cache).
-    void setTypeAndResult(symbols::AnnotationStore& store, symbols::ValueEntry resultSymbol);
-    void setAggregateAddressResult(symbols::AnnotationStore& store, symbols::ValueEntry addressSymbol,
-            const type::Type& aggregateType);
-    void setFunctionDesignatorResult(symbols::AnnotationStore& store, symbols::ValueEntry addressSymbol,
-            const type::Type& functionType);
+    void setTypeAndResult(symbols::AnnotationStore& store, const symbols::ValueEntry& resultSymbol);
+    void setAggregateAddressResult(symbols::AnnotationStore& store,
+            const symbols::ValueEntry& addressSymbol, const type::Type& aggregateType);
+    void setFunctionDesignatorResult(symbols::AnnotationStore& store,
+            const symbols::ValueEntry& addressSymbol, const type::Type& functionType);
     // Become src's value: C type, form, result, lvalue symbol, address plan.
     // Identifier / GenericSelection also copy value category.
     void takeValueFrom(Expression& src, symbols::AnnotationStore& store);

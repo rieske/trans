@@ -25,7 +25,7 @@ public:
     void setExitLabel(symbols::AnnotationStore& store, symbols::LabelEntry exitLabel);
     symbols::LabelEntry* getExitLabel(symbols::AnnotationStore& store) const;
 
-    void setCaseTemp(symbols::AnnotationStore& store, symbols::ValueEntry temp);
+    void setCaseTemp(symbols::AnnotationStore& store, const symbols::ValueEntry& temp);
     symbols::ValueEntry* getCaseTemp(symbols::AnnotationStore& store) const;
 
     void addCase(CaseLabel* caseLabel);

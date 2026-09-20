@@ -91,11 +91,11 @@ void SemanticAnalysisVisitor::visit(ast::ArrayAccess& arrayAccess) {
     indexPlan.baseOperand = baseOperand;
 
     if (elementType.isArray()) {
-        auto addr = symbolTable.createTemporarySymbol(type::pointer(elementType.getElementType()));
+        const auto& addr = symbolTable.createTemporarySymbol(type::pointer(elementType.getElementType()));
         arrayAccess.setLvalueSymbol(annotations(), addr);
         arrayAccess.setAggregateAddressResult(annotations(), addr, elementType);
     } else {
-        auto addr = symbolTable.createTemporarySymbol(type::pointer(elementType));
+        const auto& addr = symbolTable.createTemporarySymbol(type::pointer(elementType));
         arrayAccess.setLvalueSymbol(annotations(), addr);
         arrayAccess.setTypeAndResult(annotations(), symbolTable.createTemporarySymbol(elementType));
     }
@@ -136,7 +136,7 @@ void SemanticAnalysisVisitor::visit(ast::MemberAccess& memberAccess) {
     const type::Type addrType = found->type.isArray()
             ? type::pointer(found->type.getElementType())
             : type::pointer(found->type);
-    auto fieldAddr = symbolTable.createTemporarySymbol(addrType);
+    const auto& fieldAddr = symbolTable.createTemporarySymbol(addrType);
     memberAccess.setLvalueSymbol(annotations(), fieldAddr);
     symbols::FieldPlan fieldPlan;
     fieldPlan.fieldOffsetBytes = found->offsetBytes;
@@ -155,7 +155,7 @@ void SemanticAnalysisVisitor::visit(ast::ConstantExpression& constant) {
 
 void SemanticAnalysisVisitor::visit(ast::StringLiteralExpression& stringLiteral) {
     stringLiteral.setRodataLabel(annotations(), symbolTable.newConstant(stringLiteral.getValue()));
-    auto address = symbolTable.createTemporarySymbol(type::pointer(type::signedCharacter()));
+    const auto& address = symbolTable.createTemporarySymbol(type::pointer(type::signedCharacter()));
     stringLiteral.setAggregateAddressResult(annotations(), address, stringLiteral.expressionType());
 }
 
@@ -266,7 +266,7 @@ void SemanticAnalysisVisitor::visit(ast::UnaryExpression& expression) {
                 annotations().setAddressPlan(&expression, symbols::AddressPlan { plan });
             } else if (pointee.isArray()) {
                 // *ptr-to-array yields the array object (address); do not scalar-load the row.
-                auto addr = symbolTable.createTemporarySymbol(type::pointer(pointee.getElementType()));
+                const auto& addr = symbolTable.createTemporarySymbol(type::pointer(pointee.getElementType()));
                 expression.setLvalueSymbol(annotations(), addr);
                 expression.setAggregateAddressResult(annotations(), addr, pointee);
             } else {
@@ -280,11 +280,11 @@ void SemanticAnalysisVisitor::visit(ast::UnaryExpression& expression) {
             type::Type elem = operandType.getElementType();
             if (elem.isArray()) {
                 // *a for multi-dim: yield decayed address of first row; keep array expr type.
-                auto addr = symbolTable.createTemporarySymbol(type::pointer(elem.getElementType()));
+                const auto& addr = symbolTable.createTemporarySymbol(type::pointer(elem.getElementType()));
                 expression.setLvalueSymbol(annotations(), addr);
                 expression.setAggregateAddressResult(annotations(), addr, elem);
             } else {
-                auto addr = symbolTable.createTemporarySymbol(type::pointer(elem));
+                const auto& addr = symbolTable.createTemporarySymbol(type::pointer(elem));
                 expression.setLvalueSymbol(annotations(), addr);
                 expression.setTypeAndResult(annotations(), symbolTable.createTemporarySymbol(elem));
                 expression.setType(elem);

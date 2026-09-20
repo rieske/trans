@@ -52,7 +52,7 @@ bool ValueScope::insertSymbol(SymbolKey key, const type::Type& type, translation
     }
     symbols::ValueEntry entry {
             std::move(objectName), type, context, index, storage, std::move(sourceName) };
-    localSymbols.insert(std::make_pair(std::move(key), entry));
+    localSymbols.insert(std::make_pair(std::move(key), std::move(entry)));
     return true;
 }
 
@@ -124,13 +124,14 @@ void ValueScope::applyFunctionSpecifiers(const SymbolKey& key, bool isInline, bo
     localSymbols.at(key).applyFunctionSpecs(isInline, isNoreturn, isExtern);
 }
 
-symbols::ValueEntry ValueScope::createTemporarySymbol(type::Type type) {
+const symbols::ValueEntry& ValueScope::createTemporarySymbol(const type::Type& type) {
     std::string tempName = generateTempName();
     const int index = allocateAutomatic(type);
     symbols::ValueEntry temp { tempName, type, translation_unit::Context { "", 0 }, index };
     temp.markExpressionTemp();
-    localSymbols.insert(std::make_pair(SymbolKey { 0, tempName }, temp));
-    return temp;
+    const auto inserted = localSymbols.insert(
+            std::make_pair(SymbolKey { 0, temp.getName() }, std::move(temp)));
+    return inserted.first->second;
 }
 
 const std::map<SymbolKey, symbols::ValueEntry>& ValueScope::getSymbols() const {
