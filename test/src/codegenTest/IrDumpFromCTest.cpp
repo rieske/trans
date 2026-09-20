@@ -123,6 +123,34 @@ TEST(IrDumpFromC, mutualRecursionKeepsBackEdge) {
             || b.find("CALL a") != std::string::npos || b.find("CALL b") != std::string::npos);
 }
 
+TEST(IrDumpFromC, indirectCallKeepsStarAtO1) {
+    const char* src = "static int add1(int x) { return x + 1; }"
+            " int f(int y) { int (*fp)(int) = add1; return add1(y) + fp(y); }\n";
+    const std::string o1 = compileToIr(src, 1);
+    EXPECT_THAT(o1, HasSubstr("PROC add1\n"));
+    const std::string f = procedureDump(o1, "f");
+    EXPECT_THAT(f, HasSubstr("CALL *"));
+    EXPECT_THAT(f, Not(HasSubstr("CALL add1")));
+}
+
+TEST(IrDumpFromC, variadicCalleeKeepsCallAtO1) {
+    const char* src = "static int sum(int n, ...) { return n; } int f(void) { return sum(1); }\n";
+    const std::string o1 = compileToIr(src, 1);
+    EXPECT_THAT(o1, HasSubstr("PROC sum variadic\n"));
+    EXPECT_THAT(procedureDump(o1, "f"), HasSubstr("CALL sum"));
+}
+
+TEST(IrDumpFromC, oversizeCalleeKeepsCallAtO1) {
+    std::string src = "static int fat(int x) {\n";
+    for (int i = 0; i < 32; ++i) {
+        src += "++x;\n";
+    }
+    src += "return x;\n} int f(int y) { return fat(y); }\n";
+    const std::string o1 = compileToIr(src, 1);
+    EXPECT_THAT(countSubstr(procedureDump(o1, "fat"), "INC "), Eq(32));
+    EXPECT_THAT(procedureDump(o1, "f"), HasSubstr("CALL fat"));
+}
+
 TEST(IrDumpFromC, call) {
     EXPECT_THAT(compileToIr("int g(int x); int f(int x) { return g(x); }\n"), StrEq(
             "PROC f\n"
