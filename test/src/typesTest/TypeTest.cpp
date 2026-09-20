@@ -132,6 +132,7 @@ TEST(Type, pointerToSignedInteger) {
     auto pointsTo = t.dereference();
     EXPECT_THAT(pointsTo.getSize(), Eq(4));
     EXPECT_THAT(pointsTo.isPrimitive(), IsTrue());
+    EXPECT_EQ(&t.dereference(), &t.dereference());
 }
 
 TEST(Type, pointerToPointerToSignedInteger) {
@@ -277,6 +278,7 @@ TEST(Type, arrayOfIntHasElementTypeAndSize) {
     EXPECT_THAT(a.getSize(), Eq(12));
     EXPECT_THAT(a.getArraySize(), Eq(3));
     EXPECT_THAT(a.getElementType().getSize(), Eq(4));
+    EXPECT_EQ(&a.getElementType(), &a.getElementType());
     EXPECT_THAT(a.to_string(), Eq("int[3]"));
 }
 
