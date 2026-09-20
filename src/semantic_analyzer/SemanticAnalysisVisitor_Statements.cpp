@@ -9,16 +9,17 @@ void SemanticAnalysisVisitor::visit(ast::JumpStatement& statement) {
         return;
     }
     const auto& loop = loopStack.back();
-    if (statement.jumpKeyword.value == "break") {
+    switch (statement.jumpKind()) {
+    case ast::JumpKind::Break:
         statement.setJumpTo(annotations(), *loop.exit);
-    } else if (statement.jumpKeyword.value == "continue") {
+        break;
+    case ast::JumpKind::Continue:
         if (!loop.cont) {
             semanticError("`continue` statement not in loop", statement.jumpKeyword.context);
             return;
         }
         statement.setJumpTo(annotations(), *loop.cont);
-    } else {
-        semanticError("unsupported jump statement `" + statement.jumpKeyword.value + "`", statement.jumpKeyword.context);
+        break;
     }
 }
 

@@ -11,7 +11,6 @@ namespace ast {
 class Constant {
 public:
     Constant(std::string value, type::Type type, translation_unit::Context context);
-    virtual ~Constant() = default;
 
     translation_unit::Context getContext() const;
     const std::string& getValue() const;

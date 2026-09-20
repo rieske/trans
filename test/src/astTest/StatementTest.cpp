@@ -1,6 +1,7 @@
 #include "gtest/gtest.h"
 
 #include <memory>
+#include <stdexcept>
 
 #include "ast/AbstractSyntaxTreeBuilderContext.h"
 #include "ast/Block.h"
@@ -10,6 +11,7 @@
 #include "ast/ExpressionStatement.h"
 #include "ast/IdentifierExpression.h"
 #include "ast/IfStatement.h"
+#include "ast/JumpStatement.h"
 #include "ast/NullStatement.h"
 #include "ast/ReturnStatement.h"
 #include "ast/TypeSpecifier.h"
@@ -100,6 +102,19 @@ TEST(ReturnStatement, withExpressionKeepsIt) {
 TEST(ReturnStatement, withoutExpressionIsVoid) {
     ast::ReturnStatement statement;
     EXPECT_EQ(statement.returnExpression, nullptr);
+}
+
+TEST(JumpStatement, kindFromKeyword) {
+    ast::JumpStatement br { { "break", ctx() } };
+    EXPECT_EQ(br.jumpKind(), ast::JumpKind::Break);
+    EXPECT_EQ(br.jumpKeyword.value, "break");
+    ast::JumpStatement cont { { "continue", ctx() } };
+    EXPECT_EQ(cont.jumpKind(), ast::JumpKind::Continue);
+    EXPECT_EQ(cont.jumpKeyword.value, "continue");
+}
+
+TEST(JumpStatement, rejectsOtherKeywords) {
+    EXPECT_THROW(ast::JumpStatement({ "goto", ctx() }), std::runtime_error);
 }
 
 TEST(CSNBCreators, emptyStatementPushesNullStatement) {
