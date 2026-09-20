@@ -7,10 +7,100 @@
 #include "types/Type.h"
 #include "types/TypeQuery.h"
 
-#include <sstream>
 #include <stdexcept>
+#include <string_view>
 
 namespace ast {
+
+namespace {
+
+constexpr unsigned kKwUnsigned = 1u << 0;
+constexpr unsigned kKwSigned = 1u << 1;
+constexpr unsigned kKwChar = 1u << 2;
+constexpr unsigned kKwShort = 1u << 3;
+constexpr unsigned kKwInt = 1u << 4;
+constexpr unsigned kKwFloat = 1u << 5;
+constexpr unsigned kKwDouble = 1u << 6;
+constexpr unsigned kKwVoid = 1u << 7;
+constexpr unsigned kKwInt128 = 1u << 8;
+constexpr unsigned kKwComplex = 1u << 9;
+constexpr unsigned kKwAnyKeyword = 1u << 10;
+constexpr unsigned kKwCompound = 1u << 11;
+
+bool applyKeywordToken(std::string_view tok, unsigned& bits, unsigned& longCount) {
+    if (tok == "unsigned") {
+        bits |= kKwUnsigned | kKwAnyKeyword;
+        return true;
+    }
+    if (tok == "signed") {
+        bits |= kKwSigned | kKwAnyKeyword;
+        return true;
+    }
+    if (tok == "char") {
+        bits |= kKwChar | kKwAnyKeyword;
+        return true;
+    }
+    if (tok == "short") {
+        bits |= kKwShort | kKwAnyKeyword;
+        return true;
+    }
+    if (tok == "int") {
+        bits |= kKwInt | kKwAnyKeyword;
+        return true;
+    }
+    if (tok == "long") {
+        ++longCount;
+        bits |= kKwAnyKeyword;
+        return true;
+    }
+    if (tok == "float") {
+        bits |= kKwFloat | kKwAnyKeyword;
+        return true;
+    }
+    if (tok == "double") {
+        bits |= kKwDouble | kKwAnyKeyword;
+        return true;
+    }
+    if (tok == "void") {
+        bits |= kKwVoid | kKwAnyKeyword;
+        return true;
+    }
+    if (tok == "__int128") {
+        bits |= kKwInt128 | kKwAnyKeyword;
+        return true;
+    }
+    if (tok == "_Complex") {
+        bits |= kKwComplex | kKwAnyKeyword;
+        return true;
+    }
+    return false;
+}
+
+void ingestSpecifierName(std::string_view name, unsigned& bits, unsigned& longCount) {
+    if (name.empty()) {
+        bits |= kKwCompound;
+        return;
+    }
+    std::size_t i = 0;
+    while (i < name.size()) {
+        while (i < name.size() && name[i] == ' ') {
+            ++i;
+        }
+        if (i >= name.size()) {
+            break;
+        }
+        std::size_t j = i;
+        while (j < name.size() && name[j] != ' ') {
+            ++j;
+        }
+        if (!applyKeywordToken(name.substr(i, j - i), bits, longCount)) {
+            bits |= kKwCompound;
+        }
+        i = j;
+    }
+}
+
+} // namespace
 
 DeclarationSpecifiers::DeclarationSpecifiers(TypeSpecifier typeSpecifier, DeclarationSpecifiers rest) :
         DeclarationSpecifiers(std::move(rest)) {
@@ -37,6 +127,7 @@ DeclarationSpecifiers DeclarationSpecifiers::none() {
 }
 
 void DeclarationSpecifiers::add(TypeSpecifier typeSpecifier) {
+    ingestSpecifierName(typeSpecifier.getName(), specifierKeywords_, longCount_);
     typeSpecifiers.push_back(std::move(typeSpecifier));
 }
 
@@ -129,105 +220,29 @@ bool DeclarationSpecifiers::hasFunctionSpec(FunctionSpec spec) const {
     return false;
 }
 
-namespace {
-
-// True when token is a C type-specifier keyword we fold (not a tag/typedef name).
-bool applyKeywordToken(const std::string& tok,
-        bool& hasUnsigned, bool& hasSigned, bool& hasChar, bool& hasShort, bool& hasInt,
-        int& longCount, bool& hasFloat, bool& hasDouble, bool& hasVoid, bool& hasInt128,
-        bool& hasComplexSpec) {
-    if (tok == "unsigned") {
-        hasUnsigned = true;
-        return true;
-    }
-    if (tok == "signed") {
-        hasSigned = true;
-        return true;
-    }
-    if (tok == "char") {
-        hasChar = true;
-        return true;
-    }
-    if (tok == "short") {
-        hasShort = true;
-        return true;
-    }
-    if (tok == "int") {
-        hasInt = true;
-        return true;
-    }
-    if (tok == "long") {
-        ++longCount;
-        return true;
-    }
-    if (tok == "float") {
-        hasFloat = true;
-        return true;
-    }
-    if (tok == "double") {
-        hasDouble = true;
-        return true;
-    }
-    if (tok == "void") {
-        hasVoid = true;
-        return true;
-    }
-    if (tok == "__int128") {
-        hasInt128 = true;
-        return true;
-    }
-    if (tok == "_Complex") {
-        hasComplexSpec = true;
-        return true;
-    }
-    return false;
-}
-
-} // namespace
-
 type::Type DeclarationSpecifiers::getResolvedType() const {
-    bool hasUnsigned = false;
-    bool hasSigned = false;
-    bool hasChar = false;
-    bool hasShort = false;
-    bool hasInt = false;
-    int longCount = 0;
-    bool hasFloat = false;
-    bool hasDouble = false;
-    bool hasVoid = false;
-    bool hasInt128 = false;
-    type::Type compoundType = type::voidType();
-    bool hasCompound = false;
-    bool anyKeyword = false;
-    bool hasComplexSpec = false;
+    const bool hasUnsigned = (specifierKeywords_ & kKwUnsigned) != 0;
+    const bool hasSigned = (specifierKeywords_ & kKwSigned) != 0;
+    const bool hasChar = (specifierKeywords_ & kKwChar) != 0;
+    const bool hasShort = (specifierKeywords_ & kKwShort) != 0;
+    const bool hasInt = (specifierKeywords_ & kKwInt) != 0;
+    const bool hasFloat = (specifierKeywords_ & kKwFloat) != 0;
+    const bool hasDouble = (specifierKeywords_ & kKwDouble) != 0;
+    const bool hasVoid = (specifierKeywords_ & kKwVoid) != 0;
+    const bool hasInt128 = (specifierKeywords_ & kKwInt128) != 0;
+    const bool hasComplexSpec = (specifierKeywords_ & kKwComplex) != 0;
+    const bool hasCompound = (specifierKeywords_ & kKwCompound) != 0;
+    const bool anyKeyword = (specifierKeywords_ & kKwAnyKeyword) != 0;
 
-    for (const auto& ts : typeSpecifiers) {
-        const std::string& name = ts.getName();
-        bool compound = name.empty();
-        if (!compound) {
-            std::istringstream names { name };
-            for (std::string tok; names >> tok;) {
-                const bool keyword = applyKeywordToken(tok, hasUnsigned, hasSigned, hasChar,
-                        hasShort, hasInt, longCount, hasFloat, hasDouble, hasVoid, hasInt128,
-                        hasComplexSpec);
-                anyKeyword |= keyword;
-                compound |= !keyword;
-            }
-        }
-        if (compound) {
-            hasCompound = true;
+    if (hasCompound && !anyKeyword) {
+        type::Type compoundType = type::voidType();
+        for (const auto& ts : typeSpecifiers) {
             if (ts.hasType()) {
                 compoundType = ts.getType();
             }
         }
-    }
-
-    // Struct/union/enum/typedef without keyword mix: return stored type.
-    if (hasCompound && !anyKeyword) {
         return compoundType.withQualifiers(typeQualifiers);
     }
-    // Keyword + compound together (e.g. invalid "unsigned struct S"): prefer keyword path;
-    // full constraint diagnostics deferred.
     if (hasVoid) {
         return type::voidType();
     }
@@ -235,14 +250,14 @@ type::Type DeclarationSpecifiers::getResolvedType() const {
         return hasComplexSpec ? type::complexFloat(typeQualifiers) : type::floating(typeQualifiers);
     }
     if (hasDouble) {
-        if (longCount > 0) {
+        if (longCount_ > 0) {
             return hasComplexSpec ? type::complexLongDouble(typeQualifiers)
                     : type::longDoubleFloating(typeQualifiers);
         }
         return hasComplexSpec ? type::complexDouble(typeQualifiers) : type::doubleFloating(typeQualifiers);
     }
     if (hasComplexSpec) {
-        return longCount > 0 ? type::complexLongDouble(typeQualifiers)
+        return longCount_ > 0 ? type::complexLongDouble(typeQualifiers)
                 : type::complexDouble(typeQualifiers);
     }
     if (hasChar) {
@@ -254,7 +269,7 @@ type::Type DeclarationSpecifiers::getResolvedType() const {
     if (hasInt128) {
         return hasUnsigned ? type::unsignedInt128(typeQualifiers) : type::signedInt128(typeQualifiers);
     }
-    if (longCount > 0) {
+    if (longCount_ > 0) {
         return hasUnsigned ? type::unsignedLong(typeQualifiers) : type::signedLong(typeQualifiers);
     }
     if (hasUnsigned) {
@@ -263,7 +278,6 @@ type::Type DeclarationSpecifiers::getResolvedType() const {
     if (hasSigned || hasInt || typeSpecifiers.empty()) {
         return type::signedInteger(typeQualifiers);
     }
-    // Unknown non-keyword-only list: fall back to first stored type.
     if (!typeSpecifiers.at(0).hasType()) {
         return type::voidType();
     }

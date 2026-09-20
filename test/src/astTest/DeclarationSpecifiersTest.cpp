@@ -1,11 +1,16 @@
 #include "gtest/gtest.h"
 
 #include "ast/DeclarationSpecifiers.h"
+#include "ast/IdentifierExpression.h"
+#include "ast/ParseEnvironment.h"
 #include "ast/StorageSpecifier.h"
 #include "ast/TypeSpecifier.h"
+#include "scanner/LexicalSession.h"
 #include "types/Type.h"
 #include "types/TypeQuery.h"
 #include "translation_unit/Context.h"
+
+#include <memory>
 
 namespace {
 
@@ -232,6 +237,23 @@ TEST(DeclarationSpecifiers, untaggedTentativeRecordIsAnonymousMember) {
     DeclarationSpecifiers tagged { TypeSpecifier { rec, "Inner" } };
     EXPECT_TRUE(untagged.isUntaggedRecordBody());
     EXPECT_FALSE(tagged.isUntaggedRecordBody());
+}
+
+TEST(DeclarationSpecifiers, getResolvedTypeSeesTypeofFilledAfterAdd) {
+    using namespace ast;
+    scanner::LexicalSession session;
+    ParseEnvironment env { session };
+    env.defineObject("p", type::pointer(type::signedInteger()));
+    DeclarationSpecifiers d {
+            type::Qualifier::CONST,
+            DeclarationSpecifiers { TypeSpecifier {
+                    std::make_unique<IdentifierExpression>("p", translation_unit::Context { "t", 1 }) } } };
+    EXPECT_TRUE(d.needsSemanticResolve());
+    ASSERT_TRUE(d.resolveTypeofAtParseTime(env));
+    const type::Type t = d.getResolvedType();
+    EXPECT_TRUE(t.isConst());
+    EXPECT_TRUE(t.isPointer());
+    EXPECT_TRUE(t.dereference().equivalentTo(type::signedInteger()));
 }
 
 } // namespace

@@ -49,12 +49,17 @@ public:
     TypeSpecifier toTypeSpecifier() const;
 
 private:
-    DeclarationSpecifiers() = default;
+    DeclarationSpecifiers() :
+            specifierKeywords_ { 0 },
+            longCount_ { 0 } {
+    }
 
     std::vector<TypeSpecifier> typeSpecifiers;
     std::vector<type::Qualifier> typeQualifiers;
     std::vector<StorageSpecifier> storageSpecifiers;
     std::vector<FunctionSpecifier> functionSpecifiers;
+    unsigned specifierKeywords_;
+    unsigned longCount_;
 };
 
 } // namespace ast
