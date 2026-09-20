@@ -46,14 +46,14 @@ void Expression::setType(const type::Type& type) {
     this->type = type;
 }
 
-type::Type Expression::expressionType() const {
+const type::Type& Expression::expressionType() const {
     if (!type) {
         throw std::runtime_error { "expression type is not set" };
     }
     return *type;
 }
 
-type::Type Expression::valueType(const symbols::AnnotationStore& store) const {
+const type::Type& Expression::valueType(const symbols::AnnotationStore& store) const {
     if (const auto* r = store.value(this, symbols::ValueSlot::Result)) {
         return r->getType();
     }

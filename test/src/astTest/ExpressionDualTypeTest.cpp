@@ -16,6 +16,26 @@ translation_unit::Context ctx() {
 TEST(Expression, expressionTypeThrowsWhenUnset) {
     ast::IdentifierExpression id("x", ctx());
     EXPECT_THROW(id.expressionType(), std::runtime_error);
+    EXPECT_FALSE(id.isArrayObjectType());
+}
+
+TEST(Expression, expressionTypeIsStored) {
+    ast::IdentifierExpression id("x", ctx());
+    id.setType(type::signedInteger());
+    EXPECT_TRUE(id.expressionType().equivalentTo(type::signedInteger()));
+    EXPECT_EQ(&id.expressionType(), &id.expressionType());
+    EXPECT_FALSE(id.isArrayObjectType());
+}
+
+TEST(Expression, valueTypeSharesStoredType) {
+    symbols::AnnotationStore store;
+    ast::IdentifierExpression id("x", ctx());
+    id.setType(type::signedInteger());
+    EXPECT_EQ(&id.valueType(store), &id.expressionType());
+
+    symbols::ValueEntry v("x", type::signedInteger(), ctx(), 0);
+    id.setTypeAndResult(store, v);
+    EXPECT_EQ(&id.valueType(store), &id.getResultSymbol(store)->getType());
 }
 
 TEST(Expression, valueTypeFallsBackToExpressionType) {

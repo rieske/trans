@@ -76,7 +76,7 @@ public:
 
     void setType(const type::Type& type);
     // C type of the expression (sizeof / isArray / isStructure).
-    type::Type expressionType() const;
+    const type::Type& expressionType() const;
     bool hasExpressionType() const { return type.has_value(); }
     // A void expression has a type but no value to read.
     bool isVoidValue() const { return type.has_value() && type->isVoid(); }
@@ -84,10 +84,10 @@ public:
     bool hasAnalyzedValue(const symbols::AnnotationStore& store) const;
 
     // Dual-type: array expressions keep the array as expression type.
-    bool isArrayObjectType() const { return hasExpressionType() && expressionType().isArray(); }
+    bool isArrayObjectType() const { return type.has_value() && type->isArray(); }
 
     // Type of the Result symbol after SA (prefer for arithmetic / assign source value).
-    type::Type valueType(const symbols::AnnotationStore& store) const;
+    const type::Type& valueType(const symbols::AnnotationStore& store) const;
 
     bool isLval() const;
     // Address temp for this expression (ValueSlot::Lvalue on the store).
