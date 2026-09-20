@@ -140,9 +140,9 @@ void TokenStream::setIdContext(LexIdContext context) {
 
 void TokenStream::classifyAndStamp(scanner::Token& token) const {
     if (token.id == "id" || token.id == "typedef_name") {
-        if (session_.names.isIdentifierShadow(token.lexeme)
-                || !session_.isTypedef(token.lexeme)
-                || idContext_ == LexIdContext::AsIdentifier) {
+        if (idContext_ == LexIdContext::AsIdentifier
+                || session_.names.isIdentifierShadow(token.lexeme)
+                || !session_.isTypedef(token.lexeme)) {
             if (idId_ < 0) {
                 throw std::logic_error { "TokenStream: not a grammar terminal: id" };
             }

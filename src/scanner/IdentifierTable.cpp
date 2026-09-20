@@ -9,7 +9,12 @@ void IdentifierTable::addTypedef(const std::string& name, const type::Type& type
 }
 
 bool IdentifierTable::hasTypedef(std::string_view name) const {
-    return lookupTypedef(name).has_value();
+    for (auto it = scopes_.rbegin(); it != scopes_.rend(); ++it) {
+        if (it->typedefs.find(name) != it->typedefs.end()) {
+            return true;
+        }
+    }
+    return false;
 }
 
 std::optional<type::Type> IdentifierTable::lookupTypedef(std::string_view name) const {
