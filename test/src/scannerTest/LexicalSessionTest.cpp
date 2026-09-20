@@ -93,6 +93,17 @@ TEST(IdentifierTable, addTypedefClearsShadowOfSameName) {
     EXPECT_TRUE(reg.hasTypedef("T"));
 }
 
+TEST(IdentifierTable, hasTypedefMatchesLookupPresence) {
+    IdentifierTable reg;
+    EXPECT_FALSE(reg.hasTypedef("T"));
+    EXPECT_FALSE(reg.lookupTypedef("T").has_value());
+    reg.addTypedef("T", type::signedInteger());
+    EXPECT_TRUE(reg.hasTypedef("T"));
+    const auto t = reg.lookupTypedef("T");
+    ASSERT_TRUE(t.has_value());
+    EXPECT_TRUE(t->equivalentTo(type::signedInteger()));
+}
+
 TEST(IdentifierTable, addTypedefLastWins) {
     IdentifierTable reg;
     reg.addTypedef("T", type::signedInteger());
