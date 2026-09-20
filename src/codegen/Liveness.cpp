@@ -118,6 +118,7 @@ ProcedureLiveness computeProcedureLiveness(const Procedure& procedure) {
     }
     const LinearPrep prep = prepare(procedure.body);
     out.addressTaken = prep.addressTaken;
+    out.afterInst.assign(procedure.body.size(), {});
     const LiveSets live = solveLiveness(cfg, genKill(cfg, prep));
 
     for (std::size_t i = 0; i < cfg.size(); ++i) {
@@ -146,6 +147,7 @@ ProcedureLiveness computeProcedureLiveness(const Procedure& procedure) {
             if (refs.isCall) {
                 out.afterCall[static_cast<int>(instIndex[n])] = later;
             }
+            out.afterInst[instIndex[n]] = later;
             applyRefsBackward(later, refs);
             if (refs.isCall && instIndex[n] < prep.extraCallUses.size()) {
                 later.insert(prep.extraCallUses[instIndex[n]].begin(),

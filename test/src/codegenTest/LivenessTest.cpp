@@ -54,6 +54,23 @@ TEST(Liveness, loopHeaderKeepsIncTarget) {
     EXPECT_THAT(live.atLabel.at(n("L")), UnorderedElementsAre(n("x")));
 }
 
+TEST(Liveness, afterInstKeepsDefLiveOnBackEdge) {
+    IntermediateRepresentation ir;
+    IrN n { ir.strings };
+    Procedure p = makeProc(ir.strings, {
+            ir::assignConstant(n("0"), n("t")),
+            ir::label(n("L")),
+            ir::assign(n("t"), n("r")),
+            ir::assignConstant(n("1"), n("t")),
+            ir::jump(n("L")),
+    });
+    const ProcedureLiveness live = computeProcedureLiveness(p);
+    ASSERT_THAT(live.afterInst.size(), Eq(p.body.size()));
+    const int def = 3;
+    ASSERT_THAT(p.body[static_cast<std::size_t>(def)].op, Eq(Op::AssignConstant));
+    EXPECT_THAT(live.afterInst[static_cast<std::size_t>(def)], Contains(n("t")));
+}
+
 TEST(Liveness, argumentStaysLiveAcrossLabelBeforeCall) {
     IntermediateRepresentation ir;
     IrN n { ir.strings };

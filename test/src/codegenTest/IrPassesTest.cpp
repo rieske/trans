@@ -911,6 +911,43 @@ TEST(IrPasses, eliminateDeadTemps_dropsOuterLoadKeepsStoreAddress) {
             "ENDPROC f\n"));
 }
 
+TEST(IrPasses, eliminateDeadTemps_keepsTempLiveOnlyOnBackEdge) {
+    IntermediateRepresentation ir;
+    IrN n { ir.strings };
+    ir.procedures.push_back(makeProc(ir.strings, "f", {
+            ir::assignConstant(n("0"), n("t")),
+            ir::label(n("L")),
+            ir::assign(n("t"), n("r")),
+            ir::assignConstant(n("1"), n("t")),
+            ir::zeroCompare(n("x")),
+            ir::jump(n("L"), JumpCondition::IF_NOT_EQUAL),
+            ir::ret(n("r")),
+    }, exprTemps(ir.strings, { "t", "r", "x" })));
+
+    eliminateDeadTemps(ir.procedures.front());
+
+    EXPECT_THAT(toString(ir), HasSubstr("t := 0"));
+    EXPECT_THAT(toString(ir), HasSubstr("t := 1"));
+    EXPECT_THAT(toString(ir), HasSubstr("r := t"));
+}
+
+TEST(IrPasses, eliminateDeadTemps_dropsDeadTempInLoop) {
+    IntermediateRepresentation ir;
+    IrN n { ir.strings };
+    ir.procedures.push_back(makeProc(ir.strings, "f", {
+            ir::assignConstant(n("0"), n("i")),
+            ir::label(n("L")),
+            ir::assignConstant(n("1"), n("t")),
+            ir::inc(n("i")),
+            ir::jump(n("L")),
+    }, exprTemps(ir.strings, { "t", "i" })));
+
+    eliminateDeadTemps(ir.procedures.front());
+
+    EXPECT_THAT(toString(ir), Not(HasSubstr("t := 1")));
+    EXPECT_THAT(toString(ir), HasSubstr("INC i"));
+}
+
 TEST(IrPasses, eliminateDeadTemps_keepsCall) {
     IntermediateRepresentation ir;
     IrN n { ir.strings };

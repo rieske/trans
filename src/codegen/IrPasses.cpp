@@ -3,6 +3,7 @@
 #include "IrInline.h"
 
 #include "Cfg.h"
+#include "Liveness.h"
 #include "SymbolRefs.h"
 #include "util/ImmediateFormat.h"
 #include "util/IntegerLiteral.h"
@@ -731,33 +732,32 @@ bool isDeadExpressionTempDef(const Procedure& procedure, int id,
 } // namespace
 
 void eliminateDeadTemps(Procedure& procedure) {
-    std::unordered_set<int> addressTaken;
-    for (const auto& inst : procedure.body) {
-        SymbolRefs refs;
-        collectSymbolRefs(inst, refs);
-        if (refs.addressOfBase != kNoSymbol) {
-            addressTaken.insert(refs.addressOfBase);
+    ProcedureLiveness live;
+    for (;;) {
+        live = computeProcedureLiveness(procedure);
+        std::vector<Instruction> kept;
+        kept.reserve(procedure.body.size());
+        const std::unordered_set<int> empty;
+        for (int i = static_cast<int>(procedure.body.size()) - 1; i >= 0; --i) {
+            const Instruction& inst = procedure.body[static_cast<std::size_t>(i)];
+            const std::unordered_set<int>* after = nullptr;
+            if (static_cast<std::size_t>(i) < live.afterInst.size()) {
+                after = &live.afterInst[static_cast<std::size_t>(i)];
+            }
+            if (isDeadAssignable(inst.op)
+                    && isDeadExpressionTempDef(procedure, inst.result, after ? *after : empty,
+                            live.addressTaken)) {
+                continue;
+            }
+            kept.push_back(inst);
         }
+        std::reverse(kept.begin(), kept.end());
+        if (kept.size() == procedure.body.size()) {
+            procedure.body = std::move(kept);
+            break;
+        }
+        procedure.body = std::move(kept);
     }
-
-    std::unordered_set<int> laterUses;
-    std::vector<Instruction> kept;
-    kept.reserve(procedure.body.size());
-    for (int i = static_cast<int>(procedure.body.size()) - 1; i >= 0; --i) {
-        const Instruction& inst = procedure.body[static_cast<std::size_t>(i)];
-        SymbolRefs refs;
-        collectSymbolRefs(inst, refs);
-        if (isDeadAssignable(inst.op)
-                && isDeadExpressionTempDef(procedure, inst.result, laterUses, addressTaken)) {
-            continue;
-        }
-        for (int use : refs.uses) {
-            laterUses.insert(use);
-        }
-        kept.push_back(inst);
-    }
-    std::reverse(kept.begin(), kept.end());
-    procedure.body = std::move(kept);
 
     std::unordered_set<int> remaining;
     for (const auto& inst : procedure.body) {
@@ -773,7 +773,7 @@ void eliminateDeadTemps(Procedure& procedure) {
     locals.erase(std::remove_if(locals.begin(), locals.end(),
             [&](const Value& local) {
                 return local.isExpressionTemp() && remaining.count(local.id()) == 0
-                        && addressTaken.count(local.id()) == 0;
+                        && live.addressTaken.count(local.id()) == 0;
             }),
             locals.end());
 }
