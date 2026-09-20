@@ -13,6 +13,7 @@ constexpr int kNoSymbol = -1;
 class IrStringTable {
 public:
     int intern(std::string_view text);
+    int internFresh(std::string_view prefix);
     int internFrameTemp();
     int find(std::string_view text) const;
     int require(std::string_view text) const;
@@ -32,7 +33,7 @@ private:
 
     std::vector<std::string> names_;
     std::unordered_map<std::string, int, TransparentHash, std::equal_to<>> index_;
-    int nextFrameTemp_ { 0 };
+    std::unordered_map<std::string, int, TransparentHash, std::equal_to<>> nextFresh_;
 };
 
 } // namespace codegen
