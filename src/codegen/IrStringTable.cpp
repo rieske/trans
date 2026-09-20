@@ -19,12 +19,20 @@ int IrStringTable::intern(std::string_view text) {
     return id;
 }
 
-int IrStringTable::internFrameTemp() {
+int IrStringTable::internFresh(std::string_view prefix) {
+    if (prefix.empty()) {
+        internalError("IrStringTable::internFresh: empty prefix");
+    }
+    int& next = nextFresh_[std::string(prefix)];
     std::string name;
     do {
-        name = "__t" + std::to_string(nextFrameTemp_++);
+        name = std::string(prefix) + std::to_string(next++);
     } while (find(name) != kNoSymbol);
     return intern(name);
+}
+
+int IrStringTable::internFrameTemp() {
+    return internFresh("__t");
 }
 
 int IrStringTable::find(std::string_view text) const {

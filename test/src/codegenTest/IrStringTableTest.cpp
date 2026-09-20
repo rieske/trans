@@ -64,6 +64,41 @@ TEST(IrStringTable, findReturnsInternedIdOrNoSymbol) {
     EXPECT_THAT(table.find(""), Eq(kNoSymbol));
 }
 
+TEST(IrStringTable, internFreshIsSequentialPerPrefix) {
+    IrStringTable table;
+    const int a = table.internFresh("$t");
+    const int b = table.internFresh("$t");
+    const int c = table.internFresh("__L");
+    EXPECT_THAT(table.get(a), StrEq("$t0"));
+    EXPECT_THAT(table.get(b), StrEq("$t1"));
+    EXPECT_THAT(table.get(c), StrEq("__L0"));
+}
+
+TEST(IrStringTable, internFrameTempThenInternFreshAreSequentialTNames) {
+    IrStringTable table;
+    const int a = table.internFrameTemp();
+    const int b = table.internFresh("__t");
+    EXPECT_THAT(table.get(a), StrEq("__t0"));
+    EXPECT_THAT(table.get(b), StrEq("__t1"));
+}
+
+TEST(IrStringTable, internFreshSkipsInternedHole) {
+    IrStringTable table;
+    table.intern("__t1");
+    const int a = table.internFresh("__t");
+    const int b = table.internFresh("__t");
+    EXPECT_THAT(table.get(a), StrEq("__t0"));
+    EXPECT_THAT(table.get(b), StrEq("__t2"));
+}
+
+TEST(IrStringTable, internFreshAfterOccupiedPrefixContinues) {
+    IrStringTable table;
+    table.intern("$t0");
+    table.intern("$t1");
+    const int a = table.internFresh("$t");
+    EXPECT_THAT(table.get(a), StrEq("$t2"));
+}
+
 TEST(IrStringTable, requireReturnsInternedIdAndRejectsMissing) {
     IrStringTable table;
     const int x = table.intern("x");

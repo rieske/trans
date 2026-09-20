@@ -153,15 +153,6 @@ bool addressTakenIn(const std::vector<Instruction>& body, int id) {
     return false;
 }
 
-int internFresh(IrStringTable& strings, const std::string& prefix) {
-    int n = 0;
-    std::string name;
-    do {
-        name = prefix + std::to_string(n++);
-    } while (strings.find(name) != kNoSymbol);
-    return strings.intern(name);
-}
-
 int internInlinedAutomatic(IrStringTable& strings, int siteId, int sourceId) {
     std::string unique = strings.get(sourceId);
     if (unique.size() >= 2 && unique[0] == 'L' && unique[1] == '$') {
@@ -182,10 +173,10 @@ int internInlinedAutomatic(IrStringTable& strings, int siteId, int sourceId) {
 int remapPrivateValue(IrStringTable& strings, int siteId, int sourceId) {
     const std::string& name = strings.get(sourceId);
     if (name.compare(0, 2, "$t") == 0) {
-        return internFresh(strings, "$t");
+        return strings.internFresh("$t");
     }
     if (name.compare(0, 3, "__t") == 0) {
-        return internFresh(strings, "__t");
+        return strings.internFresh("__t");
     }
     return internInlinedAutomatic(strings, siteId, sourceId);
 }
@@ -335,9 +326,9 @@ std::vector<Instruction> cloneCalleeBody(
     }
 
     for (int label : privateLabels) {
-        remap[label] = internFresh(strings, "__L");
+        remap[label] = strings.internFresh("__L");
     }
-    const int cont = internFresh(strings, "__L");
+    const int cont = strings.internFresh("__L");
 
     for (const auto& inst : callee.body) {
         if (inst.op == Op::Return || inst.op == Op::VoidReturn) {
