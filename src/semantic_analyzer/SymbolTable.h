@@ -45,7 +45,7 @@ public:
     const symbols::ValueEntry* findFileScope(const std::string& name) const;
     bool insertEnumerator(const std::string& name, type::IntegerConstant value);
     const symbols::ValueEntry& lookup(const std::string& name) const;
-    symbols::ValueEntry createTemporarySymbol(type::Type type);
+    const symbols::ValueEntry& createTemporarySymbol(const type::Type& type);
     symbols::LabelEntry newLabel();
     void startFunction(std::string name, std::vector<std::string> formalArguments);
     void endFunction();

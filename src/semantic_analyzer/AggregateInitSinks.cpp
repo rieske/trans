@@ -36,9 +36,9 @@ void FieldPlanSink::onUnwritten(const type::FoundMember& slot) {
             [&](int off, const type::Type& storeType) {
                 symbols::StructFieldInit field;
                 field.offsetBytes = off;
-                auto addr = symbolTable.createTemporarySymbol(type::pointer(storeType));
+                const auto& addr = symbolTable.createTemporarySymbol(type::pointer(storeType));
                 field.addressName = addr.getName();
-                auto zero = symbolTable.createTemporarySymbol(storeType);
+                const auto& zero = symbolTable.createTemporarySymbol(storeType);
                 field.zeroInitialize = true;
                 field.sourceName = zero.getName();
                 plan.push_back(std::move(field));
@@ -51,7 +51,7 @@ void FieldPlanSink::placeScalar(const type::FoundMember& slot, ast::Expression* 
     field.bitField = slot.bitField;
     field.type = slot.type;
     const type::Type& storeType = slot.type;
-    auto addr = symbolTable.createTemporarySymbol(type::pointer(storeType));
+    const auto& addr = symbolTable.createTemporarySymbol(type::pointer(storeType));
     field.addressName = addr.getName();
     if (value && value->hasResultSymbol(annotations)) {
         decayArrayToPointer(*value, storeType, symbolTable, annotations);
@@ -67,7 +67,7 @@ void FieldPlanSink::placeScalar(const type::FoundMember& slot, ast::Expression* 
             field.sourceName = value->getResultSymbol(annotations)->getName();
         }
     } else {
-        auto zero = symbolTable.createTemporarySymbol(storeType);
+        const auto& zero = symbolTable.createTemporarySymbol(storeType);
         field.zeroInitialize = true;
         field.sourceName = zero.getName();
     }
@@ -79,9 +79,9 @@ void FieldPlanSink::placeInteger(const type::FoundMember& slot, long value) {
     field.offsetBytes = slot.offsetBytes;
     field.bitField = slot.bitField;
     field.type = slot.type;
-    auto addr = symbolTable.createTemporarySymbol(type::pointer(slot.type));
+    const auto& addr = symbolTable.createTemporarySymbol(type::pointer(slot.type));
     field.addressName = addr.getName();
-    auto src = symbolTable.createTemporarySymbol(slot.type);
+    const auto& src = symbolTable.createTemporarySymbol(slot.type);
     field.sourceName = src.getName();
     field.immediate = std::to_string(value);
     plan.push_back(std::move(field));

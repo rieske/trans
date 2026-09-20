@@ -107,6 +107,14 @@ TEST(SymbolTable, fileScopeTemporaryIsNotADataHome) {
     EXPECT_TRUE(table.getDataHomes().empty());
 }
 
+TEST(SymbolTable, createTemporarySymbolReturnsScopeEntry) {
+    SymbolTable table;
+    const auto& temp = table.createTemporarySymbol(type::signedInteger());
+    EXPECT_TRUE(temp.isExpressionTemp());
+    EXPECT_EQ(&table.lookup(temp.getName()), &temp);
+    EXPECT_TRUE(temp.getType().equivalentTo(type::signedInteger()));
+}
+
 const symbols::StaticWord* firstWord(const ValueEntry& home) {
     if (home.staticInit().empty()) {
         return nullptr;

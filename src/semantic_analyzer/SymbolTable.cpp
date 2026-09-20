@@ -255,7 +255,7 @@ const symbols::ValueEntry& SymbolTable::lookup(const std::string& name) const {
     throw std::out_of_range(name);
 }
 
-symbols::ValueEntry SymbolTable::createTemporarySymbol(type::Type type) {
+const symbols::ValueEntry& SymbolTable::createTemporarySymbol(const type::Type& type) {
     if (isAtFileScope()) {
         return globalScope.createTemporarySymbol(type);
     }

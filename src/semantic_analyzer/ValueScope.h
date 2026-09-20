@@ -28,7 +28,7 @@ public:
     bool insertEnumerator(SymbolKey key, type::IntegerConstant value);
     void insertFunctionArgument(std::string objectName, const type::Type& type,
             translation_unit::Context context, std::string sourceName);
-    symbols::ValueEntry createTemporarySymbol(type::Type type);
+    const symbols::ValueEntry& createTemporarySymbol(const type::Type& type);
     const symbols::ValueEntry* find(const SymbolKey& key) const;
     const symbols::ValueEntry& lookup(const SymbolKey& key) const;
     const symbols::ValueEntry* findArgumentBySource(const std::string& source) const;

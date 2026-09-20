@@ -60,27 +60,27 @@ const type::Type& Expression::valueType(const symbols::AnnotationStore& store) c
     return expressionType();
 }
 
-void Expression::setTypeAndResult(symbols::AnnotationStore& store, symbols::ValueEntry result) {
+void Expression::setTypeAndResult(symbols::AnnotationStore& store, const symbols::ValueEntry& result) {
     setType(result.getType());
     form = ValueForm::Scalar;
-    store.setResult(this, std::move(result));
+    store.setResult(this, result);
 }
 
 void Expression::setAggregateAddressResult(symbols::AnnotationStore& store,
-        symbols::ValueEntry addressSymbol, const type::Type& aggregateType) {
+        const symbols::ValueEntry& addressSymbol, const type::Type& aggregateType) {
     setType(aggregateType);
     form = ValueForm::AggregateAddress;
-    store.setResult(this, std::move(addressSymbol));
+    store.setResult(this, addressSymbol);
 }
 
 void Expression::setFunctionDesignatorResult(symbols::AnnotationStore& store,
-        symbols::ValueEntry addressSymbol, const type::Type& functionType) {
+        const symbols::ValueEntry& addressSymbol, const type::Type& functionType) {
     setType(functionType);
     form = ValueForm::FunctionDesignator;
     if (exprKind() == ExprKind::Identifier) {
         static_cast<IdentifierExpression*>(this)->lval_ = false;
     }
-    store.setResult(this, std::move(addressSymbol));
+    store.setResult(this, addressSymbol);
 }
 
 void Expression::takeValueFrom(Expression& src, symbols::AnnotationStore& store) {
@@ -135,8 +135,8 @@ bool Expression::isLval() const {
     }
 }
 
-void Expression::setLvalueSymbol(symbols::AnnotationStore& store, symbols::ValueEntry address) {
-    store.setLvalue(this, std::move(address));
+void Expression::setLvalueSymbol(symbols::AnnotationStore& store, const symbols::ValueEntry& address) {
+    store.setLvalue(this, address);
 }
 
 symbols::ValueEntry* Expression::getLvalueSymbol(symbols::AnnotationStore& store) const {

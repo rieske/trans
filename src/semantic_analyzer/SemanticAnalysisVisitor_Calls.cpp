@@ -17,7 +17,7 @@ void setFunctionDesignator(ast::IdentifierExpression& identifier, SymbolTable& s
     assert(symbolTable.hasFunction(name));
     auto functionEntry = symbolTable.findFunction(name);
     type::Type fnType = functionEntry.getType();
-    auto addr = symbolTable.createTemporarySymbol(type::pointer(fnType));
+    const auto& addr = symbolTable.createTemporarySymbol(type::pointer(fnType));
     identifier.setFunctionDesignatorResult(store, addr, fnType);
     symbols::FunctionDesignatorPlan plan;
     plan.functionName = functionEntry.getName();
