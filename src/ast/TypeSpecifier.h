@@ -39,7 +39,7 @@ public:
     const std::string& getName() const;
     const translation_unit::Context& getContext() const;
     bool hasType() const;
-    type::Type getType() const;
+    const type::Type& getType() const;
     void dropSpelling();
 
     void deferAbstractDeclarator(std::unique_ptr<Declarator> declarator);

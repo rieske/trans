@@ -44,7 +44,7 @@ bool TypeSpecifier::hasType() const {
     return type.has_value();
 }
 
-type::Type TypeSpecifier::getType() const {
+const type::Type& TypeSpecifier::getType() const {
     if (!type) {
         throw std::runtime_error { "type specifier type is not set" };
     }

@@ -30,6 +30,12 @@ std::unique_ptr<Declarator> unnamedPointerDeclarator() {
     return std::make_unique<Declarator>(std::make_unique<Identifier>(id), std::move(stars));
 }
 
+TEST(TypeSpecifier, getTypeIsStored) {
+    TypeSpecifier ts { type::signedInteger(), "int" };
+    EXPECT_TRUE(ts.getType().equivalentTo(type::signedInteger()));
+    EXPECT_EQ(&ts.getType(), &ts.getType());
+}
+
 TEST(TypeSpecifier, deferAbstractDeclaratorCombinesWhenTypeIsKnown) {
     TypeSpecifier ts { type::signedInteger(), "int" };
     ts.deferAbstractDeclarator(unnamedPointerDeclarator());
