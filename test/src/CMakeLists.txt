@@ -121,6 +121,7 @@ add_executable(codegenTest
         codegenTest/InstructionIrTest.cpp
         codegenTest/CfgTest.cpp
         codegenTest/LivenessTest.cpp
+        codegenTest/LoopsTest.cpp
         codegenTest/IrPassesTest.cpp
         codegenTest/IrInlineTest.cpp
         codegenTest/IrStringTableTest.cpp

@@ -22,6 +22,7 @@ add_library(backend
         IrInline.cpp
         IrPasses.cpp
         Liveness.cpp
+        Loops.cpp
         IrStringTable.cpp
         SymbolRefs.cpp
         IntelInstructionSet.cpp
