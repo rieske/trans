@@ -7,6 +7,7 @@ add_library(scanner
         Token.cpp
         TokenFilter.cpp
         IdentifierTable.cpp
+        NameIntern.cpp
         ParseTypeTable.cpp
         EnumConstantRegistry.cpp
         )

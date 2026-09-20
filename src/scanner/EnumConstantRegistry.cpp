@@ -2,13 +2,25 @@
 
 namespace scanner {
 
+EnumConstantRegistry::EnumConstantRegistry(NameIntern& intern) :
+        intern_ { intern } {
+}
+
 void EnumConstantRegistry::add(const std::string& name, type::IntegerConstant value) {
-    scopes_.back().insert_or_assign(name, std::move(value));
+    const int id = intern_.intern(name);
+    if (id == kNoName) {
+        return;
+    }
+    scopes_.back().insert_or_assign(id, std::move(value));
 }
 
 bool EnumConstantRegistry::lookup(std::string_view name, type::IntegerConstant& value) const {
+    const int id = intern_.find(name);
+    if (id == kNoName) {
+        return false;
+    }
     for (auto it = scopes_.rbegin(); it != scopes_.rend(); ++it) {
-        auto found = it->find(name);
+        auto found = it->find(id);
         if (found != it->end()) {
             value = found->second;
             return true;
@@ -18,8 +30,12 @@ bool EnumConstantRegistry::lookup(std::string_view name, type::IntegerConstant& 
 }
 
 std::optional<int> EnumConstantRegistry::bindingDepth(std::string_view name) const {
+    const int id = intern_.find(name);
+    if (id == kNoName) {
+        return std::nullopt;
+    }
     for (int i = static_cast<int>(scopes_.size()) - 1; i >= 0; --i) {
-        if (scopes_[static_cast<std::size_t>(i)].contains(name)) {
+        if (scopes_[static_cast<std::size_t>(i)].contains(id)) {
             return i;
         }
     }
@@ -32,7 +48,11 @@ bool EnumConstantRegistry::contains(std::string_view name) const {
 }
 
 bool EnumConstantRegistry::containsInCurrentScope(std::string_view name) const {
-    return scopes_.back().find(name) != scopes_.back().end();
+    const int id = intern_.find(name);
+    if (id == kNoName) {
+        return false;
+    }
+    return scopes_.back().find(id) != scopes_.back().end();
 }
 
 void EnumConstantRegistry::enterScope() {

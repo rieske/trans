@@ -1,22 +1,22 @@
 #ifndef IDENTIFIERTABLE_H_
 #define IDENTIFIERTABLE_H_
 
-#include <map>
 #include <optional>
-#include <set>
 #include <string>
 #include <string_view>
+#include <unordered_map>
+#include <unordered_set>
 #include <vector>
 
+#include "scanner/NameIntern.h"
 #include "types/Type.h"
 
 namespace scanner {
 
-// Token-class table: typedefs and identifier shadows.
-// One block-scope stack. File-scope (root) stays until the session dies.
-// Shadows are a token-class hide (typedef_name vs id).
 class IdentifierTable {
 public:
+    explicit IdentifierTable(NameIntern& intern);
+
     void addTypedef(const std::string& name, const type::Type& type);
     bool hasTypedef(std::string_view name) const;
     std::optional<type::Type> lookupTypedef(std::string_view name) const;
@@ -33,17 +33,18 @@ public:
 
 private:
     struct Scope {
-        std::map<std::string, type::Type, std::less<>> typedefs;
-        std::set<std::string, std::less<>> shadows;
+        std::unordered_map<int, type::Type> typedefs;
+        std::unordered_set<int> shadows;
     };
 
     void flushPendingParameterShadows();
 
+    NameIntern& intern_;
     unsigned revision_ { 0 };
     std::vector<Scope> scopes_ { Scope {} };
-    std::set<std::string> pendingParameterShadows_;
+    std::unordered_set<int> pendingParameterShadows_;
 };
 
 } // namespace scanner
 
-#endif // IDENTIFIERTABLE_H_
+#endif

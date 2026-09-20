@@ -1,13 +1,14 @@
 #ifndef ENUMCONSTANTREGISTRY_H_
 #define ENUMCONSTANTREGISTRY_H_
 
-#include <map>
 #include <optional>
 #include <string>
 #include <string_view>
+#include <unordered_map>
 #include <utility>
 #include <vector>
 
+#include "scanner/NameIntern.h"
 #include "types/IntegerConstant.h"
 
 namespace scanner {
@@ -24,6 +25,8 @@ struct ClosedEnumBody {
 // Open bodies are pushed by EnumBody `{` and popped by endEnumDefinition, not by `}`.
 class EnumConstantRegistry {
 public:
+    explicit EnumConstantRegistry(NameIntern& intern);
+
     void add(const std::string& name, type::IntegerConstant value);
     bool lookup(std::string_view name, type::IntegerConstant& value) const;
     std::optional<int> bindingDepth(std::string_view name) const;
@@ -47,7 +50,8 @@ private:
         bool hasRange { false };
     };
 
-    std::vector<std::map<std::string, type::IntegerConstant, std::less<>>> scopes_ { {} };
+    NameIntern& intern_;
+    std::vector<std::unordered_map<int, type::IntegerConstant>> scopes_ { {} };
     std::vector<OpenEnumBody> bodies_;
 };
 

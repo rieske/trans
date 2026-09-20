@@ -1,23 +1,23 @@
 #ifndef PARSETYPETABLE_H_
 #define PARSETYPETABLE_H_
 
-#include <map>
 #include <optional>
 #include <string>
 #include <string_view>
+#include <unordered_map>
 #include <vector>
 
+#include "scanner/NameIntern.h"
 #include "types/Type.h"
 
 namespace scanner {
 
-// Parse-time types of ordinary identifiers (objects, functions, parameters).
-// Hops with LexicalSession braces. Not token-class; not IR homes.
 class ParseTypeTable {
 public:
+    explicit ParseTypeTable(NameIntern& intern);
+
     void add(const std::string& name, const type::Type& type);
     std::optional<type::Type> lookup(std::string_view name) const;
-    // File scope is 0; pending parameter types sit one past the current frame.
     std::optional<int> bindingDepth(std::string_view name) const;
     bool containsInCurrentScope(std::string_view name) const;
     void addPending(const std::string& name, const type::Type& type);
@@ -29,10 +29,11 @@ public:
 private:
     void flushPending();
 
-    std::vector<std::map<std::string, type::Type, std::less<>>> scopes_ { {} };
-    std::map<std::string, type::Type, std::less<>> pending_;
+    NameIntern& intern_;
+    std::vector<std::unordered_map<int, type::Type>> scopes_ { {} };
+    std::unordered_map<int, type::Type> pending_;
 };
 
 } // namespace scanner
 
-#endif // PARSETYPETABLE_H_
+#endif

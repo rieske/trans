@@ -1,10 +1,58 @@
 #include "gtest/gtest.h"
 
 #include "scanner/LexicalSession.h"
+#include "scanner/NameIntern.h"
 #include "types/IntegerConstant.h"
 #include "types/Type.h"
 
 using namespace scanner;
+
+TEST(NameIntern, internIsIdentity) {
+    NameIntern intern;
+    const int a = intern.intern("T");
+    const int b = intern.intern("T");
+    const int c = intern.intern("U");
+    EXPECT_EQ(a, b);
+    EXPECT_NE(a, c);
+    EXPECT_EQ(intern.find("T"), a);
+    EXPECT_EQ(intern.find("missing"), kNoName);
+    EXPECT_EQ(intern.intern(""), kNoName);
+    EXPECT_EQ(intern.find(""), kNoName);
+    EXPECT_EQ(intern.size(), 2);
+}
+
+TEST(LexicalSession, tablesShareIntern) {
+    LexicalSession session;
+    session.names.addTypedef("N", type::signedInteger());
+    EXPECT_NE(session.intern.find("N"), kNoName);
+    session.types.add("P", type::signedInteger());
+    EXPECT_NE(session.intern.find("P"), kNoName);
+    session.enums.add("E", type::fromHostLong(1));
+    EXPECT_NE(session.intern.find("E"), kNoName);
+}
+
+TEST(LexicalSession, hasTypedefMissDoesNotIntern) {
+    LexicalSession session;
+    EXPECT_FALSE(session.names.hasTypedef("missing"));
+    EXPECT_EQ(session.intern.find("missing"), kNoName);
+    EXPECT_FALSE(session.types.lookup("gone").has_value());
+    EXPECT_EQ(session.intern.find("gone"), kNoName);
+    EXPECT_FALSE(session.enums.contains("absent"));
+    EXPECT_EQ(session.intern.find("absent"), kNoName);
+}
+
+TEST(LexicalSession, emptyNameIsNotInterned) {
+    LexicalSession session;
+    const int n = session.intern.size();
+    session.names.addTypedef("", type::signedInteger());
+    session.types.add("", type::signedInteger());
+    session.enums.add("", type::fromHostLong(1));
+    EXPECT_EQ(session.intern.size(), n);
+    EXPECT_FALSE(session.names.hasTypedef(""));
+    EXPECT_FALSE(session.types.lookup("").has_value());
+    EXPECT_FALSE(session.enums.contains(""));
+    EXPECT_EQ(session.intern.find(""), kNoName);
+}
 
 TEST(LexicalSession, isTypedefDelegatesToRegistry) {
     LexicalSession session;
@@ -56,7 +104,8 @@ TEST(LexicalSession, typedefAndEnumAreInstanceOwned) {
 }
 
 TEST(IdentifierTable, shadowScopesPushPop) {
-    IdentifierTable reg;
+    NameIntern intern;
+    IdentifierTable reg { intern };
     reg.addTypedef("T", type::signedInteger());
     reg.enterScope();
     reg.addIdentifierShadow("T");
@@ -66,14 +115,16 @@ TEST(IdentifierTable, shadowScopesPushPop) {
 }
 
 TEST(IdentifierTable, fileScopeAutoRootShadow) {
-    IdentifierTable reg;
+    NameIntern intern;
+    IdentifierTable reg { intern };
     reg.addTypedef("T", type::signedInteger());
     reg.addIdentifierShadow("T");
     EXPECT_TRUE(reg.isIdentifierShadow("T"));
 }
 
 TEST(IdentifierTable, extraLeaveScopeKeepsFileScopeShadow) {
-    IdentifierTable reg;
+    NameIntern intern;
+    IdentifierTable reg { intern };
     reg.addTypedef("T", type::signedInteger());
     reg.addIdentifierShadow("T");
     reg.leaveScope();
@@ -85,7 +136,8 @@ TEST(IdentifierTable, extraLeaveScopeKeepsFileScopeShadow) {
 }
 
 TEST(IdentifierTable, addTypedefClearsShadowOfSameName) {
-    IdentifierTable reg;
+    NameIntern intern;
+    IdentifierTable reg { intern };
     reg.enterScope();
     reg.addIdentifierShadow("T");
     reg.addTypedef("T", type::signedInteger());
@@ -94,7 +146,8 @@ TEST(IdentifierTable, addTypedefClearsShadowOfSameName) {
 }
 
 TEST(IdentifierTable, hasTypedefMatchesLookupPresence) {
-    IdentifierTable reg;
+    NameIntern intern;
+    IdentifierTable reg { intern };
     EXPECT_FALSE(reg.hasTypedef("T"));
     EXPECT_FALSE(reg.lookupTypedef("T").has_value());
     reg.addTypedef("T", type::signedInteger());
@@ -105,7 +158,8 @@ TEST(IdentifierTable, hasTypedefMatchesLookupPresence) {
 }
 
 TEST(IdentifierTable, addTypedefLastWins) {
-    IdentifierTable reg;
+    NameIntern intern;
+    IdentifierTable reg { intern };
     reg.addTypedef("T", type::signedInteger());
     reg.addTypedef("T", type::unsignedInteger());
     auto t = reg.lookupTypedef("T");
@@ -115,7 +169,8 @@ TEST(IdentifierTable, addTypedefLastWins) {
 }
 
 TEST(EnumConstantRegistry, addAndLookup) {
-    EnumConstantRegistry enums;
+    NameIntern intern;
+    EnumConstantRegistry enums { intern };
     enums.add("A", type::fromHostLong(1));
     enums.add("B", type::fromHostLong(2));
     type::IntegerConstant v;
@@ -127,7 +182,8 @@ TEST(EnumConstantRegistry, addAndLookup) {
 }
 
 TEST(EnumConstantRegistry, addLastWins) {
-    EnumConstantRegistry enums;
+    NameIntern intern;
+    EnumConstantRegistry enums { intern };
     enums.add("A", type::fromHostLong(1));
     enums.add("A", type::fromHostLong(9));
     type::IntegerConstant v;
@@ -136,7 +192,8 @@ TEST(EnumConstantRegistry, addLastWins) {
 }
 
 TEST(EnumConstantRegistry, leaveScopeRemovesInnerOnly) {
-    EnumConstantRegistry enums;
+    NameIntern intern;
+    EnumConstantRegistry enums { intern };
     enums.add("A", type::fromHostLong(1));
     enums.enterScope();
     enums.add("B", type::fromHostLong(2));
@@ -148,7 +205,8 @@ TEST(EnumConstantRegistry, leaveScopeRemovesInnerOnly) {
 }
 
 TEST(EnumConstantRegistry, extraLeaveScopeKeepsRoot) {
-    EnumConstantRegistry enums;
+    NameIntern intern;
+    EnumConstantRegistry enums { intern };
     enums.add("A", type::fromHostLong(1));
     enums.leaveScope();
     EXPECT_TRUE(enums.contains("A"));
@@ -157,7 +215,8 @@ TEST(EnumConstantRegistry, extraLeaveScopeKeepsRoot) {
 }
 
 TEST(EnumConstantRegistry, innerHidesOuterAndRestores) {
-    EnumConstantRegistry enums;
+    NameIntern intern;
+    EnumConstantRegistry enums { intern };
     enums.add("A", type::fromHostLong(1));
     enums.enterScope();
     enums.add("A", type::fromHostLong(2));
@@ -171,7 +230,8 @@ TEST(EnumConstantRegistry, innerHidesOuterAndRestores) {
 }
 
 TEST(IdentifierTable, pendingParameterShadowFlushesOnScope) {
-    IdentifierTable reg;
+    NameIntern intern;
+    IdentifierTable reg { intern };
     reg.addTypedef("T", type::signedInteger());
     reg.addPendingParameterShadow("T");
     EXPECT_FALSE(reg.isIdentifierShadow("T"));
@@ -182,7 +242,8 @@ TEST(IdentifierTable, pendingParameterShadowFlushesOnScope) {
 }
 
 TEST(IdentifierTable, pendingParameterShadowClearedWithoutFlush) {
-    IdentifierTable reg;
+    NameIntern intern;
+    IdentifierTable reg { intern };
     reg.addTypedef("T", type::signedInteger());
     reg.addPendingParameterShadow("T");
     reg.clearPendingParameterShadows();
@@ -191,7 +252,8 @@ TEST(IdentifierTable, pendingParameterShadowClearedWithoutFlush) {
 }
 
 TEST(ParseTypeTable, addLookupAndLastWins) {
-    ParseTypeTable types;
+    NameIntern intern;
+    ParseTypeTable types { intern };
     types.add("x", type::signedInteger());
     auto t = types.lookup("x");
     ASSERT_TRUE(t.has_value());
@@ -204,7 +266,8 @@ TEST(ParseTypeTable, addLookupAndLastWins) {
 }
 
 TEST(ParseTypeTable, pendingVisibleThenCleared) {
-    ParseTypeTable types;
+    NameIntern intern;
+    ParseTypeTable types { intern };
     types.addPending("n", type::signedInteger());
     auto pending = types.lookup("n");
     ASSERT_TRUE(pending.has_value());
@@ -214,7 +277,8 @@ TEST(ParseTypeTable, pendingVisibleThenCleared) {
 }
 
 TEST(ParseTypeTable, pendingFlushesIntoScope) {
-    ParseTypeTable types;
+    NameIntern intern;
+    ParseTypeTable types { intern };
     types.addPending("n", type::signedInteger());
     types.enterScope();
     auto t = types.lookup("n");
@@ -225,7 +289,8 @@ TEST(ParseTypeTable, pendingFlushesIntoScope) {
 }
 
 TEST(ParseTypeTable, braceScopesAndExtraLeaveKeepsRoot) {
-    ParseTypeTable types;
+    NameIntern intern;
+    ParseTypeTable types { intern };
     types.add("x", type::signedInteger());
     types.enterScope();
     types.add("x", type::signedCharacter());
@@ -323,7 +388,8 @@ TEST(LexicalSession, leaveBlockRestoresOuterTypedef) {
 }
 
 TEST(IdentifierTable, leaveScopeRemovesInnerTypedefOnly) {
-    IdentifierTable reg;
+    NameIntern intern;
+    IdentifierTable reg { intern };
     reg.addTypedef("T", type::signedInteger());
     reg.enterScope();
     reg.addTypedef("U", type::unsignedInteger());
@@ -335,7 +401,8 @@ TEST(IdentifierTable, leaveScopeRemovesInnerTypedefOnly) {
 }
 
 TEST(IdentifierTable, extraLeaveScopeKeepsRootTypedef) {
-    IdentifierTable reg;
+    NameIntern intern;
+    IdentifierTable reg { intern };
     reg.addTypedef("T", type::signedInteger());
     reg.leaveScope();
     EXPECT_TRUE(reg.hasTypedef("T"));
@@ -344,7 +411,8 @@ TEST(IdentifierTable, extraLeaveScopeKeepsRootTypedef) {
 }
 
 TEST(IdentifierTable, innerTypedefDoesNotClearOuterObjectShadow) {
-    IdentifierTable reg;
+    NameIntern intern;
+    IdentifierTable reg { intern };
     reg.addTypedef("T", type::signedInteger());
     reg.enterScope();
     reg.addIdentifierShadow("T");
