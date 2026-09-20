@@ -754,6 +754,119 @@ TEST(IrInline, cloneRemapsSretWhenDestMissing) {
     EXPECT_THAT(firstSret, Ne(secondSret));
 }
 
+TEST(IrInline, inlineProceduresRefusesIndirectCall) {
+    IntermediateRepresentation ir;
+    IrN n { ir.strings };
+    ir.procedures.push_back(smallCallee(ir.strings, n));
+    ir.procedures.push_back(makeProc(ir.strings, "f", {
+            ir::argument(n("y")),
+            ir::call(n("add1")),
+            ir::retrieve(n("t")),
+            ir::argument(n("y")),
+            ir::call(n("add1"), true),
+            ir::retrieve(n("r")),
+            ir::ret(n("r")),
+    }, oneFormal(ir.strings, "y")));
+    const InlineStats stats = inlineProcedures(ir);
+    EXPECT_THAT(stats.sitesInlined, Ge(1));
+    bool sawIndirect = false;
+    for (const auto& inst : ir.procedures.back().body) {
+        if (inst.op == Op::Call && inst.callIndirect && inst.arg0 == n("add1")) {
+            sawIndirect = true;
+        }
+    }
+    EXPECT_TRUE(sawIndirect);
+}
+
+TEST(IrInline, inlineProceduresRefusesVariadicCallee) {
+    IntermediateRepresentation ir;
+    IrN n { ir.strings };
+    Procedure callee = smallCallee(ir.strings, n);
+    callee.variadic = true;
+    ir.procedures.push_back(std::move(callee));
+    ir.procedures.push_back(smallCaller(ir.strings, n));
+    const InlineStats stats = inlineProcedures(ir);
+    EXPECT_THAT(stats.sitesInlined, Eq(0));
+    bool sawCall = false;
+    for (const auto& inst : ir.procedures.back().body) {
+        if (inst.op == Op::Call && inst.arg0 == n("add1")) {
+            sawCall = true;
+        }
+    }
+    EXPECT_TRUE(sawCall);
+}
+
+TEST(IrInline, inlineProceduresRefusesOversizeCallee) {
+    IntermediateRepresentation ir;
+    IrN n { ir.strings };
+    std::vector<Instruction> body;
+    body.reserve(33);
+    for (int i = 0; i < 33; ++i) {
+        body.push_back(ir::inc(n("x")));
+    }
+    ir.procedures.push_back(makeProc(ir.strings, "fat", std::move(body), oneFormal(ir.strings, "x")));
+    ir.procedures.push_back(makeProc(ir.strings, "f", {
+            ir::argument(n("y")),
+            ir::call(n("fat")),
+            ir::retrieve(n("r")),
+            ir::ret(n("r")),
+    }, oneFormal(ir.strings, "y")));
+    EXPECT_THAT(nonLabelCount(ir.procedures.front().body), Eq(33));
+    const InlineStats stats = inlineProcedures(ir);
+    EXPECT_THAT(stats.sitesInlined, Eq(0));
+    bool sawCall = false;
+    for (const auto& inst : ir.procedures.back().body) {
+        if (inst.op == Op::Call && inst.arg0 == n("fat")) {
+            sawCall = true;
+        }
+    }
+    EXPECT_TRUE(sawCall);
+}
+
+TEST(IrInline, inlineProceduresRefusesSigsetjmpCallee) {
+    IntermediateRepresentation ir;
+    IrN n { ir.strings };
+    ir.procedures.push_back(makeProc(ir.strings, "wrap", {
+            ir::call(n("__sigsetjmp")),
+            ir::voidReturn(),
+    }));
+    ir.procedures.push_back(makeProc(ir.strings, "f", {
+            ir::call(n("wrap")),
+            ir::voidReturn(),
+    }));
+    const InlineStats stats = inlineProcedures(ir);
+    EXPECT_THAT(stats.sitesInlined, Eq(0));
+    bool sawCall = false;
+    for (const auto& inst : ir.procedures.back().body) {
+        if (inst.op == Op::Call && inst.arg0 == n("wrap")) {
+            sawCall = true;
+        }
+    }
+    EXPECT_TRUE(sawCall);
+}
+
+TEST(IrInline, inlineProceduresRefusesLongjmpChkCallee) {
+    IntermediateRepresentation ir;
+    IrN n { ir.strings };
+    ir.procedures.push_back(makeProc(ir.strings, "wrap", {
+            ir::call(n("__longjmp_chk")),
+            ir::voidReturn(),
+    }));
+    ir.procedures.push_back(makeProc(ir.strings, "f", {
+            ir::call(n("wrap")),
+            ir::voidReturn(),
+    }));
+    const InlineStats stats = inlineProcedures(ir);
+    EXPECT_THAT(stats.sitesInlined, Eq(0));
+    bool sawCall = false;
+    for (const auto& inst : ir.procedures.back().body) {
+        if (inst.op == Op::Call && inst.arg0 == n("wrap")) {
+            sawCall = true;
+        }
+    }
+    EXPECT_TRUE(sawCall);
+}
+
 TEST(IrInline, inlineProceduresLeavesExternalOnlyTuUntouched) {
     IntermediateRepresentation ir;
     IrN n { ir.strings };
