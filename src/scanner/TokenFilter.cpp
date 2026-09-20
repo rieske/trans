@@ -38,7 +38,7 @@ bool isAsmKeyword(std::string_view lexeme) {
 }
 
 bool isWideStringPrefixToken(const Token& t) {
-    return (t.id == "id" || t.id == "typedef_name")
+    return (t.cls == TokenClass::Id || t.cls == TokenClass::TypedefName)
             && (t.lexeme == "L" || t.lexeme == "u" || t.lexeme == "U" || t.lexeme == "u8");
 }
 
@@ -108,7 +108,7 @@ void TokenFilter::skipParenGroup(bool noteTypeAttributes) {
     int depth = 1;
     while (depth > 0) {
         Token t = nextRaw();
-        if (t.id == Token::END) {
+        if (t.cls == TokenClass::End) {
             break;
         }
         if (noteTypeAttributes && session_) {
@@ -128,13 +128,13 @@ void TokenFilter::skipParenGroup(bool noteTypeAttributes) {
 }
 
 bool TokenFilter::isStringToken(const Token& t) {
-    return t.id == "string";
+    return t.cls == TokenClass::String;
 }
 
 Token TokenFilter::nextBaseFiltered() {
     for (;;) {
         Token t = nextRaw();
-        if (t.id == Token::END) {
+        if (t.cls == TokenClass::End) {
             return t;
         }
 
@@ -153,7 +153,7 @@ Token TokenFilter::nextBaseFiltered() {
 
         if (gnuExtensions_ && isAttribute(t.lexeme)) {
             Token next = nextRaw();
-            if (next.id == Token::END) {
+            if (next.cls == TokenClass::End) {
                 return next;
             }
             if (next.lexeme == "(") {
@@ -168,7 +168,7 @@ Token TokenFilter::nextBaseFiltered() {
             std::vector<Token> prefixes;
             for (;;) {
                 Token next = nextBaseFiltered();
-                if (next.id == Token::END) {
+                if (next.cls == TokenClass::End) {
                     for (auto it = prefixes.rbegin(); it != prefixes.rend(); ++it) {
                         pushFront(*it);
                     }
@@ -200,7 +200,7 @@ Token TokenFilter::nextBaseFiltered() {
 
 Token TokenFilter::nextToken() {
     Token t = nextBaseFiltered();
-    if (t.id == Token::END) {
+    if (t.cls == TokenClass::End) {
         return t;
     }
 
@@ -242,7 +242,7 @@ Token TokenFilter::finishStringToken(const Token& first) {
 
     for (;;) {
         Token next = nextBaseFiltered();
-        if (next.id == Token::END) {
+        if (next.cls == TokenClass::End) {
             break;
         }
         if (isStringToken(next)) {

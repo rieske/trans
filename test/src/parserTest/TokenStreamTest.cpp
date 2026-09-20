@@ -32,12 +32,12 @@ Grammar streamGrammar() {
 TEST(Token, defaultSymbolIdIsUnset) {
     const Token token { "id", "x", { "f", 1 } };
     ASSERT_EQ(token.symbolId, -1);
-    ASSERT_EQ(token.id, "id");
+    ASSERT_EQ(tokenKindName(token), "id");
 }
 
 TEST(Token, emptyIdBecomesEndMarker) {
     const Token token { "", "", { "f", 1 } };
-    ASSERT_EQ(token.id, Token::END);
+    ASSERT_EQ(tokenKindName(token), Token::END);
     ASSERT_TRUE(token.lexeme.empty());
     ASSERT_EQ(token.symbolId, -1);
 }
@@ -46,18 +46,18 @@ TEST(Token, isAValueType) {
     const Token token { "id", "x", { "f", 1 }, 7 };
     const Token copy { token };
     ASSERT_EQ(copy.symbolId, 7);
-    ASSERT_EQ(copy.id, "id");
+    ASSERT_EQ(tokenKindName(copy), "id");
 
     Token assigned { "int", "int", { "f", 2 } };
     assigned = token;
     ASSERT_EQ(assigned.symbolId, 7);
-    ASSERT_EQ(assigned.id, "id");
+    ASSERT_EQ(tokenKindName(assigned), "id");
     ASSERT_EQ(assigned.lexeme, "x");
 }
 
 TEST(Token, copyKeepsIdAndLexemeAfterTemporaryDies) {
     const Token copy { Token { "id", "hello", { "f", 1 }, 3 } };
-    ASSERT_EQ(copy.id, "id");
+    ASSERT_EQ(tokenKindName(copy), "id");
     ASSERT_EQ(copy.lexeme, "hello");
     ASSERT_EQ(copy.symbolId, 3);
 }
@@ -67,7 +67,7 @@ TEST(Token, lexemeIsIndependentOfSourceString) {
     const Token token { "id", lex, { "f", 1 } };
     lex = "xyz";
     ASSERT_EQ(token.lexeme, "abc");
-    ASSERT_EQ(token.id, "id");
+    ASSERT_EQ(tokenKindName(token), "id");
 }
 
 TEST(Token, classifyRemapDoesNotNeedAViewCtor) {
@@ -81,11 +81,11 @@ TEST(Token, classifyRemapDoesNotNeedAViewCtor) {
     int i = 0;
     TokenStream ts { [&]() { return tokens[i++]; }, session, grammar };
     const Token classified = ts.getCurrentToken();
-    EXPECT_EQ(classified.id, "typedef_name");
+    EXPECT_EQ(tokenKindName(classified), "typedef_name");
     EXPECT_EQ(classified.symbolId, *grammar.trySymbolId("typedef_name"));
     EXPECT_EQ(classified.lexeme, "T");
     const Token copy { classified };
-    EXPECT_EQ(copy.id, "typedef_name");
+    EXPECT_EQ(tokenKindName(copy), "typedef_name");
     EXPECT_EQ(copy.lexeme, "T");
 }
 
@@ -113,12 +113,12 @@ TEST(TokenStream, peekDoesNotConsume) {
     const Grammar grammar = streamGrammar();
     TokenStream tokenStream { [&]() { return tokens[currentToken++]; }, session, grammar };
 
-    ASSERT_EQ(tokenStream.getCurrentToken().id, "(");
-    ASSERT_EQ(tokenStream.peek().id, "{");
-    ASSERT_EQ(tokenStream.getCurrentToken().id, "(");
-    ASSERT_EQ(tokenStream.peek().id, "{");
-    ASSERT_EQ(tokenStream.nextToken().id, "{");
-    ASSERT_EQ(tokenStream.getCurrentToken().id, "{");
+    ASSERT_EQ(tokenKindName(tokenStream.getCurrentToken()), "(");
+    ASSERT_EQ(tokenKindName(tokenStream.peek()), "{");
+    ASSERT_EQ(tokenKindName(tokenStream.getCurrentToken()), "(");
+    ASSERT_EQ(tokenKindName(tokenStream.peek()), "{");
+    ASSERT_EQ(tokenKindName(tokenStream.nextToken()), "{");
+    ASSERT_EQ(tokenKindName(tokenStream.getCurrentToken()), "{");
 }
 
 TEST(TokenStream, takeRawDoesNotEnterOrLeaveBlock) {
@@ -137,11 +137,11 @@ TEST(TokenStream, takeRawDoesNotEnterOrLeaveBlock) {
     const Grammar grammar = streamGrammar();
     TokenStream ts { [&]() { return tokens[i++]; }, session, grammar };
 
-    ASSERT_EQ(ts.takeRaw().id, "{");
-    ASSERT_EQ(ts.getCurrentToken().id, "id");
+    ASSERT_EQ(tokenKindName(ts.takeRaw()), "{");
+    ASSERT_EQ(tokenKindName(ts.getCurrentToken()), "id");
     ASSERT_EQ(ts.takeRaw().lexeme, "T");
-    ASSERT_EQ(ts.takeRaw().id, "}");
-    ASSERT_EQ(ts.getCurrentToken().id, "id");
+    ASSERT_EQ(tokenKindName(ts.takeRaw()), "}");
+    ASSERT_EQ(tokenKindName(ts.getCurrentToken()), "id");
 }
 
 TEST(TokenStream, takeRawConsumesPeekedLookahead) {
@@ -155,10 +155,10 @@ TEST(TokenStream, takeRawConsumesPeekedLookahead) {
     const Grammar grammar = streamGrammar();
     TokenStream ts { [&]() { return tokens[i++]; }, session, grammar };
 
-    ASSERT_EQ(ts.getCurrentToken().id, "(");
-    ASSERT_EQ(ts.peek().id, "{");
-    ASSERT_EQ(ts.takeRaw().id, "(");
-    ASSERT_EQ(ts.getCurrentToken().id, "{");
+    ASSERT_EQ(tokenKindName(ts.getCurrentToken()), "(");
+    ASSERT_EQ(tokenKindName(ts.peek()), "{");
+    ASSERT_EQ(tokenKindName(ts.takeRaw()), "(");
+    ASSERT_EQ(tokenKindName(ts.getCurrentToken()), "{");
 }
 
 TEST(TokenStream, reclassifiesTypedefNameInExpressionContext) {
@@ -173,8 +173,8 @@ TEST(TokenStream, reclassifiesTypedefNameInExpressionContext) {
     int i = 0;
     const Grammar grammar = streamGrammar();
     TokenStream ts { [&]() { return tokens[i++]; }, session, grammar };
-    ASSERT_EQ(ts.getCurrentToken().id, "return");
-    ASSERT_EQ(ts.nextToken().id, "id");
+    ASSERT_EQ(tokenKindName(ts.getCurrentToken()), "return");
+    ASSERT_EQ(tokenKindName(ts.nextToken()), "id");
     ASSERT_EQ(ts.getCurrentToken().lexeme, "size_t");
 }
 
@@ -189,8 +189,8 @@ TEST(TokenStream, keepsTypedefNameInTypePosition) {
     int i = 0;
     const Grammar grammar = streamGrammar();
     TokenStream ts { [&]() { return tokens[i++]; }, session, grammar };
-    ASSERT_EQ(ts.getCurrentToken().id, "typedef_name");
-    ASSERT_EQ(ts.nextToken().id, "id"); // after typedef_name -> AsIdentifier
+    ASSERT_EQ(tokenKindName(ts.getCurrentToken()), "typedef_name");
+    ASSERT_EQ(tokenKindName(ts.nextToken()), "id"); // after typedef_name -> AsIdentifier
 }
 
 TEST(TokenStream, forcesIdWhenIdentifierShadow) {
@@ -205,7 +205,7 @@ TEST(TokenStream, forcesIdWhenIdentifierShadow) {
     int i = 0;
     const Grammar grammar = streamGrammar();
     TokenStream ts { [&]() { return tokens[i++]; }, session, grammar };
-    ASSERT_EQ(ts.getCurrentToken().id, "id");
+    ASSERT_EQ(tokenKindName(ts.getCurrentToken()), "id");
 }
 
 TEST(TokenStream, tagAfterStructIsIdentifier) {
@@ -219,8 +219,8 @@ TEST(TokenStream, tagAfterStructIsIdentifier) {
     int i = 0;
     const Grammar grammar = streamGrammar();
     TokenStream ts { [&]() { return tokens[i++]; }, session, grammar };
-    ASSERT_EQ(ts.getCurrentToken().id, "struct");
-    ASSERT_EQ(ts.nextToken().id, "id");
+    ASSERT_EQ(tokenKindName(ts.getCurrentToken()), "struct");
+    ASSERT_EQ(tokenKindName(ts.nextToken()), "id");
 }
 
 TEST(TokenStream, memberAfterDotIsIdentifier) {
@@ -234,8 +234,8 @@ TEST(TokenStream, memberAfterDotIsIdentifier) {
     int i = 0;
     const Grammar grammar = streamGrammar();
     TokenStream ts { [&]() { return tokens[i++]; }, session, grammar };
-    ASSERT_EQ(ts.getCurrentToken().id, ".");
-    ASSERT_EQ(ts.nextToken().id, "id");
+    ASSERT_EQ(tokenKindName(ts.getCurrentToken()), ".");
+    ASSERT_EQ(tokenKindName(ts.nextToken()), "id");
 }
 
 TEST(TokenStream, declaratorAfterStarIsIdentifier) {
@@ -250,9 +250,9 @@ TEST(TokenStream, declaratorAfterStarIsIdentifier) {
     int i = 0;
     const Grammar grammar = streamGrammar();
     TokenStream ts { [&]() { return tokens[i++]; }, session, grammar };
-    ASSERT_EQ(ts.getCurrentToken().id, "typedef_name");
-    ASSERT_EQ(ts.nextToken().id, "*");
-    ASSERT_EQ(ts.nextToken().id, "id");
+    ASSERT_EQ(tokenKindName(ts.getCurrentToken()), "typedef_name");
+    ASSERT_EQ(tokenKindName(ts.nextToken()), "*");
+    ASSERT_EQ(tokenKindName(ts.nextToken()), "id");
 }
 
 TEST(TokenStream, braceScopePopsIdentifierShadow) {
@@ -268,13 +268,13 @@ TEST(TokenStream, braceScopePopsIdentifierShadow) {
     int i = 0;
     const Grammar grammar = streamGrammar();
     TokenStream ts { [&]() { return tokens[i++]; }, session, grammar };
-    ASSERT_EQ(ts.getCurrentToken().id, "{");
+    ASSERT_EQ(tokenKindName(ts.getCurrentToken()), "{");
     // nextToken('{') opens a shadow scope; add the shadow on that frame.
     ts.nextToken();
     session.names.addIdentifierShadow("T");
-    ASSERT_EQ(ts.getCurrentToken().id, "id"); // shadowed inside brace
-    ASSERT_EQ(ts.nextToken().id, "}");
-    ASSERT_EQ(ts.nextToken().id, "typedef_name"); // shadow popped
+    ASSERT_EQ(tokenKindName(ts.getCurrentToken()), "id"); // shadowed inside brace
+    ASSERT_EQ(tokenKindName(ts.nextToken()), "}");
+    ASSERT_EQ(tokenKindName(ts.nextToken()), "typedef_name"); // shadow popped
 }
 
 TEST(TokenStream, promotesIdToTypedefNameInTypePosition) {
@@ -288,7 +288,7 @@ TEST(TokenStream, promotesIdToTypedefNameInTypePosition) {
     int i = 0;
     const Grammar grammar = streamGrammar();
     TokenStream ts { [&]() { return tokens[i++]; }, session, grammar };
-    ASSERT_EQ(ts.getCurrentToken().id, "typedef_name");
+    ASSERT_EQ(tokenKindName(ts.getCurrentToken()), "typedef_name");
 }
 
 TEST(TokenStream, constKeepsTypedefName) {
@@ -304,8 +304,8 @@ TEST(TokenStream, constKeepsTypedefName) {
     int i = 0;
     const Grammar grammar = streamGrammar();
     TokenStream ts { [&]() { return tokens[i++]; }, session, grammar };
-    ASSERT_EQ(ts.getCurrentToken().id, "const");
-    ASSERT_EQ(ts.nextToken().id, "typedef_name");
+    ASSERT_EQ(tokenKindName(ts.getCurrentToken()), "const");
+    ASSERT_EQ(tokenKindName(ts.nextToken()), "typedef_name");
     ASSERT_EQ(ts.getCurrentToken().lexeme, "foo_t");
 }
 
@@ -321,8 +321,8 @@ TEST(TokenStream, afterPrimitiveTypeSpecDeclaratorIsIdentifier) {
     int i = 0;
     const Grammar grammar = streamGrammar();
     TokenStream ts { [&]() { return tokens[i++]; }, session, grammar };
-    ASSERT_EQ(ts.getCurrentToken().id, "int");
-    ASSERT_EQ(ts.nextToken().id, "id");
+    ASSERT_EQ(tokenKindName(ts.getCurrentToken()), "int");
+    ASSERT_EQ(tokenKindName(ts.nextToken()), "id");
     ASSERT_EQ(ts.getCurrentToken().lexeme, "T");
 }
 
@@ -339,9 +339,9 @@ TEST(TokenStream, afterConstThenPrimitiveDeclaratorIsIdentifier) {
     int i = 0;
     const Grammar grammar = streamGrammar();
     TokenStream ts { [&]() { return tokens[i++]; }, session, grammar };
-    ASSERT_EQ(ts.getCurrentToken().id, "const");
-    ASSERT_EQ(ts.nextToken().id, "int");
-    ASSERT_EQ(ts.nextToken().id, "id");
+    ASSERT_EQ(tokenKindName(ts.getCurrentToken()), "const");
+    ASSERT_EQ(tokenKindName(ts.nextToken()), "int");
+    ASSERT_EQ(tokenKindName(ts.nextToken()), "id");
     ASSERT_EQ(ts.getCurrentToken().lexeme, "T");
 }
 
@@ -360,11 +360,11 @@ TEST(TokenStream, colonDoesNotForceTypeRestart) {
     int i = 0;
     const Grammar grammar = streamGrammar();
     TokenStream ts { [&]() { return tokens[i++]; }, session, grammar };
-    ASSERT_EQ(ts.getCurrentToken().id, "return");
-    ASSERT_EQ(ts.nextToken().id, "id"); // expression after return
-    ASSERT_EQ(ts.nextToken().id, ":");
+    ASSERT_EQ(tokenKindName(ts.getCurrentToken()), "return");
+    ASSERT_EQ(tokenKindName(ts.nextToken()), "id"); // expression after return
+    ASSERT_EQ(tokenKindName(ts.nextToken()), ":");
     // After ':', context kept (AsIdentifier) so next typedef spelling is id.
-    ASSERT_EQ(ts.nextToken().id, "id");
+    ASSERT_EQ(tokenKindName(ts.nextToken()), "id");
 }
 
 TEST(TokenStream, commaRestartsTypePositionForTypedefName) {
@@ -383,11 +383,11 @@ TEST(TokenStream, commaRestartsTypePositionForTypedefName) {
     int i = 0;
     const Grammar grammar = streamGrammar();
     TokenStream ts { [&]() { return tokens[i++]; }, session, grammar };
-    ASSERT_EQ(ts.getCurrentToken().id, "int");
-    ASSERT_EQ(ts.nextToken().id, "id");
+    ASSERT_EQ(tokenKindName(ts.getCurrentToken()), "int");
+    ASSERT_EQ(tokenKindName(ts.nextToken()), "id");
     ASSERT_EQ(ts.getCurrentToken().lexeme, "a");
-    ASSERT_EQ(ts.nextToken().id, ",");
-    ASSERT_EQ(ts.nextToken().id, "typedef_name");
+    ASSERT_EQ(tokenKindName(ts.nextToken()), ",");
+    ASSERT_EQ(tokenKindName(ts.nextToken()), "typedef_name");
     ASSERT_EQ(ts.getCurrentToken().lexeme, "size_t");
 }
 
@@ -405,11 +405,11 @@ TEST(TokenStream, pendingParameterShadowFlushesOnBrace) {
     int i = 0;
     const Grammar grammar = streamGrammar();
     TokenStream ts { [&]() { return tokens[i++]; }, session, grammar };
-    ASSERT_EQ(ts.getCurrentToken().id, "{");
+    ASSERT_EQ(tokenKindName(ts.getCurrentToken()), "{");
     ts.nextToken(); // consume `{`, flush pending into new scope
-    ASSERT_EQ(ts.getCurrentToken().id, "id"); // shadowed
-    ASSERT_EQ(ts.nextToken().id, "}");
-    ASSERT_EQ(ts.nextToken().id, "typedef_name"); // pop restores type
+    ASSERT_EQ(tokenKindName(ts.getCurrentToken()), "id"); // shadowed
+    ASSERT_EQ(tokenKindName(ts.nextToken()), "}");
+    ASSERT_EQ(tokenKindName(ts.nextToken()), "typedef_name"); // pop restores type
 }
 
 TEST(TokenStream, pendingParameterShadowClearedOnSemicolon) {
@@ -425,9 +425,9 @@ TEST(TokenStream, pendingParameterShadowClearedOnSemicolon) {
     int i = 0;
     const Grammar grammar = streamGrammar();
     TokenStream ts { [&]() { return tokens[i++]; }, session, grammar };
-    ASSERT_EQ(ts.getCurrentToken().id, ";");
+    ASSERT_EQ(tokenKindName(ts.getCurrentToken()), ";");
     ts.nextToken(); // clear pending
-    ASSERT_EQ(ts.getCurrentToken().id, "typedef_name");
+    ASSERT_EQ(tokenKindName(ts.getCurrentToken()), "typedef_name");
     ASSERT_EQ(ts.getCurrentToken().lexeme, "T");
 }
 
@@ -442,7 +442,7 @@ TEST(TokenStream, braceScopePopsParseType) {
     int i = 0;
     const Grammar grammar = streamGrammar();
     TokenStream ts { [&]() { return tokens[i++]; }, session, grammar };
-    ASSERT_EQ(ts.getCurrentToken().id, "{");
+    ASSERT_EQ(tokenKindName(ts.getCurrentToken()), "{");
     ts.nextToken();
     session.types.add("x", type::signedCharacter());
     auto inner = session.types.lookup("x");
@@ -466,7 +466,7 @@ TEST(TokenStream, enumBracesDoNotEnterOrLeaveBlock) {
     int i = 0;
     const Grammar grammar = streamGrammar();
     TokenStream ts { [&]() { return tokens[i++]; }, session, grammar };
-    ASSERT_EQ(ts.getCurrentToken().id, "enum");
+    ASSERT_EQ(tokenKindName(ts.getCurrentToken()), "enum");
     ts.nextToken();
     ts.nextToken();
     session.enums.add("B", type::fromHostLong(2));
@@ -487,7 +487,7 @@ TEST(TokenStream, taggedEnumBracesDoNotEnterOrLeaveBlock) {
     int i = 0;
     const Grammar grammar = streamGrammar();
     TokenStream ts { [&]() { return tokens[i++]; }, session, grammar };
-    ASSERT_EQ(ts.getCurrentToken().id, "enum");
+    ASSERT_EQ(tokenKindName(ts.getCurrentToken()), "enum");
     ts.nextToken();
     ts.nextToken();
     ts.nextToken();
@@ -506,12 +506,12 @@ TEST(TokenStream, consumeMovesCurrentAndAdvances) {
     scanner::LexicalSession session;
     TokenStream ts { [&]() { return tokens[i++]; }, session, grammar };
 
-    ASSERT_EQ(ts.getCurrentToken().id, "id");
+    ASSERT_EQ(tokenKindName(ts.getCurrentToken()), "id");
     const Token taken = ts.consume();
-    EXPECT_EQ(taken.id, "id");
+    EXPECT_EQ(tokenKindName(taken), "id");
     EXPECT_EQ(taken.lexeme, "variable");
     EXPECT_EQ(taken.symbolId, *grammar.trySymbolId("id"));
-    EXPECT_EQ(ts.getCurrentToken().id, "+");
+    EXPECT_EQ(tokenKindName(ts.getCurrentToken()), "+");
     EXPECT_EQ(ts.getCurrentToken().lexeme, "+");
 }
 
@@ -522,7 +522,7 @@ TEST(TokenStream, stampsCurrentTokenFromGrammar) {
     scanner::LexicalSession session;
     TokenStream ts { [&]() { return tokens[i++]; }, session, grammar };
 
-    ASSERT_EQ(ts.getCurrentToken().id, "id");
+    ASSERT_EQ(tokenKindName(ts.getCurrentToken()), "id");
     ASSERT_EQ(ts.getCurrentToken().symbolId, *grammar.trySymbolId("id"));
 }
 
@@ -540,11 +540,11 @@ TEST(TokenStream, peekDoesNotClassifyLookahead) {
     int i = 0;
     TokenStream ts { [&]() { return tokens[i++]; }, session, grammar };
 
-    ASSERT_EQ(ts.getCurrentToken().id, "id");
-    ASSERT_EQ(ts.nextToken().id, "(");
-    ASSERT_EQ(ts.peek().id, "typedef_name");
+    ASSERT_EQ(tokenKindName(ts.getCurrentToken()), "id");
+    ASSERT_EQ(tokenKindName(ts.nextToken()), "(");
+    ASSERT_EQ(tokenKindName(ts.peek()), "typedef_name");
     ASSERT_EQ(ts.peek().symbolId, -1);
-    ASSERT_EQ(ts.nextToken().id, "typedef_name");
+    ASSERT_EQ(tokenKindName(ts.nextToken()), "typedef_name");
     ASSERT_EQ(ts.getCurrentToken().lexeme, "num");
     ASSERT_EQ(ts.getCurrentToken().symbolId, *grammar.trySymbolId("typedef_name"));
 }
@@ -560,9 +560,9 @@ TEST(TokenStream, peekLeavesLookaheadUnstamped) {
     TokenStream ts { [&]() { return tokens[i++]; }, session, grammar };
 
     ASSERT_EQ(ts.getCurrentToken().symbolId, *grammar.trySymbolId("("));
-    ASSERT_EQ(ts.peek().id, "{");
+    ASSERT_EQ(tokenKindName(ts.peek()), "{");
     ASSERT_EQ(ts.peek().symbolId, -1);
-    ASSERT_EQ(ts.getCurrentToken().id, "(");
+    ASSERT_EQ(tokenKindName(ts.getCurrentToken()), "(");
     ASSERT_EQ(ts.nextToken().symbolId, *grammar.trySymbolId("{"));
 }
 
@@ -584,10 +584,10 @@ TEST(TokenStream, revisionBumpReclassifiesCurrentWithoutAdvance) {
     int i = 0;
     TokenStream ts { [&]() { return tokens[i++]; }, session, grammar };
 
-    ASSERT_EQ(ts.getCurrentToken().id, "typedef_name");
+    ASSERT_EQ(tokenKindName(ts.getCurrentToken()), "typedef_name");
     ASSERT_EQ(ts.getCurrentToken().symbolId, *grammar.trySymbolId("typedef_name"));
     session.names.addIdentifierShadow("T");
-    ASSERT_EQ(ts.getCurrentToken().id, "id");
+    ASSERT_EQ(tokenKindName(ts.getCurrentToken()), "id");
     ASSERT_EQ(ts.getCurrentToken().symbolId, *grammar.trySymbolId("id"));
 }
 

@@ -93,7 +93,7 @@ LrFinish runLrParse(const ParsingTable& parsingTable, TokenStream& tokenStream,
                 && live
                 && cell.kind == ParsingTable::kCellReduce
                 && grammar->getRuleById(cell.payload).getDefiningSymbol() == stop->definingSymbol
-                && tokenStream.getCurrentToken().id == stop->lookahead
+                && tokenStream.getCurrentToken().lexeme == stop->lookahead
                 && nest == 0) {
             if (applyReduce(parsingStack, grammar->getRuleById(cell.payload), parsingTable, syntaxTreeBuilder)) {
                 return LrFinish::Complete;

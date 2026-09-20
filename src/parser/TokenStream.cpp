@@ -47,16 +47,17 @@ constexpr std::string_view kTypeRestarts[] = {
 
 } // namespace
 
-TokenStream::SpecifierLookahead::Op TokenStream::SpecifierLookahead::consume(std::string_view id) {
-    if (id == "enum") {
+TokenStream::SpecifierLookahead::Op TokenStream::SpecifierLookahead::consume(const scanner::Token& token) {
+    if (token.cls == scanner::TokenClass::Lexeme && token.lexeme == "enum") {
         state_ = State::AfterEnum;
         return Op::None;
     }
-    if (id == "struct" || id == "union") {
+    if (token.cls == scanner::TokenClass::Lexeme
+            && (token.lexeme == "struct" || token.lexeme == "union")) {
         state_ = State::AfterRecord;
         return Op::None;
     }
-    if (id == "{") {
+    if (token.lexeme == "{") {
         Op op = Op::OpenBlock;
         if (state_ == State::AfterEnum || state_ == State::AfterEnumTag) {
             op = Op::OpenEnumBody;
@@ -66,18 +67,18 @@ TokenStream::SpecifierLookahead::Op TokenStream::SpecifierLookahead::consume(std
         state_ = State::None;
         return op;
     }
-    if (id == "}") {
+    if (token.lexeme == "}") {
         return Op::Close;
     }
-    if (id == ";") {
+    if (token.lexeme == ";") {
         state_ = State::None;
         return Op::EndDeclarators;
     }
-    if (state_ == State::AfterEnum && id == "id") {
+    if (state_ == State::AfterEnum && token.cls == scanner::TokenClass::Id) {
         state_ = State::AfterEnumTag;
         return Op::None;
     }
-    if (state_ == State::AfterRecord && id == "id") {
+    if (state_ == State::AfterRecord && token.cls == scanner::TokenClass::Id) {
         state_ = State::AfterRecordTag;
         return Op::None;
     }
@@ -120,6 +121,11 @@ void TokenStream::indexRoles() {
     }
     idId_ = grammar_.trySymbolId("id").value_or(-1);
     typedefNameId_ = grammar_.trySymbolId("typedef_name").value_or(-1);
+    stringId_ = grammar_.trySymbolId("string").value_or(-1);
+    intConstId_ = grammar_.trySymbolId("int_const").value_or(-1);
+    floatConstId_ = grammar_.trySymbolId("float_const").value_or(-1);
+    charConstId_ = grammar_.trySymbolId("char_const").value_or(-1);
+    endId_ = grammar_.getEndSymbol();
 }
 
 // Transitions use the reclassified token id so shadows and type promotions
@@ -139,29 +145,56 @@ void TokenStream::setIdContext(LexIdContext context) {
 }
 
 void TokenStream::classifyAndStamp(scanner::Token& token) const {
-    if (token.id == "id" || token.id == "typedef_name") {
+    if (token.cls == scanner::TokenClass::Id || token.cls == scanner::TokenClass::TypedefName) {
         if (idContext_ == LexIdContext::AsIdentifier
                 || session_.names.isIdentifierShadow(token.lexeme)
                 || !session_.isTypedef(token.lexeme)) {
             if (idId_ < 0) {
                 throw std::logic_error { "TokenStream: not a grammar terminal: id" };
             }
-            token.id = "id";
+            token.cls = scanner::TokenClass::Id;
             token.symbolId = idId_;
         } else {
             if (typedefNameId_ < 0) {
                 throw std::logic_error { "TokenStream: not a grammar terminal: typedef_name" };
             }
-            token.id = "typedef_name";
+            token.cls = scanner::TokenClass::TypedefName;
             token.symbolId = typedefNameId_;
         }
         return;
     }
-    const auto symbolId = grammar_.trySymbolId(token.id);
-    if (!symbolId) {
-        throw std::logic_error { "TokenStream: not a grammar terminal: " + token.id };
+    int stamped = -1;
+    switch (token.cls) {
+    case scanner::TokenClass::String:
+        stamped = stringId_;
+        break;
+    case scanner::TokenClass::IntConst:
+        stamped = intConstId_;
+        break;
+    case scanner::TokenClass::FloatConst:
+        stamped = floatConstId_;
+        break;
+    case scanner::TokenClass::CharConst:
+        stamped = charConstId_;
+        break;
+    case scanner::TokenClass::End:
+        stamped = endId_;
+        break;
+    case scanner::TokenClass::Lexeme: {
+        const auto symbolId = grammar_.trySymbolId(token.lexeme);
+        if (!symbolId) {
+            throw std::logic_error { "TokenStream: not a grammar terminal: " + token.lexeme };
+        }
+        token.symbolId = *symbolId;
+        return;
     }
-    token.symbolId = *symbolId;
+    default:
+        break;
+    }
+    if (stamped < 0) {
+        throw std::logic_error { "TokenStream: not a grammar terminal" };
+    }
+    token.symbolId = stamped;
 }
 
 void TokenStream::refreshCurrent() const {
@@ -208,7 +241,7 @@ scanner::Token TokenStream::takeRaw() {
 scanner::Token TokenStream::consume() {
     scanner::Token taken = takeCurrent();
     advanceIdContext(taken);
-    switch (specifier_.consume(taken.id)) {
+    switch (specifier_.consume(taken)) {
     case SpecifierLookahead::Op::OpenBlock:
         session_.openBrace(scanner::BraceFrame::Block);
         break;

@@ -5,6 +5,7 @@
 #include "scanner/LexicalSession.h"
 #include "scanner/Scanner.h"
 #include "scanner/Token.h"
+#include "TokenMatcher.h"
 #include "types/Type.h"
 
 #include "ResourceHelpers.h"
@@ -25,7 +26,7 @@ std::vector<Token> scanAll(const std::string &path) {
     std::vector<Token> out;
     for (int i = 0; i < 200; ++i) {
         Token t = scanner.nextToken();
-        if (t.id == Token::END) {
+        if (t.cls == scanner::TokenClass::End) {
             break;
         }
         out.push_back(t);
@@ -41,7 +42,7 @@ TEST(ScannerTokens, takenTokenLexemeSurvivesLaterScan) {
     Token first = scanner.nextToken();
     Token second = scanner.nextToken();
     Token third = scanner.nextToken();
-    EXPECT_EQ(first.id, "id");
+    EXPECT_EQ(tokenKindName(first), "id");
     EXPECT_EQ(first.lexeme, "alpha");
     EXPECT_EQ(second.lexeme, "beta");
     EXPECT_EQ(third.lexeme, "gamma");
@@ -57,7 +58,7 @@ TEST(ScannerTokens, keywordsAreDistinctFromIdentifiers) {
     auto toks = scanAll(path);
     auto has = [&](const std::string &id) {
         for (const auto &t : toks) {
-            if (t.id == id && t.lexeme == id) {
+            if (tokenKindName(t) == id && t.lexeme == id) {
                 return true;
             }
         }
@@ -94,7 +95,7 @@ TEST(ScannerTokens, keywordsAreDistinctFromIdentifiers) {
     bool sawX = false;
     for (const auto &t : toks) {
         if (t.lexeme == "x") {
-            EXPECT_EQ(t.id, "id");
+            EXPECT_EQ(tokenKindName(t), "id");
             sawX = true;
         }
     }
@@ -108,7 +109,7 @@ TEST(ScannerTokens, gnuBuiltinNamesAreIdentifiers) {
     int builtinIds = 0;
     for (const auto &t : toks) {
         if (t.lexeme.rfind("__builtin_", 0) == 0) {
-            EXPECT_EQ(t.id, "id");
+            EXPECT_EQ(tokenKindName(t), "id");
             ++builtinIds;
         }
     }
@@ -120,7 +121,7 @@ TEST(ScannerTokens, punctuatorsDotArrowQuestionColonEllipsis) {
     auto toks = scanAll(path);
     std::vector<std::string> ids;
     for (const auto &t : toks) {
-        ids.push_back(std::string { t.id });
+        ids.push_back(std::string { tokenKindName(t) });
     }
     EXPECT_THAT(ids, Contains("."));
     EXPECT_THAT(ids, Contains("->"));
@@ -134,7 +135,7 @@ TEST(ScannerTokens, hexIntegerConstant) {
     auto toks = scanAll(path);
     bool found = false;
     for (const auto &t : toks) {
-        if (t.id == "int_const" && (t.lexeme == "0x2A" || t.lexeme == "0x2a")) {
+        if (tokenKindName(t) == "int_const" && (t.lexeme == "0x2A" || t.lexeme == "0x2a")) {
             found = true;
         }
     }
@@ -147,7 +148,7 @@ TEST(ScannerTokens, floatWithExponentAndSuffix) {
     bool foundFloat = false;
     bool foundExp = false;
     for (const auto &t : toks) {
-        if (t.id == "float_const") {
+        if (tokenKindName(t) == "float_const") {
             if (t.lexeme.find("1.5") != std::string::npos || t.lexeme.find('f') != std::string::npos || t.lexeme.find('F') != std::string::npos) {
                 foundFloat = true;
             }
@@ -165,7 +166,7 @@ TEST(ScannerTokens, charHexAndOctalEscapesLexAsCharConst) {
     auto toks = scanAll(path);
     int charConsts = 0;
     for (const auto &t : toks) {
-        if (t.id == "char_const") {
+        if (tokenKindName(t) == "char_const") {
             ++charConsts;
             EXPECT_THAT(t.lexeme, AnyOf(HasSubstr("\\x41"), HasSubstr("\\101"), Eq("'\\x41'"), Eq("'\\101'")));
         }
@@ -178,7 +179,7 @@ TEST(ScannerTokens, stringWithEscapesIsOneToken) {
     auto toks = scanAll(path);
     bool found = false;
     for (const auto &t : toks) {
-        if (t.id == "string") {
+        if (tokenKindName(t) == "string") {
             found = true;
             EXPECT_THAT(t.lexeme, HasSubstr("\\n"));
         }
@@ -191,7 +192,7 @@ TEST(ScannerTokens, stillScansExistingKeywords) {
     auto toks = scanAll(path);
     auto has = [&](const std::string &id) {
         for (const auto &t : toks) {
-            if (t.id == id) {
+            if (tokenKindName(t) == id) {
                 return true;
             }
         }
@@ -212,18 +213,18 @@ TEST(ScannerTokens, tokensCarryLineMarkerSourceAndLine) {
             "y;\n");
     auto toks = scanAll(path);
     ASSERT_GE(toks.size(), 5u);
-    EXPECT_EQ(toks[0].id, "int");
+    EXPECT_EQ(tokenKindName(toks[0]), "int");
     EXPECT_EQ(toks[0].lexeme, "int");
     EXPECT_EQ(toks[0].context.getSourceName(), "orig.c");
     EXPECT_EQ(toks[0].context.getOffset(), 10u);
-    EXPECT_EQ(toks[1].id, "id");
+    EXPECT_EQ(tokenKindName(toks[1]), "id");
     EXPECT_EQ(toks[1].lexeme, "x");
     EXPECT_EQ(toks[1].context.getSourceName(), "orig.c");
     EXPECT_EQ(toks[1].context.getOffset(), 10u);
-    EXPECT_EQ(toks[2].id, ";");
+    EXPECT_EQ(tokenKindName(toks[2]), ";");
     EXPECT_EQ(toks[2].context.getSourceName(), "orig.c");
     EXPECT_EQ(toks[2].context.getOffset(), 10u);
-    EXPECT_EQ(toks[3].id, "id");
+    EXPECT_EQ(tokenKindName(toks[3]), "id");
     EXPECT_EQ(toks[3].lexeme, "y");
     EXPECT_EQ(toks[3].context.getSourceName(), "orig.c");
     EXPECT_EQ(toks[3].context.getOffset(), 11u);
@@ -268,7 +269,7 @@ TEST(ScannerTokens, longIdentifierKeepsStartLine) {
     auto path = writeTempSource("scan_long_id", "int abcdefghijklmnopqrstuvwxyz;\n");
     auto toks = scanAll(path);
     ASSERT_GE(toks.size(), 3u);
-    EXPECT_EQ(toks[1].id, "id");
+    EXPECT_EQ(tokenKindName(toks[1]), "id");
     EXPECT_EQ(toks[1].lexeme, "abcdefghijklmnopqrstuvwxyz");
     EXPECT_EQ(toks[1].context.getOffset(), 1u);
 }
@@ -294,7 +295,7 @@ TEST(ScannerTokens, compoundPunctuatorIsOneTokenAtStartLine) {
     auto toks = scanAll(path);
     std::vector<std::string> ids;
     for (const auto& t : toks) {
-        ids.push_back(std::string { t.id });
+        ids.push_back(std::string { tokenKindName(t) });
     }
     EXPECT_THAT(ids, ElementsAre("id", "<<=", "id", ";"));
     EXPECT_EQ(toks[1].lexeme, "<<=");
@@ -308,7 +309,7 @@ TEST(ScannerTokens, emitsTypedefNameWhenSessionRegisters) {
     session.names.addTypedef("myint", type::signedInteger());
     Scanner scanner{path, reader.fromConfiguration(getResourcePath("configuration/scanner.lex")), session};
     Token t = scanner.nextToken();
-    EXPECT_EQ(t.id, "typedef_name");
+    EXPECT_EQ(tokenKindName(t), "typedef_name");
     EXPECT_EQ(t.lexeme, "myint");
 }
 
