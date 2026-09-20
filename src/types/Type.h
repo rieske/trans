@@ -133,7 +133,7 @@ public:
     bool isVariableArray() const;
     std::shared_ptr<VlaBound> vlaBound() const;
     // Internal compiler error unless kind is Array.
-    Type getElementType() const;
+    const Type& getElementType() const;
     int getArraySize() const;
     // Parameter arrays decay to pointer-to-element. Internal compiler error unless Array.
     Type decayArray() const;
@@ -172,7 +172,7 @@ public:
     Type withQualifiers(const std::vector<Qualifier>& qualifiers) const;
 
     // Internal compiler error unless kind is Pointer.
-    Type dereference() const;
+    const Type& dereference() const;
     // Type of *p or a[i]. Empty if this is not a pointer or array.
     std::optional<Type> indexElement() const;
 

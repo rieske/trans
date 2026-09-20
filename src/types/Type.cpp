@@ -325,7 +325,7 @@ std::shared_ptr<VlaBound> Type::vlaBound() const {
     return {};
 }
 
-Type Type::getElementType() const {
+const Type& Type::getElementType() const {
     if (const auto* a = arrayPayload()) {
         return *a->element;
     }
@@ -353,7 +353,7 @@ int Type::getElementStride() const {
     ice("not an array type");
 }
 
-Type Type::dereference() const {
+const Type& Type::dereference() const {
     if (const auto* p = std::get_if<PointerPayload>(&_payload)) {
         if (p->pointee) {
             return *p->pointee;
