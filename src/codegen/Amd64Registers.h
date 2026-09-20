@@ -11,10 +11,10 @@ class Amd64Registers {
 public:
     Register& getBasePointer();
     Register& getStackPointer();
-    std::vector<Register*> getGeneralPurposeRegisters();
-    std::vector<Register*> getCallerSavedRegisters();
-    std::vector<Register*> getCalleeSavedRegisters();
-    std::vector<Register*> getIntegerArgumentRegisters();
+    const std::vector<Register*>& getGeneralPurposeRegisters() const;
+    const std::vector<Register*>& getCallerSavedRegisters() const;
+    const std::vector<Register*>& getCalleeSavedRegisters() const;
+    const std::vector<Register*>& getIntegerArgumentRegisters() const;
     Register& getRetrievalRegister();
     Register& getMultiplicationRegister();
     Register& getRemainderRegister();
