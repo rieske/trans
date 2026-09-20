@@ -3,6 +3,7 @@
 
 #include "EnumConstantRegistry.h"
 #include "IdentifierTable.h"
+#include "NameIntern.h"
 #include "ParseTypeTable.h"
 
 #include <stack>
@@ -84,9 +85,10 @@ enum class BraceFrame { Block, Record, EnumBody };
 
 // Not copyable: FA holds a raw pointer to the session.
 struct LexicalSession {
-    IdentifierTable names;
-    ParseTypeTable types;
-    EnumConstantRegistry enums;
+    NameIntern intern;
+    IdentifierTable names { intern };
+    ParseTypeTable types { intern };
+    EnumConstantRegistry enums { intern };
     RecordPacked recordPacked;
     PendingTransparentUnion transparentUnion;
 
