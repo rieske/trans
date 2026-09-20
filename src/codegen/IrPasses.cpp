@@ -778,14 +778,18 @@ void eliminateDeadTemps(Procedure& procedure) {
             locals.end());
 }
 
+void applyCfgPasses(Procedure& procedure, int optLevel) {
+    Cfg cfg = buildCfg(procedure.body);
+    if (optLevel >= 1) {
+        cfg = threadJumps(std::move(cfg));
+        cfg = eliminateUnreachable(std::move(cfg));
+    }
+    procedure.body = flattenCfg(eliminateJumpToNext(std::move(cfg)));
+}
+
 IntermediateRepresentation applyCfgPasses(IntermediateRepresentation ir, int optLevel) {
     for (auto& procedure : ir.procedures) {
-        Cfg cfg = buildCfg(procedure.body);
-        if (optLevel >= 1) {
-            cfg = threadJumps(std::move(cfg));
-            cfg = eliminateUnreachable(std::move(cfg));
-        }
-        procedure.body = flattenCfg(eliminateJumpToNext(std::move(cfg)));
+        applyCfgPasses(procedure, optLevel);
     }
     return ir;
 }
@@ -795,20 +799,19 @@ IntermediateRepresentation runIrPasses(IntermediateRepresentation ir, int optLev
     ir = applyCfgPasses(std::move(ir), optLevel);
     if (optLevel >= 1) {
         const InlineStats stats = inlineProcedures(ir);
-        if (stats.sitesInlined != 0) {
-            ir = applyCfgPasses(std::move(ir), optLevel);
+        for (int i : stats.dirtyCallers) {
+            applyCfgPasses(ir.procedures[static_cast<std::size_t>(i)], optLevel);
         }
         for (int iter = 0; iter < 8; ++iter) {
-            FoldResult fold;
+            bool changed = false;
             for (auto& procedure : ir.procedures) {
                 const FoldResult one = foldConstants(procedure, ir.strings);
-                fold.changed = fold.changed || one.changed;
-                fold.controlFlow = fold.controlFlow || one.controlFlow;
+                if (one.controlFlow) {
+                    applyCfgPasses(procedure, optLevel);
+                }
+                changed = changed || one.changed;
             }
-            if (fold.controlFlow) {
-                ir = applyCfgPasses(std::move(ir), optLevel);
-            }
-            if (!fold.changed) {
+            if (!changed) {
                 break;
             }
         }

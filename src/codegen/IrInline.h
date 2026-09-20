@@ -4,6 +4,7 @@
 #include "Instruction.h"
 
 #include <string_view>
+#include <vector>
 
 namespace codegen {
 
@@ -37,6 +38,7 @@ struct InlineStats {
     int refusedSize { 0 };
     int refusedRecursion { 0 };
     int refusedOther { 0 };
+    std::vector<int> dirtyCallers;
 };
 
 // Does not splice. Pushes clones onto caller.frame.locals.

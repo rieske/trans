@@ -17,6 +17,7 @@ FoldResult foldConstants(Procedure& procedure, IrStringTable& strings);
 void copyPropagate(Procedure& procedure);
 void eliminateDeadTemps(Procedure& procedure);
 
+void applyCfgPasses(Procedure& procedure, int optLevel);
 IntermediateRepresentation applyCfgPasses(IntermediateRepresentation ir, int optLevel = 1);
 
 IntermediateRepresentation runIrPasses(IntermediateRepresentation ir, int optLevel = 1);

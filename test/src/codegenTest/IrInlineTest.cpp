@@ -889,6 +889,7 @@ TEST(IrInline, inlineProceduresSplicesEligibleCall) {
     ir.procedures.push_back(smallCaller(ir.strings, n));
     const InlineStats stats = inlineProcedures(ir);
     EXPECT_THAT(stats.sitesInlined, Eq(1));
+    EXPECT_THAT(stats.dirtyCallers, ElementsAre(1));
     bool callerHasCall = false;
     bool calleeRemains = false;
     bool sawAdd = false;
