@@ -9,14 +9,9 @@ enum class ArrayBound {
     Compatible
 };
 
-bool sameShape(const Type& a, const Type& b, bool matchQualifiers, ArrayBound bounds) {
-    if (matchQualifiers) {
-        if (a.isConst() != b.isConst() || a.isVolatile() != b.isVolatile()) {
-            return false;
-        }
-    }
-    const Type left = matchQualifiers ? a : a.withoutTopLevelQualifiers();
-    const Type right = matchQualifiers ? b : b.withoutTopLevelQualifiers();
+bool sameShape(const Type& a, const Type& b, bool matchQualifiers, ArrayBound bounds);
+
+bool sameShapeAfterCv(const Type& left, const Type& right, bool matchQualifiers, ArrayBound bounds) {
     if (left.kind() != right.kind()) {
         return false;
     }
@@ -44,27 +39,26 @@ bool sameShape(const Type& a, const Type& b, bool matchQualifiers, ArrayBound bo
         }
         return true;
     case TypeKind::Function: {
-        const Function fa = left.getFunction();
-        const Function fb = right.getFunction();
+        const Function& fa = left.getFunction();
+        const Function& fb = right.getFunction();
         if (fa.isVariadic() != fb.isVariadic()) {
             return false;
         }
         if (!sameShape(fa.getReturnType(), fb.getReturnType(), matchQualifiers, bounds)) {
             return false;
         }
-        const auto aa = fa.getArguments();
-        const auto ba = fb.getArguments();
+        const std::vector<Type>& aa = fa.getArguments();
+        const std::vector<Type>& ba = fb.getArguments();
         if (aa.size() != ba.size()) {
             return false;
         }
         for (std::size_t i = 0; i < aa.size(); ++i) {
-            Type pa = aa[i];
-            Type pb = ba[i];
             if (bounds == ArrayBound::Compatible) {
-                pa = pa.withoutTopLevelQualifiers();
-                pb = pb.withoutTopLevelQualifiers();
-            }
-            if (!sameShape(pa, pb, matchQualifiers, bounds)) {
+                if (!sameShape(aa[i].withoutTopLevelQualifiers(), ba[i].withoutTopLevelQualifiers(),
+                            matchQualifiers, bounds)) {
+                    return false;
+                }
+            } else if (!sameShape(aa[i], ba[i], matchQualifiers, bounds)) {
                 return false;
             }
         }
@@ -75,6 +69,17 @@ bool sameShape(const Type& a, const Type& b, bool matchQualifiers, ArrayBound bo
         return left.structureBodyIdentity() == right.structureBodyIdentity();
     }
     return false;
+}
+
+bool sameShape(const Type& a, const Type& b, bool matchQualifiers, ArrayBound bounds) {
+    if (matchQualifiers) {
+        if (a.isConst() != b.isConst() || a.isVolatile() != b.isVolatile()) {
+            return false;
+        }
+        return sameShapeAfterCv(a, b, matchQualifiers, bounds);
+    }
+    return sameShapeAfterCv(a.withoutTopLevelQualifiers(), b.withoutTopLevelQualifiers(),
+            matchQualifiers, bounds);
 }
 
 std::vector<Qualifier> topQualifiers(const Type& t) {
@@ -116,11 +121,11 @@ Type makeComposite(const Type& a, const Type& b) {
     case TypeKind::Pointer:
         return pointer(makeComposite(a.dereference(), b.dereference()), topQualifiers(a));
     case TypeKind::Function: {
-        const Function fa = a.getFunction();
-        const Function fb = b.getFunction();
+        const Function& fa = a.getFunction();
+        const Function& fb = b.getFunction();
         std::vector<Type> args;
-        const auto aa = fa.getArguments();
-        const auto ba = fb.getArguments();
+        const std::vector<Type>& aa = fa.getArguments();
+        const std::vector<Type>& ba = fb.getArguments();
         args.reserve(aa.size());
         for (std::size_t i = 0; i < aa.size(); ++i) {
             args.push_back(makeComposite(aa[i], ba[i]));
