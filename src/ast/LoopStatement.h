@@ -14,8 +14,8 @@ public:
 
     void accept(AbstractSyntaxTreeVisitor& visitor) override;
 
-    const std::unique_ptr<LoopHeader> header;
-    const std::unique_ptr<Statement> body;
+    std::unique_ptr<LoopHeader> header;
+    std::unique_ptr<Statement> body;
 };
 
 } // namespace ast

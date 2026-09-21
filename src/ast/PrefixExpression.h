@@ -11,7 +11,6 @@ namespace ast {
 class PrefixExpression: public UnaryOpExpression<type::IncDec> {
 public:
     PrefixExpression(type::IncDec op, std::unique_ptr<Expression> unaryExpression);
-    virtual ~PrefixExpression();
 
     void accept(AbstractSyntaxTreeVisitor& visitor) override;
     ExprKind exprKind() const override { return ExprKind::Prefix; }

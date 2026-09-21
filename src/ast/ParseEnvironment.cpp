@@ -22,15 +22,15 @@ ParseEnvironment ParseEnvironment::nestedIn(const ParseEnvironment& enclosing) {
     return ParseEnvironment { enclosing.session_, enclosing };
 }
 
-type::Type ParseEnvironment::ensureStructTag(const std::string& tag) {
+type::Type ParseEnvironment::ensureRecordTag(const std::string& tag, bool isUnion) {
     for (const ParseEnvironment* env = this; env != nullptr; env = env->tagParent_) {
-        auto it = env->structTags_.find(tag);
-        if (it != env->structTags_.end()) {
+        auto it = env->recordTags_.find(tag);
+        if (it != env->recordTags_.end()) {
             return it->second;
         }
     }
-    type::Type incomplete = type::incompleteRecord();
-    structTags_.emplace(tag, incomplete);
+    type::Type incomplete = type::incompleteRecord(isUnion);
+    recordTags_.emplace(tag, incomplete);
     return incomplete;
 }
 

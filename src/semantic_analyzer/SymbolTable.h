@@ -72,7 +72,6 @@ private:
     bool bindBlockScopeExtern(const std::string& name, const type::Type& type,
             translation_unit::Context context);
 
-    std::map<std::string, symbols::LabelEntry> labels;
     std::map<std::string, std::string> constants;
 
     // Block ids are monotonic across the whole unit: siblings never reuse an id.

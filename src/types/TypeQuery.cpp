@@ -104,7 +104,7 @@ Type assignmentConvertTarget(AssignOp op, const Type& dest, const Type& source) 
         return integerPromote(source);
     }
     if ((op == AssignOp::AddAssign || op == AssignOp::SubAssign)
-            && dest.isPointer() && isIntegralScalar(source)) {
+            && dest.isPointer() && isIntegral(source)) {
         return integerPromote(source);
     }
     return dest;
@@ -120,19 +120,19 @@ PointerArithmeticInfo classifyPointerArithmetic(const Type& left, const Type& ri
     if (!left.isPointer() && !right.isPointer()) {
         return info;
     }
-    if (op == ArithmeticOp::Add && left.isPointer() && isIntegralScalar(right)) {
+    if (op == ArithmeticOp::Add && left.isPointer() && isIntegral(right)) {
         info.form = PointerArithmeticForm::PtrPlusInt;
         info.resultType = left;
         info.strideBytes = pointerElementStride(left);
         return info;
     }
-    if (op == ArithmeticOp::Add && isIntegralScalar(left) && right.isPointer()) {
+    if (op == ArithmeticOp::Add && isIntegral(left) && right.isPointer()) {
         info.form = PointerArithmeticForm::IntPlusPtr;
         info.resultType = right;
         info.strideBytes = pointerElementStride(right);
         return info;
     }
-    if (op == ArithmeticOp::Sub && left.isPointer() && isIntegralScalar(right)) {
+    if (op == ArithmeticOp::Sub && left.isPointer() && isIntegral(right)) {
         info.form = PointerArithmeticForm::PtrMinusInt;
         info.resultType = left;
         info.strideBytes = pointerElementStride(left);

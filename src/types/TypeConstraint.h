@@ -8,14 +8,15 @@
 
 namespace type {
 
-// Incomplete as an array element or record member (void, function, incomplete record/array).
-inline bool incompleteArrayElement(const Type& t) {
+// Incomplete object type, or function (illegal as array element / record member the same way).
+// Pointer-to-incomplete is complete.
+inline bool isIncompleteObjectType(const Type& t) {
     return t.isVoid() || t.isFunction() || t.isIncompleteRecord() || t.isIncompleteArray();
 }
 
 // Byte size of a complete array layer. Empty on overflow. Incomplete element is 0.
 inline std::optional<int> arrayByteSize(const Type& element, int count) {
-    if (incompleteArrayElement(element) || count < 0) {
+    if (isIncompleteObjectType(element) || count < 0) {
         return 0;
     }
     const long long stride = element.getSize();
@@ -30,7 +31,7 @@ inline std::optional<int> arrayByteSize(const Type& element, int count) {
 }
 
 inline const char* arrayLayerError(const Type& element, bool checkCount, int count) {
-    if (incompleteArrayElement(element)) {
+    if (isIncompleteObjectType(element)) {
         return "array of incomplete type";
     }
     if (!checkCount || count < 0) {

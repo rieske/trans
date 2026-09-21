@@ -11,7 +11,6 @@ namespace ast {
 class DoubleOperandExpression: public Expression {
 public:
     DoubleOperandExpression(std::unique_ptr<Expression> leftOperand, std::unique_ptr<Expression> rightOperand);
-    virtual ~DoubleOperandExpression();
 
     std::optional<type::Type> intIfOperandsType(const ParseEnvironment& environment) const;
 
@@ -33,8 +32,8 @@ public:
 protected:
     bool foldOperands(type::IntegerConstant& value, type::BinaryOp op) const;
 
-    const std::unique_ptr<Expression> leftOperand;
-    const std::unique_ptr<Expression> rightOperand;
+    std::unique_ptr<Expression> leftOperand;
+    std::unique_ptr<Expression> rightOperand;
 };
 
 } // namespace ast

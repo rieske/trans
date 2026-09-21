@@ -13,7 +13,6 @@ namespace ast {
 class DefaultLabel: public Statement {
 public:
     DefaultLabel(TerminalSymbol defaultKeyword, std::unique_ptr<Statement> statement);
-    virtual ~DefaultLabel() = default;
 
     void accept(AbstractSyntaxTreeVisitor& visitor) override;
 
@@ -21,7 +20,7 @@ public:
     symbols::LabelEntry* getLabel(symbols::AnnotationStore& store) const;
 
     const TerminalSymbol defaultKeyword;
-    const std::unique_ptr<Statement> statement;
+    std::unique_ptr<Statement> statement;
 
 };
 

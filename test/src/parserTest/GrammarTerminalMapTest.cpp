@@ -11,6 +11,8 @@
 #include <map>
 #include <stdexcept>
 #include <string>
+#include <string_view>
+#include <type_traits>
 #include <vector>
 
 namespace {
@@ -52,6 +54,17 @@ TEST(Grammar, getSymbolByIdThrowsForUnknownId) {
     const int terminal = grammar.getTerminalIDs().front();
     EXPECT_THAT(grammar.symbolId(grammar.getSymbolById(terminal)), Eq(terminal));
     EXPECT_THROW(grammar.getSymbolById(10000), std::out_of_range);
+}
+
+static_assert(std::is_same_v<
+        int (Grammar::*)(std::string_view) const,
+        decltype(&Grammar::symbolId)>);
+
+TEST(Grammar, symbolIdLooksUpWithoutOwningTheName) {
+    const Grammar grammar = expressionGrammar();
+    const std::string_view name = "identifier";
+    EXPECT_THAT(grammar.symbolId(name), Eq(*grammar.trySymbolId(name)));
+    EXPECT_THROW(grammar.symbolId("not_a_symbol"), std::out_of_range);
 }
 
 TEST(Grammar, strIsTotalSoDiagnosticsCannotFail) {

@@ -1,6 +1,7 @@
 #include "gtest/gtest.h"
 
 #include <memory>
+#include <utility>
 
 #include "ast/Declaration.h"
 #include "ast/DeclarationSpecifiers.h"
@@ -65,6 +66,15 @@ TEST(ForLoopHeader, absentInit) {
     ast::ForLoopHeader header { ast::ForInit { }, nullptr, nullptr };
     EXPECT_EQ(header.loopKind(), ast::LoopKind::For);
     EXPECT_EQ(header.initialization.asDeclaration(), nullptr);
+    EXPECT_EQ(header.initialization.asExpression(), nullptr);
+}
+
+TEST(ForLoopHeader, movesInit) {
+    auto expression = std::make_unique<ast::IdentifierExpression>("x", ctx());
+    auto* raw = expression.get();
+    ast::ForLoopHeader header { ast::ForInit { std::move(expression) }, nullptr, nullptr };
+    ast::ForLoopHeader moved { std::move(header) };
+    EXPECT_EQ(moved.initialization.asExpression(), raw);
     EXPECT_EQ(header.initialization.asExpression(), nullptr);
 }
 

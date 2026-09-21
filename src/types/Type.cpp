@@ -245,7 +245,6 @@ TypeKind Type::kind() const {
         } else if constexpr (std::is_same_v<T, ArrayPayload>) {
             return TypeKind::Array;
         } else if constexpr (std::is_same_v<T, RecordPayload>) {
-            // Null body is still a record placeholder; treat as Struct until completed as union.
             return arm.body && arm.body->isUnion ? TypeKind::Union : TypeKind::Struct;
         }
     }, _payload);

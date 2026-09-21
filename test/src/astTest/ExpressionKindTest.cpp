@@ -1,6 +1,7 @@
 #include "gtest/gtest.h"
 
 #include <memory>
+#include <utility>
 #include <vector>
 
 #include "ast/ArithmeticExpression.h"
@@ -176,6 +177,36 @@ TEST(Expression, storedLexemes) {
     ast::StringLiteralExpression s("\"hi\"", ctx());
     EXPECT_EQ(s.getValue(), "\"hi\"");
     EXPECT_EQ(&s.getValue(), &s.getValue());
+}
+
+TEST(Expression, identifierMoves) {
+    ast::IdentifierExpression name("foo", ctx());
+    ast::IdentifierExpression moved { std::move(name) };
+    EXPECT_EQ(moved.getIdentifier(), "foo");
+    EXPECT_TRUE(name.getIdentifier().empty());
+}
+
+TEST(Expression, constantMoves) {
+    ast::ConstantExpression ce { ast::Constant("7", type::signedInteger(), ctx()) };
+    ast::ConstantExpression moved { std::move(ce) };
+    EXPECT_EQ(moved.getValue(), "7");
+    EXPECT_TRUE(ce.getValue().empty());
+}
+
+TEST(Expression, stringLiteralMoves) {
+    ast::StringLiteralExpression s("\"hi\"", ctx());
+    ast::StringLiteralExpression moved { std::move(s) };
+    EXPECT_EQ(moved.getValue(), "\"hi\"");
+    EXPECT_TRUE(s.getValue().empty());
+}
+
+TEST(Expression, commaMovesOperands) {
+    auto left = id();
+    auto* rawLeft = left.get();
+    ast::ExpressionList list(std::move(left), id());
+    ast::ExpressionList moved { std::move(list) };
+    EXPECT_EQ(moved.getLeftOperand(), rawLeft);
+    EXPECT_EQ(list.getLeftOperand(), nullptr);
 }
 
 } // namespace

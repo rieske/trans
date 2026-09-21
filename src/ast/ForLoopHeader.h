@@ -13,13 +13,11 @@ public:
     ForLoopHeader(ForInit initialization,
             std::unique_ptr<Expression> clause,
             std::unique_ptr<Expression> increment);
-    virtual ~ForLoopHeader();
-
     LoopKind loopKind() const override { return LoopKind::For; }
     void accept(AbstractSyntaxTreeVisitor& visitor) override;
 
-    const ForInit initialization;
-    const std::unique_ptr<Expression> clause;
+    ForInit initialization;
+    std::unique_ptr<Expression> clause;
 };
 
 } // namespace ast

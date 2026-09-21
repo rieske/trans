@@ -66,7 +66,7 @@ void SemanticAnalysisVisitor::visit(ast::ArrayAccess& arrayAccess) {
     ast::Expression* index = right;
     if (type::isSubscriptBase(leftExpr, leftValue)) {
         sub = type::arraySubscriptInfo(leftExpr, leftValue);
-    } else if ((type::isIntegralScalar(leftExpr) || type::isIntegralScalar(leftValue))
+    } else if ((type::isIntegral(leftExpr) || type::isIntegral(leftValue))
             && type::isSubscriptBase(rightExpr, rightValue)) {
         baseOperand = symbols::BinaryOperand::Right;
         index = left;

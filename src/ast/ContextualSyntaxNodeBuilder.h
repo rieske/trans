@@ -1,6 +1,7 @@
 #ifndef _CONTEXTUAL_SYNTAX_NODE_BUILDER_
 #define _CONTEXTUAL_SYNTAX_NODE_BUILDER_
 
+#include <cstddef>
 #include <vector>
 
 #include "AbstractSyntaxTreeBuilderContext.h"
@@ -18,6 +19,8 @@ private:
     using Creator = void (*)(AbstractSyntaxTreeBuilderContext&);
 
     void bind(int lhs, std::vector<int> rhs, Creator creator);
+    void bindBoth(int matchedLhs, int unmatchedLhs, std::vector<int> rhs, Creator creator,
+            std::size_t unmatchedIndex = static_cast<std::size_t>(-1));
     void noCreatorDefined(const parser::Production& production,
             AbstractSyntaxTreeBuilderContext& context) const;
 

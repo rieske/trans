@@ -13,9 +13,6 @@ DoubleOperandExpression::DoubleOperandExpression(std::unique_ptr<Expression> lef
 {
 }
 
-DoubleOperandExpression::~DoubleOperandExpression() {
-}
-
 std::optional<type::Type> DoubleOperandExpression::intIfOperandsType(
         const ParseEnvironment& environment) const {
     if (!leftOperand->typeAtParseTime(environment) || !rightOperand->typeAtParseTime(environment)) {

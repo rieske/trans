@@ -10,9 +10,6 @@ ExpressionList::ExpressionList(std::unique_ptr<Expression> leftHandSide, std::un
         DoubleOperandExpression(std::move(leftHandSide), std::move(rightHandSide)) {
 }
 
-ExpressionList::~ExpressionList() {
-}
-
 void ExpressionList::accept(AbstractSyntaxTreeVisitor& visitor) {
     visitor.visit(*this);
 }

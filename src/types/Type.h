@@ -89,7 +89,7 @@ public:
     friend Type array(const Type& elementType, int elementCount);
     friend Type incompleteArray(const Type& elementType);
     friend Type variableArray(const Type& elementType, std::shared_ptr<VlaBound> bound);
-    friend Type incompleteRecord();
+    friend Type incompleteRecord(bool asUnion);
     friend Type structure(const std::vector<std::pair<std::string, Type>>& members);
     friend const char* completeStructure(Type& structType, const std::vector<MemberSpec>& members,
             bool packed);
@@ -230,11 +230,9 @@ Type function(const Type& returnType, const std::vector<Type>& arguments = {}, b
 Type array(const Type& elementType, int elementCount);
 Type incompleteArray(const Type& elementType);
 Type variableArray(const Type& elementType, std::shared_ptr<VlaBound> bound = {});
-// Incomplete record tag (struct or union not yet known). Both live as RecordPayload;
-// kind() is Struct vs Union via shared StructBody::isUnion once completed.
 // Pointers and aliases that share structureBodyIdentity() see the same body when
 // completeStructure/completeUnion mutates it - required for self-referential tags.
-Type incompleteRecord();
+Type incompleteRecord(bool asUnion = false);
 BitField makeBitField(const Type& declared, int width, int shift);
 
 struct FoundMember {

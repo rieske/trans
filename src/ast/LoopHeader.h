@@ -27,7 +27,7 @@ public:
     void setLoopContinue(symbols::AnnotationStore& store, symbols::LabelEntry loopContinue);
     symbols::LabelEntry* getLoopContinue(symbols::AnnotationStore& store) const;
 
-    const std::unique_ptr<Expression> increment;
+    std::unique_ptr<Expression> increment;
 
 protected:
     LoopHeader(std::unique_ptr<Expression> increment = nullptr);

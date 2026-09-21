@@ -12,8 +12,6 @@ ForLoopHeader::ForLoopHeader(ForInit initialization,
         clause { std::move(clause) } {
 }
 
-ForLoopHeader::~ForLoopHeader() = default;
-
 void ForLoopHeader::accept(AbstractSyntaxTreeVisitor& visitor) {
     visitor.visit(*this);
 }

@@ -185,6 +185,94 @@ void expectForCreatorBound(const parser::Grammar& grammar,
     EXPECT_EQ(statement->asBlock(), nullptr);
 }
 
+void expectStatementCloneBound(const parser::Grammar& grammar,
+        const ast::ContextualSyntaxNodeBuilder& builder, const char* lhs,
+        std::initializer_list<const char*> rhs, int terminals,
+        bool expressionBeforeStatement) {
+    const auto* prod = production(grammar, lhs, rhs);
+    ASSERT_NE(prod, nullptr) << lhs;
+    scanner::LexicalSession session;
+    ast::AbstractSyntaxTreeBuilderContext context { session };
+    std::ostringstream logged;
+    diag::Sink sink { logged };
+    context.setSink(&sink);
+    const translation_unit::Context where { "t.c", 1 };
+    if (expressionBeforeStatement) {
+        context.pushExpression(std::make_unique<ast::IdentifierExpression>("c", where));
+        context.pushStatement(std::make_unique<ast::Block>());
+    } else {
+        context.pushStatement(std::make_unique<ast::Block>());
+        context.pushExpression(std::make_unique<ast::IdentifierExpression>("c", where));
+    }
+    for (int i = 0; i < terminals; ++i) {
+        context.pushTerminal({ ";", where });
+    }
+    try {
+        builder.updateContext(*prod, context);
+    } catch (const std::exception& ex) {
+        ADD_FAILURE() << lhs << ": " << ex.what();
+        return;
+    }
+    EXPECT_THAT(logged.str(),
+            testing::Not(testing::HasSubstr("language construct not implemented yet")));
+    auto statement = context.popAsStatement();
+    ASSERT_NE(statement, nullptr);
+}
+
+void expectIfElseCloneBound(const parser::Grammar& grammar,
+        const ast::ContextualSyntaxNodeBuilder& builder, const char* lhs, const char* end) {
+    const auto* prod = production(grammar, lhs,
+            { "if", "(", "<exp>", ")", "<matched>", "else", end });
+    ASSERT_NE(prod, nullptr) << lhs;
+    scanner::LexicalSession session;
+    ast::AbstractSyntaxTreeBuilderContext context { session };
+    std::ostringstream logged;
+    diag::Sink sink { logged };
+    context.setSink(&sink);
+    const translation_unit::Context where { "t.c", 1 };
+    context.pushExpression(std::make_unique<ast::IdentifierExpression>("c", where));
+    context.pushStatement(std::make_unique<ast::Block>());
+    context.pushStatement(std::make_unique<ast::Block>());
+    for (int i = 0; i < 4; ++i) {
+        context.pushTerminal({ ";", where });
+    }
+    try {
+        builder.updateContext(*prod, context);
+    } catch (const std::exception& ex) {
+        ADD_FAILURE() << lhs << ": " << ex.what();
+        return;
+    }
+    EXPECT_THAT(logged.str(),
+            testing::Not(testing::HasSubstr("language construct not implemented yet")));
+    auto statement = context.popAsStatement();
+    ASSERT_NE(statement, nullptr);
+}
+
+TEST(CSNBCreators, matchedUnmatchedStatementClonesAreRegistered) {
+    const parser::Grammar grammar = productGrammar();
+    const ast::ContextualSyntaxNodeBuilder builder { grammar };
+    const struct {
+        const char* end;
+        const char* iteration;
+        const char* labeled;
+        const char* selection;
+    } clones[] = {
+        { "<matched>", "<iteration_stat_matched>", "<labeled_stat_matched>", "<matched>" },
+        { "<unmatched>", "<iteration_stat_unmatched>", "<labeled_stat_unmatched>", "<unmatched>" },
+    };
+    for (const auto& clone : clones) {
+        expectStatementCloneBound(grammar, builder, clone.iteration,
+                { "while", "(", "<exp>", ")", clone.end }, 3, false);
+        expectStatementCloneBound(grammar, builder, clone.iteration,
+                { "do", clone.end, "while", "(", "<exp>", ")", ";" }, 5, false);
+        expectStatementCloneBound(grammar, builder, clone.selection,
+                { "switch", "(", "<exp>", ")", clone.end }, 3, true);
+        expectStatementCloneBound(grammar, builder, clone.labeled,
+                { "case", "<conditional_exp>", ":", clone.end }, 2, true);
+        expectIfElseCloneBound(grammar, builder, clone.selection, clone.end);
+    }
+}
+
 TEST(CSNBCreators, forLoopProductionsAreRegistered) {
     const parser::Grammar grammar = productGrammar();
     const ast::ContextualSyntaxNodeBuilder builder { grammar };
@@ -198,6 +286,27 @@ TEST(CSNBCreators, forLoopProductionsAreRegistered) {
             }
         }
     }
+}
+
+TEST(CSNBCreators, incompleteUnionTagIsUnion) {
+    const parser::Grammar grammar = productGrammar();
+    const ast::ContextualSyntaxNodeBuilder builder { grammar };
+    const auto* unionKw = production(grammar, "<struct_or_union>", { "union" });
+    const auto* spec = production(grammar, "<struct_or_union_spec>",
+            { "<struct_or_union>", "id" });
+    ASSERT_NE(unionKw, nullptr);
+    ASSERT_NE(spec, nullptr);
+    scanner::LexicalSession session;
+    ast::AbstractSyntaxTreeBuilderContext context { session };
+    const translation_unit::Context where { "t.c", 1 };
+    context.pushTerminal({ "union", where });
+    builder.updateContext(*unionKw, context);
+    context.pushTerminal({ "U", where });
+    builder.updateContext(*spec, context);
+    ASSERT_TRUE(context.hasTypeSpecifier());
+    ast::TypeSpecifier ts = context.popTypeSpecifier();
+    EXPECT_TRUE(ts.getType().isUnion());
+    EXPECT_TRUE(ts.getType().isIncompleteRecord());
 }
 
 TEST(CSNBCreators, doNothingIsNoOp) {

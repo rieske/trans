@@ -713,6 +713,9 @@ TEST(Type, kindClassifiesNodesWithoutPayloadBleed) {
     EXPECT_THAT(array(signedInteger(), 2).kind(), Eq(TypeKind::Array));
     EXPECT_THAT(structure({ { "x", signedInteger() } }).kind(), Eq(TypeKind::Struct));
     EXPECT_THAT(incompleteRecord().kind(), Eq(TypeKind::Struct));
+    EXPECT_THAT(incompleteRecord(true).kind(), Eq(TypeKind::Union));
+    EXPECT_TRUE(incompleteRecord(true).isUnion());
+    EXPECT_FALSE(incompleteRecord(true).isStructure());
 }
 
 TEST(Type, longDoubleAlignmentIsSize) {

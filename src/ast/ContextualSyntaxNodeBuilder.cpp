@@ -389,23 +389,24 @@ ContextualSyntaxNodeBuilder::ContextualSyntaxNodeBuilder(const parser::Grammar& 
     int s_colon = grammar.symbolId(":");
     int s_labeled_stat_matched = grammar.symbolId("<labeled_stat_matched>");
     int s_labeled_stat_unmatched = grammar.symbolId("<labeled_stat_unmatched>");
-    bind(s_matched, { s_if, s_open_paren, s_exp, s_close_paren, s_matched, grammar.symbolId("else"), s_matched }, ifElseStatement);
+    bindBoth(s_matched, s_unmatched,
+            { s_if, s_open_paren, s_exp, s_close_paren, s_matched, grammar.symbolId("else"), s_matched },
+            ifElseStatement);
     bind(s_unmatched, { s_if, s_open_paren, s_exp, s_close_paren, s_stat }, ifStatement);
-    bind(s_unmatched, { s_if, s_open_paren, s_exp, s_close_paren, s_matched, grammar.symbolId("else"), s_unmatched }, ifElseStatement);
     int s_switch = grammar.symbolId("switch");
-    bind(s_matched, { s_switch, s_open_paren, s_exp, s_close_paren, s_matched }, switchStatement);
-    bind(s_unmatched, { s_switch, s_open_paren, s_exp, s_close_paren, s_unmatched }, switchStatement);
+    bindBoth(s_matched, s_unmatched, { s_switch, s_open_paren, s_exp, s_close_paren, s_matched },
+            switchStatement);
     bind(s_matched, { s_labeled_stat_matched }, doNothing);
     bind(s_unmatched, { s_labeled_stat_unmatched }, doNothing);
     int s_case = grammar.symbolId("case");
     int s_default = grammar.symbolId("default");
     // s_identifier defined earlier with declarators / primary_exp.
-    bind(s_labeled_stat_matched, { s_case, s_conditional_exp, s_colon, s_matched }, caseLabel);
-    bind(s_labeled_stat_unmatched, { s_case, s_conditional_exp, s_colon, s_unmatched }, caseLabel);
-    bind(s_labeled_stat_matched, { s_default, s_colon, s_matched }, defaultLabel);
-    bind(s_labeled_stat_unmatched, { s_default, s_colon, s_unmatched }, defaultLabel);
-    bind(s_labeled_stat_matched, { s_identifier, s_colon, s_matched }, namedLabel);
-    bind(s_labeled_stat_unmatched, { s_identifier, s_colon, s_unmatched }, namedLabel);
+    bindBoth(s_labeled_stat_matched, s_labeled_stat_unmatched,
+            { s_case, s_conditional_exp, s_colon, s_matched }, caseLabel);
+    bindBoth(s_labeled_stat_matched, s_labeled_stat_unmatched, { s_default, s_colon, s_matched },
+            defaultLabel);
+    bindBoth(s_labeled_stat_matched, s_labeled_stat_unmatched, { s_identifier, s_colon, s_matched },
+            namedLabel);
     bind(s_matched, { s_exp_stat }, doNothing);
     bind(s_matched, { s_compound_stat }, doNothing);
     bind(s_matched, { s_jump_stat }, doNothing);
@@ -456,16 +457,14 @@ ContextualSyntaxNodeBuilder::ContextualSyntaxNodeBuilder(const parser::Grammar& 
     int s_while = grammar.symbolId("while");
     int s_do = grammar.symbolId("do");
     int s_for = grammar.symbolId("for");
-    bind(s_iteration_stat_matched, { s_while, s_open_paren, s_exp, s_close_paren, s_matched }, whileLoopStatement);
-    bind(s_iteration_stat_unmatched, { s_while, s_open_paren, s_exp, s_close_paren, s_unmatched }, whileLoopStatement);
-    bind(s_iteration_stat_matched, { s_do, s_matched, s_while, s_open_paren, s_exp, s_close_paren, s_semicolon }, doWhileLoopStatement);
-    bind(s_iteration_stat_unmatched, { s_do, s_unmatched, s_while, s_open_paren, s_exp, s_close_paren, s_semicolon }, doWhileLoopStatement);
+    bindBoth(s_iteration_stat_matched, s_iteration_stat_unmatched,
+            { s_while, s_open_paren, s_exp, s_close_paren, s_matched }, whileLoopStatement);
+    bindBoth(s_iteration_stat_matched, s_iteration_stat_unmatched,
+            { s_do, s_matched, s_while, s_open_paren, s_exp, s_close_paren, s_semicolon },
+            doWhileLoopStatement, 1);
 
     auto registerFor = [&](const std::vector<int>& prod, Creator creator) {
-        bind(s_iteration_stat_matched, prod, creator);
-        auto unmatchedProd = prod;
-        unmatchedProd[unmatchedProd.size() - 1] = s_unmatched;
-        bind(s_iteration_stat_unmatched, unmatchedProd, creator);
+        bindBoth(s_iteration_stat_matched, s_iteration_stat_unmatched, prod, creator);
     };
     int s_decl_for = grammar.symbolId("<decl>");
     auto forRhs = [&](ForInitKind init, bool clause, bool increment) {
@@ -594,7 +593,7 @@ ContextualSyntaxNodeBuilder::ContextualSyntaxNodeBuilder(const parser::Grammar& 
                 context.popStructDeclaratorList();
                 bool isUnion = context.popIsUnion();
                 // Shared incomplete tag so self-referential members keep one layout identity.
-                type::Type tagType = context.environment().ensureStructTag(tag.value);
+                type::Type tagType = context.environment().ensureRecordTag(tag.value, isUnion);
                 completeRecordFromSpec(context, tagType, std::move(body.members), isUnion, close.context);
                 if (context.failed()) {
                     return;
@@ -621,12 +620,12 @@ ContextualSyntaxNodeBuilder::ContextualSyntaxNodeBuilder(const parser::Grammar& 
             });
     bind(s_struct_or_union_spec, { s_struct_or_union, s_identifier }, [](AbstractSyntaxTreeBuilderContext& context) {
                 auto tag = context.popTerminal();
-                context.popIsUnion(); // layout decided at definition
+                const bool isUnion = context.popIsUnion();
                 context.popStructMemberList(); // no body
                 context.popStructDeclaratorList();
                 context.environment().session().recordPacked.abandon();
                 context.pushTypeSpecifier(TypeSpecifier {
-                        context.environment().ensureStructTag(tag.value), tag.value });
+                        context.environment().ensureRecordTag(tag.value, isUnion), tag.value });
             });
 
     bind(s_struct_declarator, { s_declarator }, [](AbstractSyntaxTreeBuilderContext& context) {
@@ -687,6 +686,16 @@ ContextualSyntaxNodeBuilder::ContextualSyntaxNodeBuilder(const parser::Grammar& 
     bind(s_struct_decl_list, { s_struct_decl_list, s_struct_decl }, doNothing);
 }
 
+
+void ContextualSyntaxNodeBuilder::bindBoth(int matchedLhs, int unmatchedLhs, std::vector<int> rhs,
+        Creator creator, std::size_t unmatchedIndex) {
+    if (unmatchedIndex == static_cast<std::size_t>(-1)) {
+        unmatchedIndex = rhs.size() - 1;
+    }
+    bind(matchedLhs, rhs, creator);
+    rhs[unmatchedIndex] = grammar->symbolId("<unmatched>");
+    bind(unmatchedLhs, std::move(rhs), creator);
+}
 
 void ContextualSyntaxNodeBuilder::bind(int lhs, std::vector<int> rhs, Creator creator) {
     for (const parser::Production& production : grammar->getProductionsOfSymbol(lhs)) {

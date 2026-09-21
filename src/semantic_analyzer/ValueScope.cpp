@@ -82,7 +82,8 @@ const symbols::ValueEntry& ValueScope::lookup(const SymbolKey& key) const {
     if (const symbols::ValueEntry* entry = find(key)) {
         return *entry;
     }
-    throw std::out_of_range(key.source);
+    throw std::logic_error {
+            "internal compiler error: no symbol named `" + key.source + "`" };
 }
 
 const symbols::ValueEntry* ValueScope::findArgumentBySource(const std::string& source) const {
@@ -127,7 +128,7 @@ void ValueScope::applyFunctionSpecifiers(const SymbolKey& key, bool isInline, bo
 const symbols::ValueEntry& ValueScope::createTemporarySymbol(const type::Type& type) {
     std::string tempName = generateTempName();
     const int index = allocateAutomatic(type);
-    symbols::ValueEntry temp { tempName, type, translation_unit::Context { "", 0 }, index };
+    symbols::ValueEntry temp { std::move(tempName), type, translation_unit::Context { "", 0 }, index };
     temp.markExpressionTemp();
     const auto inserted = localSymbols.insert(
             std::make_pair(SymbolKey { 0, temp.getName() }, std::move(temp)));

@@ -1,12 +1,13 @@
 #include "State.h"
 
 #include <stdexcept>
+#include <utility>
 
 namespace scanner {
 
 State::State(std::string stateName, std::string tokenId) :
-        stateName { stateName },
-        tokenId { tokenId },
+        stateName { std::move(stateName) },
+        tokenId { std::move(tokenId) },
         transitions {},
         hasTransition { false } {
 }
@@ -51,13 +52,15 @@ bool State::isFinal() const {
     return !hasTransition;
 }
 
-IdentifierState::IdentifierState(std::string stateName, std::string tokenId): State { stateName, tokenId } {}
+IdentifierState::IdentifierState(std::string stateName, std::string tokenId):
+        State { std::move(stateName), std::move(tokenId) } {}
 
 bool IdentifierState::needsKeywordLookup() const {
     return true;
 }
 
-StringLiteralState::StringLiteralState(std::string stateName, std::string tokenId): State { stateName, tokenId } {}
+StringLiteralState::StringLiteralState(std::string stateName, std::string tokenId):
+        State { std::move(stateName), std::move(tokenId) } {}
 
 const State* StringLiteralState::nextStateForCharacter(char c) const {
     if (c == ' ') {
@@ -69,7 +72,7 @@ const State* StringLiteralState::nextStateForCharacter(char c) const {
     return State::nextStateForCharacter(c);
 }
 
-EOLCommentState::EOLCommentState(std::string stateName): State { stateName, "" } {}
+EOLCommentState::EOLCommentState(std::string stateName): State { std::move(stateName), "" } {}
 
 const State* EOLCommentState::nextStateForCharacter(char c) const {
     return (c != '\n') ? this : State::nextStateForCharacter(c);

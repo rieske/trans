@@ -267,8 +267,8 @@ bool Compiler::sourceFileNeedsGccPreprocessor(const std::string& sourceFileName,
 }
 
 Compiler::Compiler(Configuration configuration) :
-        configuration { configuration },
-        frontEnd { loadFrontEnd(configuration) }
+        configuration { std::move(configuration) },
+        frontEnd { loadFrontEnd(this->configuration) }
 {
 }
 
