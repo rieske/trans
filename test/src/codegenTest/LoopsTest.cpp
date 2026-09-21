@@ -59,8 +59,8 @@ TEST(Loops, entryDominatesReachableBlocks) {
     const auto dom = dominators(cfg);
     ASSERT_THAT(dom, SizeIs(cfg.size()));
     for (std::size_t i = 0; i < cfg.size(); ++i) {
-        EXPECT_THAT(dom[i], Contains(0u));
-        EXPECT_THAT(dom[i], Contains(i));
+        EXPECT_TRUE(dom[i].test(0u));
+        EXPECT_TRUE(dom[i].test(i));
     }
 }
 
@@ -109,7 +109,9 @@ TEST(Loops, forLoopHasHeaderLatchAndBody) {
     EXPECT_THAT(loops[0].blocks, UnorderedElementsAre(1u, 2u));
     EXPECT_THAT(loops[0].latches, ElementsAre(2u));
     const auto dom = dominators(cfg);
-    EXPECT_THAT(dom[2], Contains(1u));
+    EXPECT_TRUE(dom[2].test(1u));
+    EXPECT_TRUE(hasPreheader(cfg, loops[0]));
+    EXPECT_THAT(preheaderIndex(cfg, loops[0]), Optional(Eq(0u)));
 }
 
 TEST(Loops, nestedLoopsInnerHeaderInOuter) {
@@ -145,6 +147,8 @@ TEST(Loops, nestedLoopsInnerHeaderInOuter) {
     for (const std::size_t b : inner->blocks) {
         EXPECT_THAT(outer->blocks, Contains(b));
     }
+    EXPECT_FALSE(hasPreheader(cfg, *inner));
+    EXPECT_FALSE(hasPreheader(cfg, *outer));
 }
 
 TEST(Loops, twoLatchesSameHeaderAreOneLoop) {
@@ -164,6 +168,7 @@ TEST(Loops, twoLatchesSameHeaderAreOneLoop) {
     ASSERT_THAT(loops, SizeIs(1));
     EXPECT_THAT(loops[0].header, Eq(0u));
     EXPECT_THAT(loops[0].latches, UnorderedElementsAre(1u, 2u));
+    EXPECT_FALSE(hasPreheader(cfg, loops[0]));
 }
 
 TEST(Loops, selfLoopIsOneLoop) {
@@ -179,6 +184,7 @@ TEST(Loops, selfLoopIsOneLoop) {
     EXPECT_THAT(loops[0].header, Eq(0u));
     EXPECT_THAT(loops[0].blocks, UnorderedElementsAre(0u));
     EXPECT_THAT(loops[0].latches, ElementsAre(0u));
+    EXPECT_FALSE(hasPreheader(cfg, loops[0]));
 }
 
 TEST(Loops, irreducibleCycleIsNotANaturalLoop) {
@@ -211,8 +217,8 @@ TEST(Loops, deadJumpAfterReturnIsNotALoop) {
     EXPECT_THAT(naturalLoops(cfg), IsEmpty());
     const auto dom = dominators(cfg);
     ASSERT_THAT(dom, SizeIs(cfg.size()));
-    EXPECT_THAT(dom[1], IsEmpty());
-    EXPECT_THAT(dom[2], IsEmpty());
+    EXPECT_TRUE(dom[1].none());
+    EXPECT_TRUE(dom[2].none());
 }
 
 TEST(Loops, deadGotoIntoHeaderIsNotAnExtraLatch) {
@@ -230,6 +236,7 @@ TEST(Loops, deadGotoIntoHeaderIsNotAnExtraLatch) {
     EXPECT_THAT(loops[0].header, Eq(0u));
     EXPECT_THAT(loops[0].latches, ElementsAre(0u));
     EXPECT_THAT(loops[0].blocks, UnorderedElementsAre(0u));
+    EXPECT_FALSE(hasPreheader(cfg, loops[0]));
 }
 
 TEST(Loops, unreachableIrreducibleIsNotALoop) {
@@ -262,6 +269,136 @@ TEST(Loops, loopWithHeaderFindsForHeader) {
     });
     EXPECT_THAT(loopWithHeader(naturalLoops(cfg), 1u), NotNull());
     EXPECT_THAT(loopWithHeader(naturalLoops(cfg), 0u), IsNull());
+}
+
+TEST(Loops, trampolineGotoIsPreheader) {
+    IrStringTable strings;
+    IrN n { strings };
+    const Cfg cfg = buildCfg({
+            ir::jump(n("L")),
+            ir::label(n("Skip")),
+            ir::inc(n("x")),
+            ir::voidReturn(),
+            ir::label(n("L")),
+            ir::inc(n("i")),
+            ir::jump(n("L")),
+    });
+    const auto loops = naturalLoops(cfg);
+    ASSERT_THAT(loops, SizeIs(1));
+    EXPECT_TRUE(hasPreheader(cfg, loops[0]));
+    EXPECT_THAT(preheaderIndex(cfg, loops[0]), Optional(Eq(0u)));
+}
+
+TEST(Loops, criticalEdgePredIsNotPreheader) {
+    IrStringTable strings;
+    IrN n { strings };
+    const Cfg cfg = buildCfg({
+            ir::label(n("Lo")),
+            ir::zeroCompare(n("x")),
+            ir::jump(n("X"), JumpCondition::IF_EQUAL),
+            ir::label(n("Li")),
+            ir::inc(n("y")),
+            ir::jump(n("Li")),
+            ir::label(n("X")),
+            ir::voidReturn(),
+    });
+    const auto loops = naturalLoops(cfg);
+    ASSERT_THAT(loops, SizeIs(1));
+    EXPECT_FALSE(hasPreheader(cfg, loops[0]));
+}
+
+TEST(Loops, twoNonLatchPredsAreNotPreheader) {
+    IrStringTable strings;
+    IrN n { strings };
+    const Cfg cfg = buildCfg({
+            ir::zeroCompare(n("x")),
+            ir::jump(n("A"), JumpCondition::IF_EQUAL),
+            ir::jump(n("L")),
+            ir::label(n("A")),
+            ir::jump(n("L")),
+            ir::label(n("L")),
+            ir::inc(n("i")),
+            ir::jump(n("L")),
+    });
+    const auto loops = naturalLoops(cfg);
+    ASSERT_THAT(loops, SizeIs(1));
+    EXPECT_FALSE(hasPreheader(cfg, loops[0]));
+}
+
+TEST(Loops, duplicateSuccsUniquifyToPreheader) {
+    IrStringTable strings;
+    IrN n { strings };
+    const Cfg cfg = buildCfg({
+            ir::zeroCompare(n("x")),
+            ir::jump(n("L"), JumpCondition::IF_EQUAL),
+            ir::label(n("L")),
+            ir::inc(n("i")),
+            ir::jump(n("L")),
+    });
+    const auto loops = naturalLoops(cfg);
+    ASSERT_THAT(loops, SizeIs(1));
+    EXPECT_TRUE(hasPreheader(cfg, loops[0]));
+    EXPECT_THAT(preheaderIndex(cfg, loops[0]), Optional(Eq(0u)));
+}
+
+TEST(Loops, forInitPlusDeadGotoKeepsForInitPreheader) {
+    IrStringTable strings;
+    IrN n { strings };
+    const Cfg cfg = buildCfg({
+            ir::assignConstant(n("0"), n("i")),
+            ir::label(n("L")),
+            ir::zeroCompare(n("i")),
+            ir::jump(n("End"), JumpCondition::IF_EQUAL),
+            ir::inc(n("i")),
+            ir::jump(n("L")),
+            ir::label(n("End")),
+            ir::ret(n("i")),
+            ir::label(n("Dead")),
+            ir::jump(n("L")),
+    });
+    const auto loops = naturalLoops(cfg);
+    ASSERT_THAT(loops, SizeIs(1));
+    EXPECT_TRUE(hasPreheader(cfg, loops[0]));
+    EXPECT_THAT(preheaderIndex(cfg, loops[0]), Optional(Eq(0u)));
+}
+
+TEST(Loops, cachedPredDomMatchWrappers) {
+    IrStringTable strings;
+    IrN n { strings };
+    const Cfg forInit = buildCfg({
+            ir::assignConstant(n("0"), n("i")),
+            ir::label(n("L")),
+            ir::zeroCompare(n("i")),
+            ir::jump(n("End"), JumpCondition::IF_EQUAL),
+            ir::inc(n("i")),
+            ir::jump(n("L")),
+            ir::label(n("End")),
+            ir::ret(n("i")),
+            ir::label(n("Dead")),
+            ir::jump(n("L")),
+    });
+    const auto pred = cfgPredecessors(forInit);
+    const auto dom = dominators(forInit);
+    const auto cached = naturalLoops(forInit, pred, dom);
+    const auto wrapped = naturalLoops(forInit);
+    ASSERT_THAT(cached, SizeIs(1));
+    ASSERT_THAT(wrapped, SizeIs(1));
+    EXPECT_THAT(cached[0].header, Eq(wrapped[0].header));
+    EXPECT_THAT(preheaderIndex(forInit, cached[0], pred, dom), Optional(Eq(0u)));
+    EXPECT_TRUE(hasPreheader(forInit, cached[0], pred, dom));
+
+    const Cfg deadGoto = buildCfg({
+            ir::label(n("L")),
+            ir::inc(n("i")),
+            ir::jump(n("L")),
+            ir::label(n("Dead")),
+            ir::jump(n("L")),
+    });
+    const auto deadPred = cfgPredecessors(deadGoto);
+    const auto deadDom = dominators(deadGoto);
+    const auto deadLoops = naturalLoops(deadGoto, deadPred, deadDom);
+    ASSERT_THAT(deadLoops, SizeIs(1));
+    EXPECT_FALSE(hasPreheader(deadGoto, deadLoops[0], deadPred, deadDom));
 }
 
 } // namespace

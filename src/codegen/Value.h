@@ -35,6 +35,7 @@ public:
     type::sysv::Classification getClassification() const;
 
     void markExpressionTemp();
+    void clearExpressionTemp();
     bool isExpressionTemp() const;
     void setLastUseOrdinal(int ordinal);
     int getLastUseOrdinal() const;

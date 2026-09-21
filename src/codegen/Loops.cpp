@@ -1,9 +1,41 @@
 #include "Loops.h"
 
 #include <algorithm>
+#include <cstdint>
 
 namespace codegen {
 namespace {
+
+std::size_t wordCount(std::size_t n) {
+    return (n + 63) / 64;
+}
+
+void setBit(DomBits& bits, std::size_t i) {
+    bits.words[i / 64] |= std::uint64_t { 1 } << (i % 64);
+}
+
+DomBits bitsForAll(std::size_t n) {
+    DomBits bits;
+    bits.words.assign(wordCount(n), ~std::uint64_t { 0 });
+    const std::size_t rem = n % 64;
+    if (rem != 0) {
+        bits.words.back() = (std::uint64_t { 1 } << rem) - 1;
+    }
+    return bits;
+}
+
+DomBits bitsForOne(std::size_t n, std::size_t i) {
+    DomBits bits;
+    bits.words.assign(wordCount(n), 0);
+    setBit(bits, i);
+    return bits;
+}
+
+void andEq(DomBits& dst, const DomBits& src) {
+    for (std::size_t w = 0; w < dst.words.size(); ++w) {
+        dst.words[w] &= src.words[w];
+    }
+}
 
 std::vector<char> reachableFromEntry(const Cfg& cfg) {
     std::vector<char> reachable(cfg.size(), 0);
@@ -37,21 +69,17 @@ std::vector<std::vector<std::size_t>> cfgPredecessors(const Cfg& cfg) {
     return pred;
 }
 
-std::vector<std::unordered_set<std::size_t>> dominators(const Cfg& cfg) {
+std::vector<DomBits> dominators(const Cfg& cfg, const std::vector<std::vector<std::size_t>>& pred) {
     const std::size_t n = cfg.size();
-    std::vector<std::unordered_set<std::size_t>> dom(n);
+    std::vector<DomBits> dom(n);
     if (n == 0) {
         return dom;
     }
-    std::unordered_set<std::size_t> all;
-    for (std::size_t i = 0; i < n; ++i) {
-        all.insert(i);
-    }
-    dom[0] = { 0 };
+    const DomBits all = bitsForAll(n);
+    dom[0] = bitsForOne(n, 0);
     for (std::size_t i = 1; i < n; ++i) {
         dom[i] = all;
     }
-    const auto pred = cfgPredecessors(cfg);
     bool changed = true;
     while (changed) {
         changed = false;
@@ -59,18 +87,12 @@ std::vector<std::unordered_set<std::size_t>> dominators(const Cfg& cfg) {
             if (pred[i].empty()) {
                 continue;
             }
-            std::unordered_set<std::size_t> meet = dom[pred[i].front()];
+            DomBits meet = dom[pred[i].front()];
             for (std::size_t p = 1; p < pred[i].size(); ++p) {
-                std::unordered_set<std::size_t> next;
-                for (const std::size_t b : meet) {
-                    if (dom[pred[i][p]].count(b) != 0) {
-                        next.insert(b);
-                    }
-                }
-                meet = std::move(next);
+                andEq(meet, dom[pred[i][p]]);
             }
-            meet.insert(i);
-            if (meet != dom[i]) {
+            setBit(meet, i);
+            if (meet.words != dom[i].words) {
                 dom[i] = std::move(meet);
                 changed = true;
             }
@@ -79,10 +101,14 @@ std::vector<std::unordered_set<std::size_t>> dominators(const Cfg& cfg) {
     const auto reachable = reachableFromEntry(cfg);
     for (std::size_t i = 0; i < n; ++i) {
         if (!reachable[i]) {
-            dom[i].clear();
+            std::fill(dom[i].words.begin(), dom[i].words.end(), 0);
         }
     }
     return dom;
+}
+
+std::vector<DomBits> dominators(const Cfg& cfg) {
+    return dominators(cfg, cfgPredecessors(cfg));
 }
 
 namespace {
@@ -109,14 +135,13 @@ std::unordered_set<std::size_t> loopBlocks(std::size_t header, std::size_t latch
 
 } // namespace
 
-std::vector<NaturalLoop> naturalLoops(const Cfg& cfg) {
-    const auto pred = cfgPredecessors(cfg);
-    const auto dom = dominators(cfg);
+std::vector<NaturalLoop> naturalLoops(const Cfg& cfg,
+        const std::vector<std::vector<std::size_t>>& pred, const std::vector<DomBits>& dom) {
     std::vector<NaturalLoop> byHeader(cfg.size());
     std::vector<char> seen(cfg.size(), 0);
     for (std::size_t n = 0; n < cfg.size(); ++n) {
         for (const std::size_t h : cfgSuccessors(cfg, n)) {
-            if (dom[n].count(h) == 0) {
+            if (!dom[n].test(h)) {
                 continue;
             }
             seen[h] = 1;
@@ -136,6 +161,60 @@ std::vector<NaturalLoop> naturalLoops(const Cfg& cfg) {
         out.push_back(std::move(byHeader[h]));
     }
     return out;
+}
+
+std::vector<NaturalLoop> naturalLoops(const Cfg& cfg) {
+    return naturalLoops(cfg, cfgPredecessors(cfg), dominators(cfg));
+}
+
+std::optional<std::size_t> preheaderIndex(const Cfg& cfg, const NaturalLoop& loop,
+        const std::vector<std::vector<std::size_t>>& pred, const std::vector<DomBits>& dom) {
+    if (loop.header >= cfg.size()) {
+        return std::nullopt;
+    }
+    std::unordered_set<std::size_t> latches(loop.latches.begin(), loop.latches.end());
+    std::vector<std::size_t> nonLatch;
+    std::unordered_set<std::size_t> seenPred;
+    for (const std::size_t p : pred[loop.header]) {
+        if (!seenPred.insert(p).second) {
+            continue;
+        }
+        if (latches.count(p) != 0) {
+            continue;
+        }
+        if (!dom[loop.header].test(p)) {
+            continue;
+        }
+        nonLatch.push_back(p);
+    }
+    if (nonLatch.size() != 1) {
+        return std::nullopt;
+    }
+    const std::size_t P = nonLatch.front();
+    if (loop.blocks.count(P) != 0) {
+        return std::nullopt;
+    }
+    std::unordered_set<std::size_t> succs;
+    for (const std::size_t s : cfgSuccessors(cfg, P)) {
+        succs.insert(s);
+    }
+    if (succs.size() != 1 || succs.count(loop.header) == 0) {
+        return std::nullopt;
+    }
+    return P;
+}
+
+std::optional<std::size_t> preheaderIndex(const Cfg& cfg, const NaturalLoop& loop) {
+    return preheaderIndex(cfg, loop, cfgPredecessors(cfg), dominators(cfg));
+}
+
+bool hasPreheader(const Cfg& cfg, const NaturalLoop& loop,
+        const std::vector<std::vector<std::size_t>>& pred, const std::vector<DomBits>& dom) {
+    return preheaderIndex(cfg, loop, pred, dom).has_value();
+}
+
+bool hasPreheader(const Cfg& cfg, const NaturalLoop& loop) {
+    return preheaderIndex(cfg, loop).has_value();
 }
 
 } // namespace codegen

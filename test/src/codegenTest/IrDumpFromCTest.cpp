@@ -171,6 +171,23 @@ TEST(IrDumpFromC, structField) {
                     "ENDPROC gety\n"));
 }
 
+TEST(IrDumpFromC, licmHoistsInvariantAddInForAtO1) {
+    const char* src = "int f(int n) { int i; int s = 0; for (i = 0; i < n; i++) s += n + 1; return s; }\n";
+    const std::string o0 = procedureDump(compileToIr(src, 0), "f");
+    const std::string o1 = procedureDump(compileToIr(src, 1), "f");
+    EXPECT_THAT(o0.find(" + "), Gt(o0.find("\n__L")));
+    EXPECT_THAT(o1.find(" + "), Lt(o1.find("\n__L")));
+}
+
+TEST(IrDumpFromC, licmDoesNotInsertPreheaderWhenNothingHoists) {
+    const char* src = "int f(int n) { while (n) n--; return n; }\n";
+    const std::string o0 = procedureDump(compileToIr(src, 0), "f");
+    const std::string o1 = procedureDump(compileToIr(src, 1), "f");
+    EXPECT_THAT(o1, HasSubstr("PROC f\n__L0:\n\tCMP "));
+    EXPECT_THAT(countSubstr(o1, "\n__L"), Eq(2));
+    EXPECT_THAT(countSubstr(o1, "\n__L"), Eq(countSubstr(o0, "\n__L")));
+}
+
 TEST(IrDumpFromC, vlaSizeofIsUseTimeProduct) {
     EXPECT_THAT(compileToIr("int vlasz(int n) { return (int)sizeof(int [n]); }\n"), StrEq(
             "PROC vlasz\n"
