@@ -37,7 +37,7 @@ public:
     int getEndSymbol() const;
 
     std::string getSymbolById(int symbolId) const;
-    int symbolId(std::string definition) const;
+    int symbolId(std::string_view definition) const;
     std::optional<int> trySymbolId(std::string_view definition) const;
 
     bool isTerminal(int symbolId) const;

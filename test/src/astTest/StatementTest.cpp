@@ -45,6 +45,15 @@ TEST(Statement, expressionStatementWrapsExpression) {
     EXPECT_EQ(statement.expression.get(), raw);
 }
 
+TEST(Statement, expressionStatementMoves) {
+    auto expression = std::make_unique<ast::IdentifierExpression>("x", ctx());
+    auto* raw = expression.get();
+    ast::ExpressionStatement statement { std::move(expression) };
+    ast::ExpressionStatement moved { std::move(statement) };
+    EXPECT_EQ(moved.expression.get(), raw);
+    EXPECT_EQ(statement.expression, nullptr);
+}
+
 TEST(BuilderContext, popAsStatementPassesBlockThrough) {
     scanner::LexicalSession session;
     ast::AbstractSyntaxTreeBuilderContext context { session };
@@ -90,6 +99,15 @@ TEST(IfStatement, withElseKeepsBothBodies) {
             std::make_unique<ast::NullStatement>(),
             std::move(elseBody) };
     EXPECT_EQ(statement.elseBody.get(), raw);
+}
+
+TEST(IfStatement, movesChildren) {
+    auto test = std::make_unique<ast::IdentifierExpression>("c", ctx());
+    auto* raw = test.get();
+    ast::IfStatement statement { std::move(test), std::make_unique<ast::NullStatement>() };
+    ast::IfStatement moved { std::move(statement) };
+    EXPECT_EQ(moved.testExpression.get(), raw);
+    EXPECT_EQ(statement.testExpression, nullptr);
 }
 
 TEST(ReturnStatement, withExpressionKeepsIt) {

@@ -11,7 +11,6 @@ namespace ast {
 class ConstantExpression: public Expression {
 public:
     ConstantExpression(Constant constant);
-    virtual ~ConstantExpression();
 
     void accept(AbstractSyntaxTreeVisitor& visitor) override;
     ExprKind exprKind() const override { return ExprKind::Constant; }

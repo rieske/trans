@@ -9,11 +9,17 @@
 #include "parser/ParsingTable.h"
 
 class LanguageFrontEnd {
+    struct CtorTag {
+        explicit CtorTag() = default;
+    };
+
 public:
     LanguageFrontEnd(const LanguageFrontEnd&) = delete;
     LanguageFrontEnd& operator=(const LanguageFrontEnd&) = delete;
     LanguageFrontEnd(LanguageFrontEnd&&) = delete;
     LanguageFrontEnd& operator=(LanguageFrontEnd&&) = delete;
+
+    explicit LanguageFrontEnd(CtorTag, parser::Grammar grammar);
 
     static std::shared_ptr<const LanguageFrontEnd> load(const Configuration& configuration);
     static void clearProductCacheForTesting();
@@ -22,8 +28,6 @@ public:
     const parser::ParsingTable& table() const;
 
 private:
-    explicit LanguageFrontEnd(parser::Grammar grammar);
-
     parser::Grammar grammar_;
     parser::ParsingTable table_;
 };

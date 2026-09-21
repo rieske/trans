@@ -15,8 +15,8 @@ namespace type {
 // Pointer/function combinations (isPointerToFunction, …). A function type is
 // Type::isFunction(); a pointer is its own kind and does not bleed Function.
 
-// Non-floating, non-complex primitive scalar (not a pointer — isPrimitive already excludes indirection).
-inline bool isIntegralScalar(const Type& t) {
+// Integer type (ISO): primitive, not floating or complex. Pointers are not integral.
+inline bool isIntegral(const Type& t) {
     return t.isPrimitive() && !t.getPrimitive().isFloating() && !t.getPrimitive().isComplex();
 }
 
@@ -48,12 +48,6 @@ PointerArithmeticInfo classifyPointerArithmetic(const Type& left, const Type& ri
 
 inline bool isPointerToFunction(const Type& t) {
     return t.isPointer() && t.dereference().isFunction();
-}
-
-// Void, bare function, incomplete record, or incomplete array (not pointer-to-incomplete).
-// Shared definition used by sizeof and member/element completeness checks.
-inline bool isIncompleteObjectType(const Type& t) {
-    return incompleteArrayElement(t);
 }
 
 // VLA, or array whose element has a runtime size. Pointer-to-VLA is not included:
@@ -94,11 +88,6 @@ inline bool hasComputableRuntimeSize(const Type& t) {
 // are 1; ISO treats both as incomplete. VM types are complete but not an ICE
 // (nullopt, not an error).
 std::optional<int> sizeofObject(const Type& t, bool gnu);
-
-// Same predicate as isIncompleteObjectType; name documents member/element sites.
-inline bool isIncompleteMemberOrElementType(const Type& t) {
-    return isIncompleteObjectType(t);
-}
 
 inline bool isFloating(const Type& t) {
     return t.isPrimitive() && t.getPrimitive().isFloating();
@@ -155,10 +144,6 @@ inline Type complexOfReal(const Type& real) {
         return complexDouble();
     }
     return complexFloat();
-}
-
-inline bool isIntegral(const Type& t) {
-    return isIntegralScalar(t);
 }
 
 inline bool isBoolean(const Type& t) {

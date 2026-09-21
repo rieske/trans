@@ -104,8 +104,11 @@ std::string Grammar::getSymbolById(int symbolId) const {
     return *name;
 }
 
-int Grammar::symbolId(std::string definition) const {
-    return symbolIDs.at(definition);
+int Grammar::symbolId(std::string_view definition) const {
+    if (const auto id = trySymbolId(definition)) {
+        return *id;
+    }
+    throw std::out_of_range { "no grammar symbol named `" + std::string(definition) + "`" };
 }
 
 std::optional<int> Grammar::trySymbolId(std::string_view definition) const {

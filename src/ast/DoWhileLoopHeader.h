@@ -14,7 +14,7 @@ public:
     LoopKind loopKind() const override { return LoopKind::DoWhile; }
     void accept(AbstractSyntaxTreeVisitor& visitor) override;
 
-    const std::unique_ptr<Expression> clause;
+    std::unique_ptr<Expression> clause;
 };
 
 } // namespace ast

@@ -401,7 +401,24 @@ TEST(SymbolTable, staticLocalObjectNameIsLDollarSt) {
 TEST(SymbolTable, findMissingIsNullAndLookupThrows) {
     SymbolTable table;
     EXPECT_EQ(table.find("nope"), nullptr);
-    EXPECT_THROW(table.lookup("nope"), std::out_of_range);
+    try {
+        table.lookup("nope");
+        FAIL() << "lookup should throw";
+    } catch (const std::logic_error& ex) {
+        EXPECT_THAT(ex.what(), HasSubstr("internal compiler error:"));
+        EXPECT_THAT(ex.what(), HasSubstr("nope"));
+    }
+}
+
+TEST(SymbolTable, findFunctionMissingIsIce) {
+    SymbolTable table;
+    try {
+        table.findFunction("nope");
+        FAIL() << "findFunction should throw";
+    } catch (const std::logic_error& ex) {
+        EXPECT_THAT(ex.what(), HasSubstr("internal compiler error:"));
+        EXPECT_THAT(ex.what(), HasSubstr("nope"));
+    }
 }
 
 TEST(SymbolTable, findSeesFileScopeObject) {

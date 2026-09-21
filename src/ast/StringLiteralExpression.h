@@ -11,7 +11,6 @@ namespace ast {
 class StringLiteralExpression: public Expression {
 public:
     StringLiteralExpression(std::string value, translation_unit::Context context);
-    virtual ~StringLiteralExpression();
 
     translation_unit::Context getContext() const override;
     ExprKind exprKind() const override { return ExprKind::StringLiteral; }

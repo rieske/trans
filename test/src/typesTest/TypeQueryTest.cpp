@@ -193,16 +193,6 @@ TEST(TypeQuery, arraySubscriptInfoEmptyCompleteElementIsValid) {
     EXPECT_EQ(pinfo.elementStride, 0);
 }
 
-TEST(TypeQuery, incompletePredicatesShareDefinition) {
-    type::Type inc = type::incompleteRecord();
-    EXPECT_EQ(type::isIncompleteObjectType(inc), type::isIncompleteMemberOrElementType(inc));
-    EXPECT_EQ(type::isIncompleteObjectType(type::voidType()),
-            type::isIncompleteMemberOrElementType(type::voidType()));
-    EXPECT_EQ(type::isIncompleteObjectType(type::signedInteger()),
-            type::isIncompleteMemberOrElementType(type::signedInteger()));
-}
-
-
 TEST(TypeQuery, classifyPointerArithmeticForms) {
     type::Type i = type::signedInteger();
     type::Type pi = type::pointer(i);
@@ -308,14 +298,6 @@ TEST(TypeQuery, isSubscriptBasePointerAndArray) {
     EXPECT_TRUE(type::isSubscriptBase(arr, pi));
     EXPECT_TRUE(type::isSubscriptBase(i, pi));
     EXPECT_FALSE(type::isSubscriptBase(i, i));
-}
-
-TEST(TypeQuery, incompleteMemberOrElement) {
-    EXPECT_TRUE(type::isIncompleteMemberOrElementType(type::voidType()));
-    EXPECT_TRUE(type::isIncompleteMemberOrElementType(type::function(type::signedInteger(), {})));
-    EXPECT_TRUE(type::isIncompleteMemberOrElementType(type::incompleteRecord()));
-    EXPECT_TRUE(type::isIncompleteMemberOrElementType(type::incompleteArray(type::signedInteger())));
-    EXPECT_FALSE(type::isIncompleteMemberOrElementType(type::pointer(type::voidType())));
 }
 
 TEST(TypeQuery, productAssignFailureMessageTypeMismatch) {

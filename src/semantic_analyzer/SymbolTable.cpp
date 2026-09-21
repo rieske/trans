@@ -131,7 +131,7 @@ symbols::FunctionEntry SymbolTable::updateFunction(std::string name, type::Type 
 symbols::FunctionEntry SymbolTable::findFunction(std::string name) const {
     const symbols::ValueEntry* entry = fileScopeFunction(globalScope, name);
     if (!entry) {
-        throw std::out_of_range(name);
+        throw std::logic_error { "internal compiler error: no function named `" + name + "`" };
     }
     return symbols::FunctionEntry { *entry };
 }
@@ -252,7 +252,7 @@ const symbols::ValueEntry& SymbolTable::lookup(const std::string& name) const {
     if (const symbols::ValueEntry* entry = find(name)) {
         return *entry;
     }
-    throw std::out_of_range(name);
+    throw std::logic_error { "internal compiler error: no symbol named `" + name + "`" };
 }
 
 const symbols::ValueEntry& SymbolTable::createTemporarySymbol(const type::Type& type) {
@@ -263,10 +263,7 @@ const symbols::ValueEntry& SymbolTable::createTemporarySymbol(const type::Type& 
 }
 
 symbols::LabelEntry SymbolTable::newLabel() {
-    std::string labelName = generateLabelName();
-    symbols::LabelEntry label { labelName };
-    labels.insert(std::make_pair(labelName, label));
-    return label;
+    return symbols::LabelEntry { generateLabelName() };
 }
 
 void SymbolTable::startFunction(std::string name, std::vector<std::string> formalArguments) {

@@ -15,9 +15,6 @@ ConstantExpression::ConstantExpression(Constant constant) :
     setType(this->constant.getType());
 }
 
-ConstantExpression::~ConstantExpression() {
-}
-
 void ConstantExpression::accept(AbstractSyntaxTreeVisitor& visitor) {
     visitor.visit(*this);
 }

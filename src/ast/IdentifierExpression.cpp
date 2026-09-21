@@ -14,9 +14,6 @@ IdentifierExpression::IdentifierExpression(std::string identifier, translation_u
 {
 }
 
-IdentifierExpression::~IdentifierExpression() {
-}
-
 void IdentifierExpression::accept(AbstractSyntaxTreeVisitor& visitor) {
     visitor.visit(*this);
 }

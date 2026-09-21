@@ -24,7 +24,7 @@ public:
     const std::string& getLabelName() const;
 
     TerminalSymbol name;
-    const std::unique_ptr<Statement> statement;
+    std::unique_ptr<Statement> statement;
 
 };
 

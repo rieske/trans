@@ -22,9 +22,9 @@ public:
     void setExitLabel(symbols::AnnotationStore& store, symbols::LabelEntry exitLabel);
     symbols::LabelEntry* getExitLabel(symbols::AnnotationStore& store) const;
 
-    const std::unique_ptr<Expression> testExpression;
-    const std::unique_ptr<Statement> body;
-    const std::unique_ptr<Statement> elseBody;
+    std::unique_ptr<Expression> testExpression;
+    std::unique_ptr<Statement> body;
+    std::unique_ptr<Statement> elseBody;
 };
 
 } // namespace ast

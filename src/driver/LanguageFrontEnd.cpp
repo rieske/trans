@@ -18,7 +18,7 @@ parser::Grammar readGrammar(const Configuration& configuration) {
 
 } // namespace
 
-LanguageFrontEnd::LanguageFrontEnd(parser::Grammar grammar) :
+LanguageFrontEnd::LanguageFrontEnd(CtorTag, parser::Grammar grammar) :
         grammar_ { std::move(grammar) },
         table_ { &grammar_ } {
 }
@@ -39,7 +39,7 @@ std::shared_ptr<const LanguageFrontEnd> LanguageFrontEnd::load(const Configurati
         return cachedProduct;
     }
 
-    cachedProduct.reset(new LanguageFrontEnd { readGrammar(configuration) });
+    cachedProduct = std::make_shared<LanguageFrontEnd>(CtorTag {}, readGrammar(configuration));
     cachedGrammarPath = grammarPath;
     return cachedProduct;
 }

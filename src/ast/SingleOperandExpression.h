@@ -10,7 +10,6 @@ namespace ast {
 class SingleOperandExpression: public Expression {
 public:
     explicit SingleOperandExpression(std::unique_ptr<Expression> _operand);
-    virtual ~SingleOperandExpression();
 
     std::optional<type::Type> typeAtParseTime(const ParseEnvironment& environment) const override;
 
@@ -24,7 +23,7 @@ public:
     translation_unit::Context getContext() const override;
 
 protected:
-    const std::unique_ptr<Expression> _operand;
+    std::unique_ptr<Expression> _operand;
 };
 
 } // namespace ast

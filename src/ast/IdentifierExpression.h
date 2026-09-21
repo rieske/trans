@@ -11,7 +11,6 @@ namespace ast {
 class IdentifierExpression: public Expression {
 public:
     IdentifierExpression(std::string identifier, translation_unit::Context context);
-    virtual ~IdentifierExpression();
 
     void accept(AbstractSyntaxTreeVisitor& visitor) override;
     ExprKind exprKind() const override { return ExprKind::Identifier; }

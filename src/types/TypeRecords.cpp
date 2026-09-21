@@ -24,11 +24,12 @@ Type builtinVaListType() {
     return array(builtinVaListTagType(), 1);
 }
 
-Type incompleteRecord() {
+Type incompleteRecord(bool asUnion) {
     Type result { std::vector<Qualifier> {} };
     Type::RecordPayload rec;
     rec.body = std::make_shared<Type::StructBody>();
     rec.body->complete = false;
+    rec.body->isUnion = asUnion;
     rec.body->size = 0;
     result._payload = std::move(rec);
     return result;

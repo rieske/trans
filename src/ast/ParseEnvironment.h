@@ -33,7 +33,7 @@ public:
 
     scanner::LexicalSession& session() { return session_; }
 
-    type::Type ensureStructTag(const std::string& tag);
+    type::Type ensureRecordTag(const std::string& tag, bool isUnion);
 
     void defineTypedef(const std::string& name, type::Type type);
     std::optional<type::Type> lookupTypedef(const std::string& name) const;
@@ -86,7 +86,7 @@ private:
     bool gnuExtensions_ { true };
     std::shared_ptr<VlaExpressionTable> vlas_;
     std::map<std::string, type::Type> transients_;
-    std::map<std::string, type::Type> structTags_;
+    std::map<std::string, type::Type> recordTags_;
     std::map<std::string, type::Type> enumTags_;
 };
 

@@ -68,10 +68,8 @@ TEST(Compiler, pthreadThreadParamsStealLoop) {
             me = arg;
             pthread_mutex_lock(&progress_mu);
             while (me->remaining) {
-                pthread_mutex_unlock(&progress_mu);
                 *(me->processed) = *(me->processed) + me->remaining;
                 me->remaining = 0;
-                pthread_mutex_lock(&progress_mu);
                 me->working = 0;
                 pthread_cond_signal(&progress_cv);
                 pthread_mutex_unlock(&progress_mu);
@@ -111,12 +109,10 @@ TEST(Compiler, pthreadThreadParamsStealLoop) {
                 i = 0;
                 while (i < 8) {
                     if (!p[i].working && p[i].remaining == 0 && active) {
-                        pthread_mutex_unlock(&progress_mu);
                         pthread_mutex_lock(&p[i].mutex);
                         p[i].data_ready = 1;
                         pthread_cond_signal(&p[i].cond);
                         pthread_mutex_unlock(&p[i].mutex);
-                        pthread_mutex_lock(&progress_mu);
                         p[i].working = 1;
                         active = active - 1;
                     }

@@ -1,9 +1,10 @@
 #include "Configuration.h"
 
 #include <stdexcept>
+#include <utility>
 
 void Configuration::setSourceFiles(std::vector<std::string> sourceFiles) {
-    this->sourceFiles = sourceFiles;
+    this->sourceFiles = std::move(sourceFiles);
 }
 
 void Configuration::setResourcesBasePath(std::string resourcesBasePath) {

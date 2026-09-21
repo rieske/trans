@@ -9,9 +9,6 @@ SingleOperandExpression::SingleOperandExpression(std::unique_ptr<Expression> _op
 {
 }
 
-SingleOperandExpression::~SingleOperandExpression() {
-}
-
 std::optional<type::Type> SingleOperandExpression::typeAtParseTime(const ParseEnvironment& environment) const {
     return _operand->typeAtParseTime(environment);
 }

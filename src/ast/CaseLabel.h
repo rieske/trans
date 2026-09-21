@@ -13,7 +13,6 @@ namespace ast {
 class CaseLabel: public Statement {
 public:
     CaseLabel(std::unique_ptr<Expression> caseExpression, std::unique_ptr<Statement> statement);
-    virtual ~CaseLabel() = default;
 
     void accept(AbstractSyntaxTreeVisitor& visitor) override;
 
@@ -23,8 +22,8 @@ public:
     void setCaseValue(long value);
     long getCaseValue() const;
 
-    const std::unique_ptr<Expression> caseExpression;
-    const std::unique_ptr<Statement> statement;
+    std::unique_ptr<Expression> caseExpression;
+    std::unique_ptr<Statement> statement;
 
 private:
     long caseValue { 0 };

@@ -2,10 +2,12 @@
 
 #include "AbstractSyntaxTreeVisitor.h"
 
+#include <utility>
+
 namespace ast {
 
 Pointer::Pointer(std::vector<type::Qualifier> qualifiers) :
-        qualifiers { qualifiers }
+        qualifiers { std::move(qualifiers) }
 {
 }
 

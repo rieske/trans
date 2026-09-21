@@ -62,35 +62,49 @@ TEST(ParseEnvironment, gnuExtensionsDefaultTrueAndCopiedToNested) {
     EXPECT_FALSE(nested.gnuExtensions());
 }
 
-TEST(ParseEnvironment, ensureStructTagSharesIdentity) {
+TEST(ParseEnvironment, ensureRecordTagSharesIdentity) {
     LexicalSession session;
     ParseEnvironment env{session};
-    type::Type a = env.ensureStructTag("Node");
-    type::Type b = env.ensureStructTag("Node");
+    type::Type a = env.ensureRecordTag("Node", false);
+    type::Type b = env.ensureRecordTag("Node", false);
     EXPECT_EQ(a.structureBodyIdentity(), b.structureBodyIdentity());
-    type::Type c = env.ensureStructTag("Node");
+    type::Type c = env.ensureRecordTag("Node", false);
     EXPECT_EQ(c.structureBodyIdentity(), a.structureBodyIdentity());
+    EXPECT_TRUE(a.isStructure());
+    EXPECT_FALSE(a.isUnion());
 }
 
-TEST(ParseEnvironment, nestedEnsureStructTagFindsParentTag) {
+TEST(ParseEnvironment, ensureUnionTagReportsUnion) {
+    LexicalSession session;
+    ParseEnvironment env{session};
+    type::Type u = env.ensureRecordTag("U", true);
+    EXPECT_TRUE(u.isUnion());
+    EXPECT_TRUE(u.isIncompleteRecord());
+    EXPECT_FALSE(u.isStructure());
+    type::Type again = env.ensureRecordTag("U", true);
+    EXPECT_EQ(u.structureBodyIdentity(), again.structureBodyIdentity());
+    EXPECT_TRUE(again.isUnion());
+}
+
+TEST(ParseEnvironment, nestedEnsureRecordTagFindsParentTag) {
     LexicalSession session;
     ParseEnvironment parent{session};
-    type::Type outer = parent.ensureStructTag("Pair");
+    type::Type outer = parent.ensureRecordTag("Pair", false);
     type::completeStructure(outer, {
             type::MemberSpec { "a", type::signedLong() },
             type::MemberSpec { "b", type::signedLong() },
     });
 
     ParseEnvironment nested{session, parent};
-    type::Type inner = nested.ensureStructTag("Pair");
+    type::Type inner = nested.ensureRecordTag("Pair", false);
     EXPECT_EQ(inner.structureBodyIdentity(), outer.structureBodyIdentity());
     EXPECT_TRUE(inner.isCompleteRecord());
     EXPECT_EQ(inner.getSize(), 16u);
 
-    type::Type local = nested.ensureStructTag("Inner");
+    type::Type local = nested.ensureRecordTag("Inner", false);
     EXPECT_TRUE(local.isIncompleteRecord());
     EXPECT_NE(local.structureBodyIdentity(), outer.structureBodyIdentity());
-    type::Type parentInner = parent.ensureStructTag("Inner");
+    type::Type parentInner = parent.ensureRecordTag("Inner", false);
     EXPECT_NE(parentInner.structureBodyIdentity(), local.structureBodyIdentity());
 }
 

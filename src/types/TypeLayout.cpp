@@ -53,7 +53,7 @@ const char* completeMemberError(const Type& memberType, bool flexibleArray, bool
     if (isTentativeRecord(memberType)) {
         return nullptr;
     }
-    if (isIncompleteMemberOrElementType(memberType) && !flexibleArray) {
+    if (isIncompleteObjectType(memberType) && !flexibleArray) {
         return asUnion ? "union member has incomplete type" : "structure member has incomplete type";
     }
     return nullptr;

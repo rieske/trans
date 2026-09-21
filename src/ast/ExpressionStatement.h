@@ -11,11 +11,10 @@ namespace ast {
 class ExpressionStatement: public Statement {
 public:
     explicit ExpressionStatement(std::unique_ptr<Expression> expression);
-    virtual ~ExpressionStatement() = default;
 
     void accept(AbstractSyntaxTreeVisitor& visitor) override;
 
-    const std::unique_ptr<Expression> expression;
+    std::unique_ptr<Expression> expression;
 };
 
 } // namespace ast

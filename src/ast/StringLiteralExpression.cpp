@@ -13,8 +13,6 @@ StringLiteralExpression::StringLiteralExpression(std::string value, translation_
     setType(type::array(type::signedCharacter(), util::stringLiteralArrayLength(this->value)));
 }
 
-StringLiteralExpression::~StringLiteralExpression() = default;
-
 translation_unit::Context StringLiteralExpression::getContext() const {
     return context;
 }

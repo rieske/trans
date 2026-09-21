@@ -8,9 +8,6 @@ PrefixExpression::PrefixExpression(type::IncDec op, std::unique_ptr<Expression> 
         UnaryOpExpression(std::move(unaryExpression), op) {
 }
 
-PrefixExpression::~PrefixExpression() {
-}
-
 void PrefixExpression::accept(AbstractSyntaxTreeVisitor& visitor) {
     visitor.visit(*this);
 }
