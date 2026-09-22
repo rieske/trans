@@ -1,5 +1,6 @@
 #include "StringLiteralExpression.h"
 #include "ast/AbstractSyntaxTreeVisitor.h"
+#include "symbols/AnnotationStore.h"
 #include "util/StringLiteralDecode.h"
 
 #include <utility>

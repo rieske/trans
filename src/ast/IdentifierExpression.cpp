@@ -2,6 +2,7 @@
 
 #include "AbstractSyntaxTreeVisitor.h"
 #include "ParseEnvironment.h"
+#include "symbols/AnnotationStore.h"
 #include "types/IntegerConstant.h"
 
 #include <utility>

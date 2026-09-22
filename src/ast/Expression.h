@@ -4,9 +4,13 @@
 #include <optional>
 
 #include "AbstractSyntaxTreeNode.h"
-#include "symbols/AnnotationStore.h"
-#include "symbols/ValueEntry.h"
+#include "translation_unit/Context.h"
 #include "types/IntegerConstant.h"
+
+namespace symbols {
+class AnnotationStore;
+class ValueEntry;
+}
 
 namespace ast {
 

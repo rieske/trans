@@ -1,5 +1,8 @@
 #include "Expression.h"
 
+#include "symbols/AnnotationStore.h"
+#include "symbols/ValueEntry.h"
+
 #include "ConstantExpression.h"
 #include "GenericSelection.h"
 #include "IdentifierExpression.h"
