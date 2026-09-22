@@ -5,6 +5,7 @@
 #include "ast/ArrayDeclarator.h"
 #include "ast/FunctionDeclarator.h"
 #include "ast/Identifier.h"
+#include "ast/ParenthesizedDeclarator.h"
 
 namespace {
 
@@ -35,6 +36,17 @@ TEST(DirectDeclarator, functionDeclaratorWalksNestedArray) {
             std::make_unique<Identifier>(name("a")), nullptr);
     FunctionDeclarator fn { std::move(array) };
     EXPECT_TRUE(fn.hasArrayDeclarator());
+}
+
+TEST(DirectDeclarator, constParenthesizedArrayReportsArray) {
+    const ParenthesizedDeclarator plain {
+            std::make_unique<Declarator>(std::make_unique<Identifier>(name("a"))) };
+    EXPECT_FALSE(plain.hasArrayDeclarator());
+    auto array = std::make_unique<ArrayDeclarator>(
+            std::make_unique<Identifier>(name("b")), nullptr);
+    const ParenthesizedDeclarator wrapped {
+            std::make_unique<Declarator>(std::move(array)) };
+    EXPECT_TRUE(wrapped.hasArrayDeclarator());
 }
 
 } // namespace
