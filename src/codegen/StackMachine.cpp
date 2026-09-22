@@ -193,6 +193,11 @@ void StackMachine::startProcedure(const Procedure& procedure) {
         registerFrameHome(value.id(), spillSlotAddress(value));
     }
 
+    // sret is not an IR value, so edge spills will not keep rdi. Home it before the body.
+    if (memoryReturn) {
+        storeRegisterValue(*integerArgRegs[0]);
+    }
+
     for (const auto& incoming : incomingRegArgs) {
         Value& home = resolve(incoming.name);
         for (int i = 0; i < incoming.asgn.count; ++i) {
