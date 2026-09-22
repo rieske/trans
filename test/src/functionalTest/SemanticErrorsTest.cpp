@@ -647,6 +647,14 @@ INSTANTIATE_TEST_SUITE_P(Compiler, SemanticErrorCatalog, testing::Values(
         "array of incomplete type",
     },
     SemanticErrorCase{
+        "parenthesizedVoidArrayParameter",
+        R"prg(
+            int f(void (a[3])) { return 0; }
+            int main(void) { return 0; }
+        )prg",
+        "array of incomplete type",
+    },
+    SemanticErrorCase{
         "voidArrayTypedef",
         R"prg(
             typedef void a[3];

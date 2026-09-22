@@ -1,5 +1,4 @@
 #include "DirectDeclarator.h"
-#include "ArrayDeclarator.h"
 
 #include <utility>
 
@@ -17,13 +16,6 @@ const std::string& DirectDeclarator::getName() const {
 
 translation_unit::Context DirectDeclarator::getContext() const {
     return context;
-}
-
-bool DirectDeclarator::hasArrayDeclarator() const {
-    bool found = false;
-    const_cast<DirectDeclarator*>(this)->forEachArrayDeclarator(
-            [&](ArrayDeclarator&) { found = true; });
-    return found;
 }
 
 } // namespace ast

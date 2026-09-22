@@ -558,6 +558,20 @@ int scanf(const char *, ...);
     program.runAndExpect("7");
 }
 
+TEST(Compiler, parenthesizedDeclaratorIsNotAnArray) {
+    SourceProgram program{R"prg(int printf(const char *, ...);
+        int f(int (b)) { return b; }
+        int main(void) {
+            int (a);
+            a = 4;
+            printf("%d", f(a));
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("4");
+}
+
 // C: T *(a[N]) is the same as T *a[N] (array of pointers), not pointer-to-array.
 TEST(Compiler, parenthesizedArrayOfPointersAssign) {
     SourceProgram program{R"prg(int printf(const char *, ...);
