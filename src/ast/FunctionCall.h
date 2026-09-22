@@ -13,7 +13,6 @@ namespace ast {
 class FunctionCall: public SingleOperandExpression {
 public:
     FunctionCall(std::unique_ptr<Expression> callExpression, std::vector<std::unique_ptr<Expression>> argumentList = { });
-    virtual ~FunctionCall() = default;
 
     void accept(AbstractSyntaxTreeVisitor& visitor) override;
     ExprKind exprKind() const override { return ExprKind::FunctionCall; }

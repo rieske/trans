@@ -17,7 +17,6 @@ class FunctionDeclarator;
 class Declarator: public AbstractSyntaxTreeNode {
 public:
     Declarator(std::unique_ptr<DirectDeclarator> declarator, std::vector<Pointer> indirection = {});
-    virtual ~Declarator() = default;
 
     void accept(AbstractSyntaxTreeVisitor& visitor) override;
     void visitChildren(AbstractSyntaxTreeVisitor& visitor);

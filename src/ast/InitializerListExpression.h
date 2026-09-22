@@ -57,7 +57,6 @@ struct InitializerElement {
 class InitializerListExpression: public Expression {
 public:
     explicit InitializerListExpression(std::vector<InitializerElement> elements);
-    virtual ~InitializerListExpression() = default;
 
     void accept(AbstractSyntaxTreeVisitor& visitor) override;
     ExprKind exprKind() const override { return ExprKind::InitList; }

@@ -86,6 +86,13 @@ TEST(FunctionDefinition, formalArgumentNames) {
     EXPECT_EQ(namedIntParam("x").getName(), "x");
 }
 
+TEST(FunctionDefinition, formalArgumentMoves) {
+    FormalArgument arg = namedIntParam("x");
+    FormalArgument moved { std::move(arg) };
+    EXPECT_EQ(moved.getName(), "x");
+    EXPECT_EQ(arg.getName(), "");
+}
+
 TEST(FunctionDefinition, nonFunctionDeclaratorIsNotADefinedFunction) {
     FunctionDefinition def {
             intSpecs(),
