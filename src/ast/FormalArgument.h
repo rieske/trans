@@ -14,8 +14,6 @@ class FormalArgument: public AbstractSyntaxTreeNode {
 public:
     FormalArgument(DeclarationSpecifiers specifiers);
     FormalArgument(DeclarationSpecifiers specifiers, std::unique_ptr<Declarator> declarator);
-    FormalArgument(FormalArgument&& rhs);
-    virtual ~FormalArgument() = default;
 
     void accept(AbstractSyntaxTreeVisitor& visitor) override;
     void visitSpecifiers(AbstractSyntaxTreeVisitor& visitor);

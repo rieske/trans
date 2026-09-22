@@ -16,7 +16,6 @@ public:
     FunctionDeclarator(std::unique_ptr<DirectDeclarator> declarator);
     FunctionDeclarator(std::unique_ptr<DirectDeclarator> declarator, FormalArguments formalArguments,
             bool variadic = false);
-    virtual ~FunctionDeclarator() = default;
 
     void accept(AbstractSyntaxTreeVisitor& visitor) override;
     void visitFormalArguments(AbstractSyntaxTreeVisitor& visitor);

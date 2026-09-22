@@ -17,9 +17,6 @@ class FunctionDeclarator;
 
 class DirectDeclarator: public AbstractSyntaxTreeNode {
 public:
-    virtual ~DirectDeclarator() = default;
-
-
     const std::string& getName() const;
 
     translation_unit::Context getContext() const;

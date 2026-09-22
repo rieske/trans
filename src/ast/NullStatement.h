@@ -8,7 +8,6 @@ namespace ast {
 class NullStatement: public Statement {
 public:
     NullStatement() = default;
-    virtual ~NullStatement() = default;
 
     void accept(AbstractSyntaxTreeVisitor& visitor) override;
 };

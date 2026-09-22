@@ -12,7 +12,6 @@ namespace ast {
 class Declaration: public AbstractSyntaxTreeNode {
 public:
     Declaration(DeclarationSpecifiers declarationSpecifiers, std::vector<std::unique_ptr<InitializedDeclarator>> declarators = { });
-    virtual ~Declaration() = default;
 
     void accept(AbstractSyntaxTreeVisitor& visitor);
     void visitChildren(AbstractSyntaxTreeVisitor& visitor);

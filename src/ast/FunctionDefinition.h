@@ -17,7 +17,6 @@ class FunctionDefinition: public AbstractSyntaxTreeNode {
 public:
     FunctionDefinition(DeclarationSpecifiers returnType, std::unique_ptr<Declarator> declarator,
             std::unique_ptr<Block> body);
-    virtual ~FunctionDefinition() = default;
 
     void accept(AbstractSyntaxTreeVisitor& visitor) override;
     void visitReturnType(AbstractSyntaxTreeVisitor& visitor);

@@ -14,7 +14,6 @@ class Block: public Statement {
 public:
     Block() = default;
     explicit Block(std::vector<BlockItem> items);
-    virtual ~Block() = default;
 
     void accept(AbstractSyntaxTreeVisitor& visitor) override;
     Block* asBlock() override { return this; }

@@ -16,12 +16,6 @@ FormalArgument::FormalArgument(DeclarationSpecifiers specifiers, std::unique_ptr
 {
 }
 
-ast::FormalArgument::FormalArgument(FormalArgument&& rhs) :
-        specifiers { std::move(rhs.specifiers) },
-        declarator { std::move(rhs.declarator) }
-{
-}
-
 void FormalArgument::accept(AbstractSyntaxTreeVisitor& visitor) {
     visitor.visit(*this);
 }

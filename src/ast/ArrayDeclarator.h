@@ -18,7 +18,6 @@ class ArrayDeclarator: public DirectDeclarator {
 public:
     ArrayDeclarator(std::unique_ptr<DirectDeclarator> declarator,
             std::unique_ptr<Expression> subscriptExpression, VlaExpressionTable* table = nullptr);
-    virtual ~ArrayDeclarator() = default;
 
     void accept(AbstractSyntaxTreeVisitor& visitor) override;
     type::Type getFundamentalType(std::vector<Pointer> indirection, const type::Type& baseType) const override;
