@@ -178,6 +178,7 @@ add_executable(functionalTest
         functionalTest/VoidTest.cpp
         functionalTest/InputOutputTest.cpp
         functionalTest/ForLoopTest.cpp
+        functionalTest/LicmSoakTest.cpp
         functionalTest/WhileLoopTest.cpp
         functionalTest/DoWhileTest.cpp
         functionalTest/GotoTest.cpp
