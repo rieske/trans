@@ -153,6 +153,14 @@ inline Instruction copyPart(int source, int dest, int byteOffset) {
     i.imm = byteOffset;
     return i;
 }
+inline Instruction pointerAdd(int base, int byteOffset, int result) {
+    Instruction i;
+    i.op = Op::PointerAdd;
+    i.arg0 = base;
+    i.result = result;
+    i.imm = byteOffset;
+    return i;
+}
 inline Instruction pointerOffset(int base, int index, int elementSizeBytes, int result, bool subtract) {
     Instruction i;
     i.op = Op::PointerOffset;

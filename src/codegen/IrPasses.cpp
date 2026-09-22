@@ -2,6 +2,7 @@
 #include "codegen/IrBuilders.h"
 #include "IrInline.h"
 #include "Licm.h"
+#include "StrengthReduce.h"
 
 #include "Cfg.h"
 #include "Liveness.h"
@@ -556,6 +557,12 @@ void rewriteValueUses(Instruction& inst, const std::unordered_map<int, int>& cop
     case Op::ValueCompare:
     case Op::PointerOffset:
     case Op::PointerDiff:
+        rewriteValueUse(inst.arg0, copy);
+        rewriteValueUse(inst.arg1, copy);
+        return;
+    case Op::PointerAdd:
+        rewriteValueUse(inst.arg0, copy);
+        return;
     case Op::VaStart:
     case Op::VaCopy:
         rewriteValueUse(inst.arg0, copy);
@@ -710,6 +717,7 @@ bool isDeadAssignable(Op op) {
     case Op::Shl:
     case Op::Shr:
     case Op::PointerOffset:
+    case Op::PointerAdd:
     case Op::PointerDiff:
     case Op::AddressOf:
     case Op::Dereference:
@@ -818,7 +826,8 @@ IntermediateRepresentation runIrPasses(IntermediateRepresentation ir, int optLev
         }
         for (auto& procedure : ir.procedures) {
             const LicmStats licm = hoistLoopInvariants(procedure, ir.strings);
-            if (licm.inserted != 0 || licm.hoisted != 0) {
+            const StrengthReduceStats sr = strengthReduce(procedure, ir.strings);
+            if (licm.inserted != 0 || licm.hoisted != 0 || sr.reduced != 0 || sr.inserted != 0) {
                 applyCfgPasses(procedure, optLevel);
             }
         }

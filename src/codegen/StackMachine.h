@@ -57,6 +57,7 @@ public:
     // Pointer value +/- integer: result = base +/- index * elementSizeBytes.
     void pointerOffset(int baseName, int indexName, int elementSizeBytes, int resultName,
             bool subtract);
+    void pointerAdd(int baseName, int resultName, int byteOffset);
     // Pointer - pointer: result = (left - right) / elementSizeBytes (element count).
     void pointerDifference(int leftName, int rightName, int elementSizeBytes, int resultName);
     void fieldAddress(int baseName, int offsetBytes, int resultName,

@@ -125,6 +125,8 @@ OpContract opContract(Op op) {
         return { InstructionClass::Ordinary, FArg0 | FArg1 | FImm };
     case Op::PointerOffset:
         return { InstructionClass::Ordinary, FArg0 | FArg1 | FResult | FImm | FPointerSubtract };
+    case Op::PointerAdd:
+        return { InstructionClass::Ordinary, FArg0 | FResult | FImm };
     case Op::ZeroCompare:
     case Op::Argument:
         return { InstructionClass::Ordinary, FArg0 };

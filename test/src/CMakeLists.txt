@@ -124,6 +124,7 @@ add_executable(codegenTest
         codegenTest/LoopsTest.cpp
         codegenTest/PreheaderTest.cpp
         codegenTest/LicmTest.cpp
+        codegenTest/StrengthReduceTest.cpp
         codegenTest/IrPassesTest.cpp
         codegenTest/IrInlineTest.cpp
         codegenTest/IrStringTableTest.cpp
@@ -179,6 +180,7 @@ add_executable(functionalTest
         functionalTest/InputOutputTest.cpp
         functionalTest/ForLoopTest.cpp
         functionalTest/LicmSoakTest.cpp
+        functionalTest/StrengthReduceSoakTest.cpp
         functionalTest/WhileLoopTest.cpp
         functionalTest/DoWhileTest.cpp
         functionalTest/GotoTest.cpp

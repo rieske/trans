@@ -32,6 +32,9 @@ void StackMachine::emit(const Instruction& instruction) {
         pointerOffset(instruction.arg0, instruction.arg1, instruction.imm,
                 instruction.result, instruction.pointerSubtract);
         break;
+    case Op::PointerAdd:
+        pointerAdd(instruction.arg0, instruction.result, instruction.imm);
+        break;
     case Op::PointerDiff:
         pointerDifference(
                 instruction.arg0, instruction.arg1, instruction.imm, instruction.result);
