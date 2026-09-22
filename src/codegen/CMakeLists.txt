@@ -23,6 +23,8 @@ add_library(backend
         IrPasses.cpp
         Liveness.cpp
         Loops.cpp
+        Preheader.cpp
+        Licm.cpp
         IrStringTable.cpp
         SymbolRefs.cpp
         IntelInstructionSet.cpp

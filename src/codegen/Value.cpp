@@ -74,6 +74,10 @@ void Value::markExpressionTemp() {
     expressionTemp_ = true;
 }
 
+void Value::clearExpressionTemp() {
+    expressionTemp_ = false;
+}
+
 bool Value::isExpressionTemp() const {
     return expressionTemp_;
 }

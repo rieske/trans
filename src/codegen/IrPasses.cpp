@@ -1,6 +1,7 @@
 #include "IrPasses.h"
 #include "codegen/IrBuilders.h"
 #include "IrInline.h"
+#include "Licm.h"
 
 #include "Cfg.h"
 #include "Liveness.h"
@@ -813,6 +814,12 @@ IntermediateRepresentation runIrPasses(IntermediateRepresentation ir, int optLev
             }
             if (!changed) {
                 break;
+            }
+        }
+        for (auto& procedure : ir.procedures) {
+            const LicmStats licm = hoistLoopInvariants(procedure, ir.strings);
+            if (licm.inserted != 0 || licm.hoisted != 0) {
+                applyCfgPasses(procedure, optLevel);
             }
         }
         for (auto& procedure : ir.procedures) {
