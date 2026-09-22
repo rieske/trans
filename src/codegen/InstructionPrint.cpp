@@ -1,6 +1,7 @@
 #include "Instruction.h"
 #include "codegen/InternalError.h"
 
+#include <limits>
 #include <sstream>
 #include <string_view>
 
@@ -149,6 +150,17 @@ void print(std::ostream& stream, const Instruction& instruction, const IrStringT
         stream << "\t" << name(strings, instruction.result) << " := " << name(strings, instruction.arg0)
                << "[+" << instruction.imm << "]\n";
         return;
+    case Op::PointerAdd: {
+        const char* sign = " + ";
+        int magnitude = instruction.imm;
+        if (instruction.imm < 0 && instruction.imm != std::numeric_limits<int>::min()) {
+            sign = " - ";
+            magnitude = -instruction.imm;
+        }
+        stream << "\t" << name(strings, instruction.result) << " := " << name(strings, instruction.arg0)
+               << sign << magnitude << " (ptr)\n";
+        return;
+    }
     case Op::PointerOffset:
         stream << "\t" << name(strings, instruction.result) << " := " << name(strings, instruction.arg0)
                << (instruction.pointerSubtract ? " - " : " + ") << name(strings, instruction.arg1);

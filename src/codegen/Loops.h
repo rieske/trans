@@ -27,6 +27,8 @@ struct DomBits {
     }
 };
 
+bool hasBackwardJump(const std::vector<Instruction>& body);
+
 std::vector<std::vector<std::size_t>> cfgPredecessors(const Cfg& cfg);
 std::vector<DomBits> dominators(const Cfg& cfg);
 std::vector<DomBits> dominators(const Cfg& cfg, const std::vector<std::vector<std::size_t>>& pred);

@@ -59,6 +59,18 @@ std::vector<char> reachableFromEntry(const Cfg& cfg) {
 
 } // namespace
 
+bool hasBackwardJump(const std::vector<Instruction>& body) {
+    std::unordered_set<int> seen;
+    for (const auto& inst : body) {
+        if (inst.op == Op::Label && inst.arg0 != kNoSymbol) {
+            seen.insert(inst.arg0);
+        } else if (inst.op == Op::Jump && inst.arg0 != kNoSymbol && seen.count(inst.arg0) != 0) {
+            return true;
+        }
+    }
+    return false;
+}
+
 std::vector<std::vector<std::size_t>> cfgPredecessors(const Cfg& cfg) {
     std::vector<std::vector<std::size_t>> pred(cfg.size());
     for (std::size_t i = 0; i < cfg.size(); ++i) {

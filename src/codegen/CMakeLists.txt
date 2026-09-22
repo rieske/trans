@@ -24,6 +24,7 @@ add_library(backend
         Loops.cpp
         Preheader.cpp
         Licm.cpp
+        StrengthReduce.cpp
         IrStringTable.cpp
         SymbolRefs.cpp
         Register.cpp

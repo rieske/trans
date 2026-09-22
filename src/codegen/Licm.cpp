@@ -182,18 +182,6 @@ int headerLabelOf(const Cfg& cfg, const NaturalLoop& loop) {
     return cfg[loop.header].label;
 }
 
-bool hasBackwardJump(const std::vector<Instruction>& body) {
-    std::unordered_set<int> seen;
-    for (const auto& inst : body) {
-        if (inst.op == Op::Label && inst.arg0 != kNoSymbol) {
-            seen.insert(inst.arg0);
-        } else if (inst.op == Op::Jump && inst.arg0 != kNoSymbol && seen.count(inst.arg0) != 0) {
-            return true;
-        }
-    }
-    return false;
-}
-
 struct LoopSnap {
     std::vector<std::vector<std::size_t>> pred;
     std::vector<DomBits> dom;
@@ -228,6 +216,7 @@ bool isLicmPureOp(Op op) {
     case Op::Bswap:
     case Op::Ctz:
     case Op::PointerOffset:
+    case Op::PointerAdd:
     case Op::PointerDiff:
     case Op::FieldAddress:
     case Op::IndexAddress:

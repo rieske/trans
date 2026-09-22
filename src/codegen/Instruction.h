@@ -52,6 +52,7 @@ enum class Op {
     FieldAddress,        // arg0 result imm(offset) baseMode
     CopyPart,            // arg0 result imm(byteOffset)
     PointerOffset,       // arg0 arg1 result imm(elemSize) pointerSubtract
+    PointerAdd,          // arg0 result imm(signed byte offset)
     PointerDiff,         // arg0 arg1 result imm(elemSize)
     FunctionAddress,     // arg0 result
     ValueCompare,        // arg0 arg1 imm(signedRel)

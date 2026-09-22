@@ -18,6 +18,7 @@ void collectSymbolRefs(const Instruction& instruction, SymbolRefs& refs) {
     case Op::ValueCompare:
     case Op::PointerOffset:
     case Op::PointerDiff:
+    case Op::PointerAdd:
         refs.addUse(instruction.arg0);
         refs.addUse(instruction.arg1);
         refs.addDef(instruction.result);

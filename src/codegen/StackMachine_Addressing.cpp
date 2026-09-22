@@ -59,6 +59,10 @@ void StackMachine::pointerOffset(int baseName, int indexName, int elementSizeByt
     scaledBaseIndex(baseName, indexName, elementSizeBytes, resultName, symbols::AddressBaseMode::PointerValue, subtract);
 }
 
+void StackMachine::pointerAdd(int baseName, int resultName, int byteOffset) {
+    fieldAddress(baseName, byteOffset, resultName, symbols::AddressBaseMode::PointerValue);
+}
+
 void StackMachine::pointerDifference(int leftName, int rightName, int elementSizeBytes,
         int resultName) {
     auto& left = resolve(leftName);
@@ -101,12 +105,17 @@ void StackMachine::pointerDifference(int leftName, int rightName, int elementSiz
 void StackMachine::fieldAddress(int baseName, int offsetBytes, int resultName,
         symbols::AddressBaseMode baseMode) {
     auto& base = resolve(baseName);
-    Register& addr = get64BitRegister();
-    materializeBaseAddress(base, baseMode, addr);
+    auto& result = resolve(resultName);
+    const bool inPlace = (&base == &result) && !symbols::addressBaseUsesLea(baseMode)
+            && !residesInMemory(base);
+    Register& addr = inPlace ? base.getAssignedRegister() : get64BitRegister();
+    if (!inPlace) {
+        materializeBaseAddress(base, baseMode, addr);
+    }
     if (offsetBytes != 0) {
         assembly << instructionSet->add(addr, offsetBytes);
     }
-    bindResult(addr, resolve(resultName));
+    bindResult(addr, result);
 }
 
 void StackMachine::allocaBytes(int sizeName, int resultName) {

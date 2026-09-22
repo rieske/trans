@@ -179,6 +179,62 @@ TEST(IrDumpFromC, licmHoistsInvariantAddInForAtO1) {
     EXPECT_THAT(o1.find(" + "), Lt(o1.find("\n__L")));
 }
 
+TEST(IrDumpFromC, strengthReduceMovesMulOfIvBeforeLoop) {
+    const char* src = "int f(int n, int k) {\n"
+            "  int i, s = 0;\n"
+            "  for (i = 0; i < n; i++) s += i * k;\n"
+            "  return s;\n"
+            "}\n";
+    const std::string o0 = procedureDump(compileToIr(src, 0), "f");
+    const std::string o1 = procedureDump(compileToIr(src, 1), "f");
+    const auto mul0 = o0.find(" * ");
+    const auto lab0 = o0.find("\n__L");
+    const auto mul1 = o1.find("$sr0 := L$loc1_i * L$loc1_k");
+    const auto lab1 = o1.find("\n__L");
+    ASSERT_THAT(mul0, Ne(std::string::npos));
+    ASSERT_THAT(lab0, Ne(std::string::npos));
+    ASSERT_THAT(mul1, Ne(std::string::npos));
+    ASSERT_THAT(lab1, Ne(std::string::npos));
+    EXPECT_THAT(mul0, Gt(lab0));
+    EXPECT_THAT(mul1, Lt(lab1));
+    EXPECT_THAT(countSubstr(o1, " * "), Eq(1));
+    EXPECT_THAT(o1, HasSubstr("INC L$loc1_i\n\t$sr0 := $sr0 + L$loc1_k\n"));
+}
+
+TEST(IrDumpFromC, strengthReduceStepsIndexedPointer) {
+    const char* src = "int f(int *a, int n) {\n"
+            "  long i;\n"
+            "  int s = 0;\n"
+            "  for (i = 0; i < n; i++) s += a[i];\n"
+            "  return s;\n"
+            "}\n";
+    const std::string o0 = procedureDump(compileToIr(src, 0), "f");
+    const std::string o1 = procedureDump(compileToIr(src, 1), "f");
+    const auto stride0 = o0.find("stride=4");
+    const auto lab0 = o0.find("\n__L");
+    const auto stride1 = o1.find("$sr0 := &L$loc1_a[L$loc1_i] stride=4 (ptr)");
+    const auto lab1 = o1.find("\n__L");
+    ASSERT_THAT(stride0, Ne(std::string::npos));
+    ASSERT_THAT(lab0, Ne(std::string::npos));
+    ASSERT_THAT(stride1, Ne(std::string::npos));
+    ASSERT_THAT(lab1, Ne(std::string::npos));
+    EXPECT_THAT(stride0, Gt(lab0));
+    EXPECT_THAT(stride1, Lt(lab1));
+    EXPECT_THAT(countSubstr(o1, "stride="), Eq(1));
+    EXPECT_THAT(o1, HasSubstr("INC L$loc1_i\n\t$sr0 := $sr0 + 4 (ptr)\n"));
+}
+
+TEST(IrDumpFromC, strengthReducePrintsNegativePointerStep) {
+    const char* src = "int f(int *a, int n) {\n"
+            "  long i;\n"
+            "  int s = 0;\n"
+            "  for (i = n - 1; i >= 0; i--) s += a[i];\n"
+            "  return s;\n"
+            "}\n";
+    const std::string o1 = procedureDump(compileToIr(src, 1), "f");
+    EXPECT_THAT(o1, HasSubstr("$sr0 := $sr0 - 4 (ptr)\n"));
+}
+
 TEST(IrDumpFromC, licmDoesNotInsertPreheaderWhenNothingHoists) {
     const char* src = "int f(int n) { while (n) n--; return n; }\n";
     const std::string o0 = procedureDump(compileToIr(src, 0), "f");
