@@ -2,8 +2,7 @@
 #include "gmock/gmock.h"
 
 #include "codegen/StackMachine.h"
-#include "codegen/ATandTInstructionSet.h"
-#include "codegen/IntelInstructionSet.h"
+#include "codegen/InstructionSet.h"
 #include "codegen/IrBuilders.h"
 #include "codegen/IrStringTable.h"
 #include "codegen/JumpCondition.h"
@@ -84,8 +83,8 @@ protected:
     }
 
     IrStringTable names;
-    ATandTInstructionSet att;
-    IntelInstructionSet intel;
+    InstructionSet att { AsmSyntax::Att };
+    InstructionSet intel { AsmSyntax::Intel };
     Amd64Registers extraRegs;
     std::unique_ptr<Amd64Registers> registers;
     std::stringstream assemblyCode { };
