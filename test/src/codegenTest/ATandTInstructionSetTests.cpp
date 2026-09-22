@@ -1,7 +1,7 @@
 #include "gtest/gtest.h"
 #include "gmock/gmock.h"
 
-#include "codegen/ATandTInstructionSet.h"
+#include "codegen/InstructionSet.h"
 #include "codegen/MemoryOperand.h"
 #include "codegen/Register.h"
 
@@ -12,7 +12,7 @@ namespace {
 using namespace testing;
 using namespace codegen;
 
-ATandTInstructionSet instructions;
+InstructionSet instructions { AsmSyntax::Att };
 
 TEST(ATandTInstructionSet, emitsPreamble) {
     EXPECT_THAT(instructions.preamble({}), Eq("\n.section .data\n"

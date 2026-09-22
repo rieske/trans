@@ -3,7 +3,6 @@
 add_library(backend
         Amd64Registers.cpp
         AssemblyGenerator.cpp
-        ATandTInstructionSet.cpp
         Cfg.cpp
         CodeGeneratingVisitor.cpp
         CodeGeneratingVisitor_Addressing.cpp
@@ -27,7 +26,6 @@ add_library(backend
         Licm.cpp
         IrStringTable.cpp
         SymbolRefs.cpp
-        IntelInstructionSet.cpp
         Register.cpp
         RegisterSubreg.cpp
         StackMachine.cpp

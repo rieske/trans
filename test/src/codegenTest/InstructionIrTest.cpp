@@ -10,7 +10,7 @@
 #include "codegen/Amd64Registers.h"
 #include "codegen/AssemblyGenerator.h"
 #include "codegen/GlobalVariable.h"
-#include "codegen/ATandTInstructionSet.h"
+#include "codegen/InstructionSet.h"
 #include "codegen/Cfg.h"
 #include "codegen/Instruction.h"
 #include "codegen/IrBuilders.h"
@@ -482,7 +482,7 @@ TEST(InstructionIr, preambleDeclaresReferencedExternsOnly) {
                     codegen::Value { n("t0"), 1, codegen::Type::INTEGRAL, 8 } }, {} }));
 
     std::ostringstream assembly;
-    AssemblyGenerator generator { &assembly, std::make_unique<ATandTInstructionSet>(),
+    AssemblyGenerator generator { &assembly, std::make_unique<InstructionSet>(AsmSyntax::Att),
             std::make_unique<Amd64Registers>() };
     generator.generateAssemblyCode(ir, {}, {});
 
@@ -505,7 +505,7 @@ TEST(InstructionIr, referenceObjectEmitsOneExtern) {
     x.emission = ObjectEmission::Reference;
 
     std::ostringstream assembly;
-    AssemblyGenerator generator { &assembly, std::make_unique<ATandTInstructionSet>(),
+    AssemblyGenerator generator { &assembly, std::make_unique<InstructionSet>(AsmSyntax::Att),
             std::make_unique<Amd64Registers>() };
     generator.generateAssemblyCode(ir, {}, { x });
 
@@ -531,7 +531,7 @@ TEST(InstructionIr, referenceObjectAddressEmitsOneExtern) {
     pointer.initValues = { symbols::StaticAddress { "x" } };
 
     std::ostringstream assembly;
-    AssemblyGenerator generator { &assembly, std::make_unique<ATandTInstructionSet>(),
+    AssemblyGenerator generator { &assembly, std::make_unique<InstructionSet>(AsmSyntax::Att),
             std::make_unique<Amd64Registers>() };
     generator.generateAssemblyCode(ir, {}, { x, pointer });
 
@@ -551,7 +551,7 @@ TEST(InstructionIr, stringPoolAddressIsNotExtern) {
     pointer.initValues = { symbols::StaticAddress { "L$str1" } };
 
     std::ostringstream assembly;
-    AssemblyGenerator generator { &assembly, std::make_unique<ATandTInstructionSet>(),
+    AssemblyGenerator generator { &assembly, std::make_unique<InstructionSet>(AsmSyntax::Att),
             std::make_unique<Amd64Registers>() };
     generator.generateAssemblyCode(ir, { { "L$str1", "hi" } }, { pointer });
 
@@ -568,7 +568,7 @@ TEST(InstructionIr, assemblyGeneratorEmitsFromDataIr) {
             ProcedureFrame { { codegen::Value { n("t0"), 0, codegen::Type::INTEGRAL, 8 } }, {} }));
 
     std::ostringstream assembly;
-    AssemblyGenerator generator { &assembly, std::make_unique<ATandTInstructionSet>(),
+    AssemblyGenerator generator { &assembly, std::make_unique<InstructionSet>(AsmSyntax::Att),
             std::make_unique<Amd64Registers>() };
     generator.generateAssemblyCode(ir, {}, {});
 
@@ -586,7 +586,7 @@ TEST(InstructionIr, emitIsDeterministic) {
 
     auto emitAsm = [](IntermediateRepresentation program) {
         std::ostringstream assembly;
-        AssemblyGenerator generator { &assembly, std::make_unique<ATandTInstructionSet>(),
+        AssemblyGenerator generator { &assembly, std::make_unique<InstructionSet>(AsmSyntax::Att),
                 std::make_unique<Amd64Registers>() };
         generator.generateAssemblyCode(program, {}, {});
         return assembly.str();

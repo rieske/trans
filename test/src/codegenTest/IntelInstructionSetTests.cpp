@@ -1,7 +1,7 @@
 #include "gtest/gtest.h"
 #include "gmock/gmock.h"
 
-#include "codegen/IntelInstructionSet.h"
+#include "codegen/InstructionSet.h"
 #include "codegen/MemoryOperand.h"
 #include "codegen/Register.h"
 
@@ -10,7 +10,7 @@ namespace {
 using namespace testing;
 using namespace codegen;
 
-IntelInstructionSet instructions;
+InstructionSet instructions { AsmSyntax::Intel };
 
 TEST(IntelInstructionSet, asmSymbolPrefixesSourceNames) {
     EXPECT_THAT(instructions.asmSymbol("abs"), Eq("$abs"));

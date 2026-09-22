@@ -13,9 +13,9 @@
 #include "ast/SyntaxTreeBuilder.h"
 #include "codegen/Amd64Registers.h"
 #include "codegen/AssemblyGenerator.h"
-#include "codegen/ATandTInstructionSet.h"
+#include "codegen/InstructionSet.h"
 #include "codegen/GlobalVariable.h"
-#include "codegen/IntelInstructionSet.h"
+
 #include "codegen/IrGenerator.h"
 #include "scanner/LexFileScannerReader.h"
 #include "scanner/LexicalSession.h"
@@ -184,17 +184,18 @@ void assemble(const std::string& assemblyFileName, const std::string& objectFile
 
 std::unique_ptr<codegen::AssemblyGenerator> makeAssemblyGenerator(
         const Configuration& configuration, std::ostream* assemblyFile) {
-    std::unique_ptr<codegen::InstructionSet> instructionSet;
+    codegen::AsmSyntax syntax;
     switch (configuration.getAssemblyDialect()) {
     case AssemblyDialect::Intel:
-        instructionSet = std::make_unique<codegen::IntelInstructionSet>();
+        syntax = codegen::AsmSyntax::Intel;
         break;
     case AssemblyDialect::AtAndT:
-        instructionSet = std::make_unique<codegen::ATandTInstructionSet>();
+        syntax = codegen::AsmSyntax::Att;
         break;
     default:
         throw std::logic_error { "unknown AssemblyDialect" };
     }
+    auto instructionSet = std::make_unique<codegen::InstructionSet>(syntax);
     return std::make_unique<codegen::AssemblyGenerator>(
             assemblyFile,
             std::move(instructionSet),
