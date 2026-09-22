@@ -201,6 +201,40 @@ int scanf(const char *, ...);
     program.runAndExpect("1 2 3");
 }
 
+TEST(Compiler, sretPointerSurvivesUntakenBranch) {
+    SourceProgram program{R"prg(int printf(const char *, ...);
+int scanf(const char *, ...);
+        struct Big {
+            unsigned long a;
+            unsigned long b;
+            unsigned long c;
+        };
+
+        struct Big make(unsigned long x) {
+            struct Big s;
+            if (x) {
+                s.a = x;
+                s.b = x + 1;
+                s.c = x + 2;
+            } else {
+                s.a = 7;
+                s.b = 8;
+                s.c = 9;
+            }
+            return s;
+        }
+
+        int main() {
+            struct Big s;
+            s = make(0);
+            printf("%lu %lu %lu", s.a, s.b, s.c);
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("7 8 9");
+}
+
 TEST(Compiler, twoWordStructPassAndReturnByValue) {
     SourceProgram program{R"prg(int printf(const char *, ...);
 int scanf(const char *, ...);
