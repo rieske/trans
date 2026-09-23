@@ -153,6 +153,7 @@ LicmStats hoistLoopInvariants(Procedure& procedure, IrStringTable& strings) {
         snap = analyzeLoops(cfg);
         index = buildUseDefIndex(cfg, procedure);
     }
+    std::vector<int> pinned;
     std::sort(snap.loops.begin(), snap.loops.end(), [](const NaturalLoop& a, const NaturalLoop& b) {
         if (a.blocks.size() != b.blocks.size()) {
             return a.blocks.size() < b.blocks.size();
@@ -184,15 +185,18 @@ LicmStats hoistLoopInvariants(Procedure& procedure, IrStringTable& strings) {
                     }
                     Instruction inst = insts[i];
                     insts.erase(insts.begin() + static_cast<std::ptrdiff_t>(i));
-                    if (Value* dest = findValue(index, inst.result)) {
-                        dest->clearExpressionTemp();
-                    }
                     appendBeforeTerminator(cfg[*pre], inst);
                     invariantTemps.insert(inst.result);
+                    pinned.push_back(inst.result);
                     ++stats.hoisted;
                     did = true;
                 }
             }
+        }
+    }
+    for (int id : pinned) {
+        if (Value* dest = findValue(index, id)) {
+            dest->clearExpressionTemp();
         }
     }
     if (stats.inserted != 0 || stats.hoisted != 0) {
