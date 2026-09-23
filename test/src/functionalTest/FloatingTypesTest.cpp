@@ -650,4 +650,31 @@ TEST(Compiler, longDoubleConvertAndMixedAdd) {
     program.runAndExpect("42 42.5 42.5 -1");
 }
 
+// ISO C99 6.4.4.2 hexadecimal floating constants: 0x hex-digits [. hex-digits] p/P [+-] decimal-digits [fFlL]
+TEST(Compiler, hexadecimalFloatingConstants) {
+    SourceProgram program{R"prg(int printf(const char *, ...);
+        int main() {
+            printf("%d %d %d %d %d %d %d %d ",
+                (int)0x1.0p1,
+                (int)0x1.8p1,
+                (int)0x10.0p0,
+                (int)0x.8p1,
+                (int)0x1p+1,
+                (int)0x1.p1,
+                (int)(0x1.0p-1 * 4.0),
+                (int)(0x1.0p-100f * 0x1.0p100));
+            printf("%d %d %d %d %d %d",
+                (int)sizeof(0x1.0p0f),
+                (int)sizeof(0x1.0p0),
+                (int)sizeof(0x1.0p0L),
+                (int)0X1.8P1,
+                0x10,
+                (int)(-0x1.0p3));
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("2 3 16 1 2 2 2 1 4 8 16 3 16 -8");
+}
+
 } // namespace
