@@ -191,6 +191,32 @@ TEST(IrDumpFromC, licmHoistsAddWhenLoopMayNotRun) {
     EXPECT_THAT(acc, Gt(lab1));
 }
 
+TEST(IrDumpFromC, licmHoistsNestedInvariantToOuterPreheader) {
+    const char* src = "int f(int n) {\n"
+            "  int i, j, s = 0;\n"
+            "  for (i = 0; i < n; i++)\n"
+            "    for (j = 0; j < n; j++)\n"
+            "      s += n + 1;\n"
+            "  return s;\n"
+            "}\n";
+    const std::string o0 = procedureDump(compileToIr(src, 0), "f");
+    const std::string o1 = procedureDump(compileToIr(src, 1), "f");
+    const auto add0 = o0.find("L$loc1_n + ");
+    const auto lab0 = o0.find("\n__L");
+    const auto add1 = o1.find("L$loc1_n + ");
+    const auto lab1 = o1.find("\n__L");
+    const auto acc = o1.find("L$loc1_s := L$loc1_s + ");
+    ASSERT_THAT(add0, Ne(std::string::npos));
+    ASSERT_THAT(lab0, Ne(std::string::npos));
+    ASSERT_THAT(add1, Ne(std::string::npos));
+    ASSERT_THAT(lab1, Ne(std::string::npos));
+    ASSERT_THAT(acc, Ne(std::string::npos));
+    EXPECT_THAT(add0, Gt(lab0));
+    EXPECT_THAT(add1, Lt(lab1));
+    EXPECT_THAT(acc, Gt(lab1));
+    EXPECT_THAT(countSubstr(o1, "L$loc1_n + "), Eq(1));
+}
+
 TEST(IrDumpFromC, licmHoistsInvariantAddInForAtO1) {
     const char* src = "int f(int n) { int i; int s = 0; for (i = 0; i < n; i++) s += n + 1; return s; }\n";
     const std::string o0 = procedureDump(compileToIr(src, 0), "f");
