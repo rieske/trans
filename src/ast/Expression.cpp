@@ -94,6 +94,7 @@ void Expression::takeValueFrom(Expression& src, symbols::AnnotationStore& store)
         setFunctionDesignatorResult(store, *src.getResultSymbol(store), src.expressionType());
     } else {
         setTypeAndResult(store, *src.getResultSymbol(store));
+        setType(src.expressionType());
     }
     if (auto* addr = src.getLvalueSymbol(store)) {
         setLvalueSymbol(store, *addr);

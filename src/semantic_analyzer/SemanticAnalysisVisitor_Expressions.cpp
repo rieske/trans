@@ -145,7 +145,13 @@ void SemanticAnalysisVisitor::visit(ast::MemberAccess& memberAccess) {
     if (found->type.isArray()) {
         memberAccess.setAggregateAddressResult(annotations(), fieldAddr, found->type);
     } else {
-        memberAccess.setTypeAndResult(annotations(), symbolTable.createTemporarySymbol(found->type));
+        const type::Type valueType = found->bitField
+                ? type::promoteBitField(*found->bitField, found->type)
+                : found->type;
+        memberAccess.setTypeAndResult(annotations(), symbolTable.createTemporarySymbol(valueType));
+        if (found->bitField) {
+            memberAccess.setType(found->type);
+        }
     }
 }
 
@@ -171,6 +177,7 @@ void SemanticAnalysisVisitor::visit(ast::PostfixExpression& expression) {
     // result. Leaving the operand here makes consumers that read Result see the new value.
     expression.setTypeAndResult(annotations(),
             symbolTable.createTemporarySymbol(operandSymbol.getType()));
+    expression.setType(expression.operandType());
 
     checkIncrementOperand(*this, expression.getOperandExpression()->isLval(),
             expression.operandType(), expression.getContext());
@@ -183,8 +190,8 @@ void SemanticAnalysisVisitor::visit(ast::PrefixExpression& expression) {
     }
     rejectFunctionValue(expression.operandType(), expression.getContext());
 
-    expression.setType(expression.operandType());
     expression.setTypeAndResult(annotations(), *expression.operandSymbol(annotations()));
+    expression.setType(expression.operandType());
 
     checkIncrementOperand(*this, expression.getOperandExpression()->isLval(),
             expression.operandType(), expression.getContext());
@@ -665,6 +672,7 @@ void SemanticAnalysisVisitor::visit(ast::AssignmentExpression& expression) {
                 symbolTable, annotations());
 
         expression.setTypeAndResult(annotations(), *expression.leftOperandSymbol(annotations()));
+        expression.setType(left);
     } else {
         semanticError("lvalue required on the left side of assignment", expression.getContext());
     }
@@ -677,6 +685,11 @@ void SemanticAnalysisVisitor::visit(ast::ExpressionList& expression) {
         return;
     }
     takeAnalyzedFrom(expression, *expression.getRightOperand(), symbolTable, annotations());
+    ast::Expression* right = expression.getRightOperand();
+    if (!right->isVoidValue() && !right->isArrayObjectType()
+            && !right->holdsAggregateAddress() && !right->holdsFunctionDesignator()) {
+        expression.setType(right->expressionType());
+    }
 }
 
 } // namespace semantic_analyzer

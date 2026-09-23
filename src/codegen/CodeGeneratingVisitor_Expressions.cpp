@@ -76,9 +76,12 @@ void CodeGeneratingVisitor::visit(ast::MemberAccess& memberAccess) {
             baseMode));
     if (!memberAccess.holdsAggregateAddress()) {
         const int resultName = id(*memberAccess.getResultSymbol(store_));
-        emit(ir::dereference(addrTemp, resultName));
         if (field->isBitField()) {
-            emitBitFieldExtract(resultName, resultName, *field->bitField);
+            const int container = addScratchValue(memberAccess.expressionType());
+            emit(ir::dereference(addrTemp, container));
+            emitBitFieldExtract(container, resultName, *field->bitField);
+        } else {
+            emit(ir::dereference(addrTemp, resultName));
         }
     }
 }
