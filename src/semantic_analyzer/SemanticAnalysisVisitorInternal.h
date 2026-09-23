@@ -146,7 +146,7 @@ inline bool productAssignOk(const type::Type& dest, const type::Type& source,
     return sourceExpr && dest.isPointer() && foldsToIntegerZero(*sourceExpr);
 }
 
-// Materialize a convert temp when dest is bool (0/1) or numeric width/kind changes.
+// Materialize a convert temp when dest is bool (0/1) or the numeric value changes.
 inline void maybeSetConversion(ast::Expression* expr,
         const type::Type& targetType,
         SymbolTable& symbolTable,

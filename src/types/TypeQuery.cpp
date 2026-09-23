@@ -92,6 +92,15 @@ Type integerPromote(const Type& t) {
     return t;
 }
 
+Type promoteBitField(const BitField& bits, const Type& declared) {
+    if (declared.getSize() > signedInteger().getSize()) {
+        return declared;
+    }
+    const int intBits = signedInteger().getSize() * 8;
+    const bool fits = bits.isSigned ? bits.width <= intBits : bits.width < intBits;
+    return fits ? signedInteger() : unsignedInteger();
+}
+
 Type defaultArgPromote(const Type& t) {
     if (isFloat(t)) {
         return doubleFloating();

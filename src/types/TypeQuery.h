@@ -204,6 +204,11 @@ std::optional<Type> memberAccessResult(const Type& baseType, bool arrow,
 // Integer promotions (C 6.3.1.1): types narrower than int convert to int.
 Type integerPromote(const Type& t);
 
+// A bit-field whose declared type is no wider than int promotes to int when
+// int can hold every value of the field, otherwise to unsigned int. A declared
+// type wider than int is unchanged.
+Type promoteBitField(const BitField& bits, const Type& declared);
+
 // C 6.5.2.2: integer promotions, then float -> double. Other types unchanged.
 Type defaultArgPromote(const Type& t);
 
@@ -219,6 +224,14 @@ inline bool needsIntegerWiden(const Type& from, const Type& to) {
 inline bool needsIntegerNarrow(const Type& from, const Type& to) {
     return isIntegral(from) && isIntegral(to) && !isBoolean(to)
             && to.getSize() > 0 && from.getSize() > to.getSize();
+}
+
+// Same width, different signedness. The bits fit, but integer promotions
+// sign-extend a signed value and zero-extend an unsigned one.
+inline bool needsIntegerSignChange(const Type& from, const Type& to) {
+    return isIntegral(from) && isIntegral(to) && !isBoolean(from) && !isBoolean(to)
+            && from.getSize() > 0 && from.getSize() == to.getSize()
+            && valueIsSigned(from) != valueIsSigned(to);
 }
 
 // Integer-to-pointer (6.3.2.3): widen a narrower integer to pointer width.
@@ -239,7 +252,8 @@ inline bool needsNumericConvert(const Type& from, const Type& to) {
             || (isIntegral(from) && isFloating(to));
     const bool floatWidth = isFloating(from) && isFloating(to)
             && from.getSize() != to.getSize();
-    return floatInt || floatWidth || needsIntegerWiden(from, to) || needsIntegerNarrow(from, to);
+    return floatInt || floatWidth || needsIntegerWiden(from, to) || needsIntegerNarrow(from, to)
+            || needsIntegerSignChange(from, to);
 }
 
 // Usual arithmetic conversions: if either side is complex, convert both to

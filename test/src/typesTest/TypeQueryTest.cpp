@@ -403,6 +403,9 @@ TEST(TypeQuery, needsNumericConvert) {
     EXPECT_TRUE(type::needsNumericConvert(type::signedLong(), type::signedInt128()));
     EXPECT_TRUE(type::needsNumericConvert(type::signedInt128(), type::signedLong()));
     EXPECT_TRUE(type::needsNumericConvert(type::signedInteger(), type::signedCharacter()));
+    EXPECT_TRUE(type::needsNumericConvert(type::signedCharacter(), type::unsignedCharacter()));
+    EXPECT_TRUE(type::needsNumericConvert(type::signedInteger(), type::unsignedInteger()));
+    EXPECT_FALSE(type::needsNumericConvert(type::signedInteger(), type::signedInteger()));
     EXPECT_FALSE(type::needsNumericConvert(type::floating(), type::floating()));
     EXPECT_FALSE(type::needsNumericConvert(type::signedInteger(), type::boolean()));
     EXPECT_FALSE(type::needsNumericConvert(type::floating(), type::boolean()));
