@@ -22,6 +22,7 @@ add_library(backend
         IrPasses.cpp
         Liveness.cpp
         Loops.cpp
+        LoopFacts.cpp
         Preheader.cpp
         Licm.cpp
         StrengthReduce.cpp

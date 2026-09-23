@@ -1,6 +1,7 @@
 #include "Licm.h"
 
 #include "Cfg.h"
+#include "LoopFacts.h"
 #include "Loops.h"
 #include "Preheader.h"
 #include "SymbolRefs.h"
@@ -15,69 +16,6 @@
 namespace codegen {
 namespace {
 
-struct UseDefIndex {
-    std::unordered_map<int, Value*> values;
-    std::unordered_map<int, int> defCount;
-    std::unordered_map<int, std::unordered_set<std::size_t>> defBlocks;
-    std::unordered_map<int, std::unordered_set<std::size_t>> useBlocks;
-    std::unordered_set<int> addressTaken;
-    std::vector<char> indirectWrite;
-};
-
-bool isIndirectWriteOp(Op op) {
-    return op == Op::LvalueAssign || op == Op::Call || op == Op::VaStart || op == Op::VaArg
-            || op == Op::VaCopy || op == Op::VaEnd;
-}
-
-UseDefIndex buildUseDefIndex(Cfg& cfg, Procedure& procedure) {
-    UseDefIndex index;
-    for (auto& value : procedure.frame.locals) {
-        index.values[value.id()] = &value;
-    }
-    for (auto& value : procedure.frame.arguments) {
-        index.values[value.id()] = &value;
-    }
-    index.indirectWrite.assign(cfg.size(), 0);
-    for (std::size_t b = 0; b < cfg.size(); ++b) {
-        for (const auto& inst : cfg[b].insts) {
-            if (isIndirectWriteOp(inst.op)) {
-                index.indirectWrite[b] = 1;
-            }
-            SymbolRefs refs;
-            collectSymbolRefs(inst, refs);
-            if (refs.addressOfBase != kNoSymbol) {
-                index.addressTaken.insert(refs.addressOfBase);
-            }
-            for (int id : refs.defs) {
-                ++index.defCount[id];
-                index.defBlocks[id].insert(b);
-            }
-            for (int id : refs.uses) {
-                index.useBlocks[id].insert(b);
-            }
-        }
-    }
-    return index;
-}
-
-Value* findValue(const UseDefIndex& index, int id) {
-    const auto it = index.values.find(id);
-    return it == index.values.end() ? nullptr : it->second;
-}
-
-bool defInLoop(const UseDefIndex& index, const NaturalLoop& loop, int id) {
-    const auto it = index.defBlocks.find(id);
-    if (it == index.defBlocks.end()) {
-        return false;
-    }
-    for (const std::size_t b : it->second) {
-        if (loop.blocks.count(b) != 0) {
-            return true;
-        }
-    }
-    return false;
-}
-
 bool usesOutsideLoop(const UseDefIndex& index, const NaturalLoop& loop, int id) {
     const auto it = index.useBlocks.find(id);
     if (it == index.useBlocks.end()) {
@@ -85,15 +23,6 @@ bool usesOutsideLoop(const UseDefIndex& index, const NaturalLoop& loop, int id) 
     }
     for (const std::size_t b : it->second) {
         if (loop.blocks.count(b) == 0) {
-            return true;
-        }
-    }
-    return false;
-}
-
-bool loopHasIndirectWrite(const UseDefIndex& index, const NaturalLoop& loop) {
-    for (const std::size_t b : loop.blocks) {
-        if (b < index.indirectWrite.size() && index.indirectWrite[b]) {
             return true;
         }
     }
@@ -167,35 +96,6 @@ bool anyHoistable(const Cfg& cfg, const NaturalLoop& loop, const UseDefIndex& in
     return false;
 }
 
-void appendBeforeTerminator(BasicBlock& block, Instruction inst) {
-    if (!block.insts.empty() && instructionTransfersControl(block.insts.back())) {
-        block.insts.insert(block.insts.end() - 1, std::move(inst));
-    } else {
-        block.insts.push_back(std::move(inst));
-    }
-}
-
-int headerLabelOf(const Cfg& cfg, const NaturalLoop& loop) {
-    if (loop.header >= cfg.size()) {
-        return kNoSymbol;
-    }
-    return cfg[loop.header].label;
-}
-
-struct LoopSnap {
-    std::vector<std::vector<std::size_t>> pred;
-    std::vector<DomBits> dom;
-    std::vector<NaturalLoop> loops;
-};
-
-LoopSnap analyzeLoops(const Cfg& cfg) {
-    LoopSnap snap;
-    snap.pred = cfgPredecessors(cfg);
-    snap.dom = dominators(cfg, snap.pred);
-    snap.loops = naturalLoops(cfg, snap.pred, snap.dom);
-    return snap;
-}
-
 } // namespace
 
 bool isLicmPureOp(Op op) {
@@ -244,32 +144,10 @@ LicmStats hoistLoopInvariants(Procedure& procedure, IrStringTable& strings) {
             continue;
         }
         if (anyHoistable(cfg, loop, index) && !hasPreheader(cfg, loop, snap.pred, snap.dom)) {
-            need.insert(headerLabelOf(cfg, loop));
+            need.insert(cfg[loop.header].label);
         }
     }
-    while (!need.empty()) {
-        snap = analyzeLoops(cfg);
-        const NaturalLoop* chosen = nullptr;
-        for (const auto& loop : snap.loops) {
-            if (need.count(headerLabelOf(cfg, loop)) == 0) {
-                continue;
-            }
-            if (!chosen || loop.header > chosen->header) {
-                chosen = &loop;
-            }
-        }
-        if (!chosen) {
-            break;
-        }
-        const int headerLabel = headerLabelOf(cfg, *chosen);
-        if (hasPreheader(cfg, *chosen, snap.pred, snap.dom)) {
-            need.erase(headerLabel);
-            continue;
-        }
-        insertOne(cfg, *chosen, strings);
-        ++stats.inserted;
-        need.erase(headerLabel);
-    }
+    stats.inserted = insertPreheadersFor(cfg, strings, std::move(need));
 
     if (stats.inserted != 0) {
         snap = analyzeLoops(cfg);
