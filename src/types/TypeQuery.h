@@ -229,8 +229,11 @@ inline bool needsIntegerNarrow(const Type& from, const Type& to) {
 // Same width, different signedness. The bits fit, but integer promotions
 // sign-extend a signed value and zero-extend an unsigned one.
 inline bool needsIntegerSignChange(const Type& from, const Type& to) {
+    // Only widths that are sign- or zero-extended. __int128 and long keep
+    // their bits; signed and unsigned __int128 are not a conversion.
     return isIntegral(from) && isIntegral(to) && !isBoolean(from) && !isBoolean(to)
             && from.getSize() > 0 && from.getSize() == to.getSize()
+            && from.getSize() <= signedInteger().getSize()
             && valueIsSigned(from) != valueIsSigned(to);
 }
 
