@@ -109,11 +109,39 @@
 
 :hex_prefix
 @hex_constant   0123456789abcdefABCDEF
+@hex_float_lead_dot .
 @fin
 
 :hex_constant   int_const
 @hex_constant   0123456789abcdefABCDEF
 @int_suffix     uUlL
+@hex_float_dot  .
+@hex_bin_exp    pP
+@fin
+
+# C99 hexadecimal floating constant. The binary exponent is required.
+# 0x1.0p1, 0x1p+1, 0x.8p0, 0x1.p1, optional f/F/l/L after the exponent digits.
+:hex_float_lead_dot
+@hex_float_frac 0123456789abcdefABCDEF
+
+:hex_float_dot
+@hex_float_frac 0123456789abcdefABCDEF
+@hex_bin_exp    pP
+
+:hex_float_frac
+@hex_float_frac 0123456789abcdefABCDEF
+@hex_bin_exp    pP
+
+:hex_bin_exp
+@hex_bin_exp_sign +-
+@hex_bin_exp_digits 0123456789
+
+:hex_bin_exp_sign
+@hex_bin_exp_digits 0123456789
+
+:hex_bin_exp_digits float_const
+@hex_bin_exp_digits 0123456789
+@float_suffix   fFlL
 @fin
 
 # C integer suffixes: u, l, ul, lu, ull, llu, etc.
