@@ -823,6 +823,28 @@ TEST(IrInline, inlineProceduresRefusesOversizeCallee) {
     EXPECT_TRUE(sawCall);
 }
 
+TEST(IrInline, inlineProceduresRefusesAllocaCallee) {
+    IntermediateRepresentation ir;
+    IrN n { ir.strings };
+    ir.procedures.push_back(makeProc(ir.strings, "wrap", {
+            ir::allocaBytes(n("n"), n("p")),
+            ir::voidReturn(),
+    }));
+    ir.procedures.push_back(makeProc(ir.strings, "f", {
+            ir::call(n("wrap")),
+            ir::voidReturn(),
+    }));
+    const InlineStats stats = inlineProcedures(ir);
+    EXPECT_THAT(stats.sitesInlined, Eq(0));
+    bool sawCall = false;
+    for (const auto& inst : ir.procedures.back().body) {
+        if (inst.op == Op::Call && inst.arg0 == n("wrap")) {
+            sawCall = true;
+        }
+    }
+    EXPECT_TRUE(sawCall);
+}
+
 TEST(IrInline, inlineProceduresRefusesSigsetjmpCallee) {
     IntermediateRepresentation ir;
     IrN n { ir.strings };
