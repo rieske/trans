@@ -199,6 +199,33 @@ TEST(IrDumpFromC, licmHoistsInvariantAddInForAtO1) {
     EXPECT_THAT(o1.find(" + "), Lt(o1.find("\n__L")));
 }
 
+TEST(IrDumpFromC, deadMulIsNotStrengthReduced) {
+    const char* src = "int f(int n, int k) {\n"
+            "  int i;\n"
+            "  for (i = 0; i < n; i++)\n"
+            "    (void)(i * k);\n"
+            "  return 0;\n"
+            "}\n";
+    const std::string o0 = procedureDump(compileToIr(src, 0), "f");
+    const std::string o1 = procedureDump(compileToIr(src, 1), "f");
+    EXPECT_THAT(o0, HasSubstr(" * "));
+    EXPECT_THAT(o1, Not(HasSubstr(" * ")));
+    EXPECT_THAT(o1, Not(HasSubstr("$sr")));
+}
+
+TEST(IrDumpFromC, foldHoistedConstantAdd) {
+    const char* src = "int f(void) {\n"
+            "  int i; int s = 0; int n = 3;\n"
+            "  for (i = 0; i < n; i++) s += n + 1;\n"
+            "  return s;\n"
+            "}\n";
+    const std::string o0 = procedureDump(compileToIr(src, 0), "f");
+    const std::string o1 = procedureDump(compileToIr(src, 1), "f");
+    EXPECT_THAT(o0.find(" + "), Gt(o0.find("\n__L")));
+    EXPECT_THAT(o1, HasSubstr(":= 4"));
+    EXPECT_THAT(o1, Not(HasSubstr("L$loc1_n + ")));
+}
+
 TEST(IrDumpFromC, strengthReduceRewritesMulWhenLoopMayNotRun) {
     const char* src = "int f(int n, int k) {\n"
             "  int i, s = 7;\n"
@@ -209,17 +236,19 @@ TEST(IrDumpFromC, strengthReduceRewritesMulWhenLoopMayNotRun) {
     const std::string o1 = procedureDump(compileToIr(src, 1), "f");
     const auto mul0 = o0.find(" * ");
     const auto lab0 = o0.find("\n__L");
-    const auto mul1 = o1.find("$sr0 := L$loc1_i * L$loc1_k");
+    const auto folded = o1.find("$sr0 := L$loc1_k");
     const auto lab1 = o1.find("\n__L");
     const auto acc = o1.find("L$loc1_s := L$loc1_s + ");
     ASSERT_THAT(mul0, Ne(std::string::npos));
     ASSERT_THAT(lab0, Ne(std::string::npos));
-    ASSERT_THAT(mul1, Ne(std::string::npos));
+    ASSERT_THAT(folded, Ne(std::string::npos));
     ASSERT_THAT(lab1, Ne(std::string::npos));
     ASSERT_THAT(acc, Ne(std::string::npos));
     EXPECT_THAT(mul0, Gt(lab0));
-    EXPECT_THAT(mul1, Lt(lab1));
+    EXPECT_THAT(folded, Lt(lab1));
     EXPECT_THAT(acc, Gt(lab1));
+    EXPECT_THAT(o1, Not(HasSubstr(" * ")));
+    EXPECT_THAT(o1, HasSubstr("INC L$loc1_i\n\t$sr0 := $sr0 + L$loc1_k\n"));
 }
 
 TEST(IrDumpFromC, strengthReduceKeepsIndexInsideLoopWhenBaseSlides) {
@@ -232,7 +261,7 @@ TEST(IrDumpFromC, strengthReduceKeepsIndexInsideLoopWhenBaseSlides) {
             "  return s;\n"
             "}\n";
     const std::string o1 = procedureDump(compileToIr(src, 1), "f");
-    const auto sr = o1.find("$sr0 := L$loc2_i * ");
+    const auto sr = o1.find("$sr0 := 0");
     const auto lab = o1.find("\n__L");
     const auto stride = o1.find("stride=4");
     ASSERT_THAT(sr, Ne(std::string::npos));
@@ -241,6 +270,7 @@ TEST(IrDumpFromC, strengthReduceKeepsIndexInsideLoopWhenBaseSlides) {
     EXPECT_THAT(sr, Lt(lab));
     EXPECT_THAT(stride, Gt(lab));
     EXPECT_THAT(o1, Not(HasSubstr("$sr0 := &")));
+    EXPECT_THAT(o1, HasSubstr("$sr0 := $sr0 + "));
 }
 
 TEST(IrDumpFromC, strengthReduceMovesMulOfIvBeforeLoop) {
@@ -253,15 +283,15 @@ TEST(IrDumpFromC, strengthReduceMovesMulOfIvBeforeLoop) {
     const std::string o1 = procedureDump(compileToIr(src, 1), "f");
     const auto mul0 = o0.find(" * ");
     const auto lab0 = o0.find("\n__L");
-    const auto mul1 = o1.find("$sr0 := L$loc1_i * L$loc1_k");
+    const auto folded = o1.find("$sr0 := 0");
     const auto lab1 = o1.find("\n__L");
     ASSERT_THAT(mul0, Ne(std::string::npos));
     ASSERT_THAT(lab0, Ne(std::string::npos));
-    ASSERT_THAT(mul1, Ne(std::string::npos));
+    ASSERT_THAT(folded, Ne(std::string::npos));
     ASSERT_THAT(lab1, Ne(std::string::npos));
     EXPECT_THAT(mul0, Gt(lab0));
-    EXPECT_THAT(mul1, Lt(lab1));
-    EXPECT_THAT(countSubstr(o1, " * "), Eq(1));
+    EXPECT_THAT(folded, Lt(lab1));
+    EXPECT_THAT(o1, Not(HasSubstr(" * ")));
     EXPECT_THAT(o1, HasSubstr("INC L$loc1_i\n\t$sr0 := $sr0 + L$loc1_k\n"));
 }
 

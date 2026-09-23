@@ -811,18 +811,24 @@ IntermediateRepresentation runIrPasses(IntermediateRepresentation ir, int optLev
         for (int i : stats.dirtyCallers) {
             applyCfgPasses(ir.procedures[static_cast<std::size_t>(i)], optLevel);
         }
-        for (int iter = 0; iter < 8; ++iter) {
-            bool changed = false;
-            for (auto& procedure : ir.procedures) {
-                const FoldResult one = foldConstants(procedure, ir.strings);
-                if (one.controlFlow) {
-                    applyCfgPasses(procedure, optLevel);
+        auto foldToFixpoint = [&]() {
+            for (int iter = 0; iter < 8; ++iter) {
+                bool changed = false;
+                for (auto& procedure : ir.procedures) {
+                    const FoldResult one = foldConstants(procedure, ir.strings);
+                    if (one.controlFlow) {
+                        applyCfgPasses(procedure, optLevel);
+                    }
+                    changed = changed || one.changed;
                 }
-                changed = changed || one.changed;
+                if (!changed) {
+                    break;
+                }
             }
-            if (!changed) {
-                break;
-            }
+        };
+        foldToFixpoint();
+        for (auto& procedure : ir.procedures) {
+            eliminateDeadTemps(procedure);
         }
         for (auto& procedure : ir.procedures) {
             const LicmStats licm = hoistLoopInvariants(procedure, ir.strings);
@@ -831,6 +837,7 @@ IntermediateRepresentation runIrPasses(IntermediateRepresentation ir, int optLev
                 applyCfgPasses(procedure, optLevel);
             }
         }
+        foldToFixpoint();
         for (auto& procedure : ir.procedures) {
             copyPropagate(procedure);
             eliminateDeadTemps(procedure);
