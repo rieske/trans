@@ -246,31 +246,36 @@ int scanf(const char *, ...);
 TEST(Compiler, strengthReduceIndexAcrossCall) {
     SourceProgram program{R"prg(int printf(const char *, ...);
 int scanf(const char *, ...);
-        int id(int x) { return x; }
+        static int slide(int **p) {
+            *p = *p + 1;
+            return 0;
+        }
 
-        int soak(int *a, int n, int k) {
+        int soak(int *a, int n) {
             long i;
             int s;
             s = 0;
             for (i = 0; i < n; i++) {
-                s += id(a[i]) * k;
+                s += a[i];
+                slide(&a);
             }
             return s;
         }
 
         int main() {
-            int a[4];
+            int a[5];
             a[0] = 1;
             a[1] = 2;
             a[2] = 3;
             a[3] = 4;
-            printf("%d", soak(a, 4, 3));
+            a[4] = 5;
+            printf("%d", soak(a, 3));
             return 0;
         }
     )prg"};
 
     program.compile();
-    program.runAndExpect("30");
+    program.runAndExpect("9");
 }
 
 TEST(Compiler, strengthReduceAddressTakenIv) {

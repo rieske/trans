@@ -1033,18 +1033,21 @@ TEST(IrPasses, copyPropagate_rewritesTempCopyIntoAdd) {
 TEST(IrPasses, copyPropagate_keepsNamedLocal) {
     IntermediateRepresentation ir;
     IrN n { ir.strings };
-    ProcedureFrame frame = exprTemps(ir.strings, { "t1", "t3" });
+    ProcedureFrame frame = exprTemps(ir.strings, { "t1", "t3", "t4", "t5", "t6" });
     frame.locals.push_back(integral(ir.strings, "a"));
     frame.locals.push_back(integral(ir.strings, "x"));
     ir.procedures.push_back(makeProc(ir.strings, "f", {
             ir::assign(n("t1"), n("a")),
             ir::add(n("a"), n("x"), n("t3")),
+            ir::assign(n("t4"), n("t5")),
+            ir::add(n("t5"), n("x"), n("t6")),
             ir::ret(n("t3")),
     }, std::move(frame)));
 
     copyPropagate(ir.procedures.front());
 
     EXPECT_THAT(toString(ir), HasSubstr("t3 := a + x"));
+    EXPECT_THAT(toString(ir), HasSubstr("t6 := t4 + x"));
 }
 
 TEST(IrPasses, copyPropagate_skipsSignednessChangingAssign) {
@@ -1061,47 +1064,64 @@ TEST(IrPasses, copyPropagate_skipsSignednessChangingAssign) {
     frame.locals.back().markExpressionTemp();
     frame.locals.push_back(integral(ir.strings, "t3"));
     frame.locals.back().markExpressionTemp();
+    frame.locals.push_back(codegen::Value { n("u1"), 0, codegen::Type::INTEGRAL, 1, signExt });
+    frame.locals.back().markExpressionTemp();
+    frame.locals.push_back(codegen::Value { n("u2"), 0, codegen::Type::INTEGRAL, 1, signExt });
+    frame.locals.back().markExpressionTemp();
+    frame.locals.push_back(integral(ir.strings, "u3"));
+    frame.locals.back().markExpressionTemp();
     frame.locals.push_back(integral(ir.strings, "x"));
     ir.procedures.push_back(makeProc(ir.strings, "f", {
             ir::assign(n("t1"), n("t2")),
             ir::add(n("t2"), n("x"), n("t3")),
+            ir::assign(n("u1"), n("u2")),
+            ir::add(n("u2"), n("x"), n("u3")),
             ir::ret(n("t3")),
     }, std::move(frame)));
 
     copyPropagate(ir.procedures.front());
 
     EXPECT_THAT(toString(ir), HasSubstr("t3 := t2 + x"));
+    EXPECT_THAT(toString(ir), HasSubstr("u3 := u1 + x"));
 }
 
 TEST(IrPasses, copyPropagate_skipsAddressTakenSrc) {
     IntermediateRepresentation ir;
     IrN n { ir.strings };
-    ProcedureFrame frame = exprTemps(ir.strings, { "t1", "t2", "t3", "p" }, 8);
+    ProcedureFrame frame = exprTemps(ir.strings, { "t1", "t2", "t3", "t4", "t5", "t6", "p" }, 8);
     frame.locals.push_back(integral(ir.strings, "x", 8));
     ir.procedures.push_back(makeProc(ir.strings, "f", {
             ir::addressOf(n("t1"), n("p")),
             ir::assign(n("t1"), n("t2")),
             ir::add(n("t2"), n("x"), n("t3")),
+            ir::assign(n("t4"), n("t5")),
+            ir::add(n("t5"), n("x"), n("t6")),
             ir::ret(n("t3")),
     }, std::move(frame)));
 
     copyPropagate(ir.procedures.front());
 
     EXPECT_THAT(toString(ir), HasSubstr("t3 := t2 + x"));
+    EXPECT_THAT(toString(ir), HasSubstr("t6 := t4 + x"));
 }
 
 TEST(IrPasses, copyPropagate_doesNotRewriteAddressOf) {
     IntermediateRepresentation ir;
     IrN n { ir.strings };
+    ProcedureFrame frame = exprTemps(ir.strings, { "t1", "t2", "t3", "t4", "t5", "p" }, 8);
+    frame.locals.push_back(integral(ir.strings, "x", 8));
     ir.procedures.push_back(makeProc(ir.strings, "f", {
             ir::assign(n("t1"), n("t2")),
             ir::addressOf(n("t2"), n("p")),
+            ir::assign(n("t4"), n("t5")),
+            ir::add(n("t5"), n("x"), n("t3")),
             ir::ret(n("p")),
-    }, exprTemps(ir.strings, { "t1", "t2", "p" }, 8)));
+    }, std::move(frame)));
 
     copyPropagate(ir.procedures.front());
 
     EXPECT_THAT(toString(ir), HasSubstr("p := &t2"));
+    EXPECT_THAT(toString(ir), HasSubstr("t3 := t4 + x"));
 }
 
 TEST(IrPasses, copyPropagate_clearsAtCall) {
@@ -1148,6 +1168,7 @@ TEST(IrPasses, copyPropagate_clearsAtJoinLabel) {
     frame.locals.push_back(integral(ir.strings, "x"));
     ir.procedures.push_back(makeProc(ir.strings, "f", {
             ir::assign(n("t1"), n("t2")),
+            ir::argument(n("t2")),
             ir::jump(n("L"), JumpCondition::IF_EQUAL),
             ir::assign(n("t4"), n("t2")),
             ir::label(n("L")),
@@ -1157,6 +1178,7 @@ TEST(IrPasses, copyPropagate_clearsAtJoinLabel) {
 
     copyPropagate(ir.procedures.front());
 
+    EXPECT_THAT(toString(ir), HasSubstr("PARAM t1"));
     EXPECT_THAT(toString(ir), HasSubstr("t3 := t2 + x"));
 }
 
@@ -1167,6 +1189,7 @@ TEST(IrPasses, copyPropagate_clearsAtJumpOnlySinglePredLabel) {
     frame.locals.push_back(integral(ir.strings, "x"));
     ir.procedures.push_back(makeProc(ir.strings, "f", {
             ir::assign(n("t1"), n("t2")),
+            ir::argument(n("t2")),
             ir::jump(n("L")),
             ir::label(n("L")),
             ir::add(n("t2"), n("x"), n("t3")),
@@ -1175,6 +1198,7 @@ TEST(IrPasses, copyPropagate_clearsAtJumpOnlySinglePredLabel) {
 
     copyPropagate(ir.procedures.front());
 
+    EXPECT_THAT(toString(ir), HasSubstr("PARAM t1"));
     EXPECT_THAT(toString(ir), HasSubstr("t3 := t2 + x"));
 }
 
