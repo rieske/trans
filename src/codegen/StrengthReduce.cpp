@@ -2,6 +2,7 @@
 
 #include "Cfg.h"
 #include "IrBuilders.h"
+#include "LoopFacts.h"
 #include "Loops.h"
 #include "Preheader.h"
 #include "SymbolRefs.h"
@@ -19,19 +20,6 @@
 
 namespace codegen {
 namespace {
-
-struct LoopSnap {
-    std::vector<std::vector<std::size_t>> pred;
-    std::vector<DomBits> dom;
-    std::vector<NaturalLoop> loops;
-};
-
-struct DefIndex {
-    std::unordered_map<int, Value*> values;
-    std::unordered_map<int, std::vector<std::size_t>> defBlocks;
-    std::unordered_set<int> addressTaken;
-    std::vector<char> indirect;
-};
 
 struct Step {
     bool immediate { false };
@@ -66,79 +54,12 @@ struct Group {
     std::vector<MulSite> sites;
 };
 
-LoopSnap analyzeLoops(const Cfg& cfg) {
-    LoopSnap snap;
-    snap.pred = cfgPredecessors(cfg);
-    snap.dom = dominators(cfg, snap.pred);
-    snap.loops = naturalLoops(cfg, snap.pred, snap.dom);
-    return snap;
-}
-
-bool isIndirect(Op op) {
-    return op == Op::LvalueAssign || op == Op::Call || op == Op::VaStart || op == Op::VaArg
-            || op == Op::VaCopy || op == Op::VaEnd;
-}
-
-DefIndex buildIndex(Cfg& cfg, Procedure& procedure) {
-    DefIndex index;
-    for (auto& value : procedure.frame.locals) {
-        index.values[value.id()] = &value;
-    }
-    for (auto& value : procedure.frame.arguments) {
-        index.values[value.id()] = &value;
-    }
-    index.indirect.assign(cfg.size(), 0);
-    for (std::size_t b = 0; b < cfg.size(); ++b) {
-        for (const auto& inst : cfg[b].insts) {
-            if (isIndirect(inst.op)) {
-                index.indirect[b] = 1;
-            }
-            SymbolRefs refs;
-            collectSymbolRefs(inst, refs);
-            if (refs.addressOfBase != kNoSymbol) {
-                index.addressTaken.insert(refs.addressOfBase);
-            }
-            for (int id : refs.defs) {
-                index.defBlocks[id].push_back(b);
-            }
-        }
-    }
-    return index;
-}
-
-Value* findValue(const DefIndex& index, int id) {
-    const auto it = index.values.find(id);
-    return it == index.values.end() ? nullptr : it->second;
-}
-
-bool defInLoop(const DefIndex& index, const NaturalLoop& loop, int id) {
-    const auto it = index.defBlocks.find(id);
-    if (it == index.defBlocks.end()) {
-        return false;
-    }
-    for (const std::size_t b : it->second) {
-        if (loop.blocks.count(b) != 0) {
-            return true;
-        }
-    }
-    return false;
-}
-
-bool loopHasIndirectWrite(const DefIndex& index, const NaturalLoop& loop) {
-    for (const std::size_t b : loop.blocks) {
-        if (b < index.indirect.size() && index.indirect[b]) {
-            return true;
-        }
-    }
-    return false;
-}
-
-bool isIntegral(const DefIndex& index, int id) {
+bool isIntegral(const UseDefIndex& index, int id) {
     const Value* value = findValue(index, id);
     return value != nullptr && value->getType() == Type::INTEGRAL;
 }
 
-bool isInvariant(const DefIndex& index, const NaturalLoop& loop, int id, bool indirect) {
+bool isInvariant(const UseDefIndex& index, const NaturalLoop& loop, int id, bool indirect) {
     if (defInLoop(index, loop, id)) {
         return false;
     }
@@ -214,7 +135,7 @@ bool ownedByLoop(const NaturalLoop& loop, std::size_t block, const std::vector<N
     return true;
 }
 
-std::unordered_map<int, Update> simpleIvs(const Cfg& cfg, const LoopSnap& snap, const DefIndex& index,
+std::unordered_map<int, Update> simpleIvs(const Cfg& cfg, const LoopSnap& snap, const UseDefIndex& index,
         const NaturalLoop& loop) {
     const bool indirect = loopHasIndirectWrite(index, loop);
     std::unordered_map<int, Update> updates;
@@ -264,7 +185,7 @@ std::unordered_map<int, Update> simpleIvs(const Cfg& cfg, const LoopSnap& snap, 
     return simple;
 }
 
-std::vector<Group> reducibleMuls(const Cfg& cfg, const LoopSnap& snap, const DefIndex& index,
+std::vector<Group> reducibleMuls(const Cfg& cfg, const LoopSnap& snap, const UseDefIndex& index,
         const NaturalLoop& loop) {
     const auto ivs = simpleIvs(cfg, snap, index, loop);
     const bool indirect = loopHasIndirectWrite(index, loop);
@@ -336,14 +257,14 @@ struct AddressGroup {
     std::vector<AddressSite> sites;
 };
 
-bool baseStable(const DefIndex& index, const NaturalLoop& loop, int id, bool indirect) {
+bool baseStable(const UseDefIndex& index, const NaturalLoop& loop, int id, bool indirect) {
     if (!isIntegral(index, id) || defInLoop(index, loop, id)) {
         return false;
     }
     return !(indirect && index.addressTaken.count(id) != 0);
 }
 
-bool rawRegisterIv(const DefIndex& index, int id) {
+bool rawRegisterIv(const UseDefIndex& index, int id) {
     const Value* value = findValue(index, id);
     return value != nullptr && value->getType() == Type::INTEGRAL && value->getSizeInBytes() == 8
             && value->getClassification().gprExtend == type::sysv::GprExtend::None;
@@ -367,7 +288,7 @@ bool constantByteDelta(const Step& step, int stride, bool pointerSubtract, int& 
     return true;
 }
 
-std::vector<AddressGroup> reducibleAddresses(const Cfg& cfg, const LoopSnap& snap, const DefIndex& index,
+std::vector<AddressGroup> reducibleAddresses(const Cfg& cfg, const LoopSnap& snap, const UseDefIndex& index,
         const NaturalLoop& loop) {
     const auto ivs = simpleIvs(cfg, snap, index, loop);
     const bool indirect = loopHasIndirectWrite(index, loop);
@@ -442,7 +363,7 @@ std::vector<AddressGroup> reducibleAddresses(const Cfg& cfg, const LoopSnap& sna
     return groups;
 }
 
-bool loopNeedsPreheader(const Cfg& cfg, const LoopSnap& snap, const DefIndex& index,
+bool loopNeedsPreheader(const Cfg& cfg, const LoopSnap& snap, const UseDefIndex& index,
         const NaturalLoop& loop) {
     if (hasPreheader(cfg, loop, snap.pred, snap.dom)) {
         return false;
@@ -455,14 +376,6 @@ bool loopNeedsPreheader(const Cfg& cfg, const LoopSnap& snap, const DefIndex& in
     }
     return !reducibleMuls(cfg, snap, index, loop).empty()
             || !reducibleAddresses(cfg, snap, index, loop).empty();
-}
-
-void appendBeforeTerminator(BasicBlock& block, Instruction inst) {
-    if (!block.insts.empty() && instructionTransfersControl(block.insts.back())) {
-        block.insts.insert(block.insts.end() - 1, std::move(inst));
-        return;
-    }
-    block.insts.push_back(std::move(inst));
 }
 
 int pinTemp(Procedure& procedure, IrStringTable& strings, const Shape& shape) {
@@ -566,7 +479,7 @@ StrengthReduceStats strengthReduce(Procedure& procedure, IrStringTable& strings)
     }
     Cfg cfg = buildCfg(procedure.body);
     LoopSnap snap = analyzeLoops(cfg);
-    DefIndex index = buildIndex(cfg, procedure);
+    UseDefIndex index = buildUseDefIndex(cfg, procedure);
 
     std::unordered_set<int> need;
     for (const auto& loop : snap.loops) {
@@ -574,29 +487,7 @@ StrengthReduceStats strengthReduce(Procedure& procedure, IrStringTable& strings)
             need.insert(cfg[loop.header].label);
         }
     }
-    while (!need.empty()) {
-        snap = analyzeLoops(cfg);
-        const NaturalLoop* chosen = nullptr;
-        for (const auto& loop : snap.loops) {
-            if (loop.header >= cfg.size() || need.count(cfg[loop.header].label) == 0) {
-                continue;
-            }
-            if (chosen == nullptr || loop.header > chosen->header) {
-                chosen = &loop;
-            }
-        }
-        if (chosen == nullptr) {
-            break;
-        }
-        const int headerLabel = cfg[chosen->header].label;
-        if (hasPreheader(cfg, *chosen, snap.pred, snap.dom)) {
-            need.erase(headerLabel);
-            continue;
-        }
-        insertOne(cfg, *chosen, strings);
-        need.erase(headerLabel);
-        ++stats.inserted;
-    }
+    stats.inserted = insertPreheadersFor(cfg, strings, std::move(need));
     if (stats.inserted != 0) {
         snap = analyzeLoops(cfg);
     }
@@ -609,12 +500,12 @@ StrengthReduceStats strengthReduce(Procedure& procedure, IrStringTable& strings)
         return a.header < b.header;
     });
     for (const auto& loop : loops) {
-        index = buildIndex(cfg, procedure);
+        index = buildUseDefIndex(cfg, procedure);
         const std::vector<Group> groups = reducibleMuls(cfg, snap, index, loop);
         if (!groups.empty()) {
             rewriteGroups(cfg, procedure, strings, snap, loop, groups, stats);
         }
-        index = buildIndex(cfg, procedure);
+        index = buildUseDefIndex(cfg, procedure);
         const std::vector<AddressGroup> addresses = reducibleAddresses(cfg, snap, index, loop);
         if (!addresses.empty()) {
             rewriteAddresses(cfg, procedure, strings, snap, loop, addresses, stats);
