@@ -36,7 +36,7 @@ int nonLabelCount(const std::vector<Instruction>& body) {
 
 bool calleeLooksUnsafe(const Procedure& callee, const IrStringTable& strings) {
     for (const auto& inst : callee.body) {
-        if (isVaOp(inst.op)) {
+        if (isVaOp(inst.op) || inst.op == Op::Alloca) {
             return true;
         }
         if (inst.op == Op::Call && !inst.callIndirect && isSetjmpFamily(strings.get(inst.arg0))) {

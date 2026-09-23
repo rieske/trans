@@ -50,6 +50,46 @@ TEST(Compiler, recursiveFactorialKeepsCorrectResult) {
     program.runAndExpect("120 1");
 }
 
+TEST(Compiler, vlaHelperOnce) {
+    SourceProgram program{R"prg(int printf(const char *, ...);
+        static int touch(int n) {
+            char buf[n];
+            buf[0] = 1;
+            buf[n - 1] = 2;
+            return buf[0] + buf[n - 1];
+        }
+        int main(void) {
+            printf("%d", touch(8));
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("3");
+}
+
+TEST(Compiler, vlaHelperLoopReusesStack) {
+    SourceProgram program{R"prg(int printf(const char *, ...);
+        static int touch(int n) {
+            char buf[n];
+            buf[0] = 1;
+            buf[n - 1] = 2;
+            return buf[0] + buf[n - 1];
+        }
+        int main(void) {
+            int i;
+            int s;
+            s = 0;
+            for (i = 0; i < 40; i = i + 1) {
+                s = s + touch(262144);
+            }
+            printf("%d", s);
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("120");
+}
+
 TEST(Compiler, variadicPrintfStillFormatsAfterInline) {
     SourceProgram program{R"prg(int printf(const char *, ...);
         static int add1(int x) {
