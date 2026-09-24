@@ -90,6 +90,8 @@ struct SysVStackLayout {
     };
     std::vector<Slot> slots;
     int totalBytes { 0 };
+    // Byte offset of the first byte after the last named stack argument.
+    int endOffset { 0 };
 };
 
 // Left-to-right stack args. Offset 0 is RSP+8 after call (16-aligned).
@@ -106,6 +108,7 @@ inline SysVStackLayout layoutSysVStackArgs(const std::vector<SysVStackArg>& args
         layout.slots.push_back({ off, slotSize });
         off += slotSize;
     }
+    layout.endOffset = off;
     layout.totalBytes = type::object_abi::alignUp(off, type::object_abi::STACK_ALIGNMENT);
     return layout;
 }

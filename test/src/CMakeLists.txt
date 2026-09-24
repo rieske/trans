@@ -243,6 +243,7 @@ add_executable(functionalTest
         functionalTest/UnaryOperatorsTest.cpp
         functionalTest/ShiftOperatorsTest.cpp
         functionalTest/IntegerPromotionsTest.cpp
+        functionalTest/OpenMiscompileTest.cpp
         functionalTest/IntegerMemoryWidthTest.cpp
         functionalTest/Uint32ArithTest.cpp
         functionalTest/AssignmentOperatorsTest.cpp

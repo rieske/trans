@@ -67,7 +67,7 @@ public:
     void unaryMinus(int operandName, int resultName);
     void unaryNot(int operandName, int resultName);
 
-    void assign(int operandName, int resultName);
+    void assign(int operandName, int resultName, bool unsignedSource = false);
     void widenInteger(int operandName, int resultName, bool signHighWord);
     void assignConstant(int constant, int resultName, int highWord = kNoSymbol);
     void assignLabelAddress(int label, int resultName);
@@ -165,7 +165,9 @@ private:
             std::string (InstructionSet::*ssOp)(int, int) const,
             std::string (InstructionSet::*sdOp)(int, int) const);
     bool involvesFloating(const Value& left, const Value& right, const Value& result) const;
-    bool tryNumericAssignConvert(Value& operand, Value& result);
+    bool tryNumericAssignConvert(Value& operand, Value& result, bool unsignedSource);
+    void emitUnsigned64ToXmm(Register& src, bool destFloat32, const std::vector<Register*>& keep);
+    void emitUnsigned128ToFloat(Value& operand, Value& result);
 
     enum class X87Op { Add, Sub, Mul, Div };
     bool tryComplexBinary(Value& left, Value& right, Value& result, X87Op op);
@@ -187,7 +189,7 @@ private:
     bool tryX87Binary(Value& left, Value& right, Value& result, X87Op op);
     void emitX87Binary(Value& left, Value& right, Value& result, X87Op op);
     void emitX87UnaryMinus(Value& operand, Value& result);
-    void emitX87Compare(Value& left, Value& right, bool signedRel);
+    void emitX87Compare(Value& left, Value& right);
     void emitX87ZeroCompare(Value& symbol);
     void emitX87Convert(Value& operand, Value& result);
     void setCompareFlagsFromTernary(Register& acc, bool signedRel);
@@ -313,13 +315,15 @@ private:
         Address regSave;
         Address overflow;
         int lastNamedFormal { kNoSymbol };
-        bool lastFormalOnStack { false };
+        int namedStackEnd { 0 };
         int namedGpOffset { 0 };
         int namedFpOffset { 0 };
     };
     std::optional<VariadicFrame> variadicFrame;
     int vaArgSeq { 0 };
     int wideLabel_ { 0 };
+    // ucomi sets ZF and CF for unordered as well as for equal and below.
+    bool unorderedCompare_ { false };
 };
 
 } // namespace codegen

@@ -13,6 +13,7 @@
 #include "types/TypeQuery.h"
 #include "util/StringLiteralDecode.h"
 
+#include <cstdint>
 #include <limits>
 #include <optional>
 
@@ -35,22 +36,48 @@ const ast::StringLiteralExpression* charArrayStringLiteral(const ast::Expression
     return list->getElements().front().value->asStringLiteral();
 }
 
-std::unique_ptr<ast::InitializerListExpression> braceListFromStringBytes(
-        const std::vector<unsigned char>& bytes, const translation_unit::Context& context) {
+std::unique_ptr<ast::InitializerListExpression> braceListFromCodeUnits(
+        const std::vector<std::uint32_t>& units, const translation_unit::Context& context) {
     std::vector<ast::InitializerElement> elements;
-    elements.reserve(bytes.size());
-    for (unsigned char b : bytes) {
-        ast::Constant constant { std::to_string(static_cast<int>(b)), type::signedInteger(), context };
+    elements.reserve(units.size());
+    for (std::uint32_t unit : units) {
+        const type::Type constantType = unit <= 2147483647u
+                ? type::signedInteger() : type::unsignedInteger();
+        ast::Constant constant { std::to_string(unit), constantType, context };
         elements.emplace_back(std::make_unique<ast::ConstantExpression>(std::move(constant)));
     }
     return std::make_unique<ast::InitializerListExpression>(std::move(elements));
 }
 
+std::unique_ptr<ast::InitializerListExpression> braceListFromStringBytes(
+        const std::vector<unsigned char>& bytes, const translation_unit::Context& context) {
+    std::vector<std::uint32_t> units(bytes.begin(), bytes.end());
+    return braceListFromCodeUnits(units, context);
+}
+
+bool fitCodeUnits(std::vector<std::uint32_t>& units, const type::Type& destArray, std::string* error) {
+    if (destArray.isIncompleteArray()) {
+        return true;
+    }
+    const int n = destArray.getArraySize();
+    if (n > 0 && static_cast<int>(units.size()) > n) {
+        if (static_cast<int>(units.size()) - 1 > n) {
+            if (error) {
+                *error = "excess elements in array initializer";
+            }
+            return false;
+        }
+        units.resize(static_cast<std::size_t>(n));
+    }
+    return true;
+}
+
 } // namespace
 
 bool isCharArrayStringInit(const type::Type& destArray, const ast::Expression* value) {
-    return value && destArray.isArray() && type::isCharacter(destArray.getElementType())
-            && charArrayStringLiteral(value);
+    const ast::StringLiteralExpression* literal = charArrayStringLiteral(value);
+    return literal && destArray.isArray() && type::isCharacter(destArray.getElementType())
+            && util::stringLiteralUnitBytes(literal->getValue()) == 1;
 }
 
 std::optional<std::vector<unsigned char>> charArrayBytesFromString(
@@ -88,7 +115,27 @@ bool SemanticAnalysisVisitor::rewriteCharArrayStringInitializer(ast::Initialized
     }
     if (bytes) {
         declarator.setInitializer(braceListFromStringBytes(*bytes, declarator.getContext()));
+        return true;
     }
+    const ast::StringLiteralExpression* literal = charArrayStringLiteral(declarator.getInitializer());
+    if (!literal || !type.isArray() || util::stringLiteralUnitBytes(literal->getValue()) == 1) {
+        return true;
+    }
+    if (!type.getElementType().equivalentTo(literal->expressionType().getElementType())) {
+        // A brace around the literal may initialize the first subobject array.
+        if (type.getElementType().isAggregate() && declarator.getInitializer()->asInitList()) {
+            return true;
+        }
+        semanticError(type::productAssignFailureMessage(type, literal->expressionType()),
+                declarator.getContext());
+        return false;
+    }
+    std::vector<std::uint32_t> units = util::wideStringCodeUnits(literal->getValue());
+    if (!fitCodeUnits(units, type, &err)) {
+        semanticError(err, declarator.getContext());
+        return false;
+    }
+    declarator.setInitializer(braceListFromCodeUnits(units, declarator.getContext()));
     return true;
 }
 

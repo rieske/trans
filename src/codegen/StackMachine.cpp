@@ -99,7 +99,6 @@ void StackMachine::startProcedure(const Procedure& procedure) {
     frameLayout_ = {};
     instructionOrdinal = 0;
     const int lastNamedFormal = arguments.empty() ? kNoSymbol : arguments.back().id();
-    bool lastFormalOnStack = false;
     if (procedure.exported) {
         assembly.raw(instructionSet->globl(procedureName) + "\n");
     }
@@ -147,7 +146,6 @@ void StackMachine::startProcedure(const Procedure& procedure) {
 
     for (auto& argument : arguments) {
         const SysVArgAssignment asgn = assignSysVArg(argument.getClassification(), argCounts, maxIntegerRegs);
-        lastFormalOnStack = asgn.onStack;
         if (asgn.onStack) {
             stackArgs.push_back(&argument);
             continue;
@@ -219,7 +217,7 @@ void StackMachine::startProcedure(const Procedure& procedure) {
                 addressOf(resolve(procedure.vaGpHomes[0])),
                 Address::frame(FrameBase::BasePointer, 2 * MACHINE_WORD_SIZE, MACHINE_WORD_SIZE),
                 lastNamedFormal,
-                lastFormalOnStack,
+                stackLayout.endOffset,
                 sysvNamedGpOffset(argCounts),
                 sysvNamedFpOffset(argCounts),
         };
@@ -257,6 +255,33 @@ void StackMachine::jump(JumpCondition jumpCondition, int label, bool signedRel) 
     // Taken edges skip the stores label() emits in front of the join.
     spillAcrossEdge(label);
     const std::string& labelName = text(label);
+    const bool unordered = unorderedCompare_;
+    unorderedCompare_ = false;
+    // ucomi sets ZF and CF for NaN. ja/jae already exclude that. The others do not.
+    if (unordered && (jumpCondition == JumpCondition::IF_EQUAL
+                    || jumpCondition == JumpCondition::IF_BELOW
+                    || jumpCondition == JumpCondition::IF_BELOW_OR_EQUAL)) {
+        const std::string skip = "__uo" + std::to_string(++wideLabel_);
+        assembly << instructionSet->jp(skip);
+        switch (jumpCondition) {
+        case JumpCondition::IF_EQUAL:
+            assembly << instructionSet->je(labelName);
+            break;
+        case JumpCondition::IF_BELOW:
+            assembly << instructionSet->jb(labelName);
+            break;
+        default:
+            assembly << instructionSet->jbe(labelName);
+            break;
+        }
+        assembly.label(instructionSet->label(skip));
+        return;
+    }
+    if (unordered && jumpCondition == JumpCondition::IF_NOT_EQUAL) {
+        assembly << instructionSet->jp(labelName);
+        assembly << instructionSet->jne(labelName);
+        return;
+    }
     switch (jumpCondition) {
     case JumpCondition::IF_EQUAL:
         assembly << instructionSet->je(labelName);

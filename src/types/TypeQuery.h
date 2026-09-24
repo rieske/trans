@@ -42,7 +42,7 @@ struct PointerArithmeticInfo {
     int strideBytes { 1 };
 };
 
-// Classify `left op right` for Add/Sub. Result type is the pointer type or int (ptrdiff).
+// Classify `left op right` for Add/Sub. Result type is the pointer type or ptrdiff_t (long).
 PointerArithmeticInfo classifyPointerArithmetic(const Type& left, const Type& right,
         ArithmeticOp op);
 

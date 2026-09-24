@@ -7,6 +7,7 @@
 using util::decodeStringLiteralBytes;
 using util::encodeStringLiteralToken;
 using util::stringLiteralArrayLength;
+using util::stringLiteralUnitBytes;
 using util::toGasByteDirective;
 using util::toNasmDbDirective;
 
@@ -73,6 +74,11 @@ TEST(StringLiteralDecode, unquotedBodyStillDecodes) {
     EXPECT_EQ(bytes[0], 'h');
     EXPECT_EQ(bytes[1], 'i');
     EXPECT_EQ(bytes[2], 0);
+    auto linuxBytes = decodeStringLiteralBytes("Linux");
+    ASSERT_EQ(linuxBytes.size(), 6u);
+    EXPECT_EQ(linuxBytes[0], 'L');
+    EXPECT_EQ(stringLiteralUnitBytes("Linux"), 1);
+    EXPECT_EQ(stringLiteralUnitBytes("u8xx"), 1);
 }
 
 TEST(StringLiteralDecode, encodeInteriorBytesAsQuotedToken) {
@@ -95,7 +101,7 @@ TEST(StringLiteralDecode, charConstantSimpleEscapes) {
 TEST(StringLiteralDecode, charConstantHexAndOctal) {
     long value = 0;
     ASSERT_TRUE(util::decodeCharConstant("'\\xFE'", value));
-    EXPECT_EQ(value, 0xFE);
+    EXPECT_EQ(value, -2);
     ASSERT_TRUE(util::decodeCharConstant("'\\033'", value));
     EXPECT_EQ(value, 27);
     ASSERT_TRUE(util::decodeCharConstant("'\\101'", value));

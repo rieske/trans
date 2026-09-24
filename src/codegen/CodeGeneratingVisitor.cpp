@@ -62,6 +62,13 @@ void CodeGeneratingVisitor::emitConvert(int source, int dest,
         emit(ir::widen(source, dest, type::valueIsSigned(sourceType)));
         return;
     }
+    if (type::isIntegral(sourceType) && !type::valueIsSigned(sourceType)
+            && sourceType.getSize() >= 8 && type::isFloating(destType)) {
+        Instruction cast = ir::assign(source, dest);
+        cast.imm = 1;
+        emit(cast);
+        return;
+    }
     emit(ir::assign(source, dest));
 }
 

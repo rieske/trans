@@ -11,7 +11,15 @@ StringLiteralExpression::StringLiteralExpression(std::string value, translation_
     value { std::move(value) },
     context {context}
 {
-    setType(type::array(type::signedCharacter(), util::stringLiteralArrayLength(this->value)));
+    type::Type element = type::signedCharacter();
+    const int unit = util::stringLiteralUnitBytes(this->value);
+    if (unit == 2) {
+        element = type::unsignedShort();
+    } else if (unit == 4) {
+        // char32_t is unsigned. wchar_t is signed.
+        element = this->value[0] == 'U' ? type::unsignedInteger() : type::signedInteger();
+    }
+    setType(type::array(element, util::stringLiteralArrayLength(this->value)));
 }
 
 translation_unit::Context StringLiteralExpression::getContext() const {

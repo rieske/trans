@@ -14,7 +14,7 @@ TEST(Compiler, simpleCharEscapesHaveCValues) {
     program.runAndExpect("7 8 12 11 63 92 39 34 10 9 13");
 }
 
-TEST(Compiler, hexCharEscapeIsUnsignedByte) {
+TEST(Compiler, hexCharEscapeSignExtends) {
     SourceProgram program{R"prg(int printf(const char *, ...);
         int main(void) {
             printf("%d %d %d %d", '\x41', '\xFE', '\xff', (int)sizeof('\xFE'));
@@ -22,7 +22,7 @@ TEST(Compiler, hexCharEscapeIsUnsignedByte) {
         }
     )prg"};
     program.compile();
-    program.runAndExpect("65 254 255 4");
+    program.runAndExpect("65 -2 -1 4");
 }
 
 TEST(Compiler, octalCharEscapeIsByte) {
@@ -103,7 +103,7 @@ TEST(Compiler, enumAndCaseUseHexCharIce) {
         }
     )prg"};
     program.compile();
-    program.runAndExpect("254");
+    program.runAndExpect("-2");
 }
 
 } // namespace

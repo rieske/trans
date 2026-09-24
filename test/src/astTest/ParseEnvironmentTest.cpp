@@ -561,7 +561,7 @@ TEST(ParseEnvironment, typeOfPointerArithmetic) {
             std::make_unique<IdentifierExpression>("q", ctx) };
     auto ptrMinusPtrType = env.typeOf(ptrMinusPtr);
     ASSERT_TRUE(ptrMinusPtrType.has_value());
-    EXPECT_TRUE(ptrMinusPtrType->equivalentTo(type::signedInteger()));
+    EXPECT_TRUE(ptrMinusPtrType->equivalentTo(type::signedLong()));
 
     ArithmeticExpression arrPlus {
             std::make_unique<IdentifierExpression>("a", ctx),

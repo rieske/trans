@@ -119,7 +119,7 @@ Type assignmentConvertTarget(AssignOp op, const Type& dest, const Type& source) 
     return dest;
 }
 
-// Classify `left op right` for Add/Sub. Result type is the pointer type or int (ptrdiff).
+// Classify `left op right` for Add/Sub. Result type is the pointer type or ptrdiff_t (long).
 PointerArithmeticInfo classifyPointerArithmetic(const Type& left, const Type& right,
         ArithmeticOp op) {
     PointerArithmeticInfo info;
@@ -149,7 +149,7 @@ PointerArithmeticInfo classifyPointerArithmetic(const Type& left, const Type& ri
     }
     if (op == ArithmeticOp::Sub && left.isPointer() && right.isPointer()) {
         info.form = PointerArithmeticForm::PtrMinusPtr;
-        info.resultType = signedInteger();
+        info.resultType = signedLong();
         info.strideBytes = pointerElementStride(left);
         return info;
     }

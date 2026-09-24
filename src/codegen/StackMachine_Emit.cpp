@@ -56,7 +56,7 @@ void StackMachine::emit(const Instruction& instruction) {
         unaryNot(instruction.arg0, instruction.result);
         break;
     case Op::Assign:
-        assign(instruction.arg0, instruction.result);
+        assign(instruction.arg0, instruction.result, instruction.imm != 0);
         break;
     case Op::Widen:
         widenInteger(instruction.arg0, instruction.result, instruction.imm != 0);

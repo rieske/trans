@@ -73,6 +73,8 @@ public:
     std::string mulsd(int dstXmm, int srcXmm) const;
     std::string divsd(int dstXmm, int srcXmm) const;
     std::string addss(int dstXmm, int srcXmm) const;
+    std::string ucomiss(int leftXmm, int rightXmm) const;
+    std::string ucomisd(int leftXmm, int rightXmm) const;
     std::string subss(int dstXmm, int srcXmm) const;
     std::string mulss(int dstXmm, int srcXmm) const;
     std::string divss(int dstXmm, int srcXmm) const;
@@ -84,12 +86,14 @@ public:
     std::string label(std::string name) const;
     std::string jmp(std::string label) const;
     std::string je(std::string label) const;
+    std::string jns(std::string label) const;
     std::string jne(std::string label) const;
     std::string jg(std::string label) const;
     std::string jl(std::string label) const;
     std::string jge(std::string label) const;
     std::string jle(std::string label) const;
     std::string ja(std::string label) const;
+    std::string jp(std::string label) const;
     std::string jb(std::string label) const;
     std::string jae(std::string label) const;
     std::string jbe(std::string label) const;
@@ -107,6 +111,8 @@ public:
     // Signed >>. Arithmetic shift; logical shr would turn negatives positive.
     std::string shr(const Register& result, int widthBytes = 8) const;
     std::string lshr(const Register& result, int widthBytes = 8) const;
+    std::string lshrImm(const Register& result, int amount) const;
+    std::string andImm(const Register& result, int value) const;
     std::string shld(const Register& source, const Register& dest) const;
     std::string shrd(const Register& source, const Register& dest) const;
 

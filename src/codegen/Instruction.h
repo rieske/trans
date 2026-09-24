@@ -41,7 +41,7 @@ enum class Op {
     UnaryNot,            // arg0 result
     Inc,                 // arg0 imm(step)
     Dec,                 // arg0 imm(step)
-    Assign,              // arg0 result
+    Assign,              // arg0 result imm(1 = unsigned source to float)
     Widen,               // arg0 result imm(signHighWord)
     AssignConstant,      // arg0 result arg1(high, optional)
     AssignLabelAddress,  // arg0(label) result
