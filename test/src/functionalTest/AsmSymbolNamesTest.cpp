@@ -117,6 +117,55 @@ TEST(Compiler, fileScopePointerToExternDataEmitsOneExtern) {
     EXPECT_THAT(countSubstr(program.readAssembly(), "extern x\n"), Eq(1u));
 }
 
+TEST(Compiler, zeroInitializedGlobalsAreBss) {
+    SourceProgram program{R"prg(int printf(const char *, ...);
+        int zeroArr[32];
+        int explicitZero = 0;
+        int nonzero = 7;
+        int mixed[2] = {1, 0};
+        int *nullp = 0;
+        int *addr = &nonzero;
+        int main(void) {
+            printf("%d %d %d %d %d %d %d",
+                zeroArr[0], zeroArr[31], explicitZero, nonzero,
+                mixed[0] + mixed[1], nullp == 0, addr == &nonzero);
+            return 0;
+        }
+    )prg", {"-save-temps"}};
+    program.compile();
+    const std::string asmText = program.readAssembly();
+    const bool intel = functionalTestDialectTag() == "intel";
+    EXPECT_THAT(asmText, HasSubstr(intel ? "section .bss" : ".section .bss"));
+    EXPECT_THAT(asmText, HasSubstr(intel ? "resb " : ".zero "));
+    EXPECT_THAT(asmText, HasSubstr(intel ? "section .data" : ".section .data"));
+    EXPECT_THAT(asmText, Not(HasSubstr("0, 0, 0, 0")));
+    program.runAndExpect("0 0 0 7 1 1 1");
+}
+
+// A 12-byte struct copy moves two 8-byte words. The int after the destination
+// must stay put; the old .data tail pad used to absorb that extra word.
+TEST(Compiler, structCopyIntoGlobalDoesNotClobberNeighbor) {
+    SourceProgram program{R"prg(int printf(const char *, ...);
+        struct S { int a; int b; char c; };
+        struct S src;
+        int srcTail;
+        struct S dst;
+        int dstTail;
+        int main(void) {
+            src.a = 1;
+            src.b = 2;
+            src.c = 3;
+            srcTail = 287454020;
+            dstTail = 85;
+            dst = src;
+            printf("%d %d %d %d %d", dst.a, dst.b, (int)dst.c, dstTail, srcTail);
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("1 2 3 85 287454020");
+}
+
 TEST(Compiler, defineAbsAndCallIt) {
     SourceProgram program{R"prg(int printf(const char *, ...);
         int abs(int x) {

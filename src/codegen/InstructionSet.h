@@ -158,10 +158,12 @@ private:
     std::string preamblePrefix() const;
     std::string globlDataLine(const std::string& name) const;
     std::string dataSectionHeader() const;
+    std::string bssSectionHeader() const;
     std::string textSectionHeader() const;
     std::string constantLine(const std::string& name, const std::string& escapedValue) const;
     std::string alignDirective(int bytes) const;
     std::string dataObjectLines(const GlobalVariable& global) const;
+    std::string bssObjectLines(const GlobalVariable& global) const;
     std::string dataOperandText(const symbols::StaticInitValue& value) const;
     std::string joinedDataOperands(const GlobalVariable& global) const;
 

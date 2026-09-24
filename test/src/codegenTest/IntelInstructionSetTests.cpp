@@ -34,8 +34,9 @@ TEST(IntelInstructionSet, preambleAlignsDataObject) {
     gv.emission = ObjectEmission::DefineInternal;
     EXPECT_THAT(instructions.preamble({}, { gv }), Eq("default rel\n"
             "\nsection .data\n"
+            "\nsection .bss\n"
             "\talign 8\n"
-            "\t$x dq 0\n"
+            "\t$x resb 8\n"
             "\nsection .text\n\n"));
 }
 

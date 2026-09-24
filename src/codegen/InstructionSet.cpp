@@ -554,6 +554,27 @@ std::string InstructionSet::dataSectionHeader() const {
     return att() ? "\n.section .data\n" : "\nsection .data\n";
 }
 
+std::string InstructionSet::bssSectionHeader() const {
+    return att() ? "\n.section .bss\n" : "\nsection .bss\n";
+}
+
+namespace {
+
+bool storesOnlyZeros(const GlobalVariable& global) {
+    if (global.sizeInBytes <= 0) {
+        return false;
+    }
+    for (const auto& value : global.initValues) {
+        const auto* word = std::get_if<symbols::StaticWord>(&value);
+        if (word == nullptr || word->bits != 0) {
+            return false;
+        }
+    }
+    return true;
+}
+
+} // namespace
+
 std::string InstructionSet::textSectionHeader() const {
     return att() ? "\n.section .text\n\n" : "\nsection .text\n\n";
 }
@@ -564,6 +585,13 @@ std::string InstructionSet::constantLine(const std::string& name, const std::str
 
 std::string InstructionSet::alignDirective(int bytes) const {
     return att() ? "\t.align " + std::to_string(bytes) + "\n" : "\talign " + std::to_string(bytes) + "\n";
+}
+
+std::string InstructionSet::bssObjectLines(const GlobalVariable& global) const {
+    // copyWords / loadWord / storeWord move full 8-byte words, including a short tail.
+    const int bytes = type::object_abi::dataWords(global.sizeInBytes) * type::object_abi::MACHINE_WORD_SIZE;
+    const std::string reserve = (att() ? ".zero " : "resb ") + std::to_string(bytes);
+    return defined(global.name, reserve);
 }
 
 std::string InstructionSet::dataObjectLines(const GlobalVariable& global) const {
@@ -588,8 +616,13 @@ std::string InstructionSet::preamble(const std::map<std::string, std::string>& c
     for (const auto& constant : constants) {
         out << constantLine(constant.first, constant.second);
     }
+    bool anyBss = false;
     for (const auto& global : globalVariables) {
         if (global.emission == ObjectEmission::Reference) {
+            continue;
+        }
+        if (storesOnlyZeros(global)) {
+            anyBss = true;
             continue;
         }
         if (global.emission == ObjectEmission::DefineExternal) {
@@ -599,6 +632,21 @@ std::string InstructionSet::preamble(const std::map<std::string, std::string>& c
             out << alignDirective(global.alignBytes);
         }
         out << dataObjectLines(global);
+    }
+    if (anyBss) {
+        out << bssSectionHeader();
+        for (const auto& global : globalVariables) {
+            if (global.emission == ObjectEmission::Reference || !storesOnlyZeros(global)) {
+                continue;
+            }
+            if (global.emission == ObjectEmission::DefineExternal) {
+                out << globlDataLine(global.name);
+            }
+            if (global.alignBytes > 1) {
+                out << alignDirective(global.alignBytes);
+            }
+            out << bssObjectLines(global);
+        }
     }
     out << textSectionHeader();
     return out.str();
