@@ -87,6 +87,7 @@ void StackMachine::startProcedure(const Procedure& procedure) {
     emptyGeneralPurposeRegisters();
     frameHomes.clear();
     sretId_ = kNoSymbol;
+    mainExitZero_ = text(procedure.name) == "main";
     variadicFrame.reset();
     const ProcedureLiveness live = computeProcedureLiveness(procedure);
     liveInAtLabel_ = live.atLabel;

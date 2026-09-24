@@ -17,6 +17,39 @@ int scanf(const char *, ...);
     program.runAndExpect("1");
 }
 
+// C99 5.1.2.2.3: reaching the closing brace of main is return 0.
+TEST(Compiler, mainFallingOffEndReturnsZero) {
+    SourceProgram program{R"prg(int printf(const char *, ...);
+        int main(void) {
+            printf("7");
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("7");
+}
+
+TEST(Compiler, boolCompoundAssignStoresZeroOrOne) {
+    SourceProgram program{R"prg(int printf(const char *, ...);
+        int main(void) {
+            _Bool b = 0;
+            int v = (b -= 1);
+            _Bool d = 1;
+            int w = (d += 1);
+            _Bool e = 0;
+            int i;
+            for (i = 0; i < 7; i++) e -= 1;
+            _Bool f = 0;
+            int p = ++f;
+            _Bool g = 0;
+            int q = --g;
+            printf("%d %d %d %d %d %d %d", (int)b, v, (int)d, w, (int)e, p, q);
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("1 1 1 1 1 1 1");
+}
+
 TEST(Compiler, defaultReturnTypeHelperFunction) {
     SourceProgram program{R"prg(int printf(const char *, ...);
 int scanf(const char *, ...);

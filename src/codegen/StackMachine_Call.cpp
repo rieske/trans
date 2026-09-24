@@ -378,6 +378,9 @@ void StackMachine::returnFromProcedure(int returnSymbolName) {
             storeInMemory(returnSymbol);
             assembly << instructionSet->loadX87(memoryOperand(returnSymbol));
         }
+    } else if (mainExitZero_) {
+        Register& rax = registers->getRetrievalRegister();
+        assembly << instructionSet->xor_(rax, rax, 4);
     }
     popCalleeSavedRegisters();
     assembly << instructionSet->leave();

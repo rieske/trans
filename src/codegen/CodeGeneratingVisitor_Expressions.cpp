@@ -187,6 +187,11 @@ void CodeGeneratingVisitor::emitIncDec(int name, const type::Type& valueType, bo
     } else {
         emit(ir::dec(name, 1));
     }
+    if (type::isBoolean(valueType)) {
+        const int normalized = addScratchValue(type::signedInteger());
+        emitBooleanConvert(name, normalized);
+        emit(ir::assign(normalized, name));
+    }
 }
 
 void CodeGeneratingVisitor::visit(ast::PostfixExpression& expression) {
@@ -615,6 +620,11 @@ void CodeGeneratingVisitor::visit(ast::AssignmentExpression& expression) {
         return;
     }
 
+    if (type::isBoolean(expression.leftOperandType())) {
+        const int normalized = addScratchValue(type::signedInteger());
+        emitBooleanConvert(resultName, normalized);
+        emit(ir::assign(normalized, resultName));
+    }
     if (expression.leftOperandLvalueSymbol(store_)) {
         emitLvalueStore(*expression.getLeftOperand(), resultName);
     }
