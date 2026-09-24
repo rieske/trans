@@ -49,8 +49,13 @@ const Value* findValue(const Procedure& procedure, int id) {
 }
 
 bool isFoldableInteger(const Value* value) {
-    return value && value->getType() == Type::INTEGRAL && value->getSizeInBytes() > 0
-            && value->getSizeInBytes() <= 8;
+    return value && !value->isVolatile() && value->getType() == Type::INTEGRAL
+            && value->getSizeInBytes() > 0 && value->getSizeInBytes() <= 8;
+}
+
+bool operandIsVolatile(const Procedure& procedure, int id) {
+    const Value* value = findValue(procedure, id);
+    return value && value->isVolatile();
 }
 
 unsigned long long widthMask(int bytes) {
@@ -181,7 +186,11 @@ std::optional<unsigned long long> knownBits(
 }
 
 std::optional<Instruction> tryAlgebraicIdentity(const Instruction& inst,
-        const std::unordered_map<int, unsigned long long>& known, IrStringTable& strings) {
+        const std::unordered_map<int, unsigned long long>& known, const Procedure& procedure,
+        IrStringTable& strings) {
+    if (operandIsVolatile(procedure, inst.arg0) || operandIsVolatile(procedure, inst.arg1)) {
+        return std::nullopt;
+    }
     const auto isZero = [&](int id) {
         const auto bits = knownBits(known, id);
         return bits && *bits == 0;
@@ -311,7 +320,7 @@ std::optional<Instruction> tryFold(const Instruction& inst,
                 }
             }
         }
-        return tryAlgebraicIdentity(inst, known, strings);
+        return tryAlgebraicIdentity(inst, known, procedure, strings);
     }
     case Op::UnaryMinus:
     case Op::UnaryNot:
@@ -753,7 +762,10 @@ void eliminateDeadTemps(Procedure& procedure) {
             if (static_cast<std::size_t>(i) < live.afterInst.size()) {
                 after = &live.afterInst[static_cast<std::size_t>(i)];
             }
-            if (isDeadAssignable(inst.op)
+            const bool volatileUse = operandIsVolatile(procedure, inst.arg0)
+                    || operandIsVolatile(procedure, inst.arg1)
+                    || operandIsVolatile(procedure, inst.result);
+            if (isDeadAssignable(inst.op) && !volatileUse
                     && isDeadExpressionTempDef(procedure, inst.result, after ? *after : empty,
                             live.addressTaken)) {
                 continue;

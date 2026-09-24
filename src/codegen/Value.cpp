@@ -82,6 +82,14 @@ bool Value::isExpressionTemp() const {
     return expressionTemp_;
 }
 
+void Value::markVolatile() {
+    volatile_ = true;
+}
+
+bool Value::isVolatile() const {
+    return volatile_;
+}
+
 void Value::setLastUseOrdinal(int ordinal) {
     lastUseOrdinal_ = ordinal;
 }

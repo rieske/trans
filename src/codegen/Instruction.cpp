@@ -38,6 +38,9 @@ int addFrameTemp(IrStringTable& strings, Procedure& procedure, const type::Type&
             type::sysv::classify(type)
     };
     scratch.markExpressionTemp();
+    if (type.isVolatile()) {
+        scratch.markVolatile();
+    }
     const int scratchId = scratch.id();
     procedure.frame.locals.push_back(std::move(scratch));
     return scratchId;
@@ -57,6 +60,9 @@ Value valueFromSymbol(IrStringTable& strings, const symbols::ValueEntry& symbol)
     };
     if (symbol.isExpressionTemp()) {
         value.markExpressionTemp();
+    }
+    if (objectType.isVolatile()) {
+        value.markVolatile();
     }
     return value;
 }

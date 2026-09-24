@@ -37,6 +37,8 @@ public:
     void markExpressionTemp();
     void clearExpressionTemp();
     bool isExpressionTemp() const;
+    void markVolatile();
+    bool isVolatile() const;
     void setLastUseOrdinal(int ordinal);
     int getLastUseOrdinal() const;
 
@@ -49,6 +51,7 @@ private:
 
     Register* assignedRegister { nullptr };
     bool expressionTemp_ { false };
+    bool volatile_ { false };
     int lastUseOrdinal_ { -1 };
 };
 
