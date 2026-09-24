@@ -205,4 +205,23 @@ TEST(Compiler, genericBitFieldKeepsDeclaredWidth) {
     program.runAndExpect("6 171 171 1 1");
 }
 
+// (signed char)-32 promoted to int is -32, not the zero-extended byte 224.
+// ~((int)(signed char)28) is -29, which is greater than -32.
+TEST(Compiler, signedCharMaxSignExtendsAtOpt) {
+    SourceProgram program{R"prg(int printf(const char *, ...);
+        #define max(a, b) \
+            ({ __typeof__(a) _a = (a); \
+               __typeof__(b) _b = (b); \
+               _a > _b ? _a : _b; })
+        int main(void) {
+            short v = (short) max(~((int)(signed char)28),
+                (int) max((signed char)-32, (signed char)-32));
+            printf("%d", (int)v);
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("-29");
+}
+
 } // namespace

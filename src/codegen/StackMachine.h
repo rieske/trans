@@ -298,6 +298,7 @@ private:
 
     std::set<int> definedProcedures;
     int sretId_ { kNoSymbol };
+    bool mainExitZero_ { false };
 
     bool hasFrame_ { false };
     bool haveEdgeLiveness_ { false };

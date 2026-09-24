@@ -491,9 +491,17 @@ FoldResult foldConstants(Procedure& procedure, IrStringTable& strings) {
             }
         } else if (inst.op == Op::Assign && escaped.count(inst.result) == 0) {
             const auto src = known.find(inst.arg0);
+            const Value* srcVal = findValue(procedure, inst.arg0);
             const Value* dest = findValue(procedure, inst.result);
-            if (src != known.end() && isFoldableInteger(dest)) {
-                known[inst.result] = src->second & widthMask(dest->getSizeInBytes());
+            if (src != known.end() && isFoldableInteger(srcVal) && isFoldableInteger(dest)) {
+                unsigned long long bits = src->second;
+                const int srcBytes = srcVal->getSizeInBytes();
+                const int destBytes = dest->getSizeInBytes();
+                if (srcBytes > 0 && srcBytes < destBytes
+                        && srcVal->getClassification().gprExtend == type::sysv::GprExtend::Sign) {
+                    bits = static_cast<unsigned long long>(asSigned(bits, bitWidth(srcBytes)));
+                }
+                known[inst.result] = bits & widthMask(destBytes);
                 recorded = true;
             }
         }
