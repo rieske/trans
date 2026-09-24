@@ -140,6 +140,17 @@ inline bool foldsToIntegerZero(const ast::Expression& expr) {
 // (including pointer-to-function) when sourceExpr is provided.
 inline bool productAssignOk(const type::Type& dest, const type::Type& source,
         const ast::Expression* sourceExpr = nullptr) {
+    if (sourceExpr && dest.isPointer()) {
+        if (const auto* literal = sourceExpr->asStringLiteral()) {
+            const type::Type& element = literal->expressionType().getElementType();
+            const type::Type& pointee = dest.dereference();
+            const bool sameElement = pointee.isVoid() || pointee.equivalentTo(element)
+                    || (type::isCharacter(pointee) && type::isCharacter(element));
+            if (!sameElement) {
+                return false;
+            }
+        }
+    }
     if (type::productAssignFrom(dest, source)) {
         return true;
     }

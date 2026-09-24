@@ -441,15 +441,15 @@ TEST(Compiler, adjacentStringsConcatenate) {
     program.runAndExpect("abcd");
 }
 
-TEST(Compiler, wideStringPrefixIsPlainString) {
+TEST(Compiler, wideStringIsFourByteUnits) {
     SourceProgram program{R"prg(#include <stdio.h>
         int main() {
-            printf("%s", L"ok");
+            printf("%d %d %d", (int)sizeof(L"ok"), (int)L"ok"[0], (int)L"ok"[1]);
             return 0;
         }
     )prg"};
     program.compile();
-    program.runAndExpect("ok");
+    program.runAndExpect("12 111 107");
 }
 
 TEST(Compiler, statementAsmIsNullStatement) {

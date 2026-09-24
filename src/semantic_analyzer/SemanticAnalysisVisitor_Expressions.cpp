@@ -6,6 +6,8 @@
 
 #include "ast/CompoundLiteral.h"
 #include "ast/InitializerListExpression.h"
+#include "ast/StringLiteralExpression.h"
+#include "util/StringLiteralDecode.h"
 #include "ast/TypeCast.h"
 #include "ast/TypeNameExpression.h"
 #include "ast/TypeSpecifier.h"
@@ -15,6 +17,27 @@
 namespace semantic_analyzer {
 
 namespace {
+
+void sizeWideStringCompoundLiteral(type::Type& target, const ast::InitializerListExpression& list) {
+    if (!target.isIncompleteArray() || target.getElementType().isAggregate()) {
+        return;
+    }
+    const auto& elements = list.getElements();
+    if (elements.size() != 1 || elements.front().isDesignated() || !elements.front().value) {
+        return;
+    }
+    const auto* literal = elements.front().value->asStringLiteral();
+    if (!literal || util::stringLiteralUnitBytes(literal->getValue()) == 1) {
+        return;
+    }
+    if (!target.getElementType().equivalentTo(literal->expressionType().getElementType())) {
+        return;
+    }
+    const int units = static_cast<int>(util::wideStringCodeUnits(literal->getValue()).size());
+    if (units > 0) {
+        target = type::array(target.getElementType(), units);
+    }
+}
 
 void checkIncrementOperand(SemanticAnalysisVisitor& visitor, bool isLval,
         const type::Type& operandType, const translation_unit::Context& context) {
@@ -161,7 +184,8 @@ void SemanticAnalysisVisitor::visit(ast::ConstantExpression& constant) {
 
 void SemanticAnalysisVisitor::visit(ast::StringLiteralExpression& stringLiteral) {
     stringLiteral.setRodataLabel(annotations(), symbolTable.newConstant(stringLiteral.getValue()));
-    const auto& address = symbolTable.createTemporarySymbol(type::pointer(type::signedCharacter()));
+    const auto& address = symbolTable.createTemporarySymbol(
+            type::pointer(stringLiteral.expressionType().getElementType()));
     stringLiteral.setAggregateAddressResult(annotations(), address, stringLiteral.expressionType());
 }
 
@@ -402,6 +426,7 @@ void SemanticAnalysisVisitor::visit(ast::CompoundLiteral& expression) {
 
     type::Type target = expression.getTypeSpecifier().getType();
     ast::InitializerListExpression& list = expression.initializer();
+    sizeWideStringCompoundLiteral(target, list);
     if (!applyIncompleteArrayBound(target, &list, expression.getContext())) {
         return;
     }

@@ -57,9 +57,7 @@ void StackMachine::vaStart(int apName, int lastStorageName) {
         internalError("va_start in non-variadic procedure");
     }
     const VariadicFrame& frame = *variadicFrame;
-    if (lastStorageName < 0) {
-        lastStorageName = frame.lastNamedFormal;
-    }
+    (void)lastStorageName;
 
     spillGeneralPurposeRegisters();
     emptyGeneralPurposeRegisters();
@@ -76,17 +74,11 @@ void StackMachine::vaStart(int apName, int lastStorageName) {
     assembly << instructionSet->lea(memoryOperand(frame.regSave), scratch);
     assembly << instructionSet->mov(scratch, MemoryOperand::at(tag, 16));
 
-    if (frame.lastFormalOnStack && lastStorageName >= 0) {
-        auto& last = resolve(lastStorageName);
-        storeInMemory(last);
-        assembly << instructionSet->lea(memoryOperand(last), scratch);
-        const int lastBytes = type::object_abi::valueWords(last.getSizeInBytes()) * MACHINE_WORD_SIZE;
-        assembly << instructionSet->lea(MemoryOperand::at(scratch, lastBytes), scratch);
-        assembly << instructionSet->mov(scratch, MemoryOperand::at(tag, 8));
-    } else {
-        assembly << instructionSet->lea(memoryOperand(frame.overflow), scratch);
-        assembly << instructionSet->mov(scratch, MemoryOperand::at(tag, 8));
+    assembly << instructionSet->lea(memoryOperand(frame.overflow), scratch);
+    if (frame.namedStackEnd != 0) {
+        assembly << instructionSet->add(scratch, frame.namedStackEnd);
     }
+    assembly << instructionSet->mov(scratch, MemoryOperand::at(tag, 8));
     emptyGeneralPurposeRegisters();
 }
 

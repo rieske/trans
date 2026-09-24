@@ -1,6 +1,7 @@
 #include "TokenFilter.h"
 
 #include "scanner/LexicalSession.h"
+#include "scanner/Scanner.h"
 #include "util/StringLiteralDecode.h"
 
 #include <string_view>
@@ -210,7 +211,7 @@ Token TokenFilter::nextToken() {
             pushFront(next);
             return t;
         }
-        return finishStringToken(next);
+        return finishStringToken(next, t.lexeme);
     }
 
     if (isStringToken(t)) {
@@ -220,25 +221,9 @@ Token TokenFilter::nextToken() {
     return t;
 }
 
-Token TokenFilter::finishStringToken(const Token& first) {
-    auto takeInterior = [](const Token& t) {
-        auto bytes = util::decodeStringLiteralBytes(t.lexeme);
-        if (!bytes.empty() && bytes.back() == '\0') {
-            bytes.pop_back();
-        }
-        return bytes;
-    };
-
-    std::vector<unsigned char> bytes;
-    bool glued = false;
-    auto appendString = [&](const Token& t) {
-        auto piece = takeInterior(t);
-        if (!glued) {
-            bytes = takeInterior(first);
-            glued = true;
-        }
-        bytes.insert(bytes.end(), piece.begin(), piece.end());
-    };
+Token TokenFilter::finishStringToken(const Token& first, std::string prefix) {
+    std::vector<std::string> pieces;
+    pieces.push_back(prefix.empty() ? first.lexeme : prefix + first.lexeme);
 
     for (;;) {
         Token next = nextBaseFiltered();
@@ -246,13 +231,13 @@ Token TokenFilter::finishStringToken(const Token& first) {
             break;
         }
         if (isStringToken(next)) {
-            appendString(next);
+            pieces.push_back(next.lexeme);
             continue;
         }
         if (isWideStringPrefixToken(next)) {
             Token after = nextBaseFiltered();
             if (isStringToken(after)) {
-                appendString(after);
+                pieces.push_back(next.lexeme + after.lexeme);
                 continue;
             }
             pushFront(after);
@@ -262,8 +247,44 @@ Token TokenFilter::finishStringToken(const Token& first) {
         pushFront(next);
         break;
     }
-    if (!glued) {
-        return first;
+    if (pieces.size() == 1) {
+        return Token { "string", pieces.front(), first.context };
+    }
+
+    std::string wide;
+    bool sawU8 = false;
+    bool mixedWide = false;
+    for (const std::string& piece : pieces) {
+        const auto quote = piece.find('"');
+        const std::string piecePrefix = quote == std::string::npos ? std::string {} : piece.substr(0, quote);
+        if (piecePrefix == "u8") {
+            sawU8 = true;
+            continue;
+        }
+        if (util::stringLiteralUnitBytes(piece) == 1) {
+            continue;
+        }
+        if (wide.empty()) {
+            wide = piecePrefix;
+        } else if (piecePrefix != wide) {
+            mixedWide = true;
+        }
+    }
+    if (!wide.empty()) {
+        if (sawU8 || mixedWide) {
+            throw LexError { first.context,
+                    "concatenation of string literals with conflicting encoding prefixes" };
+        }
+        return Token { "string", util::concatWideLiterals(wide, pieces), first.context };
+    }
+
+    std::vector<unsigned char> bytes;
+    for (const std::string& piece : pieces) {
+        auto interior = util::decodeStringLiteralBytes(piece);
+        if (!interior.empty() && interior.back() == '\0') {
+            interior.pop_back();
+        }
+        bytes.insert(bytes.end(), interior.begin(), interior.end());
     }
     return Token { "string", util::encodeStringLiteralToken(bytes), first.context };
 }

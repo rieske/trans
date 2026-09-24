@@ -257,7 +257,7 @@ TEST(TypeQuery, arithmeticExpressionResultForms) {
 
     auto ptrDiff = type::arithmeticExpressionResult(pi, pi, type::ArithmeticOp::Sub);
     ASSERT_TRUE(ptrDiff.has_value());
-    EXPECT_TRUE(ptrDiff->equivalentTo(i));
+    EXPECT_TRUE(ptrDiff->equivalentTo(type::signedLong()));
 
     auto uac = type::arithmeticExpressionResult(c, c, type::ArithmeticOp::Add);
     ASSERT_TRUE(uac.has_value());

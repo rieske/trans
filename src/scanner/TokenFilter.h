@@ -23,7 +23,7 @@ public:
 private:
     Token nextRaw();
     Token nextBaseFiltered();
-    Token finishStringToken(const Token& first);
+    Token finishStringToken(const Token& first, std::string prefix = {});
     void skipBalancedParenGroup();
     void skipAttributeGroup();
     void skipParenGroup(bool noteTypeAttributes);

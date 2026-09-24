@@ -144,14 +144,14 @@ TEST(TokenFilter, stripsAsmBalancedForm) {
     EXPECT_EQ(toks[2].second, ";");
 }
 
-TEST(TokenFilter, stripsWideStringPrefixL) {
+TEST(TokenFilter, keepsWideStringPrefixL) {
     auto path = writeTempSource("tf_wide_l", "const char *p = L\"NULL\";\n");
     auto toks = filterIds(path);
     bool found = false;
     for (const auto& t : toks) {
         if (t.first == "string") {
             found = true;
-            EXPECT_EQ(t.second, "\"NULL\"");
+            EXPECT_EQ(t.second, "L\"NULL\"");
         }
         EXPECT_NE(t.second, "L");
     }

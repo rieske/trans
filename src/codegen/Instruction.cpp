@@ -105,7 +105,9 @@ OpContract opContract(Op op) {
         return { InstructionClass::Ordinary, FArg0 | FArg1 | FResult | FImm };
     case Op::UnaryMinus:
     case Op::UnaryNot:
+        return { InstructionClass::Ordinary, FArg0 | FResult };
     case Op::Assign:
+        return { InstructionClass::Ordinary, FArg0 | FResult | FImm };
     case Op::LvalueAssign:
     case Op::Dereference:
     case Op::AddressOf:

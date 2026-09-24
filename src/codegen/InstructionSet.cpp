@@ -142,12 +142,14 @@ std::string InstructionSet::label(std::string name) const {
 
 std::string InstructionSet::jmp(std::string target) const { return jump("jmp", std::move(target)); }
 std::string InstructionSet::je(std::string target) const { return jump("je", std::move(target)); }
+std::string InstructionSet::jns(std::string target) const { return jump("jns", std::move(target)); }
 std::string InstructionSet::jne(std::string target) const { return jump("jne", std::move(target)); }
 std::string InstructionSet::jg(std::string target) const { return jump("jg", std::move(target)); }
 std::string InstructionSet::jl(std::string target) const { return jump("jl", std::move(target)); }
 std::string InstructionSet::jge(std::string target) const { return jump("jge", std::move(target)); }
 std::string InstructionSet::jle(std::string target) const { return jump("jle", std::move(target)); }
 std::string InstructionSet::ja(std::string target) const { return jump("ja", std::move(target)); }
+std::string InstructionSet::jp(std::string target) const { return jump("jp", std::move(target)); }
 std::string InstructionSet::jb(std::string target) const { return jump("jb", std::move(target)); }
 std::string InstructionSet::jae(std::string target) const { return jump("jae", std::move(target)); }
 std::string InstructionSet::jbe(std::string target) const { return jump("jbe", std::move(target)); }
@@ -264,6 +266,14 @@ std::string InstructionSet::mulsd(int dstXmm, int srcXmm) const {
 
 std::string InstructionSet::divsd(int dstXmm, int srcXmm) const {
     return ordered("divsd", xmm(dstXmm), xmm(srcXmm));
+}
+
+std::string InstructionSet::ucomiss(int leftXmm, int rightXmm) const {
+    return ordered("ucomiss", xmm(leftXmm), xmm(rightXmm));
+}
+
+std::string InstructionSet::ucomisd(int leftXmm, int rightXmm) const {
+    return ordered("ucomisd", xmm(leftXmm), xmm(rightXmm));
 }
 
 std::string InstructionSet::addss(int dstXmm, int srcXmm) const {
@@ -467,6 +477,14 @@ std::string InstructionSet::shr(const Register& result, int widthBytes) const {
 
 std::string InstructionSet::lshr(const Register& result, int widthBytes) const {
     return binary("shr", reg(result, widthBytes), decorateReg("cl"), widthBytes);
+}
+
+std::string InstructionSet::lshrImm(const Register& result, int amount) const {
+    return binary("shr", reg(result), imm(amount), 8);
+}
+
+std::string InstructionSet::andImm(const Register& result, int value) const {
+    return binary("and", reg(result), imm(value), 8);
 }
 
 std::string InstructionSet::shld(const Register& source, const Register& dest) const {

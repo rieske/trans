@@ -12,6 +12,7 @@ struct IntegerLiteral {
     int base { 10 };
     bool uns { false };
     bool lng { false };
+    bool tooWide { false };
 };
 
 inline int integerDigitValue(char c, int base) {
@@ -43,17 +44,20 @@ inline bool parseIntegerLiteral(const std::string& token, IntegerLiteral& out) {
     }
     WideUInt v = 0;
     bool any = false;
+    bool tooWide = false;
     const WideUInt max = ~(WideUInt)0;
     for (; i < token.size(); ++i) {
         const int d = integerDigitValue(token[i], base);
         if (d < 0) {
             break;
         }
-        if (v > max / static_cast<unsigned>(base)) {
-            return false;
-        }
-        v = v * static_cast<unsigned>(base) + static_cast<unsigned>(d);
         any = true;
+        const unsigned digit = static_cast<unsigned>(d);
+        const unsigned radix = static_cast<unsigned>(base);
+        if (v > max / radix || (v == max / radix && digit > max % radix)) {
+            tooWide = true;
+        }
+        v = v * radix + digit;
     }
     if (!any) {
         return false;
@@ -74,6 +78,7 @@ inline bool parseIntegerLiteral(const std::string& token, IntegerLiteral& out) {
     out.base = base;
     out.uns = u;
     out.lng = l;
+    out.tooWide = tooWide;
     return true;
 }
 

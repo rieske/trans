@@ -5,7 +5,9 @@
 #include "CharArrayStringInit.h"
 
 #include "ast/InitializerListExpression.h"
+#include "ast/StringLiteralExpression.h"
 #include "types/TypeQuery.h"
+#include "util/StringLiteralDecode.h"
 
 #include <functional>
 #include <optional>
@@ -94,6 +96,32 @@ void placeCharArrayBytes(const type::FoundMember& slot, const ast::Expression* v
     }
 }
 
+void placeWideArrayUnits(const type::FoundMember& slot, const ast::StringLiteralExpression* literal,
+        AggregateInitSink& sink) {
+    if (!slot.type.getElementType().equivalentTo(literal->expressionType().getElementType())) {
+        sink.error(type::productAssignFailureMessage(slot.type, literal->expressionType()));
+        return;
+    }
+    std::vector<std::uint32_t> units = util::wideStringCodeUnits(literal->getValue());
+    const int n = slot.type.isIncompleteArray() ? 0 : slot.type.getArraySize();
+    if (n > 0 && static_cast<int>(units.size()) > n) {
+        if (static_cast<int>(units.size()) - 1 > n) {
+            sink.error("excess elements in array initializer");
+            return;
+        }
+        units.resize(static_cast<std::size_t>(n));
+    }
+    const type::Type elem = slot.type.getElementType();
+    const int stride = slot.type.getElementStride();
+    for (std::size_t i = 0; i < units.size(); ++i) {
+        sink.placeInteger(place(elem, slot.offsetBytes + static_cast<int>(i) * stride),
+                static_cast<long>(units[i]));
+    }
+    for (int i = static_cast<int>(units.size()); i < n; ++i) {
+        sink.onUnwritten(place(elem, slot.offsetBytes + i * stride));
+    }
+}
+
 void placeAt(const type::FoundMember& slot, ast::Expression* value, AggregateInitSink& sink) {
     if (!sink.ok()) {
         return;
@@ -101,6 +129,14 @@ void placeAt(const type::FoundMember& slot, ast::Expression* value, AggregateIni
     if (value && isCharArrayStringInit(slot.type, value)) {
         placeCharArrayBytes(slot, value, sink);
         return;
+    }
+    if (value && slot.type.isArray()) {
+        if (const auto* literal = value->asStringLiteral()) {
+            if (util::stringLiteralUnitBytes(literal->getValue()) != 1) {
+                placeWideArrayUnits(slot, literal, sink);
+                return;
+            }
+        }
     }
     if (auto* nestedList = value ? value->asInitList() : nullptr) {
         if (slot.type.isAggregate()) {
@@ -221,7 +257,10 @@ std::size_t fillFromStream(const type::Type& destType, int baseOffset,
     if (destType.isStructure() || destType.isArray()) {
         if (!isBarrier(ei)) {
             ast::Expression* value = elements[ei].value.get();
-            if (isCharArrayStringInit(destType, value) || value->asInitList()) {
+            const auto* literal = value->asStringLiteral();
+            const bool wideArray = destType.isArray() && literal
+                    && util::stringLiteralUnitBytes(literal->getValue()) != 1;
+            if (isCharArrayStringInit(destType, value) || wideArray || value->asInitList()) {
                 placeAt(place(destType, baseOffset), value, sink);
                 return ei + 1;
             }
@@ -395,6 +434,15 @@ void walkAggregateInit(const type::Type& targetType, const ast::InitializerListE
         return;
     }
     const auto& src = list->getElements();
+    if (targetType.isArray() && !targetType.getElementType().isAggregate() && src.size() == 1
+            && !src.front().isDesignated() && src.front().value) {
+        if (const auto* literal = src.front().value->asStringLiteral()) {
+            if (util::stringLiteralUnitBytes(literal->getValue()) != 1) {
+                placeWideArrayUnits(place(targetType, baseOffset), literal, sink);
+                return;
+            }
+        }
+    }
 
     auto applyDesignator = [&](std::size_t& ei) {
         const auto& el = src[ei];

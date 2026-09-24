@@ -43,26 +43,15 @@ void StackMachine::emitX87UnaryMinus(Value& operand, Value& result) {
     assembly << instructionSet->storeX87(memoryOperand(result), 16);
 }
 
-void StackMachine::emitX87Compare(Value& left, Value& right, bool signedRel) {
-    Register& acc = get64BitRegister();
+void StackMachine::emitX87Compare(Value& left, Value& right) {
     storeInMemory(left);
     storeInMemory(right);
     assembly << instructionSet->loadX87(memoryOperand(right), 16);
     assembly << instructionSet->loadX87(memoryOperand(left), 16);
     assembly << instructionSet->fucomip();
     assembly << instructionSet->fstpSt0();
-    if (!signedRel) {
-        return;
-    }
-    const int id = ++wideLabel_;
-    const std::string done = "__xc" + std::to_string(id) + "d";
-    assembly << instructionSet->mov("0", acc);
-    assembly << instructionSet->je(done);
-    assembly << instructionSet->mov("-1", acc);
-    assembly << instructionSet->jb(done);
-    assembly << instructionSet->mov("1", acc);
-    assembly.label(instructionSet->label(done));
-    setCompareFlagsFromTernary(acc, true);
+    // fucomip sets CF for NaN, same as ucomi. The parity skip has to see it.
+    unorderedCompare_ = true;
 }
 
 void StackMachine::emitX87ZeroCompare(Value& symbol) {

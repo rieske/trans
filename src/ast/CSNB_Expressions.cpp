@@ -44,6 +44,13 @@ type::Type integerLiteralType(const std::string& token) {
     if (!util::parseIntegerLiteral(token, lit)) {
         return type::signedInteger();
     }
+    if (lit.tooWide) {
+        // Hex and octal keep the last ranked type, unsigned __int128.
+        if (lit.uns || lit.base != 10) {
+            return type::unsignedInt128();
+        }
+        return type::signedInt128();
+    }
     return type::rankedLiteral(lit.value, lit.base, lit.uns, lit.lng).type;
 }
 

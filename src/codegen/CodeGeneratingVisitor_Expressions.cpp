@@ -401,11 +401,11 @@ void CodeGeneratingVisitor::emitAdditive(type::ArithmeticOp op, const type::Type
     case type::PointerArithmeticForm::PtrMinusPtr: {
         const type::Type pointee = leftType.dereference();
         if (type::hasComputableRuntimeSize(pointee)) {
-            const int size = addScratchValue(type::signedInteger());
+            const int size = addScratchValue(type::signedLong());
             emitSizeofProduct(pointee, size);
-            const int bytes = addScratchValue(type::signedInteger());
+            const int bytes = addScratchValue(type::signedLong());
             emit(ir::pointerDiff(leftName, rightName, 1, bytes));
-            emitIntegerMulDiv(type::ArithmeticOp::Div, bytes, size, resultName, type::signedInteger());
+            emitIntegerMulDiv(type::ArithmeticOp::Div, bytes, size, resultName, type::signedLong());
             return;
         }
         emit(ir::pointerDiff(leftName, rightName, ptrArith.strideBytes, resultName));
@@ -453,7 +453,8 @@ void CodeGeneratingVisitor::visit(ast::ComparisonExpression& expression) {
     const auto* leftSym = expression.leftOperandSymbol(store_);
     const auto* rightSym = expression.rightOperandSymbol(store_);
     const type::Type uac = type::usualArithmeticResult(leftSym->getType(), rightSym->getType());
-    const bool signedRel = type::valueIsSigned(uac);
+    // ucomiss/ucomisd report order in CF/ZF. Signed jg/jl read SF/OF.
+    const bool signedRel = type::valueIsSigned(uac) && !type::isFloating(uac);
     emit(ir::valueCompare(
             convertedResult(*expression.getLeftOperand()),
             convertedResult(*expression.getRightOperand()),

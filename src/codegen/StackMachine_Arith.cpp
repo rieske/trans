@@ -143,32 +143,28 @@ void StackMachine::mod(int leftOperandName, int rightOperandName, int resultName
 }
 
 void StackMachine::compare(int leftSymbolName, int rightSymbolName, bool signedRel) {
+    unorderedCompare_ = false;
     auto& leftSymbol = resolve(leftSymbolName);
     auto& rightSymbol = resolve(rightSymbolName);
     if (tryComplexCompare(leftSymbol, rightSymbol)) {
         return;
     }
     if (isX87Float(leftSymbol) || isX87Float(rightSymbol)) {
-        emitX87Compare(leftSymbol, rightSymbol, signedRel);
+        emitX87Compare(leftSymbol, rightSymbol);
         return;
     }
     if (tryWideCompare(leftSymbol, rightSymbol, signedRel)) {
         return;
     }
 
-    // Usual arithmetic: promote integral side to double bits before comparing.
-    // IEEE bit patterns order as signed integers for non-NaN values.
     const bool floating = leftSymbol.getType() == Type::FLOATING
             || rightSymbol.getType() == Type::FLOATING;
     if (floating) {
         const bool destFloat32 = !isSseFloat64(leftSymbol) && !isSseFloat64(rightSymbol);
         loadValueToXmm(leftSymbol, 0, destFloat32);
         loadValueToXmm(rightSymbol, 1, destFloat32);
-        Register& leftReg = get64BitRegister();
-        Register& rightReg = get64BitRegisterExcluding(leftReg);
-        xmmToGpr(0, leftReg, destFloat32);
-        xmmToGpr(1, rightReg, destFloat32);
-        assembly << instructionSet->cmp(leftReg, rightReg);
+        assembly << (destFloat32 ? instructionSet->ucomiss(0, 1) : instructionSet->ucomisd(0, 1));
+        unorderedCompare_ = true;
         return;
     }
 
@@ -179,6 +175,7 @@ void StackMachine::compare(int leftSymbolName, int rightSymbolName, bool signedR
 }
 
 void StackMachine::zeroCompare(int symbolName) {
+    unorderedCompare_ = false;
     auto& symbol = resolve(symbolName);
     if (tryComplexZeroCompare(symbol)) {
         return;
@@ -276,14 +273,14 @@ void StackMachine::widenInteger(int operandName, int resultName, bool signHighWo
     storeWord(hi, result, 1);
 }
 
-void StackMachine::assign(int operandName, int resultName) {
+void StackMachine::assign(int operandName, int resultName, bool unsignedSource) {
     auto& operand = resolve(operandName);
     auto& result = resolve(resultName);
 
     if (tryComplexAssignConvert(operand, result)) {
         return;
     }
-    if (tryNumericAssignConvert(operand, result)) {
+    if (tryNumericAssignConvert(operand, result, unsignedSource)) {
         return;
     }
 
