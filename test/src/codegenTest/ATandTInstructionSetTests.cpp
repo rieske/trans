@@ -26,8 +26,9 @@ TEST(ATandTInstructionSet, preambleAlignsDataObject) {
     gv.alignBytes = 8;
     gv.emission = ObjectEmission::DefineInternal;
     EXPECT_THAT(instructions.preamble({}, { gv }), Eq("\n.section .data\n"
+            "\n.section .bss\n"
             "\t.align 8\n"
-            "x:\n\t.quad 0\n"
+            "x:\n\t.zero 8\n"
             "\n.section .text\n\n"));
 }
 
