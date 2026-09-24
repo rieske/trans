@@ -225,6 +225,15 @@ TEST(IrDumpFromC, licmHoistsInvariantAddInForAtO1) {
     EXPECT_THAT(o1.find(" + "), Lt(o1.find("\n__L")));
 }
 
+TEST(IrDumpFromC, deadNamedLocalIsRemoved) {
+    const char* src = "int f(int a) { int x; x = a; return 0; }\n";
+    const std::string o0 = procedureDump(compileToIr(src, 0), "f");
+    const std::string o1 = procedureDump(compileToIr(src, 1), "f");
+    EXPECT_THAT(o0, HasSubstr("L$loc1_x"));
+    EXPECT_THAT(o1, Not(HasSubstr("L$loc1_x")));
+    EXPECT_THAT(o1, HasSubstr("RETURN"));
+}
+
 TEST(IrDumpFromC, deadMulIsNotStrengthReduced) {
     const char* src = "int f(int n, int k) {\n"
             "  int i;\n"
@@ -428,12 +437,8 @@ TEST(IrDumpFromC, foldsLocalIntegerAddAtO1) {
             "ENDPROC f\n"));
     EXPECT_THAT(compileToIr(src, 1), StrEq(
             "PROC f\n"
-            "\t$t0 := 1\n"
-            "\tL$loc1_a := $t0\n"
-            "\t$t1 := 2\n"
-            "\tL$loc1_b := $t1\n"
-            "\t$t2 := 3\n"
-            "\tRETURN $t2\n"
+            "\t$t0 := 3\n"
+            "\tRETURN $t0\n"
             "ENDPROC f\n"));
 }
 
@@ -565,8 +570,6 @@ TEST(IrDumpFromC, starPostfixAssignStoresThroughSavedPointer) {
     EXPECT_THAT(compileToIr(src, 1), StrEq(
             "PROC f\n"
             "\t$t0 := L$loc1_p\n"
-            "\t__t0 := 1\n"
-            "\tL$loc1_p := L$loc1_p + __t0*4 (ptr)\n"
             "\t$t1 := 9\n"
             "\t*$t0 := $t1\n"
             "\tRETURN\n"

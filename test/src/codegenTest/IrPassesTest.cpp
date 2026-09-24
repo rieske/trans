@@ -709,7 +709,7 @@ TEST(IrPasses, eliminateDeadTemps_keepsJoinAssignsWithLaterUse) {
     EXPECT_THAT(toString(ir), HasSubstr("t := 1"));
 }
 
-TEST(IrPasses, eliminateDeadTemps_keepsNamedLocal) {
+TEST(IrPasses, eliminateDeadTemps_dropsDeadNamedLocal) {
     IntermediateRepresentation ir;
     IrN n { ir.strings };
     ProcedureFrame frame;
@@ -726,10 +726,42 @@ TEST(IrPasses, eliminateDeadTemps_keepsNamedLocal) {
 
     EXPECT_THAT(toString(ir), StrEq(
             "PROC f\n"
-            "\tt0 := 1\n"
-            "\ta := t0\n"
             "\tRETURN\n"
             "ENDPROC f\n"));
+    EXPECT_TRUE(ir.procedures.front().frame.locals.empty());
+}
+
+TEST(IrPasses, eliminateDeadTemps_keepsVolatileNamedLocal) {
+    IntermediateRepresentation ir;
+    IrN n { ir.strings };
+    ProcedureFrame frame;
+    frame.locals.push_back(integral(ir.strings, "a"));
+    frame.locals.back().markVolatile();
+    ir.procedures.push_back(makeProc(ir.strings, "f", {
+            ir::assignConstant(n("1"), n("a")),
+            ir::voidReturn(),
+    }, std::move(frame)));
+
+    eliminateDeadTemps(ir.procedures.front());
+
+    EXPECT_THAT(toString(ir), HasSubstr("a := 1"));
+}
+
+TEST(IrPasses, eliminateDeadTemps_keepsDivIntoNamedLocal) {
+    IntermediateRepresentation ir;
+    IrN n { ir.strings };
+    ProcedureFrame frame;
+    frame.locals.push_back(integral(ir.strings, "a"));
+    frame.locals.push_back(integral(ir.strings, "x"));
+    frame.locals.push_back(integral(ir.strings, "y"));
+    ir.procedures.push_back(makeProc(ir.strings, "f", {
+            ir::div(n("x"), n("y"), n("a")),
+            ir::voidReturn(),
+    }, std::move(frame)));
+
+    eliminateDeadTemps(ir.procedures.front());
+
+    EXPECT_THAT(toString(ir), HasSubstr("a := x / y"));
 }
 
 TEST(IrPasses, eliminateDeadTemps_keepsAddressTaken) {
