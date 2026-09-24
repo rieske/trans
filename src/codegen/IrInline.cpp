@@ -186,6 +186,9 @@ void pushClone(Procedure& caller, const Value& src, int newId, bool asExprTemp) 
     if (asExprTemp || src.isExpressionTemp()) {
         clone.markExpressionTemp();
     }
+    if (src.isVolatile()) {
+        clone.markVolatile();
+    }
     caller.frame.locals.push_back(std::move(clone));
 }
 
@@ -266,7 +269,11 @@ bool formalCanShareActual(const Procedure& callee, int formalId, int actualId,
     if (formalDefOrAddr || actualMentioned) {
         return false;
     }
+    const Value* formal = findValue(callee, formalId);
     const Value* actual = findValue(caller, actualId);
+    if (formal && formal->isVolatile() && !(actual && actual->isVolatile())) {
+        return false;
+    }
     if (actual && actual->isExpressionTemp() && calleeHasLabel) {
         return false;
     }
