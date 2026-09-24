@@ -738,13 +738,19 @@ bool isDeadAssignable(Op op) {
     }
 }
 
-bool isDeadExpressionTempDef(const Procedure& procedure, int id,
+bool isDeadValueDef(const Procedure& procedure, Op op, int id,
         const std::unordered_set<int>& laterUses, const std::unordered_set<int>& addressTaken) {
     if (addressTaken.count(id) != 0 || laterUses.count(id) != 0) {
         return false;
     }
     const Value* dest = findValue(procedure, id);
-    return dest && dest->isExpressionTemp();
+    if (!dest || dest->isVolatile()) {
+        return false;
+    }
+    if (dest->isExpressionTemp()) {
+        return true;
+    }
+    return op != Op::Div && op != Op::Mod;
 }
 
 } // namespace
@@ -766,7 +772,7 @@ void eliminateDeadTemps(Procedure& procedure) {
                     || operandIsVolatile(procedure, inst.arg1)
                     || operandIsVolatile(procedure, inst.result);
             if (isDeadAssignable(inst.op) && !volatileUse
-                    && isDeadExpressionTempDef(procedure, inst.result, after ? *after : empty,
+                    && isDeadValueDef(procedure, inst.op, inst.result, after ? *after : empty,
                             live.addressTaken)) {
                 continue;
             }
@@ -793,7 +799,7 @@ void eliminateDeadTemps(Procedure& procedure) {
     auto& locals = procedure.frame.locals;
     locals.erase(std::remove_if(locals.begin(), locals.end(),
             [&](const Value& local) {
-                return local.isExpressionTemp() && remaining.count(local.id()) == 0
+                return !local.isVolatile() && remaining.count(local.id()) == 0
                         && live.addressTaken.count(local.id()) == 0;
             }),
             locals.end());
