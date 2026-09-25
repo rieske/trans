@@ -34,18 +34,22 @@ IntermediateRepresentation sealProcedures(IntermediateRepresentation ir) {
 
 namespace {
 
-const Value* findValue(const Procedure& procedure, int id) {
+using ValueIndex = std::unordered_map<int, const Value*>;
+
+ValueIndex indexValues(const Procedure& procedure) {
+    ValueIndex index;
     for (const auto& value : procedure.frame.locals) {
-        if (value.id() == id) {
-            return &value;
-        }
+        index.emplace(value.id(), &value);
     }
     for (const auto& value : procedure.frame.arguments) {
-        if (value.id() == id) {
-            return &value;
-        }
+        index.emplace(value.id(), &value);
     }
-    return nullptr;
+    return index;
+}
+
+const Value* findValue(const ValueIndex& index, int id) {
+    const auto it = index.find(id);
+    return it == index.end() ? nullptr : it->second;
 }
 
 bool isFoldableInteger(const Value* value) {
@@ -53,8 +57,8 @@ bool isFoldableInteger(const Value* value) {
             && value->getSizeInBytes() > 0 && value->getSizeInBytes() <= 8;
 }
 
-bool operandIsVolatile(const Procedure& procedure, int id) {
-    const Value* value = findValue(procedure, id);
+bool operandIsVolatile(const ValueIndex& index, int id) {
+    const Value* value = findValue(index, id);
     return value && value->isVolatile();
 }
 
@@ -186,9 +190,9 @@ std::optional<unsigned long long> knownBits(
 }
 
 std::optional<Instruction> tryAlgebraicIdentity(const Instruction& inst,
-        const std::unordered_map<int, unsigned long long>& known, const Procedure& procedure,
+        const std::unordered_map<int, unsigned long long>& known, const ValueIndex& values,
         IrStringTable& strings) {
-    if (operandIsVolatile(procedure, inst.arg0) || operandIsVolatile(procedure, inst.arg1)) {
+    if (operandIsVolatile(values, inst.arg0) || operandIsVolatile(values, inst.arg1)) {
         return std::nullopt;
     }
     const auto isZero = [&](int id) {
@@ -284,9 +288,9 @@ std::optional<Instruction> tryAlgebraicIdentity(const Instruction& inst,
 }
 
 std::optional<Instruction> tryFold(const Instruction& inst,
-        const std::unordered_map<int, unsigned long long>& known, const Procedure& procedure,
+        const std::unordered_map<int, unsigned long long>& known, const ValueIndex& values,
         IrStringTable& strings) {
-    const Value* dest = findValue(procedure, inst.result);
+    const Value* dest = findValue(values, inst.result);
     if (!isFoldableInteger(dest)) {
         return std::nullopt;
     }
@@ -311,8 +315,8 @@ std::optional<Instruction> tryFold(const Instruction& inst,
         const auto left = known.find(inst.arg0);
         const auto right = known.find(inst.arg1);
         if (left != known.end() && right != known.end()) {
-            const Value* lhs = findValue(procedure, inst.arg0);
-            const Value* rhs = findValue(procedure, inst.arg1);
+            const Value* lhs = findValue(values, inst.arg0);
+            const Value* rhs = findValue(values, inst.arg1);
             if (isFoldableInteger(lhs) && isFoldableInteger(rhs)) {
                 const auto bits = evalBinary(inst.op, left->second, right->second, destBytes, inst.imm);
                 if (bits) {
@@ -320,7 +324,7 @@ std::optional<Instruction> tryFold(const Instruction& inst,
                 }
             }
         }
-        return tryAlgebraicIdentity(inst, known, procedure, strings);
+        return tryAlgebraicIdentity(inst, known, values, strings);
     }
     case Op::UnaryMinus:
     case Op::UnaryNot:
@@ -329,7 +333,7 @@ std::optional<Instruction> tryFold(const Instruction& inst,
         if (operand == known.end()) {
             return std::nullopt;
         }
-        const Value* src = findValue(procedure, inst.arg0);
+        const Value* src = findValue(values, inst.arg0);
         if (!isFoldableInteger(src)) {
             return std::nullopt;
         }
@@ -419,10 +423,10 @@ struct PendingCompare {
 };
 
 std::optional<PendingCompare> pendingFromCompare(const Instruction& inst, std::size_t index,
-        const std::unordered_map<int, unsigned long long>& known, const Procedure& procedure) {
+        const std::unordered_map<int, unsigned long long>& known, const ValueIndex& values) {
     if (inst.op == Op::ZeroCompare) {
         const auto value = known.find(inst.arg0);
-        const Value* src = findValue(procedure, inst.arg0);
+        const Value* src = findValue(values, inst.arg0);
         if (value == known.end() || !isFoldableInteger(src)) {
             return std::nullopt;
         }
@@ -431,8 +435,8 @@ std::optional<PendingCompare> pendingFromCompare(const Instruction& inst, std::s
     if (inst.op == Op::ValueCompare) {
         const auto left = known.find(inst.arg0);
         const auto right = known.find(inst.arg1);
-        const Value* lhs = findValue(procedure, inst.arg0);
-        const Value* rhs = findValue(procedure, inst.arg1);
+        const Value* lhs = findValue(values, inst.arg0);
+        const Value* rhs = findValue(values, inst.arg1);
         if (left == known.end() || right == known.end() || !isFoldableInteger(lhs)
                 || !isFoldableInteger(rhs)
                 || lhs->getSizeInBytes() != rhs->getSizeInBytes()) {
@@ -450,6 +454,7 @@ std::optional<PendingCompare> pendingFromCompare(const Instruction& inst, std::s
 // before its AddressOf is reached, and `known` is dropped at any label not entered solely
 // by fallthrough, so nothing survives a back edge into a later AddressOf.
 FoldResult foldConstants(Procedure& procedure, IrStringTable& strings) {
+    const ValueIndex values = indexValues(procedure);
     const auto preds = labelPredCounts(procedure.body);
     std::unordered_map<int, unsigned long long> known;
     std::unordered_set<int> escaped;
@@ -469,7 +474,7 @@ FoldResult foldConstants(Procedure& procedure, IrStringTable& strings) {
             fall = true;
             continue;
         }
-        if (auto repl = tryFold(inst, known, procedure, strings)) {
+        if (auto repl = tryFold(inst, known, values, strings)) {
             inst = *repl;
             result.changed = true;
         }
@@ -482,7 +487,7 @@ FoldResult foldConstants(Procedure& procedure, IrStringTable& strings) {
         bool recorded = false;
         if (inst.op == Op::AssignConstant && inst.arg1 == kNoSymbol
                 && escaped.count(inst.result) == 0) {
-            const Value* dest = findValue(procedure, inst.result);
+            const Value* dest = findValue(values, inst.result);
             if (isFoldableInteger(dest)) {
                 if (auto bits = parseConstBits(strings.get(inst.arg0))) {
                     known[inst.result] = *bits & widthMask(dest->getSizeInBytes());
@@ -491,8 +496,8 @@ FoldResult foldConstants(Procedure& procedure, IrStringTable& strings) {
             }
         } else if (inst.op == Op::Assign && escaped.count(inst.result) == 0) {
             const auto src = known.find(inst.arg0);
-            const Value* srcVal = findValue(procedure, inst.arg0);
-            const Value* dest = findValue(procedure, inst.result);
+            const Value* srcVal = findValue(values, inst.arg0);
+            const Value* dest = findValue(values, inst.result);
             if (src != known.end() && isFoldableInteger(srcVal) && isFoldableInteger(dest)) {
                 unsigned long long bits = src->second;
                 const int srcBytes = srcVal->getSizeInBytes();
@@ -525,7 +530,7 @@ FoldResult foldConstants(Procedure& procedure, IrStringTable& strings) {
                 result.controlFlow = true;
             }
             pending.reset();
-        } else if (auto next = pendingFromCompare(inst, i, known, procedure)) {
+        } else if (auto next = pendingFromCompare(inst, i, known, values)) {
             pending = next;
         } else {
             pending.reset();
@@ -647,7 +652,7 @@ void killCopy(std::unordered_map<int, int>& copy, int id) {
     }
 }
 
-bool isEligibleCopy(const Instruction& inst, const Procedure& procedure,
+bool isEligibleCopy(const Instruction& inst, const ValueIndex& values,
         const std::unordered_set<int>& addressTaken) {
     if (inst.op != Op::Assign) {
         return false;
@@ -655,8 +660,8 @@ bool isEligibleCopy(const Instruction& inst, const Procedure& procedure,
     if (addressTaken.count(inst.arg0) != 0 || addressTaken.count(inst.result) != 0) {
         return false;
     }
-    const Value* src = findValue(procedure, inst.arg0);
-    const Value* dest = findValue(procedure, inst.result);
+    const Value* src = findValue(values, inst.arg0);
+    const Value* dest = findValue(values, inst.result);
     return src && dest && src->isExpressionTemp() && dest->isExpressionTemp()
             && src->getType() == dest->getType()
             && src->getSizeInBytes() == dest->getSizeInBytes()
@@ -666,6 +671,7 @@ bool isEligibleCopy(const Instruction& inst, const Procedure& procedure,
 } // namespace
 
 void copyPropagate(Procedure& procedure) {
+    const ValueIndex values = indexValues(procedure);
     std::unordered_set<int> addressTaken;
     for (const auto& inst : procedure.body) {
         SymbolRefs refs;
@@ -690,7 +696,7 @@ void copyPropagate(Procedure& procedure) {
         rewriteValueUses(inst, copy);
         if (inst.op == Op::Call) {
             copy.clear();
-        } else if (isEligibleCopy(inst, procedure, addressTaken)) {
+        } else if (isEligibleCopy(inst, values, addressTaken)) {
             killCopy(copy, inst.result);
             const auto src = copy.find(inst.arg0);
             copy[inst.result] = src == copy.end() ? inst.arg0 : src->second;
@@ -746,12 +752,12 @@ bool isDeadAssignable(Op op) {
     }
 }
 
-bool isDeadValueDef(const Procedure& procedure, Op op, int id, bool liveAfter,
+bool isDeadValueDef(const ValueIndex& values, Op op, int id, bool liveAfter,
         const std::unordered_set<int>& addressTaken) {
     if (addressTaken.count(id) != 0 || liveAfter) {
         return false;
     }
-    const Value* dest = findValue(procedure, id);
+    const Value* dest = findValue(values, id);
     if (!dest || dest->isVolatile()) {
         return false;
     }
@@ -764,6 +770,7 @@ bool isDeadValueDef(const Procedure& procedure, Op op, int id, bool liveAfter,
 } // namespace
 
 void eliminateDeadTemps(Procedure& procedure) {
+    const ValueIndex values = indexValues(procedure);
     TempLiveness live;
     for (;;) {
         live = computeTempLiveness(procedure);
@@ -772,11 +779,11 @@ void eliminateDeadTemps(Procedure& procedure) {
         for (int i = static_cast<int>(procedure.body.size()) - 1; i >= 0; --i) {
             const Instruction& inst = procedure.body[static_cast<std::size_t>(i)];
             const bool liveAfter = live.resultLiveAfter[static_cast<std::size_t>(i)] != 0;
-            const bool volatileUse = operandIsVolatile(procedure, inst.arg0)
-                    || operandIsVolatile(procedure, inst.arg1)
-                    || operandIsVolatile(procedure, inst.result);
+            const bool volatileUse = operandIsVolatile(values, inst.arg0)
+                    || operandIsVolatile(values, inst.arg1)
+                    || operandIsVolatile(values, inst.result);
             if (isDeadAssignable(inst.op) && !volatileUse
-                    && isDeadValueDef(procedure, inst.op, inst.result, liveAfter, live.addressTaken)) {
+                    && isDeadValueDef(values, inst.op, inst.result, liveAfter, live.addressTaken)) {
                 continue;
             }
             kept.push_back(inst);
@@ -825,6 +832,7 @@ IntermediateRepresentation applyCfgPasses(IntermediateRepresentation ir, int opt
 }
 
 void forwardLocalLoads(Procedure& procedure) {
+    const ValueIndex values = indexValues(procedure);
     std::unordered_map<int, std::unordered_set<int>> addrOf;
     bool grewTargets = true;
     auto addTarget = [&](int pointer, int object) {
@@ -880,7 +888,7 @@ void forwardLocalLoads(Procedure& procedure) {
     };
     for (const auto& inst : procedure.body) {
         if (inst.op == Op::Assign) {
-            if (findValue(procedure, inst.result) == nullptr) {
+            if (findValue(values, inst.result) == nullptr) {
                 escapes(inst.arg0);
             }
             continue;
@@ -941,30 +949,74 @@ void forwardLocalLoads(Procedure& procedure) {
         }
     }
 
-    const auto preds = labelPredCounts(procedure.body);
-    std::unordered_map<int, int> pointsTo;
-    std::unordered_map<int, int> valueOf;
-    bool fall = true;
-    auto killStored = [&](int id) {
-        for (auto it = valueOf.begin(); it != valueOf.end(); ) {
-            if (it->first == id || it->second == id) {
-                it = valueOf.erase(it);
-            } else {
-                ++it;
+    struct StoreSlots {
+        enum { kEmpty = -1 };
+        std::unordered_map<int, int> slot;
+        std::unordered_map<int, std::vector<int>> holders;
+
+        int get(int id) const {
+            const auto it = slot.find(id);
+            return it == slot.end() ? kEmpty : it->second;
+        }
+
+        void forget(int obj) {
+            const auto it = slot.find(obj);
+            if (it != slot.end()) {
+                std::erase(holders[it->second], obj);
+                slot.erase(it);
+            }
+        }
+
+        void set(int obj, int stored) {
+            forget(obj);
+            slot[obj] = stored;
+            holders[stored].push_back(obj);
+        }
+
+        void kill(int id) {
+            forget(id);
+            const auto it = holders.find(id);
+            if (it == holders.end()) {
+                return;
+            }
+            for (const int obj : it->second) {
+                slot.erase(obj);
+            }
+            holders.erase(it);
+        }
+
+        void clear() {
+            slot.clear();
+            holders.clear();
+        }
+
+        void dropEscaped(const std::unordered_set<int>& escapedIds) {
+            for (auto it = slot.begin(); it != slot.end(); ) {
+                if (escapedIds.count(it->first) != 0 || escapedIds.count(it->second) != 0) {
+                    std::erase(holders[it->second], it->first);
+                    it = slot.erase(it);
+                } else {
+                    ++it;
+                }
             }
         }
     };
-    auto sameKind = [](const Procedure& proc, int stored, int loaded) {
-        const Value* from = findValue(proc, stored);
-        const Value* to = findValue(proc, loaded);
+
+    const auto preds = labelPredCounts(procedure.body);
+    std::unordered_map<int, int> pointsTo;
+    StoreSlots valueOf;
+    bool fall = true;
+    auto sameKind = [&](int stored, int loaded) {
+        const Value* from = findValue(values, stored);
+        const Value* to = findValue(values, loaded);
         return from && to && from->getType() == to->getType()
                 && from->getSizeInBytes() == to->getSizeInBytes()
                 && from->getClassification().gprExtend == to->getClassification().gprExtend;
     };
     auto rewrite = [&](int& id) {
-        const auto it = valueOf.find(id);
-        if (it != valueOf.end() && sameKind(procedure, it->second, id)) {
-            id = it->second;
+        const int stored = valueOf.get(id);
+        if (stored != StoreSlots::kEmpty && sameKind(stored, id)) {
+            id = stored;
         }
     };
     auto isObject = [&](int local) {
@@ -982,17 +1034,17 @@ void forwardLocalLoads(Procedure& procedure) {
         if (!isObject(local)) {
             return;
         }
-        const Value* object = findValue(procedure, local);
+        const Value* object = findValue(values, local);
         if (!object || object->isVolatile()) {
             return;
         }
-        const auto known = valueOf.find(stored);
-        const int storedId = known == valueOf.end() ? stored : known->second;
-        if (!sameKind(procedure, storedId, local)) {
-            valueOf.erase(local);
+        const int known = valueOf.get(stored);
+        const int storedId = known == StoreSlots::kEmpty ? stored : known;
+        if (!sameKind(storedId, local)) {
+            valueOf.forget(local);
             return;
         }
-        valueOf[local] = storedId;
+        valueOf.set(local, storedId);
     };
     auto leak = [&](int id) {
         std::vector<int> work;
@@ -1012,7 +1064,7 @@ void forwardLocalLoads(Procedure& procedure) {
                 continue;
             }
             escaped.insert(obj);
-            valueOf.erase(obj);
+            valueOf.forget(obj);
             const auto next = pointsTo.find(obj);
             if (next != pointsTo.end()) {
                 work.push_back(next->second);
@@ -1045,7 +1097,7 @@ void forwardLocalLoads(Procedure& procedure) {
             } else {
                 pointsTo.erase(inst.result);
             }
-            killStored(inst.result);
+            valueOf.kill(inst.result);
             remember(inst.result, inst.arg0);
         } else if (inst.op == Op::LvalueAssign) {
             rewrite(inst.arg0);
@@ -1054,7 +1106,7 @@ void forwardLocalLoads(Procedure& procedure) {
                 valueOf.clear();
                 pointsTo.clear();
             } else {
-                killStored(ptr->second);
+                valueOf.kill(ptr->second);
                 remember(ptr->second, inst.arg0);
                 const auto target = pointsTo.find(inst.arg0);
                 if (target != pointsTo.end()) {
@@ -1066,10 +1118,10 @@ void forwardLocalLoads(Procedure& procedure) {
         } else if (inst.op == Op::Dereference) {
             const auto ptr = pointsTo.find(inst.arg0);
             if (ptr != pointsTo.end()) {
-                const auto known = valueOf.find(ptr->second);
+                const int known = valueOf.get(ptr->second);
                 const auto inner = pointsTo.find(ptr->second);
-                if (known != valueOf.end() && sameKind(procedure, known->second, inst.result)) {
-                    const int src = known->second;
+                if (known != StoreSlots::kEmpty && sameKind(known, inst.result)) {
+                    const int src = known;
                     inst = ir::assign(src, inst.result);
                     const auto srcPtr = pointsTo.find(src);
                     if (srcPtr != pointsTo.end()) {
@@ -1111,13 +1163,7 @@ void forwardLocalLoads(Procedure& procedure) {
                     ++it;
                 }
             }
-            for (auto it = valueOf.begin(); it != valueOf.end(); ) {
-                if (escaped.count(it->first) != 0 || escaped.count(it->second) != 0) {
-                    it = valueOf.erase(it);
-                } else {
-                    ++it;
-                }
-            }
+            valueOf.dropEscaped(escaped);
         } else {
             SymbolRefs refs;
             collectSymbolRefs(inst, refs);
@@ -1131,7 +1177,7 @@ void forwardLocalLoads(Procedure& procedure) {
                 rewrite(inst.arg1);
             }
             for (int id : refs.defs) {
-                killStored(id);
+                valueOf.kill(id);
             }
         }
         if (instructionTransfersControl(inst)
