@@ -829,6 +829,323 @@ IntermediateRepresentation applyCfgPasses(IntermediateRepresentation ir, int opt
     return ir;
 }
 
+void forwardLocalLoads(Procedure& procedure) {
+    std::unordered_map<int, std::unordered_set<int>> addrOf;
+    bool grewTargets = true;
+    auto addTarget = [&](int pointer, int object) {
+        if (addrOf[pointer].insert(object).second) {
+            grewTargets = true;
+        }
+    };
+    auto copyTargets = [&](int from, int to) {
+        const auto it = addrOf.find(from);
+        if (it == addrOf.end()) {
+            return;
+        }
+        auto& dest = addrOf[to];
+        for (int object : it->second) {
+            if (dest.insert(object).second) {
+                grewTargets = true;
+            }
+        }
+    };
+    while (grewTargets) {
+        grewTargets = false;
+        for (const auto& inst : procedure.body) {
+            if (inst.op == Op::AddressOf) {
+                addTarget(inst.result, inst.arg0);
+            } else if (inst.op == Op::Assign) {
+                copyTargets(inst.arg0, inst.result);
+            } else if ((inst.op == Op::IndexAddress || inst.op == Op::FieldAddress)
+                    && symbols::addressBaseUsesLea(inst.baseMode)) {
+                addTarget(inst.result, inst.arg0);
+            } else if (inst.op == Op::IndexAddress || inst.op == Op::FieldAddress) {
+                copyTargets(inst.arg0, inst.result);
+            } else if (inst.op == Op::Dereference) {
+                const auto src = addrOf.find(inst.arg0);
+                if (src == addrOf.end()) {
+                    continue;
+                }
+                const std::vector<int> objects(src->second.begin(), src->second.end());
+                for (int object : objects) {
+                    copyTargets(object, inst.result);
+                }
+            }
+        }
+    }
+    std::unordered_set<int> escaped;
+    auto escapes = [&](int id) {
+        const auto it = addrOf.find(id);
+        if (it == addrOf.end()) {
+            return;
+        }
+        for (int object : it->second) {
+            escaped.insert(object);
+        }
+    };
+    for (const auto& inst : procedure.body) {
+        if (inst.op == Op::Assign) {
+            if (findValue(procedure, inst.result) == nullptr) {
+                escapes(inst.arg0);
+            }
+            continue;
+        }
+        if (inst.op == Op::AddressOf || inst.op == Op::Dereference
+                || inst.op == Op::IndexAddress || inst.op == Op::FieldAddress) {
+            continue;
+        }
+        if (inst.op == Op::LvalueAssign) {
+            escapes(inst.arg0);
+            continue;
+        }
+        SymbolRefs refs;
+        collectSymbolRefs(inst, refs);
+        for (int id : refs.uses) {
+            escapes(id);
+        }
+        for (int id : refs.defs) {
+            escapes(id);
+        }
+    }
+    for (const auto& value : procedure.frame.locals) {
+        if (value.isVolatile()) {
+            escaped.insert(value.id());
+        }
+    }
+    for (const auto& value : procedure.frame.arguments) {
+        if (value.isVolatile()) {
+            escaped.insert(value.id());
+        }
+    }
+    bool grew = true;
+    while (grew) {
+        grew = false;
+        for (const auto& entry : addrOf) {
+            if (escaped.count(entry.first) == 0) {
+                continue;
+            }
+            for (int object : entry.second) {
+                if (escaped.insert(object).second) {
+                    grew = true;
+                }
+            }
+        }
+    }
+    for (auto it = addrOf.begin(); it != addrOf.end(); ) {
+        for (auto object = it->second.begin(); object != it->second.end(); ) {
+            if (escaped.count(*object) != 0) {
+                object = it->second.erase(object);
+            } else {
+                ++object;
+            }
+        }
+        if (it->second.empty()) {
+            it = addrOf.erase(it);
+        } else {
+            ++it;
+        }
+    }
+
+    const auto preds = labelPredCounts(procedure.body);
+    std::unordered_map<int, int> pointsTo;
+    std::unordered_map<int, int> valueOf;
+    bool fall = true;
+    auto killStored = [&](int id) {
+        for (auto it = valueOf.begin(); it != valueOf.end(); ) {
+            if (it->first == id || it->second == id) {
+                it = valueOf.erase(it);
+            } else {
+                ++it;
+            }
+        }
+    };
+    auto sameKind = [](const Procedure& proc, int stored, int loaded) {
+        const Value* from = findValue(proc, stored);
+        const Value* to = findValue(proc, loaded);
+        return from && to && from->getType() == to->getType()
+                && from->getSizeInBytes() == to->getSizeInBytes()
+                && from->getClassification().gprExtend == to->getClassification().gprExtend;
+    };
+    auto rewrite = [&](int& id) {
+        const auto it = valueOf.find(id);
+        if (it != valueOf.end() && sameKind(procedure, it->second, id)) {
+            id = it->second;
+        }
+    };
+    auto isObject = [&](int local) {
+        if (escaped.count(local) != 0) {
+            return false;
+        }
+        for (const auto& entry : addrOf) {
+            if (entry.second.count(local) != 0) {
+                return true;
+            }
+        }
+        return false;
+    };
+    auto remember = [&](int local, int stored) {
+        if (!isObject(local)) {
+            return;
+        }
+        const Value* object = findValue(procedure, local);
+        if (!object || object->isVolatile()) {
+            return;
+        }
+        const auto known = valueOf.find(stored);
+        const int storedId = known == valueOf.end() ? stored : known->second;
+        if (!sameKind(procedure, storedId, local)) {
+            valueOf.erase(local);
+            return;
+        }
+        valueOf[local] = storedId;
+    };
+    auto leak = [&](int id) {
+        std::vector<int> work;
+        std::unordered_set<int> seen;
+        const auto pointed = pointsTo.find(id);
+        if (pointed != pointsTo.end()) {
+            work.push_back(pointed->second);
+        }
+        const auto may = addrOf.find(id);
+        if (may != addrOf.end()) {
+            work.insert(work.end(), may->second.begin(), may->second.end());
+        }
+        while (!work.empty()) {
+            const int obj = work.back();
+            work.pop_back();
+            if (!seen.insert(obj).second) {
+                continue;
+            }
+            escaped.insert(obj);
+            valueOf.erase(obj);
+            const auto next = pointsTo.find(obj);
+            if (next != pointsTo.end()) {
+                work.push_back(next->second);
+                pointsTo.erase(next);
+            }
+            const auto more = addrOf.find(obj);
+            if (more != addrOf.end()) {
+                work.insert(work.end(), more->second.begin(), more->second.end());
+            }
+        }
+    };
+
+    for (auto& inst : procedure.body) {
+        if (inst.op == Op::Label) {
+            const bool keep = fall && preds.count(inst.arg0) != 0 && preds.at(inst.arg0) == 1;
+            if (!keep) {
+                pointsTo.clear();
+                valueOf.clear();
+            }
+            fall = true;
+            continue;
+        }
+        if (inst.op == Op::AddressOf) {
+            pointsTo[inst.result] = inst.arg0;
+        } else if (inst.op == Op::Assign) {
+            rewrite(inst.arg0);
+            const auto srcPtr = pointsTo.find(inst.arg0);
+            if (srcPtr != pointsTo.end()) {
+                pointsTo[inst.result] = srcPtr->second;
+            } else {
+                pointsTo.erase(inst.result);
+            }
+            killStored(inst.result);
+            remember(inst.result, inst.arg0);
+        } else if (inst.op == Op::LvalueAssign) {
+            rewrite(inst.arg0);
+            const auto ptr = pointsTo.find(inst.result);
+            if (ptr == pointsTo.end()) {
+                valueOf.clear();
+                pointsTo.clear();
+            } else {
+                killStored(ptr->second);
+                remember(ptr->second, inst.arg0);
+                const auto target = pointsTo.find(inst.arg0);
+                if (target != pointsTo.end()) {
+                    pointsTo[ptr->second] = target->second;
+                } else {
+                    pointsTo.erase(ptr->second);
+                }
+            }
+        } else if (inst.op == Op::Dereference) {
+            const auto ptr = pointsTo.find(inst.arg0);
+            if (ptr != pointsTo.end()) {
+                const auto known = valueOf.find(ptr->second);
+                const auto inner = pointsTo.find(ptr->second);
+                if (known != valueOf.end() && sameKind(procedure, known->second, inst.result)) {
+                    const int src = known->second;
+                    inst = ir::assign(src, inst.result);
+                    const auto srcPtr = pointsTo.find(src);
+                    if (srcPtr != pointsTo.end()) {
+                        pointsTo[inst.result] = srcPtr->second;
+                    } else if (inner != pointsTo.end()) {
+                        pointsTo[inst.result] = inner->second;
+                    }
+                } else if (inner != pointsTo.end()) {
+                    pointsTo[inst.result] = inner->second;
+                }
+            }
+        } else if (inst.op == Op::IndexAddress || inst.op == Op::FieldAddress) {
+            if (inst.op == Op::IndexAddress) {
+                rewrite(inst.arg1);
+            }
+            int base = -1;
+            if (symbols::addressBaseUsesLea(inst.baseMode)) {
+                if (escaped.count(inst.arg0) == 0) {
+                    base = inst.arg0;
+                }
+            } else {
+                const auto ptr = pointsTo.find(inst.arg0);
+                if (ptr != pointsTo.end()) {
+                    base = ptr->second;
+                }
+            }
+            if (base >= 0) {
+                pointsTo[inst.result] = base;
+            } else {
+                pointsTo.erase(inst.result);
+            }
+        } else if (inst.op == Op::Argument) {
+            leak(inst.arg0);
+        } else if (inst.op == Op::Call) {
+            for (auto it = pointsTo.begin(); it != pointsTo.end(); ) {
+                if (escaped.count(it->first) != 0 || escaped.count(it->second) != 0) {
+                    it = pointsTo.erase(it);
+                } else {
+                    ++it;
+                }
+            }
+            for (auto it = valueOf.begin(); it != valueOf.end(); ) {
+                if (escaped.count(it->first) != 0 || escaped.count(it->second) != 0) {
+                    it = valueOf.erase(it);
+                } else {
+                    ++it;
+                }
+            }
+        } else {
+            SymbolRefs refs;
+            collectSymbolRefs(inst, refs);
+            auto defined = [&](int id) {
+                return std::find(refs.defs.begin(), refs.defs.end(), id) != refs.defs.end();
+            };
+            if (inst.op != Op::Jump && !defined(inst.arg0)) {
+                rewrite(inst.arg0);
+            }
+            if (inst.op != Op::Jump && !defined(inst.arg1)) {
+                rewrite(inst.arg1);
+            }
+            for (int id : refs.defs) {
+                killStored(id);
+            }
+        }
+        if (instructionTransfersControl(inst)
+                && (inst.op != Op::Jump || inst.cond == JumpCondition::UNCONDITIONAL)) {
+            fall = false;
+        }
+    }
+}
+
 IntermediateRepresentation runIrPasses(IntermediateRepresentation ir, int optLevel) {
     ir = sealProcedures(std::move(ir));
     ir = applyCfgPasses(std::move(ir), optLevel);
@@ -866,6 +1183,7 @@ IntermediateRepresentation runIrPasses(IntermediateRepresentation ir, int optLev
         foldToFixpoint();
         for (auto& procedure : ir.procedures) {
             copyPropagate(procedure);
+            forwardLocalLoads(procedure);
             eliminateDeadTemps(procedure);
         }
     }

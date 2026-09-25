@@ -187,6 +187,7 @@ add_executable(functionalTest
         functionalTest/SwitchTest.cpp
         functionalTest/SizeofTest.cpp
         functionalTest/SizeofRecordMemberArrayTest.cpp
+        functionalTest/LoadForwardTest.cpp
         functionalTest/VlaTest.cpp
         functionalTest/VolatileTest.cpp
         functionalTest/ArraysTest.cpp

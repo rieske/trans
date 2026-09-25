@@ -679,6 +679,32 @@ TEST(IrDumpFromC, starRmwKeepsTheLoadAtO1) {
             "ENDPROC f\n"));
 }
 
+TEST(IrDumpFromC, forwardsStoreToReloadOfLocal) {
+    const char* src = "int f(void) { int x; int *p = &x; *p = 7; return *p; }\n";
+    EXPECT_THAT(compileToIr(src, 0), HasSubstr(":= *"));
+    const std::string o1 = compileToIr(src, 1);
+    EXPECT_THAT(o1, Not(HasSubstr(":= *")));
+    EXPECT_THAT(o1, HasSubstr("RETURN"));
+}
+
+TEST(IrDumpFromC, forwardsStoreToDirectUseOfLocal) {
+    const char* src = "int f(void) { int x; int *p = &x; *p = 7; return x; }\n";
+    const std::string o1 = compileToIr(src, 1);
+    EXPECT_THAT(o1, Not(HasSubstr("RETURN L$loc1_x")));
+    EXPECT_THAT(o1, HasSubstr("RETURN"));
+}
+
+TEST(IrDumpFromC, doesNotForwardEscapedLocal) {
+    const char* src = "void g(int *);\n"
+            "int f(void) { int x; int *p = &x; *p = 7; g(p); return *p; }\n";
+    EXPECT_THAT(compileToIr(src, 1), HasSubstr(":= *"));
+}
+
+TEST(IrDumpFromC, doesNotForwardVolatileLocal) {
+    const char* src = "int f(void) { volatile int x; int *p = &x; *p = 7; return *p; }\n";
+    EXPECT_THAT(compileToIr(src, 1), HasSubstr(":= *"));
+}
+
 TEST(IrDumpFromC, starAssignFromStarKeepsOneLoadAtO1) {
     EXPECT_THAT(compileToIr("void f(int *p) { *p = *p + 1; }\n", 1), StrEq(
             "PROC f\n"
