@@ -57,9 +57,60 @@ bool operandsInvariant(const Instruction& inst, const NaturalLoop& loop, const U
     return true;
 }
 
-bool isHoistable(const Instruction& inst, const NaturalLoop& loop, const UseDefIndex& index,
-        const std::unordered_set<int>& invariantTemps, bool indirectWrite) {
-    if (!isLicmPureOp(inst.op) || inst.result == kNoSymbol) {
+bool loopWritesAddressedObject(const Cfg& cfg, const NaturalLoop& loop, const UseDefIndex& index) {
+    for (const std::size_t b : loop.blocks) {
+        if (b >= cfg.size()) {
+            continue;
+        }
+        for (const auto& inst : cfg[b].insts) {
+            SymbolRefs refs;
+            collectSymbolRefs(inst, refs);
+            for (int id : refs.defs) {
+                if (index.addressTaken.count(id) != 0 || findValue(index, id) == nullptr) {
+                    return true;
+                }
+            }
+        }
+    }
+    return false;
+}
+
+bool loadCanBeSkipped(const Cfg& cfg, const NaturalLoop& loop, std::size_t loadBlock) {
+    if (loadBlock == loop.header) {
+        return false;
+    }
+    std::vector<char> seen(cfg.size(), 0);
+    std::vector<std::size_t> stack { loop.header };
+    if (loop.header < seen.size()) {
+        seen[loop.header] = 1;
+    }
+    while (!stack.empty()) {
+        const std::size_t b = stack.back();
+        stack.pop_back();
+        if (b == loadBlock) {
+            continue;
+        }
+        for (const std::size_t succ : cfgSuccessors(cfg, b)) {
+            if (loop.blocks.count(succ) == 0) {
+                return true;
+            }
+            if (succ < seen.size() && seen[succ] == 0) {
+                seen[succ] = 1;
+                stack.push_back(succ);
+            }
+        }
+    }
+    return false;
+}
+
+bool isHoistable(const Cfg& cfg, const Instruction& inst, const NaturalLoop& loop,
+        std::size_t block, const UseDefIndex& index, const std::unordered_set<int>& invariantTemps,
+        bool indirectWrite, bool writesAddressed) {
+    const bool load = inst.op == Op::Dereference;
+    if (load && (indirectWrite || writesAddressed || loadCanBeSkipped(cfg, loop, block))) {
+        return false;
+    }
+    if ((!isLicmPureOp(inst.op) && !load) || inst.result == kNoSymbol) {
         return false;
     }
     if ((inst.op == Op::FieldAddress || inst.op == Op::IndexAddress)
@@ -67,8 +118,15 @@ bool isHoistable(const Instruction& inst, const NaturalLoop& loop, const UseDefI
         return false;
     }
     const Value* dest = findValue(index, inst.result);
-    if (!dest || !dest->isExpressionTemp() || index.addressTaken.count(inst.result) != 0) {
+    if (!dest || dest->isVolatile() || !dest->isExpressionTemp()
+            || index.addressTaken.count(inst.result) != 0) {
         return false;
+    }
+    if (load) {
+        const Value* address = findValue(index, inst.arg0);
+        if (address && address->isVolatile()) {
+            return false;
+        }
     }
     const auto defs = index.defCount.find(inst.result);
     if (defs == index.defCount.end() || defs->second != 1) {
@@ -83,12 +141,13 @@ bool isHoistable(const Instruction& inst, const NaturalLoop& loop, const UseDefI
 bool anyHoistable(const Cfg& cfg, const NaturalLoop& loop, const UseDefIndex& index) {
     const std::unordered_set<int> none;
     const bool indirectWrite = loopHasIndirectWrite(index, loop);
+    const bool writesAddressed = loopWritesAddressedObject(cfg, loop, index);
     for (const std::size_t b : loop.blocks) {
         if (b >= cfg.size()) {
             continue;
         }
         for (const auto& inst : cfg[b].insts) {
-            if (isHoistable(inst, loop, index, none, indirectWrite)) {
+            if (isHoistable(cfg, inst, loop, b, index, none, indirectWrite, writesAddressed)) {
                 return true;
             }
         }
@@ -167,6 +226,7 @@ LicmStats hoistLoopInvariants(Procedure& procedure, IrStringTable& strings) {
             continue;
         }
         const bool indirectWrite = loopHasIndirectWrite(index, loop);
+        const bool writesAddressed = loopWritesAddressedObject(cfg, loop, index);
         std::unordered_set<int> invariantTemps;
         bool did = true;
         while (did) {
@@ -179,7 +239,8 @@ LicmStats hoistLoopInvariants(Procedure& procedure, IrStringTable& strings) {
                 }
                 auto& insts = cfg[b].insts;
                 for (std::size_t i = 0; i < insts.size();) {
-                    if (!isHoistable(insts[i], loop, index, invariantTemps, indirectWrite)) {
+                    if (!isHoistable(cfg, insts[i], loop, b, index, invariantTemps, indirectWrite,
+                                writesAddressed)) {
                         ++i;
                         continue;
                     }
