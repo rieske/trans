@@ -217,6 +217,34 @@ TEST(IrDumpFromC, licmHoistsNestedInvariantToOuterPreheader) {
     EXPECT_THAT(countSubstr(o1, "L$loc1_n + "), Eq(1));
 }
 
+TEST(IrDumpFromC, licmDoesNotHoistLoadWhenLoopMaySkip) {
+    const char* src = "int f(int *p, int n) {\n"
+            "  int i, s = 0;\n"
+            "  for (i = 0; i < n; i++) s += *p;\n"
+            "  return s;\n"
+            "}\n";
+    const std::string o1 = procedureDump(compileToIr(src, 1), "f");
+    const auto load = o1.find(":= *");
+    const auto lab = o1.find("\n__L");
+    ASSERT_THAT(load, Ne(std::string::npos));
+    ASSERT_THAT(lab, Ne(std::string::npos));
+    EXPECT_THAT(load, Gt(lab));
+}
+
+TEST(IrDumpFromC, licmLoadStaysInsideWhenLoopStores) {
+    const char* src = "int f(int *p, int *q, int n) {\n"
+            "  int i, s = 0;\n"
+            "  for (i = 0; i < n; i++) { s += *p; *q = i; }\n"
+            "  return s;\n"
+            "}\n";
+    const std::string o1 = procedureDump(compileToIr(src, 1), "f");
+    const auto load = o1.find(":= *");
+    const auto lab = o1.find("\n__L");
+    ASSERT_THAT(load, Ne(std::string::npos));
+    ASSERT_THAT(lab, Ne(std::string::npos));
+    EXPECT_THAT(load, Gt(lab));
+}
+
 TEST(IrDumpFromC, licmHoistsInvariantAddInForAtO1) {
     const char* src = "int f(int n) { int i; int s = 0; for (i = 0; i < n; i++) s += n + 1; return s; }\n";
     const std::string o0 = procedureDump(compileToIr(src, 0), "f");

@@ -187,7 +187,7 @@ TEST(Licm, doesNotHoistAddOfInductionVar) {
     EXPECT_THAT(stats.loopsVisited, Eq(1));
 }
 
-TEST(Licm, doesNotHoistDereference) {
+TEST(Licm, hoistsInvariantDereference) {
     IntermediateRepresentation ir;
     IrN n { ir.strings };
     Procedure p = makeProc(ir.strings, {
@@ -196,6 +196,26 @@ TEST(Licm, doesNotHoistDereference) {
             ir::inc(n("i")),
             ir::jump(n("L")),
     }, withArgs(exprTemps(ir.strings, { "t" }), ir.strings, { "p", "i" }));
+    const LicmStats stats = hoistLoopInvariants(p, ir.strings);
+    EXPECT_THAT(stats.hoisted, Eq(1));
+    const Cfg cfg = buildCfg(p.body);
+    const auto loops = naturalLoops(cfg);
+    ASSERT_THAT(loops, SizeIs(1));
+    const std::size_t pre = *preheaderIndex(cfg, loops[0]);
+    EXPECT_TRUE(instInBlock(cfg[pre], Op::Dereference, n("t")));
+    EXPECT_FALSE(instInBlock(cfg[loops[0].header], Op::Dereference, n("t")));
+}
+
+TEST(Licm, doesNotHoistDereferenceWhenLoopStores) {
+    IntermediateRepresentation ir;
+    IrN n { ir.strings };
+    Procedure p = makeProc(ir.strings, {
+            ir::label(n("L")),
+            ir::dereference(n("p"), n("t")),
+            ir::lvalueAssign(n("i"), n("q")),
+            ir::inc(n("i")),
+            ir::jump(n("L")),
+    }, withArgs(exprTemps(ir.strings, { "t" }), ir.strings, { "p", "q", "i" }));
     EXPECT_THAT(hoistLoopInvariants(p, ir.strings).hoisted, Eq(0));
 }
 
