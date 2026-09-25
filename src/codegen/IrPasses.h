@@ -15,6 +15,7 @@ struct FoldResult {
 
 FoldResult foldConstants(Procedure& procedure, IrStringTable& strings);
 void copyPropagate(Procedure& procedure);
+void forwardLocalLoads(Procedure& procedure);
 void eliminateDeadTemps(Procedure& procedure);
 
 void applyCfgPasses(Procedure& procedure, int optLevel);

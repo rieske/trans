@@ -1234,6 +1234,59 @@ TEST(IrPasses, copyPropagate_clearsAtJumpOnlySinglePredLabel) {
     EXPECT_THAT(toString(ir), HasSubstr("t3 := t2 + x"));
 }
 
+TEST(IrPasses, forwardLocalLoads_reusesStoreThroughPointer) {
+    IntermediateRepresentation ir;
+    IrN n { ir.strings };
+    ProcedureFrame frame = exprTemps(ir.strings, { "p", "t1", "t2" });
+    frame.locals.push_back(integral(ir.strings, "x"));
+    ir.procedures.push_back(makeProc(ir.strings, "f", {
+            ir::addressOf(n("x"), n("p")),
+            ir::lvalueAssign(n("t1"), n("p")),
+            ir::dereference(n("p"), n("t2")),
+            ir::ret(n("t2")),
+    }, std::move(frame)));
+
+    forwardLocalLoads(ir.procedures.front());
+
+    EXPECT_THAT(toString(ir), HasSubstr("t2 := t1"));
+}
+
+TEST(IrPasses, forwardLocalLoads_dropsStoreWhenStoredValueIsRedefined) {
+    IntermediateRepresentation ir;
+    IrN n { ir.strings };
+    ProcedureFrame frame = exprTemps(ir.strings, { "p", "t1", "t2", "t3" });
+    frame.locals.push_back(integral(ir.strings, "x"));
+    ir.procedures.push_back(makeProc(ir.strings, "f", {
+            ir::addressOf(n("x"), n("p")),
+            ir::lvalueAssign(n("t1"), n("p")),
+            ir::assign(n("t3"), n("t1")),
+            ir::dereference(n("p"), n("t2")),
+            ir::ret(n("t2")),
+    }, std::move(frame)));
+
+    forwardLocalLoads(ir.procedures.front());
+
+    EXPECT_THAT(toString(ir), HasSubstr("t2 := *p"));
+}
+
+TEST(IrPasses, forwardLocalLoads_replacesStoreWhenObjectIsAssigned) {
+    IntermediateRepresentation ir;
+    IrN n { ir.strings };
+    ProcedureFrame frame = exprTemps(ir.strings, { "p", "t1", "t2", "t3" });
+    frame.locals.push_back(integral(ir.strings, "x"));
+    ir.procedures.push_back(makeProc(ir.strings, "f", {
+            ir::addressOf(n("x"), n("p")),
+            ir::lvalueAssign(n("t1"), n("p")),
+            ir::assign(n("t3"), n("x")),
+            ir::dereference(n("p"), n("t2")),
+            ir::ret(n("t2")),
+    }, std::move(frame)));
+
+    forwardLocalLoads(ir.procedures.front());
+
+    EXPECT_THAT(toString(ir), HasSubstr("t2 := t3"));
+}
+
 TEST(IrPasses, applyCfgPasses_doesNotCopyPropagate) {
     IntermediateRepresentation ir;
     IrN n { ir.strings };
