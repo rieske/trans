@@ -5,13 +5,18 @@
 
 #include <unordered_map>
 #include <unordered_set>
+#include <vector>
 
 namespace codegen {
 
 struct ProcedureLiveness {
     std::unordered_map<int, std::unordered_set<int>> atLabel;
     std::unordered_map<int, std::unordered_set<int>> afterCall;
-    std::vector<std::unordered_set<int>> afterInst;
+    std::unordered_set<int> addressTaken;
+};
+
+struct TempLiveness {
+    std::vector<char> resultLiveAfter;
     std::unordered_set<int> addressTaken;
 };
 
@@ -20,6 +25,7 @@ struct LabelLiveIns {
 };
 
 ProcedureLiveness computeProcedureLiveness(const Procedure& procedure);
+TempLiveness computeTempLiveness(const Procedure& procedure);
 LabelLiveIns computeLabelLiveIns(const Procedure& procedure);
 std::unordered_map<int, std::unordered_set<int>> computeLiveAfterCalls(const Procedure& procedure);
 

@@ -6,6 +6,7 @@
 #include "codegen/IrStringTable.h"
 #include "codegen/Liveness.h"
 
+#include <string>
 #include <string_view>
 
 namespace {
@@ -54,21 +55,44 @@ TEST(Liveness, loopHeaderKeepsIncTarget) {
     EXPECT_THAT(live.atLabel.at(n("L")), UnorderedElementsAre(n("x")));
 }
 
-TEST(Liveness, afterInstKeepsDefLiveOnBackEdge) {
+TEST(Liveness, resultLiveAfterKeepsDefLiveOnBackEdge) {
     IntermediateRepresentation ir;
     IrN n { ir.strings };
-    Procedure p = makeProc(ir.strings, {
+    const Procedure p = makeProc(ir.strings, {
             ir::assignConstant(n("0"), n("t")),
             ir::label(n("L")),
             ir::assign(n("t"), n("r")),
             ir::assignConstant(n("1"), n("t")),
             ir::jump(n("L")),
     });
+    const TempLiveness live = computeTempLiveness(p);
+    ASSERT_THAT(live.resultLiveAfter.size(), Eq(p.body.size()));
+    EXPECT_THAT(live.resultLiveAfter[3], Eq(1));
+    EXPECT_THAT(live.resultLiveAfter[2], Eq(0));
+}
+
+TEST(Liveness, sparseSymbolIdsMapBackToOriginalIds) {
+    IntermediateRepresentation ir;
+    IrN n { ir.strings };
+    for (int i = 0; i < 200; ++i) {
+        n("pad" + std::to_string(i));
+    }
+    const Procedure p = makeProc(ir.strings, {
+            ir::add(n("a"), n("b"), n("t")),
+            ir::argument(n("a")),
+            ir::call(n("foo")),
+            ir::label(n("L")),
+            ir::add(n("t"), n("a"), n("u")),
+            ir::ret(n("u")),
+    });
     const ProcedureLiveness live = computeProcedureLiveness(p);
-    ASSERT_THAT(live.afterInst.size(), Eq(p.body.size()));
-    const int def = 3;
-    ASSERT_THAT(p.body[static_cast<std::size_t>(def)].op, Eq(Op::AssignConstant));
-    EXPECT_THAT(live.afterInst[static_cast<std::size_t>(def)], Contains(n("t")));
+    ASSERT_THAT(live.atLabel.count(n("L")), Eq(1u));
+    EXPECT_THAT(live.atLabel.at(n("L")), UnorderedElementsAre(n("t"), n("a")));
+    ASSERT_THAT(live.afterCall.count(2), Eq(1u));
+    EXPECT_THAT(live.afterCall.at(2), UnorderedElementsAre(n("t"), n("a")));
+    const TempLiveness temps = computeTempLiveness(p);
+    EXPECT_THAT(temps.resultLiveAfter[0], Eq(1));
+    EXPECT_THAT(temps.resultLiveAfter[4], Eq(1));
 }
 
 TEST(Liveness, argumentStaysLiveAcrossLabelBeforeCall) {
