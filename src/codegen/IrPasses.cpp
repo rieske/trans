@@ -1187,6 +1187,128 @@ void forwardLocalLoads(Procedure& procedure) {
     }
 }
 
+struct ExprKey {
+    Op op;
+    int arg0;
+    int arg1;
+    int imm;
+    bool operator==(const ExprKey& other) const {
+        return op == other.op && arg0 == other.arg0 && arg1 == other.arg1 && imm == other.imm;
+    }
+};
+
+struct ExprKeyHash {
+    std::size_t operator()(const ExprKey& key) const {
+        return (static_cast<std::size_t>(key.op) * 1315423911u)
+                ^ (static_cast<std::size_t>(key.arg0) << 1)
+                ^ (static_cast<std::size_t>(key.arg1) << 17)
+                ^ (static_cast<std::size_t>(key.imm) << 8);
+    }
+};
+
+bool isNumberableOp(Op op) {
+    switch (op) {
+    case Op::Add:
+    case Op::Sub:
+    case Op::Mul:
+    case Op::Div:
+    case Op::Mod:
+    case Op::And:
+    case Op::Or:
+    case Op::Xor:
+    case Op::Shl:
+    case Op::Shr:
+    case Op::UnaryMinus:
+    case Op::UnaryNot:
+        return true;
+    default:
+        return false;
+    }
+}
+
+bool sameValueKind(const ValueIndex& values, int left, int right) {
+    const Value* from = findValue(values, left);
+    const Value* to = findValue(values, right);
+    return from && to && from->getType() == to->getType()
+            && from->getSizeInBytes() == to->getSizeInBytes()
+            && from->getClassification().gprExtend == to->getClassification().gprExtend;
+}
+
+bool stableOperand(const ValueIndex& values, int id, const std::unordered_set<int>& addressTaken) {
+    if (id == kNoSymbol) {
+        return true;
+    }
+    const Value* value = findValue(values, id);
+    return value && !value->isVolatile() && addressTaken.count(id) == 0;
+}
+
+void killNumber(std::unordered_map<ExprKey, int, ExprKeyHash>& number, int id) {
+    if (id == kNoSymbol) {
+        return;
+    }
+    for (auto it = number.begin(); it != number.end(); ) {
+        if (it->first.arg0 == id || it->first.arg1 == id || it->second == id) {
+            it = number.erase(it);
+        } else {
+            ++it;
+        }
+    }
+}
+
+void valueNumber(Procedure& procedure) {
+    const ValueIndex values = indexValues(procedure);
+    std::unordered_set<int> addressTaken;
+    for (const auto& inst : procedure.body) {
+        SymbolRefs refs;
+        collectSymbolRefs(inst, refs);
+        if (refs.addressOfBase != kNoSymbol) {
+            addressTaken.insert(refs.addressOfBase);
+        }
+    }
+
+    const auto preds = labelPredCounts(procedure.body);
+    std::unordered_map<ExprKey, int, ExprKeyHash> number;
+    bool fall = true;
+    for (auto& inst : procedure.body) {
+        if (inst.op == Op::Label) {
+            const bool keep = fall && preds.count(inst.arg0) != 0 && preds.at(inst.arg0) == 1;
+            if (!keep) {
+                number.clear();
+            }
+            fall = true;
+            continue;
+        }
+        const Value* dest = findValue(values, inst.result);
+        const bool numberable = isNumberableOp(inst.op) && dest && dest->isExpressionTemp()
+                && !dest->isVolatile() && addressTaken.count(inst.result) == 0
+                && stableOperand(values, inst.arg0, addressTaken)
+                && stableOperand(values, inst.arg1, addressTaken);
+        if (numberable) {
+            killNumber(number, inst.result);
+            const ExprKey key { inst.op, inst.arg0, inst.arg1, inst.imm };
+            const auto found = number.find(key);
+            if (found != number.end() && sameValueKind(values, found->second, inst.result)) {
+                inst = ir::assign(found->second, inst.result);
+            } else if (inst.result != inst.arg0 && inst.result != inst.arg1) {
+                number[key] = inst.result;
+            }
+        } else {
+            SymbolRefs refs;
+            collectSymbolRefs(inst, refs);
+            for (int def : refs.defs) {
+                killNumber(number, def);
+            }
+        }
+        if (inst.op == Op::Call) {
+            number.clear();
+        }
+        if (instructionTransfersControl(inst)
+                && (inst.op != Op::Jump || inst.cond == JumpCondition::UNCONDITIONAL)) {
+            fall = false;
+        }
+    }
+}
+
 IntermediateRepresentation runIrPasses(IntermediateRepresentation ir, int optLevel) {
     ir = sealProcedures(std::move(ir));
     ir = applyCfgPasses(std::move(ir), optLevel);
@@ -1223,6 +1345,7 @@ IntermediateRepresentation runIrPasses(IntermediateRepresentation ir, int optLev
         }
         foldToFixpoint();
         for (auto& procedure : ir.procedures) {
+            valueNumber(procedure);
             copyPropagate(procedure);
             forwardLocalLoads(procedure);
             eliminateDeadTemps(procedure);
