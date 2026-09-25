@@ -490,6 +490,7 @@ StrengthReduceStats strengthReduce(Procedure& procedure, IrStringTable& strings)
     stats.inserted = insertPreheadersFor(cfg, strings, std::move(need));
     if (stats.inserted != 0) {
         snap = analyzeLoops(cfg);
+        index = buildUseDefIndex(cfg, procedure);
     }
 
     std::vector<NaturalLoop> loops = snap.loops;
@@ -499,16 +500,25 @@ StrengthReduceStats strengthReduce(Procedure& procedure, IrStringTable& strings)
         }
         return a.header < b.header;
     });
+    bool indexStale = false;
     for (const auto& loop : loops) {
-        index = buildUseDefIndex(cfg, procedure);
+        if (indexStale) {
+            index = buildUseDefIndex(cfg, procedure);
+            indexStale = false;
+        }
         const std::vector<Group> groups = reducibleMuls(cfg, snap, index, loop);
         if (!groups.empty()) {
             rewriteGroups(cfg, procedure, strings, snap, loop, groups, stats);
+            indexStale = true;
         }
-        index = buildUseDefIndex(cfg, procedure);
+        if (indexStale) {
+            index = buildUseDefIndex(cfg, procedure);
+            indexStale = false;
+        }
         const std::vector<AddressGroup> addresses = reducibleAddresses(cfg, snap, index, loop);
         if (!addresses.empty()) {
             rewriteAddresses(cfg, procedure, strings, snap, loop, addresses, stats);
+            indexStale = true;
         }
     }
     if (stats.reduced != 0 || stats.inserted != 0) {
