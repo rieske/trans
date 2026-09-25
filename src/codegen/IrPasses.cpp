@@ -746,9 +746,9 @@ bool isDeadAssignable(Op op) {
     }
 }
 
-bool isDeadValueDef(const Procedure& procedure, Op op, int id,
-        const std::unordered_set<int>& laterUses, const std::unordered_set<int>& addressTaken) {
-    if (addressTaken.count(id) != 0 || laterUses.count(id) != 0) {
+bool isDeadValueDef(const Procedure& procedure, Op op, int id, bool liveAfter,
+        const std::unordered_set<int>& addressTaken) {
+    if (addressTaken.count(id) != 0 || liveAfter) {
         return false;
     }
     const Value* dest = findValue(procedure, id);
@@ -764,24 +764,19 @@ bool isDeadValueDef(const Procedure& procedure, Op op, int id,
 } // namespace
 
 void eliminateDeadTemps(Procedure& procedure) {
-    ProcedureLiveness live;
+    TempLiveness live;
     for (;;) {
-        live = computeProcedureLiveness(procedure);
+        live = computeTempLiveness(procedure);
         std::vector<Instruction> kept;
         kept.reserve(procedure.body.size());
-        const std::unordered_set<int> empty;
         for (int i = static_cast<int>(procedure.body.size()) - 1; i >= 0; --i) {
             const Instruction& inst = procedure.body[static_cast<std::size_t>(i)];
-            const std::unordered_set<int>* after = nullptr;
-            if (static_cast<std::size_t>(i) < live.afterInst.size()) {
-                after = &live.afterInst[static_cast<std::size_t>(i)];
-            }
+            const bool liveAfter = live.resultLiveAfter[static_cast<std::size_t>(i)] != 0;
             const bool volatileUse = operandIsVolatile(procedure, inst.arg0)
                     || operandIsVolatile(procedure, inst.arg1)
                     || operandIsVolatile(procedure, inst.result);
             if (isDeadAssignable(inst.op) && !volatileUse
-                    && isDeadValueDef(procedure, inst.op, inst.result, after ? *after : empty,
-                            live.addressTaken)) {
+                    && isDeadValueDef(procedure, inst.op, inst.result, liveAfter, live.addressTaken)) {
                 continue;
             }
             kept.push_back(inst);
