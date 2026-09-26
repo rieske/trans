@@ -619,4 +619,196 @@ int scanf(const char *, ...);
     program.runAndExpect("30");
 }
 
+TEST(Compiler, originalIndexNegativeBoundDoesNotLoad) {
+    SourceProgram program{R"prg(int printf(const char *, ...);
+        int f(int *a, int n) {
+            long i;
+            int s;
+            s = 7;
+            for (i = 0; i < n; i++) {
+                s += a[i];
+            }
+            return s;
+        }
+        int main(void) {
+            printf("%d", f(0, -1));
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("7");
+}
+
+TEST(Compiler, originalIndexStartsAtOneStillSums) {
+    SourceProgram program{R"prg(int printf(const char *, ...);
+        int f(int *a, int n) {
+            long i;
+            int s;
+            s = 0;
+            for (i = 1; i < n; i++) {
+                s += a[i];
+            }
+            return s;
+        }
+        int main(void) {
+            int a[3];
+            a[0] = 10;
+            a[1] = 20;
+            a[2] = 30;
+            printf("%d", f(a, 3));
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("50");
+}
+
+TEST(Compiler, overwrittenZeroDoesNotStartTheIndex) {
+    SourceProgram program{R"prg(int printf(const char *, ...);
+        int f(int *a, long n) {
+            int bytes;
+            long t;
+            long u;
+            long i;
+            int s;
+            bytes = 1;
+            char buf[bytes];
+            buf[0] = 0;
+            s = 0;
+            t = 0;
+            u = t;
+            t = 1;
+            i = t;
+            for (; i < n; i++) {
+                s += a[i];
+                if (s) {
+                    break;
+                }
+            }
+            return s + buf[0] + (int)u;
+        }
+        int main(void) {
+            int a[2];
+            a[0] = 1;
+            a[1] = 2;
+            printf("%d", f(a, 1L << 62));
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("2");
+}
+
+TEST(Compiler, unsignedCompareOfNegativeIntStillEnters) {
+    SourceProgram program{R"prg(int printf(const char *, ...);
+        int f(int *a, int n) {
+            unsigned long i;
+            int s;
+            s = 0;
+            for (i = 0; i < n; i++) {
+                s = a[i];
+                if (s) {
+                    break;
+                }
+            }
+            return s;
+        }
+        int g(int *a, int n) {
+            long i;
+            int s;
+            s = 0;
+            for (i = 0; i < (unsigned long)n; i++) {
+                s = a[i];
+                if (s) {
+                    break;
+                }
+            }
+            return s;
+        }
+        int main(void) {
+            int a[1];
+            a[0] = 1;
+            printf("%d%d", f(a, -1), g(a, -1));
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("11");
+}
+
+TEST(Compiler, hugeElementUnsignedBoundStillEnters) {
+    SourceProgram program{R"prg(int printf(const char *, ...);
+        struct S { char b[2147483647]; };
+        int f(struct S *a, unsigned n) {
+            long i;
+            int s;
+            s = 0;
+            for (i = 0; i < n; i++) {
+                if (i == 1) {
+                    s = (int)((char *)(a + i) - (char *)a) == 2147483647;
+                    break;
+                }
+            }
+            return s;
+        }
+        int main(void) {
+            char dummy;
+            printf("%d%d%d", f((struct S *)&dummy, 2u), f((struct S *)&dummy, 2147483647u),
+                    f((struct S *)&dummy, 4294967295u));
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("111");
+}
+
+TEST(Compiler, highSignedBaseStillCounts) {
+    SourceProgram program{R"prg(int printf(const char *, ...);
+        int f(char *a) {
+            long i;
+            int s;
+            char *seen;
+            s = 0;
+            seen = 0;
+            for (i = 0; i < 0x2000; i++) {
+                seen = a + i;
+                s = s + 1;
+            }
+            if (seen != a + 0x1fff) {
+                return 0;
+            }
+            return s;
+        }
+        int main(void) {
+            printf("%d", f((char *)0x7ffffffffffff000UL));
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("8192");
+}
+
+TEST(Compiler, highUnsignedBaseStillCounts) {
+    SourceProgram program{R"prg(int printf(const char *, ...);
+        int f(int *a) {
+            unsigned long i;
+            int s;
+            s = 0;
+            for (i = 0; i < 4; i++) {
+                if (a + i != (int *)(0xfffffffffffffff0UL + 4 * i)) {
+                    return 0;
+                }
+                s = s + 1;
+            }
+            return s;
+        }
+        int main(void) {
+            printf("%d", f((int *)0xfffffffffffffff0UL));
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("4");
+}
+
 } // namespace
