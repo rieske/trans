@@ -58,12 +58,13 @@ AssemblyGenerator::AssemblyGenerator(std::ostream* out, std::unique_ptr<Instruct
 
 void AssemblyGenerator::generateAssemblyCode(IntermediateRepresentation& ir,
         const std::map<std::string, std::string>& constants,
-        const std::vector<GlobalVariable>& globalVariables)
+        const std::vector<GlobalVariable>& globalVariables, int optLevel)
 {
     for (const auto& global : globalVariables) {
         ir.strings.intern(global.name);
     }
     stackMachine = std::make_unique<StackMachine>(out_, *instructions_, *registers_, ir.strings);
+    stackMachine->setOptLevel(optLevel);
     stackMachine->generatePreamble(constants, globalVariables,
             collectExternalSymbols(ir, constants, globalVariables));
     for (const auto& procedure : ir.procedures) {

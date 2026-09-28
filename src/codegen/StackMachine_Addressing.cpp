@@ -85,19 +85,9 @@ void StackMachine::pointerDifference(int leftName, int rightName, int elementSiz
     storeRegisterValue(rdx);
     assembly << instructionSet->mov(addr, mulReg);
     assembly << instructionSet->cqo();
-    Register* divisor = nullptr;
-    for (auto& reg : registers->getGeneralPurposeRegisters()) {
-        if (reg != &mulReg && reg != &rdx) {
-            storeRegisterValue(*reg);
-            divisor = reg;
-            break;
-        }
-    }
-    if (!divisor) {
-        internalError("no free register for pointer difference divisor");
-    }
-    assembly << instructionSet->mov(std::to_string(elementSizeBytes), *divisor);
-    assembly << instructionSet->idiv(*divisor);
+    Register& divisor = get64BitRegisterExcluding(std::vector<Register*> { &mulReg, &rdx, &addr });
+    assembly << instructionSet->mov(std::to_string(elementSizeBytes), divisor);
+    assembly << instructionSet->idiv(divisor);
     assembly << instructionSet->mov(mulReg, addr);
     bindResult(addr, resolve(resultName));
 }

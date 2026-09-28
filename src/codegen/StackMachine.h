@@ -41,6 +41,7 @@ public:
 
     void startProcedure(const Procedure& procedure);
     void endProcedure();
+    void setOptLevel(int optLevel);
     void emit(const Instruction& instruction);
 
     void label(int name);
@@ -222,13 +223,15 @@ private:
     void dropCallerSavedBindings();
     void emptyGeneralPurposeRegisters();
 
+    void emitReturn();
     void pushCalleeSavedRegisters();
     void popCalleeSavedRegisters();
-
     void pushRegisters(std::vector<Register*> source, std::vector<Register*>& destination);
     void popRegisters(std::vector<Register*> registers);
-
     void pushRegister(Register& reg, std::vector<Register*>& registers);
+    void emitEpilogue();
+    bool isCalleeSaved(const Register& reg) const;
+    bool allocatable(const Register& reg) const;
 
     void storeInMemory(Value& symbol);
 
@@ -285,6 +288,9 @@ private:
 
     Amd64Registers* registers;
     std::vector<Register*> calleeSavedRegisters;
+    std::string epilogueLabel_;
+    bool useCalleeSaved_ { true };
+    bool shareEpilogue_ { false };
 
     const IrStringTable& strings_;
     // Pointer-stable storage; resolve indexes by intern id.

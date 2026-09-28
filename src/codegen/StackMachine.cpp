@@ -180,11 +180,25 @@ void StackMachine::startProcedure(const Procedure& procedure) {
         createVaSaveHomes(vaSaveBaseIndex, procedure.vaGpHomes, procedure.vaXmmHomes);
     }
 
-    int savedRegistersStack = registers->getCalleeSavedRegisters().size() * MACHINE_WORD_SIZE;
+    int savedRegistersStack = useCalleeSaved_
+            ? static_cast<int>(registers->getCalleeSavedRegisters().size()) * MACHINE_WORD_SIZE
+            : 0;
     frameLayout_ = type::object_abi::frameLayout(localIndex, savedRegistersStack);
+    int returns = 0;
+    for (const Instruction& instruction : procedure.body) {
+        if (instruction.op == Op::Return || instruction.op == Op::VoidReturn) {
+            ++returns;
+        }
+    }
+    calleeSavedRegisters.clear();
+    shareEpilogue_ = !useCalleeSaved_ && returns > 1;
+    if (shareEpilogue_) {
+        epilogueLabel_ = "__epi" + std::to_string(++wideLabel_);
+    }
     assembly << instructionSet->sub(registers->getStackPointer(), frameLayout_.subBytes);
-
-    pushCalleeSavedRegisters();
+    if (useCalleeSaved_) {
+        pushCalleeSavedRegisters();
+    }
     for (auto& value : scopeStorage) {
         if (frameHomes.count(value.id())) {
             continue;
@@ -228,12 +242,21 @@ void StackMachine::startProcedure(const Procedure& procedure) {
     }
 }
 
+void StackMachine::setOptLevel(int optLevel) {
+    useCalleeSaved_ = optLevel > 0;
+}
+
 void StackMachine::endProcedure() {
+    if (shareEpilogue_) {
+        emitEpilogue();
+    }
     emptyGeneralPurposeRegisters();
     scopeStorage.clear();
     scopeById.clear();
     frameHomes.clear();
     calleeSavedRegisters.clear();
+    shareEpilogue_ = false;
+    epilogueLabel_.clear();
     sretId_ = kNoSymbol;
     variadicFrame.reset();
     haveEdgeLiveness_ = false;
@@ -438,15 +461,16 @@ void StackMachine::emptyGeneralPurposeRegisters() {
     }
 }
 
-void StackMachine::pushCalleeSavedRegisters() { pushRegisters(registers->getCalleeSavedRegisters(), calleeSavedRegisters); }
+void StackMachine::pushCalleeSavedRegisters() {
+    pushRegisters(registers->getCalleeSavedRegisters(), calleeSavedRegisters);
+}
 
 void StackMachine::popCalleeSavedRegisters() {
-    if (hasFrame_ && !calleeSavedRegisters.empty()) {
+    if (!calleeSavedRegisters.empty()) {
         const int offset = -frameLayout_.subBytes
                 - static_cast<int>(calleeSavedRegisters.size()) * MACHINE_WORD_SIZE;
         assembly << instructionSet->lea(
-                MemoryOperand::at(registers->getBasePointer(), offset),
-                registers->getStackPointer());
+                MemoryOperand::at(registers->getBasePointer(), offset), registers->getStackPointer());
     }
     popRegisters(calleeSavedRegisters);
 }
@@ -468,6 +492,36 @@ void StackMachine::pushRegister(Register& reg, std::vector<Register*>& registers
     assembly << instructionSet->push(reg);
 }
 
+void StackMachine::emitEpilogue() {
+    assembly.label(instructionSet->label(epilogueLabel_));
+    assembly << instructionSet->leave();
+    assembly << instructionSet->ret();
+}
+
+bool StackMachine::isCalleeSaved(const Register& reg) const {
+    for (Register* saved : registers->getCalleeSavedRegisters()) {
+        if (saved == &reg) {
+            return true;
+        }
+    }
+    return false;
+}
+
+void StackMachine::emitReturn() {
+    if (useCalleeSaved_) {
+        popCalleeSavedRegisters();
+        assembly << instructionSet->leave();
+        assembly << instructionSet->ret();
+        return;
+    }
+    if (shareEpilogue_) {
+        assembly << instructionSet->jmp(epilogueLabel_);
+        return;
+    }
+    assembly << instructionSet->leave();
+    assembly << instructionSet->ret();
+}
+
 void StackMachine::storeInMemory(Value& symbol) {
     if (!symbol.isStored()) {
         storeRegisterValue(symbol.getAssignedRegister());
@@ -480,8 +534,7 @@ Address StackMachine::spillSlotAddress(const Value& symbol) const {
                 -frameLayout_.homeBytes + symbol.getIndex() * MACHINE_WORD_SIZE,
                 symbol.getSizeInBytes());
     }
-    int offset = symbol.getIndex() * MACHINE_WORD_SIZE
-            + static_cast<int>(calleeSavedRegisters.size()) * MACHINE_WORD_SIZE;
+    int offset = symbol.getIndex() * MACHINE_WORD_SIZE;
     return Address::frame(FrameBase::StackPointer, offset, symbol.getSizeInBytes());
 }
 
@@ -534,15 +587,23 @@ MemoryOperand StackMachine::memoryOperandAt(const Value& symbol, int byteOffset)
             home.offsetBytes() + byteOffset);
 }
 
+bool StackMachine::allocatable(const Register& reg) const {
+    return useCalleeSaved_ || !isCalleeSaved(reg);
+}
+
 Register& StackMachine::get64BitRegister() {
     for (auto& reg : registers->getGeneralPurposeRegisters()) {
-        if (!reg->containsUnstoredValue()) {
+        if (allocatable(*reg) && !reg->containsUnstoredValue()) {
             return *reg;
         }
     }
-    Register& reg = **registers->getGeneralPurposeRegisters().begin();
-    storeRegisterValue(reg);
-    return reg;
+    for (auto& reg : registers->getGeneralPurposeRegisters()) {
+        if (allocatable(*reg)) {
+            storeRegisterValue(*reg);
+            return *reg;
+        }
+    }
+    internalError("unable to get a free register");
 }
 
 Register& StackMachine::get64BitRegisterExcluding(Register& registerToExclude) {
@@ -559,12 +620,12 @@ Register& StackMachine::get64BitRegisterExcluding(const std::vector<Register*>& 
         return false;
     };
     for (auto& reg : registers->getGeneralPurposeRegisters()) {
-        if (!excluded(reg) && !reg->containsUnstoredValue()) {
+        if (!excluded(reg) && allocatable(*reg) && !reg->containsUnstoredValue()) {
             return *reg;
         }
     }
     for (auto& reg : registers->getGeneralPurposeRegisters()) {
-        if (!excluded(reg)) {
+        if (!excluded(reg) && allocatable(*reg)) {
             storeRegisterValue(*reg);
             return *reg;
         }

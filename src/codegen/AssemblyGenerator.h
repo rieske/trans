@@ -21,7 +21,7 @@ public:
 
     void generateAssemblyCode(IntermediateRepresentation& ir,
             const std::map<std::string, std::string>& constants,
-            const std::vector<GlobalVariable>& globalVariables);
+            const std::vector<GlobalVariable>& globalVariables, int optLevel = 1);
 
 private:
     std::ostream* out_;
