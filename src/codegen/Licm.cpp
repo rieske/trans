@@ -42,7 +42,7 @@ bool operandsInvariant(const Instruction& inst, const NaturalLoop& loop, const U
             continue;
         }
         const Value* value = findValue(index, id);
-        if (!value || index.addressTaken.count(id) != 0) {
+        if (!value || value->isVolatile() || index.addressTaken.count(id) != 0) {
             return false;
         }
         const bool outsideOrInvariant =

@@ -832,6 +832,36 @@ TEST(IrDumpFromC, addressOfStarPostfixDoesNotUndoIncrement) {
     EXPECT_THAT(compileToIr(src, 1), Not(HasSubstr("L$loc1_p := $t0")));
 }
 
+TEST(IrDumpFromC, volatileCastAddStaysInLoop) {
+    const char* src = "int f(volatile int k, int n) {\n"
+            "  int i, s = 0;\n"
+            "  for (i = 0; i < n; i++) s += (int)k + 1;\n"
+            "  return s;\n"
+            "}\n";
+    const std::string o1 = procedureDump(compileToIr(src, 1), "f");
+    const auto read = o1.find("L$loc1_k");
+    const auto lab = o1.find("\n__L");
+    ASSERT_THAT(read, Ne(std::string::npos));
+    ASSERT_THAT(lab, Ne(std::string::npos));
+    EXPECT_THAT(read, Gt(lab));
+}
+
+TEST(IrDumpFromC, volatilePointerBaseStaysIndexed) {
+    const char* src = "int f(int n, int * volatile p) {\n"
+            "  long i;\n"
+            "  int s = 0;\n"
+            "  for (i = 0; i < n; i++) s += p[i];\n"
+            "  return s;\n"
+            "}\n";
+    const std::string o1 = procedureDump(compileToIr(src, 1), "f");
+    const auto addr = o1.find("&L$loc1_p[L$loc1_i]");
+    const auto lab = o1.find("\n__L");
+    ASSERT_THAT(addr, Ne(std::string::npos));
+    ASSERT_THAT(lab, Ne(std::string::npos));
+    EXPECT_THAT(addr, Gt(lab));
+    EXPECT_THAT(o1, Not(HasSubstr("$sr0 := $sr0 + 4")));
+}
+
 TEST(IrDumpFromC, voidValuesAreNeverMaterialized) {
     EXPECT_THAT(compileToIr("void v(void){}\nint c = 1;\n"
                             "int main(void){ (void)v(); c ? v() : v(); return 0; }\n", 0), StrEq(

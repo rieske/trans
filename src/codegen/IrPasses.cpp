@@ -761,10 +761,10 @@ bool isDeadValueDef(const ValueIndex& values, Op op, int id, bool liveAfter,
     if (!dest || dest->isVolatile()) {
         return false;
     }
-    if (dest->isExpressionTemp()) {
-        return true;
+    if (op == Op::Div || op == Op::Mod) {
+        return false;
     }
-    return op != Op::Div && op != Op::Mod;
+    return true;
 }
 
 } // namespace
