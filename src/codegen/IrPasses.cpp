@@ -11,6 +11,7 @@
 #include "util/IntegerLiteral.h"
 
 #include <algorithm>
+#include <limits>
 #include <optional>
 #include <unordered_map>
 #include <unordered_set>
@@ -484,6 +485,149 @@ std::optional<PendingCompare> pendingFromCompare(const Instruction& inst, std::s
 // eliminateDeadTemps. Sound because facts only flow forward: a symbol cannot be aliased
 // before its AddressOf is reached, and `known` is dropped at any label not entered solely
 // by fallthrough, so nothing survives a back edge into a later AddressOf.
+const Instruction* defBefore(const std::vector<Instruction>& body, int id, const Instruction* self) {
+    const Instruction* found = nullptr;
+    for (const auto& inst : body) {
+        if (&inst == self) {
+            break;
+        }
+        if (inst.result == id) {
+            found = &inst;
+        }
+    }
+    return found;
+}
+
+bool unchangedBetween(const std::vector<Instruction>& body, const Instruction* inner,
+        const Instruction* outer, int variable, int innerConst) {
+    bool seen = false;
+    for (const auto& inst : body) {
+        if (&inst == inner) {
+            seen = true;
+            continue;
+        }
+        if (!seen) {
+            continue;
+        }
+        if (&inst == outer) {
+            return true;
+        }
+        if (inst.op == Op::Call || inst.op == Op::LvalueAssign || inst.op == Op::VaStart
+                || inst.op == Op::VaArg || inst.op == Op::VaCopy) {
+            return false;
+        }
+        SymbolRefs refs;
+        collectSymbolRefs(inst, refs);
+        for (int def : refs.defs) {
+            if (def == variable || def == innerConst) {
+                return false;
+            }
+        }
+    }
+    return false;
+}
+
+int useCount(const std::vector<Instruction>& body, int id) {
+    int count = 0;
+    for (const auto& inst : body) {
+        SymbolRefs refs;
+        collectSymbolRefs(inst, refs);
+        for (int use : refs.uses) {
+            if (use == id) {
+                ++count;
+            }
+        }
+    }
+    return count;
+}
+
+bool combineConst(Instruction& inst, std::vector<Instruction>& body,
+        std::unordered_map<int, unsigned long long>& known, const ValueIndex& values,
+        IrStringTable& strings) {
+    if (inst.op != Op::Add && inst.op != Op::Sub) {
+        return false;
+    }
+    if (operandIsVolatile(values, inst.arg0) || operandIsVolatile(values, inst.arg1)) {
+        return false;
+    }
+    const bool leftConst = known.count(inst.arg0) != 0;
+    const bool rightConst = known.count(inst.arg1) != 0;
+    if (leftConst == rightConst) {
+        return false;
+    }
+    if (inst.op == Op::Sub && !rightConst) {
+        return false;
+    }
+    const int constId = rightConst ? inst.arg1 : inst.arg0;
+    const int otherId = rightConst ? inst.arg0 : inst.arg1;
+    const Instruction* inner = defBefore(body, otherId, &inst);
+    if (inner == nullptr || inner->op != inst.op) {
+        return false;
+    }
+    if (operandIsVolatile(values, inner->arg0) || operandIsVolatile(values, inner->arg1)) {
+        return false;
+    }
+    const bool innerLeftConst = known.count(inner->arg0) != 0;
+    const bool innerRightConst = known.count(inner->arg1) != 0;
+    if (innerLeftConst == innerRightConst) {
+        return false;
+    }
+    if (inst.op == Op::Sub && !innerRightConst) {
+        return false;
+    }
+    const int innerConst = innerRightConst ? inner->arg1 : inner->arg0;
+    const int variable = innerRightConst ? inner->arg0 : inner->arg1;
+    if (inner->result == variable || !unchangedBetween(body, inner, &inst, variable, innerConst)) {
+        return false;
+    }
+    const Value* dest = findValue(values, inst.result);
+    const Value* innerDest = findValue(values, inner->result);
+    if (!isFoldableInteger(dest) || !isFoldableInteger(innerDest)
+            || dest->getSizeInBytes() != innerDest->getSizeInBytes() || dest->getSizeInBytes() <= 0) {
+        return false;
+    }
+    const int bytes = dest->getSizeInBytes();
+    const int width = bitWidth(bytes);
+    const long long c1 = asSigned(known.at(innerConst), width);
+    const long long c2 = asSigned(known.at(constId), width);
+    long long sum = 0;
+    if (width >= 64) {
+        if ((c2 > 0 && c1 > std::numeric_limits<long long>::max() - c2)
+                || (c2 < 0 && c1 < std::numeric_limits<long long>::min() - c2)) {
+            return false;
+        }
+        sum = c1 + c2;
+    } else {
+        const long long min = -(1LL << (width - 1));
+        const long long max = (1LL << (width - 1)) - 1;
+        sum = c1 + c2;
+        if (sum < min || sum > max) {
+            return false;
+        }
+    }
+    if (useCount(body, constId) != 1) {
+        return false;
+    }
+    Instruction* reaching = nullptr;
+    for (auto& earlier : body) {
+        if (&earlier == &inst) {
+            break;
+        }
+        if (earlier.result == constId) {
+            reaching = &earlier;
+        }
+    }
+    if (reaching == nullptr || reaching->op != Op::AssignConstant || reaching->arg1 != kNoSymbol) {
+        return false;
+    }
+    const unsigned long long bits = static_cast<unsigned long long>(sum) & widthMask(bytes);
+    reaching->arg0 = strings.intern(util::wordImmediate(bits));
+    known[constId] = bits;
+    inst.arg0 = variable;
+    inst.arg1 = constId;
+    return true;
+}
+
 FoldResult foldConstants(Procedure& procedure, IrStringTable& strings) {
     const ValueIndex values = indexValues(procedure);
     const auto preds = labelPredCounts(procedure.body);
@@ -509,6 +653,8 @@ FoldResult foldConstants(Procedure& procedure, IrStringTable& strings) {
         }
         if (auto repl = tryFold(inst, known, values, strings)) {
             inst = *repl;
+            result.changed = true;
+        } else if (combineConst(inst, procedure.body, known, values, strings)) {
             result.changed = true;
         }
         SymbolRefs refs;
@@ -1212,6 +1358,9 @@ void forwardLocalLoads(Procedure& procedure) {
                 }
             }
             valueOf.dropEscaped(escaped);
+        } else if (inst.op == Op::VaStart || inst.op == Op::VaArg || inst.op == Op::VaCopy) {
+            valueOf.clear();
+            pointsTo.clear();
         } else {
             SymbolRefs refs;
             collectSymbolRefs(inst, refs);

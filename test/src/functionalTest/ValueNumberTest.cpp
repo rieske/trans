@@ -60,6 +60,26 @@ void expectCmps(const char* source, const char* output, int atOpt0, int atOpt) {
     EXPECT_EQ(cmps, functionalTestOptFlag() == "-O0" ? atOpt0 : atOpt);
 }
 
+int countSubs(const std::string& body) {
+    int count = 0;
+    std::istringstream lines { body };
+    std::string line;
+    while (std::getline(lines, line)) {
+        std::size_t i = 0;
+        while (i < line.size() && std::isspace(static_cast<unsigned char>(line[i])) != 0) {
+            ++i;
+        }
+        const std::string mnemonic = line.substr(i);
+        if (mnemonic.find("rsp") != std::string::npos || mnemonic.find("esp") != std::string::npos) {
+            continue;
+        }
+        if (mnemonic.compare(0, 4, "subl") == 0 || mnemonic.compare(0, 4, "sub ") == 0) {
+            ++count;
+        }
+    }
+    return count;
+}
+
 int countAdds(const std::string& body) {
     int count = 0;
     std::istringstream lines { body };
@@ -300,6 +320,256 @@ TEST(Compiler, volatileEqualKeepsCompare) {
             return 0;
         }
     )prg", "1", 1, 1);
+}
+
+void expectAddSub(const char* source, const char* output, int adds0, int addsOpt, int subs0,
+        int subsOpt) {
+    SourceProgram program { source, { "-save-temps" } };
+    program.compile();
+    program.runAndExpect(output);
+    const std::string body = functionAssembly(program.readAssembly(), "f");
+    const bool opt0 = functionalTestOptFlag() == "-O0";
+    EXPECT_EQ(countAdds(body), opt0 ? adds0 : addsOpt);
+    EXPECT_EQ(countSubs(body), opt0 ? subs0 : subsOpt);
+}
+
+TEST(Compiler, combinesConstantAdds) {
+    expectAddSub(R"prg(int printf(const char *, ...);
+        int f(int n) {
+            return (n + 4) + 3;
+        }
+        int main(void) {
+            printf("%d", f(1));
+            return 0;
+        }
+    )prg", "8", 2, 1, 0, 0);
+}
+
+TEST(Compiler, combinesConstantSubs) {
+    expectAddSub(R"prg(int printf(const char *, ...);
+        int f(int n) {
+            return (n - 4) - 3;
+        }
+        int main(void) {
+            printf("%d", f(10));
+            return 0;
+        }
+    )prg", "3", 0, 0, 2, 1);
+}
+
+TEST(Compiler, keepsMixedAddAndSub) {
+    expectAddSub(R"prg(int printf(const char *, ...);
+        int f(int n) {
+            return (n + 4) - 3;
+        }
+        int main(void) {
+            printf("%d", f(10));
+            return 0;
+        }
+    )prg", "11", 1, 1, 1, 1);
+}
+
+TEST(Compiler, copiedConstantIsNotRewritten) {
+    SourceProgram program { R"prg(int printf(const char *, ...);
+        int f(int n) {
+            volatile int v;
+            int x;
+            int c;
+            int d;
+            v = n;
+            x = v;
+            c = 4;
+            d = c;
+            return (x + 3) + d;
+        }
+        int main(void) {
+            printf("%d", f(10));
+            return 0;
+        }
+    )prg" };
+    program.compile();
+    program.runAndExpect("17");
+}
+
+TEST(Compiler, reassignedConstantIsNotRewritten) {
+    SourceProgram program { R"prg(int printf(const char *, ...);
+        int f(int n) {
+            volatile int v;
+            int x;
+            int c;
+            v = n;
+            x = v;
+            c = 1;
+            c = 3;
+            return (x + 4) + c;
+        }
+        int main(void) {
+            printf("%d", f(10));
+            return 0;
+        }
+    )prg" };
+    program.compile();
+    program.runAndExpect("17");
+}
+
+TEST(Compiler, reassignedConstantSubIsNotRewritten) {
+    SourceProgram program { R"prg(int printf(const char *, ...);
+        int f(int n) {
+            volatile int v;
+            int x;
+            int c;
+            v = n;
+            x = v;
+            c = 1;
+            c = 3;
+            return (x - 4) - c;
+        }
+        int main(void) {
+            printf("%d", f(10));
+            return 0;
+        }
+    )prg" };
+    program.compile();
+    program.runAndExpect("3");
+}
+
+TEST(Compiler, storeBetweenConstantAddsIsNotReread) {
+    SourceProgram program { R"prg(int printf(const char *, ...);
+        int f(int n) {
+            return (n + 4) + (n += 10, 3);
+        }
+        int main(void) {
+            volatile int n;
+            n = 1;
+            printf("%d", f(n));
+            return 0;
+        }
+    )prg" };
+    program.compile();
+    program.runAndExpect("8");
+}
+
+TEST(Compiler, storeBetweenConstantSubsIsNotReread) {
+    SourceProgram program { R"prg(int printf(const char *, ...);
+        int f(int n) {
+            return (n - 4) - (n += 10, 3);
+        }
+        int main(void) {
+            volatile int n;
+            n = 10;
+            printf("%d", f(n));
+            return 0;
+        }
+    )prg" };
+    program.compile();
+    program.runAndExpect("3");
+}
+
+TEST(Compiler, callBetweenConstantAddsIsNotReread) {
+    SourceProgram program { R"prg(int printf(const char *, ...);
+        int nglob;
+        void bump(void) {
+            int bytes;
+            bytes = 1;
+            char buf[bytes];
+            buf[0] = 0;
+            nglob = 100 + buf[0];
+        }
+        int f(void) {
+            nglob = 1;
+            return (nglob + 4) + (bump(), 3);
+        }
+        int main(void) {
+            printf("%d", f());
+            return 0;
+        }
+    )prg" };
+    program.compile();
+    program.runAndExpect("8");
+}
+
+TEST(Compiler, pointerStoreBetweenAddsIsNotReread) {
+    SourceProgram program { R"prg(int printf(const char *, ...);
+        int f(int n) {
+            int *p;
+            p = &n;
+            return (n + 4) + (*p = 10, 3);
+        }
+        int main(void) {
+            volatile int n;
+            n = 1;
+            printf("%d", f(n));
+            return 0;
+        }
+    )prg" };
+    program.compile();
+    program.runAndExpect("8");
+}
+
+TEST(Compiler, pointerStoreBetweenSubsIsNotReread) {
+    SourceProgram program { R"prg(int printf(const char *, ...);
+        int f(int n) {
+            int *p;
+            p = &n;
+            return (n - 4) - (*p = 1, 3);
+        }
+        int main(void) {
+            volatile int n;
+            n = 10;
+            printf("%d", f(n));
+            return 0;
+        }
+    )prg" };
+    program.compile();
+    program.runAndExpect("3");
+}
+
+TEST(Compiler, pointerStoreBetweenGlobalAddsIsNotReread) {
+    SourceProgram program { R"prg(int printf(const char *, ...);
+        int g;
+        int f(void) {
+            int *p;
+            g = 1;
+            p = &g;
+            return (g + 4) + (*p = 10, 3);
+        }
+        int main(void) {
+            printf("%d", f());
+            return 0;
+        }
+    )prg" };
+    program.compile();
+    program.runAndExpect("8");
+}
+
+TEST(Compiler, vaStartBetweenConstantAddsIsNotReread) {
+    SourceProgram program { R"prg(int printf(const char *, ...);
+        int g;
+        int f(int n, ...) {
+            g = 1;
+            return (g + 4) + (__builtin_va_start(*(__builtin_va_list *)&g, n), 3);
+        }
+        int main(void) {
+            volatile int n;
+            n = 1;
+            printf("%d", f(n, 9));
+            return 0;
+        }
+    )prg" };
+    program.compile();
+    program.runAndExpect("8");
+}
+
+TEST(Compiler, keepsOverflowingConstantAdds) {
+    expectAddSub(R"prg(int printf(const char *, ...);
+        int f(int n) {
+            return (n + 2000000000) + 2000000000;
+        }
+        int main(void) {
+            printf("%d", 1);
+            return 0;
+        }
+    )prg", "1", 2, 2, 0, 0);
 }
 
 } // namespace
