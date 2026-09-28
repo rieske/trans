@@ -1,5 +1,8 @@
 #include "TestFixtures.h"
 
+#include <stdexcept>
+#include <string>
+
 namespace {
 
 TEST(Compiler, strengthReduceMulByInvariant) {
@@ -809,6 +812,138 @@ TEST(Compiler, highUnsignedBaseStillCounts) {
     )prg"};
     program.compile();
     program.runAndExpect("4");
+}
+
+bool trapsWithSignal(const char* source, int signalNumber) {
+    SourceProgram program { source };
+    program.compile();
+    try {
+        program.run();
+    } catch (const std::runtime_error& error) {
+        const std::string text = error.what();
+        return text.find("(" + std::to_string(signalNumber + 128) + ")") != std::string::npos;
+    }
+    return false;
+}
+
+TEST(Compiler, unreadDivideByZeroStillTraps) {
+    EXPECT_TRUE(trapsWithSignal(R"prg(
+        int z;
+        int f(int n) {
+            int d;
+            int x;
+            d = z;
+            x = n / d;
+            return 1;
+        }
+        int main(void) {
+            z = 0;
+            return f(1);
+        }
+    )prg", 8));
+}
+
+TEST(Compiler, unreadRemainderByZeroStillTraps) {
+    EXPECT_TRUE(trapsWithSignal(R"prg(
+        int z;
+        int f(int n) {
+            int d;
+            int x;
+            d = z;
+            x = n % d;
+            return 1;
+        }
+        int main(void) {
+            z = 0;
+            return f(1);
+        }
+    )prg", 8));
+}
+
+bool multiplyIsInsideLoop(const std::string& text) {
+    const std::string plain = "\nf:";
+    const std::string intel = "\n$f:";
+    std::size_t at = text.find(plain);
+    if (at == std::string::npos) {
+        at = text.find(intel);
+    }
+    if (at == std::string::npos) {
+        return false;
+    }
+    const std::size_t loop = text.find("__L", at);
+    const std::size_t mul = text.find("imul", at);
+    return loop != std::string::npos && mul != std::string::npos && mul > loop;
+}
+
+TEST(Compiler, volatileFactorIsReread) {
+    SourceProgram program { R"prg(int printf(const char *, ...);
+        int f(int n) {
+            volatile int k;
+            int i;
+            int s;
+            k = 2;
+            s = 0;
+            for (i = 0; i < n; i++) {
+                s += i * k;
+            }
+            return s;
+        }
+        int main(void) {
+            printf("%d", f(3));
+            return 0;
+        }
+    )prg",
+        { "-save-temps" } };
+    program.compile();
+    program.runAndExpect("6");
+    EXPECT_TRUE(multiplyIsInsideLoop(program.readAssembly()));
+}
+
+TEST(Compiler, volatileCastAddIsReread) {
+    SourceProgram program { R"prg(int printf(const char *, ...);
+        int f(volatile int k, int n) {
+            int i;
+            int s;
+            s = 0;
+            for (i = 0; i < n; i++) {
+                s += (int)k + 1;
+            }
+            return s;
+        }
+        int main(void) {
+            printf("%d", f(3, 4));
+            return 0;
+        }
+    )prg" };
+    program.compile();
+    program.runAndExpect("16");
+}
+
+TEST(Compiler, volatilePointerBaseIsReread) {
+    SourceProgram program { R"prg(int printf(const char *, ...);
+        int f(int n, int * volatile p) {
+            long i;
+            int s;
+            s = 0;
+            for (i = 0; i < n; i++) {
+                s += p[i];
+            }
+            return s;
+        }
+        int main(void) {
+            int a[4];
+            a[0] = 1;
+            a[1] = 2;
+            a[2] = 3;
+            a[3] = 4;
+            printf("%d", f(4, a));
+            return 0;
+        }
+    )prg",
+        { "-save-temps" } };
+    program.compile();
+    program.runAndExpect("10");
+    EXPECT_TRUE(multiplyIsInsideLoop(program.readAssembly()));
 }
 
 } // namespace

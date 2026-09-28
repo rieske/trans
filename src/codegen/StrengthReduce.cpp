@@ -67,7 +67,7 @@ bool isInvariant(const UseDefIndex& index, const NaturalLoop& loop, int id, bool
         return false;
     }
     const Value* value = findValue(index, id);
-    return value != nullptr && value->getType() == Type::INTEGRAL;
+    return value != nullptr && !value->isVolatile() && value->getType() == Type::INTEGRAL;
 }
 
 bool immediateStep(int raw, bool subtract, Step& step) {
@@ -258,6 +258,10 @@ struct AddressGroup {
 };
 
 bool baseStable(const UseDefIndex& index, const NaturalLoop& loop, int id, bool indirect) {
+    const Value* value = findValue(index, id);
+    if (value != nullptr && value->isVolatile()) {
+        return false;
+    }
     if (!isIntegral(index, id) || defInLoop(index, loop, id)) {
         return false;
     }
