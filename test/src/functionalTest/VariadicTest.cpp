@@ -614,4 +614,101 @@ TEST(Compiler, variadicVaArgPointerFromIntArray) {
     program.runAndExpect("11");
 }
 
+TEST(Compiler, vaStartStoreIsReread) {
+    SourceProgram program{R"prg(int printf(const char *, ...);
+        struct tag { unsigned gp; unsigned fp; void *ov; void *reg; };
+        int f(int n, ...) {
+            __builtin_va_list ap;
+            struct tag y;
+            struct tag z;
+            struct tag *p;
+            unsigned char *c;
+            y.gp = 1;
+            y.fp = 2;
+            y.ov = 0;
+            y.reg = 0;
+            p = (struct tag *)&ap;
+            *p = y;
+            __builtin_va_start(ap, n);
+            z = *p;
+            c = (unsigned char *)&ap;
+            printf("%u %u", (unsigned)c[0], z.gp);
+            return 0;
+        }
+        int main(void) {
+            volatile int n;
+            n = 1;
+            f(n, 9);
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("8 8");
+}
+
+TEST(Compiler, vaCopyStoreIsReread) {
+    SourceProgram program{R"prg(int printf(const char *, ...);
+        struct tag { unsigned gp; unsigned fp; void *ov; void *reg; };
+        int f(int n, ...) {
+            __builtin_va_list src;
+            __builtin_va_list ap;
+            struct tag y;
+            struct tag z;
+            struct tag *p;
+            unsigned char *c;
+            __builtin_va_start(src, n);
+            y.gp = 1;
+            y.fp = 2;
+            y.ov = 0;
+            y.reg = 0;
+            p = (struct tag *)&ap;
+            *p = y;
+            __builtin_va_copy(ap, src);
+            z = *p;
+            c = (unsigned char *)&ap;
+            printf("%u %u", (unsigned)c[0], z.gp);
+            return 0;
+        }
+        int main(void) {
+            volatile int n;
+            n = 1;
+            f(n, 9);
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("8 8");
+}
+
+TEST(Compiler, vaArgStoreIsReread) {
+    SourceProgram program{R"prg(int printf(const char *, ...);
+        struct tag { unsigned gp; unsigned fp; void *ov; void *reg; };
+        int f(int n, ...) {
+            __builtin_va_list ap;
+            struct tag y;
+            struct tag z;
+            struct tag *p;
+            unsigned char *c;
+            int got;
+            __builtin_va_start(ap, n);
+            p = (struct tag *)&ap;
+            y = *p;
+            *p = y;
+            got = __builtin_va_arg(ap, int);
+            z = *p;
+            c = (unsigned char *)&ap;
+            printf("%u %u %d", (unsigned)c[0], z.gp, got);
+            return 0;
+        }
+        int main(void) {
+            volatile int n;
+            n = 1;
+            f(n, 9);
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("16 16 9");
+}
+
 } // namespace
