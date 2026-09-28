@@ -422,8 +422,34 @@ struct PendingCompare {
     int bytes { 0 };
 };
 
+int sameRoot(int id, const std::unordered_map<int, int>& sameAs) {
+    for (int n = 0; n < 8; ++n) {
+        const auto it = sameAs.find(id);
+        if (it == sameAs.end()) {
+            return id;
+        }
+        id = it->second;
+    }
+    return id;
+}
+
+void dropSame(std::unordered_map<int, int>& sameAs, int id) {
+    if (id == kNoSymbol) {
+        return;
+    }
+    sameAs.erase(id);
+    for (auto it = sameAs.begin(); it != sameAs.end(); ) {
+        if (it->second == id) {
+            it = sameAs.erase(it);
+        } else {
+            ++it;
+        }
+    }
+}
+
 std::optional<PendingCompare> pendingFromCompare(const Instruction& inst, std::size_t index,
-        const std::unordered_map<int, unsigned long long>& known, const ValueIndex& values) {
+        const std::unordered_map<int, unsigned long long>& known,
+        const std::unordered_map<int, int>& sameAs, const ValueIndex& values) {
     if (inst.op == Op::ZeroCompare) {
         const auto value = known.find(inst.arg0);
         const Value* src = findValue(values, inst.arg0);
@@ -433,10 +459,15 @@ std::optional<PendingCompare> pendingFromCompare(const Instruction& inst, std::s
         return PendingCompare { index, value->second, 0ull, src->getSizeInBytes() };
     }
     if (inst.op == Op::ValueCompare) {
-        const auto left = known.find(inst.arg0);
-        const auto right = known.find(inst.arg1);
         const Value* lhs = findValue(values, inst.arg0);
         const Value* rhs = findValue(values, inst.arg1);
+        if (lhs && rhs && isFoldableInteger(lhs) && isFoldableInteger(rhs) && !lhs->isVolatile()
+                && !rhs->isVolatile() && lhs->getSizeInBytes() == rhs->getSizeInBytes()
+                && sameRoot(inst.arg0, sameAs) == sameRoot(inst.arg1, sameAs)) {
+            return PendingCompare { index, 0ull, 0ull, lhs->getSizeInBytes() };
+        }
+        const auto left = known.find(inst.arg0);
+        const auto right = known.find(inst.arg1);
         if (left == known.end() || right == known.end() || !isFoldableInteger(lhs)
                 || !isFoldableInteger(rhs)
                 || lhs->getSizeInBytes() != rhs->getSizeInBytes()) {
@@ -457,6 +488,7 @@ FoldResult foldConstants(Procedure& procedure, IrStringTable& strings) {
     const ValueIndex values = indexValues(procedure);
     const auto preds = labelPredCounts(procedure.body);
     std::unordered_map<int, unsigned long long> known;
+    std::unordered_map<int, int> sameAs;
     std::unordered_set<int> escaped;
     std::optional<PendingCompare> pending;
     std::vector<char> drop(procedure.body.size(), 0);
@@ -469,6 +501,7 @@ FoldResult foldConstants(Procedure& procedure, IrStringTable& strings) {
             const bool keepKnown = fall && preds.count(inst.arg0) && preds.at(inst.arg0) == 1;
             if (!keepKnown) {
                 known.clear();
+                sameAs.clear();
             }
             pending.reset();
             fall = true;
@@ -483,6 +516,7 @@ FoldResult foldConstants(Procedure& procedure, IrStringTable& strings) {
         if (refs.addressOfBase != kNoSymbol) {
             escaped.insert(refs.addressOfBase);
             known.erase(refs.addressOfBase);
+            dropSame(sameAs, refs.addressOfBase);
         }
         bool recorded = false;
         if (inst.op == Op::AssignConstant && inst.arg1 == kNoSymbol
@@ -515,6 +549,20 @@ FoldResult foldConstants(Procedure& procedure, IrStringTable& strings) {
                 known.erase(def);
             }
         }
+        if (inst.op == Op::Assign) {
+            const Value* src = findValue(values, inst.arg0);
+            const Value* dest = findValue(values, inst.result);
+            dropSame(sameAs, inst.result);
+            if (isFoldableInteger(src) && isFoldableInteger(dest) && !src->isVolatile()
+                    && !dest->isVolatile() && escaped.count(inst.result) == 0
+                    && escaped.count(inst.arg0) == 0) {
+                sameAs[inst.result] = sameRoot(inst.arg0, sameAs);
+            }
+        } else {
+            for (int def : refs.defs) {
+                dropSame(sameAs, def);
+            }
+        }
 
         if (inst.op == Op::Jump && inst.cond != JumpCondition::UNCONDITIONAL && pending) {
             const bool signedRel = inst.imm != 0;
@@ -530,7 +578,7 @@ FoldResult foldConstants(Procedure& procedure, IrStringTable& strings) {
                 result.controlFlow = true;
             }
             pending.reset();
-        } else if (auto next = pendingFromCompare(inst, i, known, values)) {
+        } else if (auto next = pendingFromCompare(inst, i, known, sameAs, values)) {
             pending = next;
         } else {
             pending.reset();
@@ -1347,6 +1395,9 @@ IntermediateRepresentation runIrPasses(IntermediateRepresentation ir, int optLev
         for (auto& procedure : ir.procedures) {
             valueNumber(procedure);
             copyPropagate(procedure);
+        }
+        foldToFixpoint();
+        for (auto& procedure : ir.procedures) {
             forwardLocalLoads(procedure);
             eliminateDeadTemps(procedure);
         }

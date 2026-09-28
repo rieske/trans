@@ -34,6 +34,32 @@ std::string functionAssembly(const std::string& text, const char* name) {
     return text.substr(at, end - at);
 }
 
+int countCmps(const std::string& body) {
+    int count = 0;
+    std::istringstream lines { body };
+    std::string line;
+    while (std::getline(lines, line)) {
+        std::size_t i = 0;
+        while (i < line.size() && std::isspace(static_cast<unsigned char>(line[i])) != 0) {
+            ++i;
+        }
+        const std::string mnemonic = line.substr(i);
+        if (mnemonic.compare(0, 3, "cmp") == 0 && mnemonic.compare(0, 4, "cmps") != 0
+                && mnemonic.compare(0, 4, "cmpx") != 0) {
+            ++count;
+        }
+    }
+    return count;
+}
+
+void expectCmps(const char* source, const char* output, int atOpt0, int atOpt) {
+    SourceProgram program { source, { "-save-temps" } };
+    program.compile();
+    program.runAndExpect(output);
+    const int cmps = countCmps(functionAssembly(program.readAssembly(), "f"));
+    EXPECT_EQ(cmps, functionalTestOptFlag() == "-O0" ? atOpt0 : atOpt);
+}
+
 int countAdds(const std::string& body) {
     int count = 0;
     std::istringstream lines { body };
@@ -225,6 +251,55 @@ TEST(Compiler, compoundAssignThroughPointerAddsAgain) {
             return 0;
         }
     )prg", "16");
+}
+
+TEST(Compiler, equalAddsAcrossFallthroughAreTaken) {
+    expectCmps(R"prg(int printf(const char *, ...);
+        int f(int a, int b) {
+            int x;
+            x = a + b;
+            goto L;
+            L:
+            return (a + b) == x;
+        }
+        int main(void) {
+            printf("%d", f(2, 3));
+            return 0;
+        }
+    )prg", "1", 1, 0);
+}
+
+TEST(Compiler, changedAddAcrossFallthroughIsNotTaken) {
+    expectCmps(R"prg(int printf(const char *, ...);
+        int f(int a, int b) {
+            int x;
+            x = a + b;
+            a = a + 1;
+            goto L;
+            L:
+            return (a + b) == x;
+        }
+        int main(void) {
+            printf("%d", f(2, 3));
+            return 0;
+        }
+    )prg", "0", 1, 1);
+}
+
+TEST(Compiler, volatileEqualKeepsCompare) {
+    expectCmps(R"prg(int printf(const char *, ...);
+        int f(volatile int a, int b) {
+            int x;
+            x = a + b;
+            goto L;
+            L:
+            return (a + b) == x;
+        }
+        int main(void) {
+            printf("%d", f(2, 3));
+            return 0;
+        }
+    )prg", "1", 1, 1);
 }
 
 } // namespace
