@@ -382,9 +382,12 @@ void StackMachine::returnFromProcedure(int returnSymbolName) {
         Register& rax = registers->getRetrievalRegister();
         assembly << instructionSet->xor_(rax, rax, 4);
     }
-    popCalleeSavedRegisters();
-    assembly << instructionSet->leave();
-    assembly << instructionSet->ret();
+    if (hasFrame_) {
+        emitReturn();
+    } else {
+        assembly << instructionSet->leave();
+        assembly << instructionSet->ret();
+    }
 }
 
 void StackMachine::retrieveProcedureReturnValue(int returnSymbolName, bool memoryReturn) {

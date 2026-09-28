@@ -273,6 +273,54 @@ TEST_F(StackMachineTest, procedureStart_storesCalleeSavedRegisters) {
             "\tpushq %r15\n");
 }
 
+TEST_F(StackMachineTest, o0SingleReturnMatchesGcc) {
+    StackMachine stackMachine { &assemblyCode, att, *registers, names };
+    stackMachine.setOptLevel(0);
+    stackMachine.startProcedure(testProc("proc", { }, { }));
+    assemblyCode.str("");
+
+    stackMachine.returnFromProcedure();
+    stackMachine.endProcedure();
+
+    expectCode("\tleave\n"
+            "\tret\n");
+}
+
+TEST_F(StackMachineTest, o0AddDoesNotUseCalleeSaved) {
+    StackMachine stackMachine { &assemblyCode, att, *registers, names };
+    stackMachine.setOptLevel(0);
+    Value a = intValue("a");
+    Value b = intValue("b");
+    Value r = intValue("r");
+    stackMachine.startProcedure(testProc("proc", { a, b, r }, {}));
+    assemblyCode.str("");
+
+    stackMachine.add(a.id(), b.id(), r.id());
+
+    EXPECT_THAT(assemblyCode.str(), testing::Not(testing::HasSubstr("%rbx")));
+    EXPECT_THAT(assemblyCode.str(), testing::Not(testing::HasSubstr("%r12")));
+}
+
+TEST_F(StackMachineTest, o0TwoReturnsShareEpilogue) {
+    StackMachine stackMachine { &assemblyCode, att, *registers, names };
+    stackMachine.setOptLevel(0);
+    Procedure procedure = testProc("proc", { }, { });
+    procedure.body.push_back(Instruction { Op::VoidReturn });
+    procedure.body.push_back(Instruction { Op::VoidReturn });
+    stackMachine.startProcedure(procedure);
+    assemblyCode.str("");
+
+    stackMachine.returnFromProcedure();
+    stackMachine.returnFromProcedure();
+    stackMachine.endProcedure();
+
+    expectCode("\tjmp __epi1\n"
+            "\tjmp __epi1\n"
+            "__epi1:\n"
+            "\tleave\n"
+            "\tret\n");
+}
+
 TEST_F(StackMachineTest, procedureReturn_returnsWithNoCalleeRegistersSaved) {
     StackMachine stackMachine { &assemblyCode, att, *registers, names };
 

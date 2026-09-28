@@ -360,7 +360,8 @@ std::optional<std::string> Compiler::compile(std::string sourceFileName) const {
         }
         std::unique_ptr<codegen::AssemblyGenerator> assemblyGenerator =
                 makeAssemblyGenerator(configuration, &assemblyFile);
-        assemblyGenerator->generateAssemblyCode(ir, semanticAnalyzer.getConstants(), globalVariables);
+        assemblyGenerator->generateAssemblyCode(ir, semanticAnalyzer.getConstants(), globalVariables,
+                configuration.optLevel());
     }
 
     if (configuration.isAssemblyOnly()) {
