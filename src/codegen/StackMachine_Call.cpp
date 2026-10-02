@@ -264,8 +264,11 @@ int StackMachine::emitCallArguments(std::size_t firstReg) {
         Value& argument = *stackArguments[i];
         const int slotOff = stackLayout.slots[i].offsetBytes;
         const int n = argument.getSizeInBytes();
-        if (n > 0 && n % MACHINE_WORD_SIZE == 0) {
-            const int words = n / MACHINE_WORD_SIZE;
+        // A GPR scalar narrower than a word still owns the whole eightbyte.
+        const bool narrowInteger = argument.getClassification().gprExtend != type::sysv::GprExtend::None
+                && n > 0 && n < MACHINE_WORD_SIZE;
+        if ((n > 0 && n % MACHINE_WORD_SIZE == 0) || narrowInteger) {
+            const int words = narrowInteger ? 1 : n / MACHINE_WORD_SIZE;
             for (int w = 0; w < words; ++w) {
                 Register& reg = get64BitRegisterExcluding(gpArgRegs);
                 loadWord(argument, w, reg, argumentOffset, gpArgRegs);

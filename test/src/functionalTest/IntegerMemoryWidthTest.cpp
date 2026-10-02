@@ -563,6 +563,34 @@ TEST(Compiler, seventhAndEighthIntStackArgThenPointer) {
     program.runAndExpect("7 8 ok");
 }
 
+// The first five copies are register arguments. The sixth is the stack slot.
+// It has to hold the same extended value a register argument already does.
+TEST(Compiler, narrowSignedStackArgumentMatchesRegisterExtension) {
+    SourceProgram program{R"prg(int printf(const char *, ...);
+        int main() {
+            int n;
+            n = -1;
+            printf("%ld %ld %ld %ld %ld %ld", n, n, n, n, n, n);
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("-1 -1 -1 -1 -1 -1");
+}
+
+TEST(Compiler, narrowUnsignedStackArgumentMatchesRegisterExtension) {
+    SourceProgram program{R"prg(int printf(const char *, ...);
+        int main() {
+            unsigned n;
+            n = 4294967295u;
+            printf("%lu %lu %lu %lu %lu %lu", n, n, n, n, n, n);
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("4294967295 4294967295 4294967295 4294967295 4294967295 4294967295");
+}
+
 TEST(Compiler, linkedListMergesortFourAndEightNodes) {
     SourceProgram program{R"prg(int printf(const char *, ...);
         void *malloc(unsigned long);

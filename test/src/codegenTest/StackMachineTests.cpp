@@ -390,6 +390,70 @@ TEST_F(StackMachineTest, procedureCall_padsStackForOddNumberOfStackArguments) {
             "\taddq $16, %rsp\n");
 }
 
+// The seventh integer is an eightbyte on the stack. A narrow scalar is extended
+// the same way as a register argument, so the upper half is not leftover stack.
+void expectNarrowStackArg(IrStringTable& names, std::stringstream& assemblyCode, InstructionSet& syntax,
+        Amd64Registers& regs, Value seventh, const char* seventhLoad) {
+    StackMachine stackMachine { &assemblyCode, syntax, regs, names };
+    std::vector<Value> locals;
+    for (int i = 0; i < 6; ++i) {
+        locals.push_back({ names.intern("a" + std::to_string(i)), i, Type::INTEGRAL, 8 });
+    }
+    locals.push_back(std::move(seventh));
+    Procedure procedure;
+    procedure.name = names.intern("proc");
+    procedure.frame.locals = std::move(locals);
+    internProcedureTemps(names, procedure);
+    stackMachine.startProcedure(procedure);
+    assemblyCode.str("");
+    assemblyCode.clear();
+    for (int i = 0; i < 6; ++i) {
+        stackMachine.procedureArgument(names.intern("a" + std::to_string(i)));
+    }
+    stackMachine.procedureArgument(names.intern("n"));
+    stackMachine.callProcedure(names.intern("procedure"));
+
+    const std::string expected =
+            std::string("\tmovq -64(%rbp), %rdi\n"
+            "\tmovq -56(%rbp), %rsi\n"
+            "\tmovq -48(%rbp), %rdx\n"
+            "\tmovq -40(%rbp), %rcx\n"
+            "\tmovq -32(%rbp), %r8\n"
+            "\tmovq -24(%rbp), %r9\n"
+            "\tsubq $16, %rsp\n")
+            + seventhLoad
+            + "\txorq %rax, %rax\n"
+            "\tcall procedure@plt\n"
+            "\taddq $16, %rsp\n";
+    EXPECT_THAT(assemblyCode.str(), StrEq(expected));
+}
+
+TEST_F(StackMachineTest, signedNarrowIntegerStackArgumentIsSignExtended) {
+    type::sysv::Classification narrow = type::sysv::integerScalar(4);
+    narrow.gprExtend = type::sysv::GprExtend::Sign;
+    expectNarrowStackArg(names, assemblyCode, att, extraRegs,
+            Value { names.intern("n"), 6, Type::INTEGRAL, 4, narrow },
+            "\tmovslq -16(%rbp), %rax\n"
+            "\tmovq %rax, (%rsp)\n");
+}
+
+TEST_F(StackMachineTest, unsignedNarrowIntegerStackArgumentIsZeroExtended) {
+    expectNarrowStackArg(names, assemblyCode, att, extraRegs,
+            Value { names.intern("n"), 6, Type::INTEGRAL, 4 },
+            "\tmovl -16(%rbp), %eax\n"
+            "\tmovq %rax, (%rsp)\n");
+}
+
+TEST_F(StackMachineTest, narrowAggregateStackArgumentKeepsItsWidth) {
+    expectNarrowStackArg(names, assemblyCode, att, extraRegs,
+            Value { names.intern("n"), 6, Type::INTEGRAL, 4,
+                    type::sysv::scalar(type::sysv::Class::Integer, 4) },
+            "\tleaq (%rsp), %rax\n"
+            "\tleaq -16(%rbp), %rbx\n"
+            "\tmovl (%rbx), %r10d\n"
+            "\tmovl %r10d, (%rax)\n");
+}
+
 TEST_F(StackMachineTest, setScopeRejectsDuplicateInternId) {
     StackMachine stackMachine { &assemblyCode, att, *registers, names };
     stackMachine.setScope({ v1 });
