@@ -35,7 +35,7 @@ and `StackMachine` emits 64-bit assembly (AT&T/GAS by default, Intel/NASM with `
 
 Prerequisites:
 - cmake - at least 3.17
-- a C++20 compiler (g++ or clang++)
+- a C++23 compiler (g++ or clang++)
 - a build tool (Make or Ninja; the root `Makefile` shells out to CMake either way)
 - gcc - preprocessor and linker
 - GNU as - default assembler (AT&T functional tests)

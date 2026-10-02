@@ -33,7 +33,7 @@ public:
     StackMachine(StackMachine&&) = default;
 
     StackMachine& operator=(const StackMachine&) = delete;
-    StackMachine& operator=(StackMachine&&) = default;
+    StackMachine& operator=(StackMachine&&) = delete;
 
     void generatePreamble(const std::map<std::string, std::string>& constants,
             const std::vector<GlobalVariable>& globalVariables,

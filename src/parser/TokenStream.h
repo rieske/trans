@@ -9,7 +9,7 @@
 #include <vector>
 
 namespace scanner {
-class LexicalSession;
+struct LexicalSession;
 }
 
 namespace parser {

@@ -19,7 +19,7 @@ public:
     Declarator(std::unique_ptr<DirectDeclarator> declarator, std::vector<Pointer> indirection = {});
 
     void accept(AbstractSyntaxTreeVisitor& visitor) override;
-    void visitChildren(AbstractSyntaxTreeVisitor& visitor);
+    void visitChildren(AbstractSyntaxTreeVisitor& visitor) override;
 
     const std::string& getName() const;
     translation_unit::Context getContext() const;
