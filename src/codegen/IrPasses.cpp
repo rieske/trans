@@ -479,8 +479,6 @@ std::optional<PendingCompare> pendingFromCompare(const Instruction& inst, std::s
     return std::nullopt;
 }
 
-} // namespace
-
 // Escapes are collected during the walk, not up front as in copyPropagate and
 // eliminateDeadTemps. Sound because facts only flow forward: a symbol cannot be aliased
 // before its AddressOf is reached, and `known` is dropped at any label not entered solely
@@ -627,6 +625,8 @@ bool combineConst(Instruction& inst, std::vector<Instruction>& body,
     inst.arg1 = constId;
     return true;
 }
+
+} // namespace
 
 FoldResult foldConstants(Procedure& procedure, IrStringTable& strings) {
     const ValueIndex values = indexValues(procedure);
@@ -1384,6 +1384,8 @@ void forwardLocalLoads(Procedure& procedure) {
     }
 }
 
+namespace {
+
 struct ExprKey {
     Op op;
     int arg0;
@@ -1506,6 +1508,106 @@ void valueNumber(Procedure& procedure) {
     }
 }
 
+struct ConstKey {
+    unsigned long long bits;
+    int bytes;
+    type::sysv::GprExtend extend;
+    bool operator==(const ConstKey& other) const {
+        return bits == other.bits && bytes == other.bytes && extend == other.extend;
+    }
+};
+
+struct ConstKeyHash {
+    std::size_t operator()(const ConstKey& key) const {
+        return (key.bits * 1315423911ull)
+                ^ (static_cast<std::size_t>(key.bytes) << 1)
+                ^ (static_cast<std::size_t>(key.extend) << 17);
+    }
+};
+
+void killReusableConst(std::unordered_map<ConstKey, int, ConstKeyHash>& live,
+        std::unordered_map<int, int>& alias, int id) {
+    if (id == kNoSymbol) {
+        return;
+    }
+    for (auto it = live.begin(); it != live.end(); ) {
+        if (it->second == id) {
+            it = live.erase(it);
+        } else {
+            ++it;
+        }
+    }
+    killCopy(alias, id);
+}
+
+// Share one live constant temp so later value numbering sees the same operand id.
+// Runs after combineConst, which needs each folded constant to have a single use.
+void reuseAssignConstants(Procedure& procedure, IrStringTable& strings) {
+    const ValueIndex values = indexValues(procedure);
+    std::unordered_set<int> addressTaken;
+    for (const auto& inst : procedure.body) {
+        SymbolRefs refs;
+        collectSymbolRefs(inst, refs);
+        if (refs.addressOfBase != kNoSymbol) {
+            addressTaken.insert(refs.addressOfBase);
+        }
+    }
+
+    const auto preds = labelPredCounts(procedure.body);
+    std::unordered_map<ConstKey, int, ConstKeyHash> live;
+    std::unordered_map<int, int> alias;
+    bool fall = true;
+    for (auto& inst : procedure.body) {
+        if (inst.op == Op::Label) {
+            const bool keep = fall && preds.count(inst.arg0) != 0 && preds.at(inst.arg0) == 1;
+            if (!keep) {
+                live.clear();
+                alias.clear();
+            }
+            fall = true;
+            continue;
+        }
+        rewriteValueUses(inst, alias);
+        const Value* dest = findValue(values, inst.result);
+        const bool reusable = inst.op == Op::AssignConstant && inst.arg1 == kNoSymbol
+                && dest && dest->isExpressionTemp() && isFoldableInteger(dest)
+                && addressTaken.count(inst.result) == 0;
+        if (reusable) {
+            const auto bits = parseConstBits(strings.get(inst.arg0));
+            killReusableConst(live, alias, inst.result);
+            if (bits) {
+                const ConstKey key {
+                    *bits & widthMask(dest->getSizeInBytes()),
+                    dest->getSizeInBytes(),
+                    dest->getClassification().gprExtend,
+                };
+                const auto found = live.find(key);
+                if (found != live.end() && found->second != inst.result
+                        && sameValueKind(values, found->second, inst.result)) {
+                    const int canon = found->second;
+                    const int dup = inst.result;
+                    inst = ir::assign(canon, dup);
+                    alias[dup] = canon;
+                } else {
+                    live.emplace(key, inst.result);
+                }
+            }
+        } else {
+            SymbolRefs refs;
+            collectSymbolRefs(inst, refs);
+            for (int def : refs.defs) {
+                killReusableConst(live, alias, def);
+            }
+        }
+        if (instructionTransfersControl(inst)
+                && (inst.op != Op::Jump || inst.cond == JumpCondition::UNCONDITIONAL)) {
+            fall = false;
+        }
+    }
+}
+
+} // namespace
+
 IntermediateRepresentation runIrPasses(IntermediateRepresentation ir, int optLevel) {
     ir = sealProcedures(std::move(ir));
     ir = applyCfgPasses(std::move(ir), optLevel);
@@ -1542,6 +1644,7 @@ IntermediateRepresentation runIrPasses(IntermediateRepresentation ir, int optLev
         }
         foldToFixpoint();
         for (auto& procedure : ir.procedures) {
+            reuseAssignConstants(procedure, ir.strings);
             valueNumber(procedure);
             copyPropagate(procedure);
         }

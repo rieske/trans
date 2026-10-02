@@ -106,6 +106,30 @@ void expectAdds(const char* source, const char* output, int atOpt0, int atOpt) {
     EXPECT_EQ(adds, functionalTestOptFlag() == "-O0" ? atOpt0 : atOpt);
 }
 
+int countImuls(const std::string& body) {
+    int count = 0;
+    std::istringstream lines { body };
+    std::string line;
+    while (std::getline(lines, line)) {
+        std::size_t i = 0;
+        while (i < line.size() && std::isspace(static_cast<unsigned char>(line[i])) != 0) {
+            ++i;
+        }
+        if (line.compare(i, 4, "imul") == 0) {
+            ++count;
+        }
+    }
+    return count;
+}
+
+void expectImuls(const char* source, const char* output, int atOpt0, int atOpt) {
+    SourceProgram program { source, { "-save-temps" } };
+    program.compile();
+    program.runAndExpect(output);
+    const int imuls = countImuls(functionAssembly(program.readAssembly(), "f"));
+    EXPECT_EQ(imuls, functionalTestOptFlag() == "-O0" ? atOpt0 : atOpt);
+}
+
 TEST(Compiler, reusesAddAcrossFallthroughLabel) {
     expectAdds(R"prg(int printf(const char *, ...);
         int f(int a, int b) {
@@ -558,6 +582,95 @@ TEST(Compiler, vaStartBetweenConstantAddsIsNotReread) {
     )prg" };
     program.compile();
     program.runAndExpect("8");
+}
+
+TEST(Compiler, reusesMultiplyBySameConstant) {
+    expectImuls(R"prg(int printf(const char *, ...);
+        int f(int n) {
+            return (n * 2) + (n * 2);
+        }
+        int main(void) {
+            printf("%d", f(3));
+            return 0;
+        }
+    )prg", "12", 2, 1);
+}
+
+TEST(Compiler, reusesMultiplyByHexConstant) {
+    expectImuls(R"prg(int printf(const char *, ...);
+        int f(int n) {
+            return (n * 2) + (n * 0x2);
+        }
+        int main(void) {
+            printf("%d", f(3));
+            return 0;
+        }
+    )prg", "12", 2, 1);
+}
+
+TEST(Compiler, reusesMultiplyByNegativeConstant) {
+    expectImuls(R"prg(int printf(const char *, ...);
+        int f(int n) {
+            return (n * -2) + (n * -2);
+        }
+        int main(void) {
+            printf("%d", f(3));
+            return 0;
+        }
+    )prg", "-12", 2, 1);
+}
+
+TEST(Compiler, keepsDistinctConstantMultiplies) {
+    expectImuls(R"prg(int printf(const char *, ...);
+        int f(int n) {
+            return (n * 2) + (n * 3);
+        }
+        int main(void) {
+            printf("%d", f(3));
+            return 0;
+        }
+    )prg", "15", 2, 2);
+}
+
+TEST(Compiler, keepsMultiplyWhenFactorChanges) {
+    expectImuls(R"prg(int printf(const char *, ...);
+        int f(int n, int k) {
+            int a;
+            a = n * 2;
+            n = k;
+            return a + (n * 2);
+        }
+        int main(void) {
+            printf("%d", f(3, 7));
+            return 0;
+        }
+    )prg", "20", 2, 2);
+}
+
+TEST(Compiler, volatileFactorIsMultipliedTwice) {
+    expectImuls(R"prg(int printf(const char *, ...);
+        int f(volatile int n) {
+            return (n * 2) + (n * 2);
+        }
+        int main(void) {
+            volatile int n;
+            n = 3;
+            printf("%d", f(n));
+            return 0;
+        }
+    )prg", "12", 2, 2);
+}
+
+TEST(Compiler, combinesRepeatedConstantAdds) {
+    expectAddSub(R"prg(int printf(const char *, ...);
+        int f(int n) {
+            return (n + 4) + 4;
+        }
+        int main(void) {
+            printf("%d", f(1));
+            return 0;
+        }
+    )prg", "9", 2, 1, 0, 0);
 }
 
 TEST(Compiler, keepsOverflowingConstantAdds) {
