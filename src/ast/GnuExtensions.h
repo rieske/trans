@@ -16,7 +16,7 @@ class TokenStream;
 }
 
 namespace scanner {
-class LexicalSession;
+struct LexicalSession;
 class Token;
 }
 

@@ -26,7 +26,7 @@ target_include_directories(trans_src INTERFACE
 )
 
 add_library(trans_common INTERFACE)
-target_compile_features(trans_common INTERFACE cxx_std_20)
+target_compile_features(trans_common INTERFACE cxx_std_23)
 target_compile_options(trans_common INTERFACE
   $<$<COMPILE_LANG_AND_ID:CXX,GNU,Clang,AppleClang>:
     -Wall;-Wextra;-Werror;-pedantic;-fno-rtti
