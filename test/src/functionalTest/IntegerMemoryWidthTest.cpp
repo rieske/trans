@@ -586,9 +586,16 @@ TEST(Compiler, narrowUnsignedStackArgumentMatchesRegisterExtension) {
             printf("%lu %lu %lu %lu %lu %lu", n, n, n, n, n, n);
             return 0;
         }
-    )prg"};
+    )prg", { "-save-temps" }};
     program.compile();
     program.runAndExpect("4294967295 4294967295 4294967295 4294967295 4294967295 4294967295");
+    // A zero upper half makes a 4-byte store of this value look zero-extended.
+    const std::string generated = program.readAssembly();
+    if (functionalTestDialectTag() == "intel") {
+        EXPECT_THAT(generated, HasSubstr("mov [rsp], "));
+    } else {
+        EXPECT_THAT(generated, HasSubstr(", (%rsp)"));
+    }
 }
 
 TEST(Compiler, linkedListMergesortFourAndEightNodes) {
