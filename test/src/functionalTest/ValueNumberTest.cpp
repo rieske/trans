@@ -106,6 +106,42 @@ void expectAdds(const char* source, const char* output, int atOpt0, int atOpt) {
     EXPECT_EQ(adds, functionalTestOptFlag() == "-O0" ? atOpt0 : atOpt);
 }
 
+bool opcodeAt(const std::string& mnemonic, const char* op) {
+    const std::string name { op };
+    if (mnemonic.compare(0, name.size(), name) != 0) {
+        return false;
+    }
+    if (mnemonic.size() == name.size()) {
+        return true;
+    }
+    const char next = mnemonic[name.size()];
+    return next == ' ' || next == 'b' || next == 'w' || next == 'l' || next == 'q';
+}
+
+int countOpcode(const std::string& body, const char* op) {
+    int count = 0;
+    std::istringstream lines { body };
+    std::string line;
+    while (std::getline(lines, line)) {
+        std::size_t i = 0;
+        while (i < line.size() && std::isspace(static_cast<unsigned char>(line[i])) != 0) {
+            ++i;
+        }
+        if (opcodeAt(line.substr(i), op)) {
+            ++count;
+        }
+    }
+    return count;
+}
+
+void expectOpcode(const char* source, const char* output, const char* op, int atOpt0, int atOpt) {
+    SourceProgram program { source, { "-save-temps" } };
+    program.compile();
+    program.runAndExpect(output);
+    const int got = countOpcode(functionAssembly(program.readAssembly(), "f"), op);
+    EXPECT_EQ(got, functionalTestOptFlag() == "-O0" ? atOpt0 : atOpt);
+}
+
 int countImuls(const std::string& body) {
     int count = 0;
     std::istringstream lines { body };
@@ -789,6 +825,222 @@ TEST(Compiler, keepsOverflowingConstantAdds) {
             return 0;
         }
     )prg", "1", 2, 2, 0, 0);
+}
+
+TEST(Compiler, combinesConstantAnds) {
+    expectOpcode(R"prg(int printf(const char *, ...);
+        int f(int n) {
+            return (n & 6) & 3;
+        }
+        int main(void) {
+            printf("%d", f(7));
+            return 0;
+        }
+    )prg", "2", "and", 2, 1);
+}
+
+TEST(Compiler, combinesLeftConstantAnd) {
+    expectOpcode(R"prg(int printf(const char *, ...);
+        int f(int n) {
+            return (3 & n) & 6;
+        }
+        int main(void) {
+            printf("%d", f(7));
+            return 0;
+        }
+    )prg", "2", "and", 2, 1);
+}
+
+TEST(Compiler, combinesChainedAnds) {
+    expectOpcode(R"prg(int printf(const char *, ...);
+        int f(int n) {
+            return ((n & 7) & 3) & 1;
+        }
+        int main(void) {
+            printf("%d", f(7));
+            return 0;
+        }
+    )prg", "1", "and", 3, 1);
+}
+
+TEST(Compiler, combinesConstantOrs) {
+    expectOpcode(R"prg(int printf(const char *, ...);
+        int f(int n) {
+            return (n | 1) | 2;
+        }
+        int main(void) {
+            printf("%d", f(4));
+            return 0;
+        }
+    )prg", "7", "or", 2, 1);
+}
+
+TEST(Compiler, orFillsAllBits) {
+    expectOpcode(R"prg(int printf(const char *, ...);
+        int f(int n) {
+            return (n | 1) | ~1;
+        }
+        int main(void) {
+            printf("%d", f(4));
+            return 0;
+        }
+    )prg", "-1", "or", 2, 0);
+}
+
+TEST(Compiler, combinesConstantXors) {
+    expectOpcode(R"prg(int printf(const char *, ...);
+        int f(int n) {
+            return (n ^ 1) ^ 2;
+        }
+        int main(void) {
+            printf("%d", f(0));
+            return 0;
+        }
+    )prg", "3", "xor", 2, 1);
+}
+
+TEST(Compiler, cancelsXor) {
+    expectOpcode(R"prg(int printf(const char *, ...);
+        int f(int n) {
+            return (n ^ 4) ^ 4;
+        }
+        int main(void) {
+            printf("%d", f(10));
+            return 0;
+        }
+    )prg", "10", "xor", 2, 0);
+}
+
+TEST(Compiler, sharedXorCancelKeepsLaterUse) {
+    expectOpcode(R"prg(int printf(const char *, ...);
+        int f(int n) {
+            int k;
+            k = 4;
+            return (n ^ k) ^ k ^ k;
+        }
+        int main(void) {
+            printf("%d", f(10));
+            return 0;
+        }
+    )prg", "14", "xor", 3, 1);
+}
+
+TEST(Compiler, sharedAndMaskIsNotRewritten) {
+    expectOpcode(R"prg(int printf(const char *, ...);
+        int f(int n) {
+            int k;
+            k = 3;
+            return ((n & 6) & k) + k;
+        }
+        int main(void) {
+            printf("%d", f(10));
+            return 0;
+        }
+    )prg", "5", "and", 2, 2);
+}
+
+TEST(Compiler, combinesConstantLeftShifts) {
+    expectOpcode(R"prg(int printf(const char *, ...);
+        int f(int n) {
+            return (n << 4) << 3;
+        }
+        int main(void) {
+            printf("%d", f(1));
+            return 0;
+        }
+    )prg", "128", "shl", 2, 1);
+}
+
+TEST(Compiler, keepsLeftShiftPastWidth) {
+    expectOpcode(R"prg(int printf(const char *, ...);
+        int f(unsigned n) {
+            return (n << 20) << 20;
+        }
+        int main(void) {
+            printf("%u", f(1));
+            return 0;
+        }
+    )prg", "0", "shl", 2, 2);
+}
+
+TEST(Compiler, combinesLongLeftShift) {
+    expectOpcode(R"prg(int printf(const char *, ...);
+        unsigned long long f(unsigned long long n) {
+            return (n << 40) << 20;
+        }
+        int main(void) {
+            printf("%llu", f(1));
+            return 0;
+        }
+    )prg", "1152921504606846976", "shl", 2, 1);
+}
+
+TEST(Compiler, keepsLongShiftPastWidth) {
+    expectOpcode(R"prg(int printf(const char *, ...);
+        unsigned long long f(unsigned long long n) {
+            return (n << 40) << 30;
+        }
+        int main(void) {
+            printf("%llu", f(1));
+            return 0;
+        }
+    )prg", "0", "shl", 2, 2);
+}
+
+TEST(Compiler, combinesArithmeticRightShifts) {
+    expectOpcode(R"prg(int printf(const char *, ...);
+        int f(int n) {
+            return (n >> 1) >> 1;
+        }
+        int main(void) {
+            printf("%d", f(-16));
+            return 0;
+        }
+    )prg", "-4", "sar", 2, 1);
+}
+
+TEST(Compiler, combinesLogicalRightShifts) {
+    expectOpcode(R"prg(int printf(const char *, ...);
+        int f(unsigned n) {
+            return (n >> 1) >> 1;
+        }
+        int main(void) {
+            printf("%u", f(4294967295u));
+            return 0;
+        }
+    )prg", "1073741823", "shr", 2, 1);
+}
+
+TEST(Compiler, pointerStoreBetweenAndsIsNotReread) {
+    SourceProgram program { R"prg(int printf(const char *, ...);
+        int f(int n) {
+            int *p;
+            p = &n;
+            return (n & 7) & (*p = 1, 3);
+        }
+        int main(void) {
+            volatile int n;
+            n = 7;
+            printf("%d", f(n));
+            return 0;
+        }
+    )prg" };
+    program.compile();
+    program.runAndExpect("3");
+}
+
+TEST(Compiler, volatileAndIsNotCombined) {
+    expectOpcode(R"prg(int printf(const char *, ...);
+        int f(volatile int n) {
+            return (n & 7) & 3;
+        }
+        int main(void) {
+            volatile int n;
+            n = 7;
+            printf("%d", f(n));
+            return 0;
+        }
+    )prg", "3", "and", 2, 2);
 }
 
 } // namespace
