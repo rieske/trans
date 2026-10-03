@@ -667,6 +667,124 @@ bool combineConst(Instruction& inst, std::vector<Instruction>& body,
     return true;
 }
 
+bool combineBitConst(Instruction& inst, std::vector<Instruction>& body,
+        std::unordered_map<int, unsigned long long>& known, const ValueIndex& values,
+        IrStringTable& strings) {
+    const bool shift = inst.op == Op::Shl || inst.op == Op::Shr;
+    const bool bit = inst.op == Op::And || inst.op == Op::Or || inst.op == Op::Xor;
+    if (!shift && !bit) {
+        return false;
+    }
+    if (operandIsVolatile(values, inst.arg0) || operandIsVolatile(values, inst.arg1)) {
+        return false;
+    }
+    const bool leftConst = known.count(inst.arg0) != 0;
+    const bool rightConst = known.count(inst.arg1) != 0;
+    if (leftConst == rightConst) {
+        return false;
+    }
+    if (shift && !rightConst) {
+        return false;
+    }
+    const int constId = rightConst ? inst.arg1 : inst.arg0;
+    const int otherId = rightConst ? inst.arg0 : inst.arg1;
+    const Instruction* inner = defBefore(body, otherId, &inst);
+    if (inner == nullptr || inner->op != inst.op) {
+        return false;
+    }
+    if (shift && inner->imm != inst.imm) {
+        return false;
+    }
+    if (operandIsVolatile(values, inner->arg0) || operandIsVolatile(values, inner->arg1)) {
+        return false;
+    }
+    const bool innerLeftConst = known.count(inner->arg0) != 0;
+    const bool innerRightConst = known.count(inner->arg1) != 0;
+    if (innerLeftConst == innerRightConst) {
+        return false;
+    }
+    if (shift && !innerRightConst) {
+        return false;
+    }
+    const int innerConst = innerRightConst ? inner->arg1 : inner->arg0;
+    const int variable = innerRightConst ? inner->arg0 : inner->arg1;
+    if (inner->result == variable || !unchangedBetween(body, inner, &inst, variable, innerConst)) {
+        return false;
+    }
+    const Value* dest = findValue(values, inst.result);
+    const Value* innerDest = findValue(values, inner->result);
+    if (!isFoldableInteger(dest) || !isFoldableInteger(innerDest)
+            || dest->getSizeInBytes() != innerDest->getSizeInBytes() || dest->getSizeInBytes() <= 0) {
+        return false;
+    }
+    const Value* outerConst = findValue(values, constId);
+    const Value* innerConstValue = findValue(values, innerConst);
+    if (!isFoldableInteger(outerConst) || !isFoldableInteger(innerConstValue)) {
+        return false;
+    }
+    const int bytes = dest->getSizeInBytes();
+    const unsigned long long mask = widthMask(bytes);
+    unsigned long long combined = 0;
+    bool assignVar = false;
+    bool assignConst = false;
+    if (shift) {
+        const int width = bitWidth(bytes);
+        const long long s1 = asSigned(known.at(innerConst), bitWidth(innerConstValue->getSizeInBytes()));
+        const long long s2 = asSigned(known.at(constId), bitWidth(outerConst->getSizeInBytes()));
+        if (s1 < 0 || s2 < 0 || s1 >= width || s2 >= width || s1 + s2 >= width) {
+            return false;
+        }
+        const long long sum = s1 + s2;
+        if (sum == 0) {
+            assignVar = true;
+        } else {
+            combined = static_cast<unsigned long long>(sum);
+        }
+    } else if (outerConst->getSizeInBytes() != bytes || innerConstValue->getSizeInBytes() != bytes) {
+        return false;
+    } else if (inst.op == Op::And) {
+        combined = (known.at(innerConst) & mask) & (known.at(constId) & mask);
+        assignConst = combined == 0;
+        assignVar = combined == mask;
+    } else if (inst.op == Op::Or) {
+        combined = (known.at(innerConst) & mask) | (known.at(constId) & mask);
+        assignVar = combined == 0;
+        assignConst = combined == mask;
+    } else {
+        combined = (known.at(innerConst) & mask) ^ (known.at(constId) & mask);
+        assignVar = combined == 0;
+    }
+    if (assignVar) {
+        inst = ir::assign(variable, inst.result);
+        return true;
+    }
+    if (assignConst) {
+        inst = ir::assignConstant(strings.intern(util::wordImmediate(combined)), inst.result);
+        return true;
+    }
+    if (useCount(body, constId) != 1) {
+        return false;
+    }
+    Instruction* reaching = nullptr;
+    for (auto& earlier : body) {
+        if (&earlier == &inst) {
+            break;
+        }
+        if (earlier.result == constId) {
+            reaching = &earlier;
+        }
+    }
+    if (reaching == nullptr || reaching->op != Op::AssignConstant || reaching->arg1 != kNoSymbol) {
+        return false;
+    }
+    const unsigned long long bits = combined & widthMask(outerConst->getSizeInBytes());
+    reaching->arg0 = strings.intern(util::wordImmediate(bits));
+    known[constId] = bits;
+    inst.arg0 = variable;
+    inst.arg1 = constId;
+    return true;
+}
+
 } // namespace
 
 FoldResult foldConstants(Procedure& procedure, IrStringTable& strings) {
@@ -695,7 +813,8 @@ FoldResult foldConstants(Procedure& procedure, IrStringTable& strings) {
         if (auto repl = tryFold(inst, known, values, strings)) {
             inst = *repl;
             result.changed = true;
-        } else if (combineConst(inst, procedure.body, known, values, strings)) {
+        } else if (combineConst(inst, procedure.body, known, values, strings)
+                || combineBitConst(inst, procedure.body, known, values, strings)) {
             result.changed = true;
         }
         SymbolRefs refs;
