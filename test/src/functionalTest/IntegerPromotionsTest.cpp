@@ -152,9 +152,16 @@ TEST(Compiler, narrowBitFieldExpressionsKeepDeclaredSize) {
                 sizeof(c.a++), sizeof(++c.a), sizeof(0, c.a));
             return 0;
         }
-    )prg"};
+    )prg", { "-save-temps" }};
     program.compile();
     program.runAndExpect("1 2 1 1 1 1");
+    // The sixth %zu is the only stack argument. The slot is eight bytes.
+    const std::string generated = program.readAssembly();
+    if (functionalTestDialectTag() == "intel") {
+        EXPECT_THAT(generated, HasSubstr("mov [rsp], "));
+    } else {
+        EXPECT_THAT(generated, HasSubstr(", (%rsp)"));
+    }
 }
 
 // Postfix keeps the promoted rvalue, so an unsigned bit-field compares as int.

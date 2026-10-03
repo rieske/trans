@@ -1604,4 +1604,260 @@ TEST(IrPasses, runIrPasses_atO1FoldsConstRelIf) {
     EXPECT_THAT(toString(ir), Not(HasSubstr("JB")));
 }
 
+IntermediateRepresentation repeatedMul(const char* left, const char* right) {
+    IntermediateRepresentation ir;
+    IrN n { ir.strings };
+    ProcedureFrame frame = exprTemps(ir.strings, { "t1", "t2", "t3", "t4", "t5" });
+    frame.locals.push_back(integral(ir.strings, "n"));
+    ir.procedures.push_back(makeProc(ir.strings, "f", {
+            ir::assignConstant(n(left), n("t1")),
+            ir::mul(n("n"), n("t1"), n("t2")),
+            ir::assignConstant(n(right), n("t3")),
+            ir::mul(n("n"), n("t3"), n("t4")),
+            ir::add(n("t2"), n("t4"), n("t5")),
+            ir::ret(n("t5")),
+    }, std::move(frame)));
+    return ir;
+}
+
+TEST(IrPasses, runIrPasses_atO0DoesNotReuseAssignConstant) {
+    IntermediateRepresentation ir = repeatedMul("2", "2");
+
+    ir = runIrPasses(std::move(ir), 0);
+
+    EXPECT_THAT(toString(ir), HasSubstr("t3 := 2"));
+    EXPECT_THAT(toString(ir), HasSubstr("t4 := n * t3"));
+}
+
+TEST(IrPasses, runIrPasses_reusesAssignConstantBeforeValueNumber) {
+    IntermediateRepresentation ir = repeatedMul("2", "2");
+
+    ir = runIrPasses(std::move(ir), 1);
+
+    EXPECT_THAT(toString(ir), StrEq(
+            "PROC f\n"
+            "\tt1 := 2\n"
+            "\tt2 := n * t1\n"
+            "\tt5 := t2 + t2\n"
+            "\tRETURN t5\n"
+            "ENDPROC f\n"));
+}
+
+TEST(IrPasses, runIrPasses_reusesHexAndDecimalConstant) {
+    IntermediateRepresentation ir = repeatedMul("2", "0x2");
+
+    ir = runIrPasses(std::move(ir), 1);
+
+    EXPECT_THAT(toString(ir), StrEq(
+            "PROC f\n"
+            "\tt1 := 2\n"
+            "\tt2 := n * t1\n"
+            "\tt5 := t2 + t2\n"
+            "\tRETURN t5\n"
+            "ENDPROC f\n"));
+}
+
+TEST(IrPasses, runIrPasses_keepsDistinctAssignConstants) {
+    IntermediateRepresentation ir = repeatedMul("2", "3");
+
+    ir = runIrPasses(std::move(ir), 1);
+
+    EXPECT_THAT(toString(ir), StrEq(
+            "PROC f\n"
+            "\tt1 := 2\n"
+            "\tt2 := n * t1\n"
+            "\tt3 := 3\n"
+            "\tt4 := n * t3\n"
+            "\tt5 := t2 + t4\n"
+            "\tRETURN t5\n"
+            "ENDPROC f\n"));
+}
+
+TEST(IrPasses, runIrPasses_reusesConstantAcrossCallButNotTheMul) {
+    IntermediateRepresentation ir;
+    IrN n { ir.strings };
+    ProcedureFrame frame = exprTemps(ir.strings, { "t1", "t2", "t3", "t4", "t5" });
+    frame.locals.push_back(integral(ir.strings, "n"));
+    ir.procedures.push_back(makeProc(ir.strings, "f", {
+            ir::assignConstant(n("2"), n("t1")),
+            ir::mul(n("n"), n("t1"), n("t2")),
+            ir::call(n("g")),
+            ir::assignConstant(n("2"), n("t3")),
+            ir::mul(n("n"), n("t3"), n("t4")),
+            ir::add(n("t2"), n("t4"), n("t5")),
+            ir::ret(n("t5")),
+    }, std::move(frame)));
+
+    ir = runIrPasses(std::move(ir), 1);
+
+    EXPECT_THAT(toString(ir), StrEq(
+            "PROC f\n"
+            "\tt1 := 2\n"
+            "\tt2 := n * t1\n"
+            "\tCALL g\n"
+            "\tt4 := n * t1\n"
+            "\tt5 := t2 + t4\n"
+            "\tRETURN t5\n"
+            "ENDPROC f\n"));
+}
+
+TEST(IrPasses, runIrPasses_doesNotReuseReassignedConstant) {
+    IntermediateRepresentation ir;
+    IrN n { ir.strings };
+    ProcedureFrame frame = exprTemps(ir.strings, { "t1", "t2", "t3", "t4", "t5", "t6", "t7" });
+    frame.locals.push_back(integral(ir.strings, "n"));
+    ir.procedures.push_back(makeProc(ir.strings, "f", {
+            ir::assignConstant(n("2"), n("t1")),
+            ir::mul(n("n"), n("t1"), n("t2")),
+            ir::assignConstant(n("3"), n("t1")),
+            ir::mul(n("n"), n("t1"), n("t6")),
+            ir::assignConstant(n("2"), n("t3")),
+            ir::mul(n("n"), n("t3"), n("t4")),
+            ir::add(n("t2"), n("t4"), n("t5")),
+            ir::add(n("t5"), n("t6"), n("t7")),
+            ir::ret(n("t7")),
+    }, std::move(frame)));
+
+    ir = runIrPasses(std::move(ir), 1);
+
+    EXPECT_THAT(toString(ir), HasSubstr("t1 := 3"));
+    EXPECT_THAT(toString(ir), HasSubstr("t3 := 2"));
+    EXPECT_THAT(toString(ir), HasSubstr("t4 := n * t3"));
+}
+
+TEST(IrPasses, runIrPasses_doesNotReuseConstantAtJoin) {
+    IntermediateRepresentation ir;
+    IrN n { ir.strings };
+    ProcedureFrame frame = exprTemps(ir.strings, { "t1", "t2", "t3", "t4", "t5", "k" });
+    frame.locals.push_back(integral(ir.strings, "n"));
+    ir.procedures.push_back(makeProc(ir.strings, "f", {
+            ir::assignConstant(n("2"), n("t1")),
+            ir::mul(n("n"), n("t1"), n("t2")),
+            ir::jump(n("L"), JumpCondition::IF_EQUAL),
+            ir::assignConstant(n("3"), n("k")),
+            ir::label(n("L")),
+            ir::assignConstant(n("2"), n("t3")),
+            ir::mul(n("n"), n("t3"), n("t4")),
+            ir::add(n("t2"), n("t4"), n("t5")),
+            ir::ret(n("t5")),
+    }, std::move(frame)));
+
+    ir = runIrPasses(std::move(ir), 1);
+
+    EXPECT_THAT(toString(ir), HasSubstr("t3 := 2"));
+    EXPECT_THAT(toString(ir), HasSubstr("t4 := n * t3"));
+}
+
+TEST(IrPasses, runIrPasses_doesNotReuseAddressTakenConstant) {
+    IntermediateRepresentation ir;
+    IrN n { ir.strings };
+    ProcedureFrame frame = exprTemps(ir.strings, { "t1", "t2", "t3", "t4", "t5", "p" }, 8);
+    frame.locals.push_back(integral(ir.strings, "n"));
+    ir.procedures.push_back(makeProc(ir.strings, "f", {
+            ir::assignConstant(n("2"), n("t1")),
+            ir::mul(n("n"), n("t1"), n("t2")),
+            ir::assignConstant(n("2"), n("t3")),
+            ir::addressOf(n("t3"), n("p")),
+            ir::argument(n("p")),
+            ir::call(n("g")),
+            ir::mul(n("n"), n("t3"), n("t4")),
+            ir::add(n("t2"), n("t4"), n("t5")),
+            ir::ret(n("t5")),
+    }, std::move(frame)));
+
+    ir = runIrPasses(std::move(ir), 1);
+
+    EXPECT_THAT(toString(ir), HasSubstr("t3 := 2"));
+    EXPECT_THAT(toString(ir), HasSubstr("t4 := n * t3"));
+}
+
+TEST(IrPasses, runIrPasses_doesNotReuseDifferentExtension) {
+    IntermediateRepresentation ir;
+    IrN n { ir.strings };
+    type::sysv::Classification sign = type::sysv::integerScalar(4);
+    sign.gprExtend = type::sysv::GprExtend::Sign;
+    const type::sysv::Classification zero = type::sysv::integerScalar(4);
+    auto temp = [&](const char* name, type::sysv::Classification cls) {
+        codegen::Value value { n(name), 0, Type::INTEGRAL, 4, cls };
+        value.markExpressionTemp();
+        return value;
+    };
+    ProcedureFrame frame;
+    frame.locals.push_back(temp("t1", sign));
+    frame.locals.push_back(temp("t2", sign));
+    frame.locals.push_back(temp("t3", zero));
+    frame.locals.push_back(temp("t4", zero));
+    frame.locals.push_back(temp("t5", sign));
+    frame.locals.push_back(integral(ir.strings, "n"));
+    ir.procedures.push_back(makeProc(ir.strings, "f", {
+            ir::assignConstant(n("2"), n("t1")),
+            ir::mul(n("n"), n("t1"), n("t2")),
+            ir::assignConstant(n("2"), n("t3")),
+            ir::mul(n("n"), n("t3"), n("t4")),
+            ir::add(n("t2"), n("t4"), n("t5")),
+            ir::ret(n("t5")),
+    }, std::move(frame)));
+
+    ir = runIrPasses(std::move(ir), 1);
+
+    EXPECT_THAT(toString(ir), HasSubstr("t1 := 2"));
+    EXPECT_THAT(toString(ir), HasSubstr("t3 := 2"));
+    EXPECT_THAT(toString(ir), HasSubstr("t4 := n * t3"));
+}
+
+TEST(IrPasses, runIrPasses_doesNotReuseDifferentWidth) {
+    IntermediateRepresentation ir;
+    IrN n { ir.strings };
+    ProcedureFrame frame;
+    auto temp = [&](const char* name, int bytes) {
+        codegen::Value value { n(name), 0, Type::INTEGRAL, bytes };
+        value.markExpressionTemp();
+        return value;
+    };
+    frame.locals.push_back(temp("t1", 1));
+    frame.locals.push_back(temp("t2", 1));
+    frame.locals.push_back(temp("t3", 4));
+    frame.locals.push_back(temp("t4", 4));
+    frame.locals.push_back(temp("t5", 4));
+    frame.locals.push_back(integral(ir.strings, "n"));
+    ir.procedures.push_back(makeProc(ir.strings, "f", {
+            ir::assignConstant(n("2"), n("t1")),
+            ir::mul(n("n"), n("t1"), n("t2")),
+            ir::assignConstant(n("2"), n("t3")),
+            ir::mul(n("n"), n("t3"), n("t4")),
+            ir::add(n("t2"), n("t4"), n("t5")),
+            ir::ret(n("t5")),
+    }, std::move(frame)));
+
+    ir = runIrPasses(std::move(ir), 1);
+
+    EXPECT_THAT(toString(ir), HasSubstr("t1 := 2"));
+    EXPECT_THAT(toString(ir), HasSubstr("t2 := n * t1"));
+    EXPECT_THAT(toString(ir), HasSubstr("t3 := 2"));
+    EXPECT_THAT(toString(ir), HasSubstr("t4 := n * t3"));
+}
+
+TEST(IrPasses, runIrPasses_stillCombinesRepeatedConstantAdd) {
+    IntermediateRepresentation ir;
+    IrN n { ir.strings };
+    ProcedureFrame frame = exprTemps(ir.strings, { "c1", "a", "c2", "b" });
+    frame.locals.push_back(integral(ir.strings, "n"));
+    ir.procedures.push_back(makeProc(ir.strings, "f", {
+            ir::assignConstant(n("4"), n("c1")),
+            ir::add(n("n"), n("c1"), n("a")),
+            ir::assignConstant(n("4"), n("c2")),
+            ir::add(n("a"), n("c2"), n("b")),
+            ir::ret(n("b")),
+    }, std::move(frame)));
+
+    ir = runIrPasses(std::move(ir), 1);
+
+    EXPECT_THAT(toString(ir), StrEq(
+            "PROC f\n"
+            "\tc2 := 8\n"
+            "\tb := n + c2\n"
+            "\tRETURN b\n"
+            "ENDPROC f\n"));
+}
+
 } // namespace
