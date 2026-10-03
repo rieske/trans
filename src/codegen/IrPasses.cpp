@@ -559,7 +559,7 @@ bool combineConst(Instruction& inst, std::vector<Instruction>& body,
     const int constId = rightConst ? inst.arg1 : inst.arg0;
     const int otherId = rightConst ? inst.arg0 : inst.arg1;
     const Instruction* inner = defBefore(body, otherId, &inst);
-    if (inner == nullptr || inner->op != inst.op) {
+    if (inner == nullptr || (inner->op != Op::Add && inner->op != Op::Sub)) {
         return false;
     }
     if (operandIsVolatile(values, inner->arg0) || operandIsVolatile(values, inner->arg1)) {
@@ -570,7 +570,7 @@ bool combineConst(Instruction& inst, std::vector<Instruction>& body,
     if (innerLeftConst == innerRightConst) {
         return false;
     }
-    if (inst.op == Op::Sub && !innerRightConst) {
+    if (inner->op == Op::Sub && !innerRightConst) {
         return false;
     }
     const int innerConst = innerRightConst ? inner->arg1 : inner->arg0;
@@ -588,19 +588,59 @@ bool combineConst(Instruction& inst, std::vector<Instruction>& body,
     const int width = bitWidth(bytes);
     const long long c1 = asSigned(known.at(innerConst), width);
     const long long c2 = asSigned(known.at(constId), width);
-    long long sum = 0;
-    if (width >= 64) {
-        if ((c2 > 0 && c1 > std::numeric_limits<long long>::max() - c2)
-                || (c2 < 0 && c1 < std::numeric_limits<long long>::min() - c2)) {
+    const long long min = width >= 64 ? std::numeric_limits<long long>::min() : -(1LL << (width - 1));
+    const long long max = width >= 64 ? std::numeric_limits<long long>::max() : (1LL << (width - 1)) - 1;
+    auto addFits = [&](long long a, long long b, long long& out) {
+        if (b > 0) {
+            if (a > max - b) {
+                return false;
+            }
+        } else if (b < 0) {
+            if (a < min - b) {
+                return false;
+            }
+        }
+        out = a + b;
+        return true;
+    };
+    auto negFits = [&](long long v, long long& out) {
+        if (v == min) {
             return false;
         }
-        sum = c1 + c2;
-    } else {
-        const long long min = -(1LL << (width - 1));
-        const long long max = (1LL << (width - 1)) - 1;
-        sum = c1 + c2;
-        if (sum < min || sum > max) {
+        out = -v;
+        return true;
+    };
+    long long combined = 0;
+    Op resultOp = inst.op;
+    if (inner->op == inst.op) {
+        if (!addFits(c1, c2, combined)) {
             return false;
+        }
+    } else {
+        long long left = c1;
+        long long right = c2;
+        if (inner->op == Op::Sub && !negFits(c1, left)) {
+            return false;
+        }
+        if (inst.op == Op::Sub && !negFits(c2, right)) {
+            return false;
+        }
+        if (!addFits(left, right, combined)) {
+            return false;
+        }
+        if (combined == 0) {
+            inst = ir::assign(variable, inst.result);
+            return true;
+        }
+        if (combined < 0) {
+            long long magnitude = 0;
+            if (!negFits(combined, magnitude)) {
+                return false;
+            }
+            combined = magnitude;
+            resultOp = Op::Sub;
+        } else {
+            resultOp = Op::Add;
         }
     }
     if (useCount(body, constId) != 1) {
@@ -618,9 +658,10 @@ bool combineConst(Instruction& inst, std::vector<Instruction>& body,
     if (reaching == nullptr || reaching->op != Op::AssignConstant || reaching->arg1 != kNoSymbol) {
         return false;
     }
-    const unsigned long long bits = static_cast<unsigned long long>(sum) & widthMask(bytes);
+    const unsigned long long bits = static_cast<unsigned long long>(combined) & widthMask(bytes);
     reaching->arg0 = strings.intern(util::wordImmediate(bits));
     known[constId] = bits;
+    inst.op = resultOp;
     inst.arg0 = variable;
     inst.arg1 = constId;
     return true;

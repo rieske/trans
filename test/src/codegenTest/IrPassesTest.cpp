@@ -1860,4 +1860,119 @@ TEST(IrPasses, runIrPasses_stillCombinesRepeatedConstantAdd) {
             "ENDPROC f\n"));
 }
 
+TEST(IrPasses, runIrPasses_combinesOppositeAddSub) {
+    IntermediateRepresentation ir;
+    IrN n { ir.strings };
+    ProcedureFrame frame = exprTemps(ir.strings, { "c1", "a", "c2", "b" });
+    frame.locals.push_back(integral(ir.strings, "n"));
+    ir.procedures.push_back(makeProc(ir.strings, "f", {
+            ir::assignConstant(n("4"), n("c1")),
+            ir::add(n("n"), n("c1"), n("a")),
+            ir::assignConstant(n("3"), n("c2")),
+            ir::sub(n("a"), n("c2"), n("b")),
+            ir::ret(n("b")),
+    }, std::move(frame)));
+
+    ir = runIrPasses(std::move(ir), 1);
+
+    EXPECT_THAT(toString(ir), StrEq(
+            "PROC f\n"
+            "\tc2 := 1\n"
+            "\tb := n + c2\n"
+            "\tRETURN b\n"
+            "ENDPROC f\n"));
+}
+
+TEST(IrPasses, runIrPasses_combinesOppositeSubAdd) {
+    IntermediateRepresentation ir;
+    IrN n { ir.strings };
+    ProcedureFrame frame = exprTemps(ir.strings, { "c1", "a", "c2", "b" });
+    frame.locals.push_back(integral(ir.strings, "n"));
+    ir.procedures.push_back(makeProc(ir.strings, "f", {
+            ir::assignConstant(n("4"), n("c1")),
+            ir::sub(n("n"), n("c1"), n("a")),
+            ir::assignConstant(n("3"), n("c2")),
+            ir::add(n("a"), n("c2"), n("b")),
+            ir::ret(n("b")),
+    }, std::move(frame)));
+
+    ir = runIrPasses(std::move(ir), 1);
+
+    EXPECT_THAT(toString(ir), StrEq(
+            "PROC f\n"
+            "\tc2 := 1\n"
+            "\tb := n - c2\n"
+            "\tRETURN b\n"
+            "ENDPROC f\n"));
+}
+
+TEST(IrPasses, runIrPasses_combinesOuterAddOfInnerSub) {
+    IntermediateRepresentation ir;
+    IrN n { ir.strings };
+    ProcedureFrame frame = exprTemps(ir.strings, { "c1", "a", "c2", "b" });
+    frame.locals.push_back(integral(ir.strings, "n"));
+    ir.procedures.push_back(makeProc(ir.strings, "f", {
+            ir::assignConstant(n("4"), n("c1")),
+            ir::sub(n("n"), n("c1"), n("a")),
+            ir::assignConstant(n("3"), n("c2")),
+            ir::add(n("c2"), n("a"), n("b")),
+            ir::ret(n("b")),
+    }, std::move(frame)));
+
+    ir = runIrPasses(std::move(ir), 1);
+
+    EXPECT_THAT(toString(ir), StrEq(
+            "PROC f\n"
+            "\tc2 := 1\n"
+            "\tb := n - c2\n"
+            "\tRETURN b\n"
+            "ENDPROC f\n"));
+}
+
+TEST(IrPasses, runIrPasses_cancelsOppositeAddSub) {
+    IntermediateRepresentation ir;
+    IrN n { ir.strings };
+    ProcedureFrame frame = exprTemps(ir.strings, { "c1", "a", "c2", "b" });
+    frame.locals.push_back(integral(ir.strings, "n"));
+    ir.procedures.push_back(makeProc(ir.strings, "f", {
+            ir::assignConstant(n("4"), n("c1")),
+            ir::add(n("n"), n("c1"), n("a")),
+            ir::assignConstant(n("4"), n("c2")),
+            ir::sub(n("a"), n("c2"), n("b")),
+            ir::ret(n("b")),
+    }, std::move(frame)));
+
+    ir = runIrPasses(std::move(ir), 1);
+
+    EXPECT_THAT(toString(ir), StrEq(
+            "PROC f\n"
+            "\tb := n\n"
+            "\tRETURN b\n"
+            "ENDPROC f\n"));
+}
+
+TEST(IrPasses, runIrPasses_cancelsSharedOppositeConstant) {
+    IntermediateRepresentation ir;
+    IrN n { ir.strings };
+    ProcedureFrame frame = exprTemps(ir.strings, { "c", "a", "b", "d" });
+    frame.locals.push_back(integral(ir.strings, "n"));
+    ir.procedures.push_back(makeProc(ir.strings, "f", {
+            ir::assignConstant(n("4"), n("c")),
+            ir::add(n("n"), n("c"), n("a")),
+            ir::sub(n("a"), n("c"), n("b")),
+            ir::add(n("b"), n("c"), n("d")),
+            ir::ret(n("d")),
+    }, std::move(frame)));
+
+    ir = runIrPasses(std::move(ir), 1);
+
+    EXPECT_THAT(toString(ir), StrEq(
+            "PROC f\n"
+            "\tc := 4\n"
+            "\tb := n\n"
+            "\td := b + c\n"
+            "\tRETURN d\n"
+            "ENDPROC f\n"));
+}
+
 } // namespace

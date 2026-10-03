@@ -381,7 +381,7 @@ TEST(Compiler, combinesConstantSubs) {
     )prg", "3", 0, 0, 2, 1);
 }
 
-TEST(Compiler, keepsMixedAddAndSub) {
+TEST(Compiler, combinesOppositeAddThenSub) {
     expectAddSub(R"prg(int printf(const char *, ...);
         int f(int n) {
             return (n + 4) - 3;
@@ -390,7 +390,95 @@ TEST(Compiler, keepsMixedAddAndSub) {
             printf("%d", f(10));
             return 0;
         }
-    )prg", "11", 1, 1, 1, 1);
+    )prg", "11", 1, 1, 1, 0);
+}
+
+TEST(Compiler, combinesOppositeSubThenAdd) {
+    expectAddSub(R"prg(int printf(const char *, ...);
+        int f(int n) {
+            return (n - 4) + 3;
+        }
+        int main(void) {
+            printf("%d", f(10));
+            return 0;
+        }
+    )prg", "9", 1, 0, 1, 1);
+}
+
+TEST(Compiler, combinesOuterAddOfInnerSub) {
+    expectAddSub(R"prg(int printf(const char *, ...);
+        int f(int n) {
+            return 3 + (n - 4);
+        }
+        int main(void) {
+            printf("%d", f(10));
+            return 0;
+        }
+    )prg", "9", 1, 0, 1, 1);
+}
+
+TEST(Compiler, cancelsAddThenSub) {
+    expectAddSub(R"prg(int printf(const char *, ...);
+        int f(int n) {
+            return (n + 4) - 4;
+        }
+        int main(void) {
+            printf("%d", f(10));
+            return 0;
+        }
+    )prg", "10", 1, 0, 1, 0);
+}
+
+TEST(Compiler, sharedConstantCancelKeepsLaterUse) {
+    SourceProgram program { R"prg(int printf(const char *, ...);
+        int f(int n) {
+            int k;
+            k = 4;
+            return (n + k) - k + k;
+        }
+        int main(void) {
+            printf("%d", f(10));
+            return 0;
+        }
+    )prg" };
+    program.compile();
+    program.runAndExpect("14");
+}
+
+TEST(Compiler, cancelsSubThenAdd) {
+    expectAddSub(R"prg(int printf(const char *, ...);
+        int f(int n) {
+            return (n - 4) + 4;
+        }
+        int main(void) {
+            printf("%d", f(10));
+            return 0;
+        }
+    )prg", "10", 1, 0, 1, 0);
+}
+
+TEST(Compiler, combinesChainedOppositeThenAdd) {
+    expectAddSub(R"prg(int printf(const char *, ...);
+        int f(int n) {
+            return ((n + 4) - 3) + 1;
+        }
+        int main(void) {
+            printf("%d", f(10));
+            return 0;
+        }
+    )prg", "12", 2, 1, 1, 0);
+}
+
+TEST(Compiler, keepsOverflowingOppositeAddSub) {
+    expectAddSub(R"prg(int printf(const char *, ...);
+        int f(int n) {
+            return (n + 2000000000) - (-2000000000);
+        }
+        int main(void) {
+            printf("%d", 1);
+            return 0;
+        }
+    )prg", "1", 1, 1, 1, 1);
 }
 
 TEST(Compiler, copiedConstantIsNotRewritten) {
@@ -528,6 +616,24 @@ TEST(Compiler, pointerStoreBetweenAddsIsNotReread) {
     )prg" };
     program.compile();
     program.runAndExpect("8");
+}
+
+TEST(Compiler, pointerStoreBetweenAddAndSubIsNotReread) {
+    SourceProgram program { R"prg(int printf(const char *, ...);
+        int f(int n) {
+            int *p;
+            p = &n;
+            return (n + 4) - (*p = 1, 3);
+        }
+        int main(void) {
+            volatile int n;
+            n = 10;
+            printf("%d", f(n));
+            return 0;
+        }
+    )prg" };
+    program.compile();
+    program.runAndExpect("11");
 }
 
 TEST(Compiler, pointerStoreBetweenSubsIsNotReread) {
