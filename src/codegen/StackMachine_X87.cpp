@@ -62,7 +62,7 @@ void StackMachine::emitX87ZeroCompare(Value& symbol) {
     assembly << instructionSet->fstpSt0();
 }
 
-void StackMachine::emitX87Convert(Value& operand, Value& result) {
+void StackMachine::emitX87Convert(Value& operand, Value& result, bool unsignedSource) {
     storeInMemory(operand);
     storeInMemory(result);
     const bool srcX = isX87Float(operand);
@@ -75,6 +75,37 @@ void StackMachine::emitX87Convert(Value& operand, Value& result) {
         return;
     }
     if (srcX && !dstF) {
+        // fisttp is signed and returns the indefinite integer at or above 2^63.
+        // fild of that bit pattern is -2^63, so fchs supplies the positive threshold.
+        if (unsignedSource && result.getSizeInBytes() == 8) {
+            const int id = ++wideLabel_;
+            const std::string small = "__xu" + std::to_string(id);
+            const std::string done = "__xd" + std::to_string(id);
+            Register& bias = get64BitRegister();
+            Register& converted = get64BitRegisterExcluding(bias);
+            assembly << instructionSet->mov("0x8000000000000000", bias);
+            assembly << instructionSet->mov(bias, memoryOperand(result));
+            assembly << instructionSet->fild(memoryOperand(result), 8);
+            assembly << instructionSet->fchs();
+            assembly << instructionSet->loadX87(memoryOperand(operand), 16);
+            assembly << instructionSet->fucomip();
+            assembly << instructionSet->fstpSt0();
+            assembly << instructionSet->jb(small);
+            assembly << instructionSet->loadX87(memoryOperand(operand), 16);
+            assembly << instructionSet->fild(memoryOperand(result), 8);
+            assembly << instructionSet->fchs();
+            assembly << instructionSet->fsubp();
+            assembly << instructionSet->fisttp(memoryOperand(result), 8);
+            assembly << instructionSet->mov(memoryOperand(result), converted);
+            assembly << instructionSet->add(bias, converted);
+            assembly << instructionSet->mov(converted, memoryOperand(result));
+            assembly << instructionSet->jmp(done);
+            assembly.label(instructionSet->label(small));
+            assembly << instructionSet->loadX87(memoryOperand(operand), 16);
+            assembly << instructionSet->fisttp(memoryOperand(result), 8);
+            assembly.label(instructionSet->label(done));
+            return;
+        }
         assembly << instructionSet->loadX87(memoryOperand(operand), 16);
         assembly << instructionSet->fisttp(memoryOperand(result), result.getSizeInBytes() >= 8 ? 8 : 4);
         return;

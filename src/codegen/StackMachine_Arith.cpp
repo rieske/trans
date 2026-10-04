@@ -184,6 +184,22 @@ void StackMachine::zeroCompare(int symbolName) {
         emitX87ZeroCompare(symbol);
         return;
     }
+    // Integer cmp treats the sign bit of -0 as true. ucomi matches +0 and -0.
+    if (symbol.getType() == Type::FLOATING) {
+        const bool float32 = isSseFloat32(symbol);
+        loadValueToXmm(symbol, 0, float32);
+        Register& zero = get64BitRegister();
+        assembly << instructionSet->xor_(zero, zero);
+        if (float32) {
+            assembly << instructionSet->movdGprToXmm(zero, 1);
+            assembly << instructionSet->ucomiss(0, 1);
+        } else {
+            assembly << instructionSet->movqGprToXmm(zero, 1);
+            assembly << instructionSet->ucomisd(0, 1);
+        }
+        unorderedCompare_ = true;
+        return;
+    }
     if (tryWideZeroCompare(symbol)) {
         return;
     }
