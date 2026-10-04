@@ -147,6 +147,175 @@ TEST(Compiler, unsignedLongToFloatKeepsSmallValues) {
     program.runAndExpect("3f800000");
 }
 
+// A negative zero is false in a condition.
+TEST(Compiler, negativeZeroIsFalse) {
+    SourceProgram program{R"prg(int printf(const char *, ...);
+        int main() {
+            double z;
+            z = -0.0;
+            printf("%d", z ? 1 : 0);
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("0");
+}
+
+// A float negative zero is false. A NaN compares unequal to zero, so it is true.
+TEST(Compiler, floatNegativeZeroIsFalseAndNaNIsTrue) {
+    SourceProgram program{R"prg(int printf(const char *, ...);
+        int main() {
+            float z;
+            float fn;
+            double n;
+            z = -0.0f;
+            fn = 0.0f / 0.0f;
+            n = 0.0 / 0.0;
+            printf("%d %d %d", z ? 1 : 0, fn ? 1 : 0, n ? 1 : 0);
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("0 1 1");
+}
+
+// gcc truncates a double toward zero when converting to unsigned long long.
+// 2^64 prints 0, 2^63 + 2048 keeps every bit, and -1.0 prints the maximum.
+TEST(Compiler, doubleToUnsignedLongLongTruncates) {
+    SourceProgram program{R"prg(int printf(const char *, ...);
+        int main() {
+            double hi;
+            double mid;
+            double neg;
+            hi = 18446744073709551616.0;
+            mid = 9223372036854777856.0;
+            neg = -1.0;
+            printf("%llu %llu %llu", (unsigned long long)hi, (unsigned long long)mid,
+                (unsigned long long)neg);
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("0 9223372036854777856 18446744073709551615");
+}
+
+// 2^63 + 2048 is in range. The conversion reads a volatile double.
+TEST(Compiler, volatileDoubleToUnsignedLongLongTruncates) {
+    SourceProgram program{R"prg(int printf(const char *, ...);
+        int main() {
+            volatile double mid;
+            mid = 9223372036854777856.0;
+            printf("%llu", (unsigned long long)mid);
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("9223372036854777856");
+}
+
+// The next float above 2^63 is 2^63 + 2^40. A signed convert of that
+// magnitude returns the indefinite integer.
+TEST(Compiler, floatToUnsignedLongLongKeepsBitsAboveTwoTo63) {
+    SourceProgram program{R"prg(int printf(const char *, ...);
+        int main() {
+            union { float f; unsigned u; } x;
+            x.u = 0x5f000001;
+            printf("%llu", (unsigned long long)x.f);
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("9223373136366403584");
+}
+
+// gcc truncates a long double toward zero when converting to unsigned long long.
+// 1.9 and 2^63 - 1 stay below 2^63, 2^63 + 2048 keeps every bit, 2^64 prints 0,
+// and -1.0 prints the maximum.
+TEST(Compiler, longDoubleToUnsignedLongLongTruncates) {
+    SourceProgram program{R"prg(int printf(const char *, ...);
+        int main() {
+            long double lo;
+            long double below;
+            long double eq;
+            long double mid;
+            long double top;
+            long double neg;
+            lo = 1.9L;
+            below = 9223372036854775807.0L;
+            eq = 9223372036854775808.0L;
+            mid = 9223372036854777856.0L;
+            top = 18446744073709551616.0L;
+            neg = -1.0L;
+            printf("%llu %llu %llu %llu %llu %llu", (unsigned long long)lo,
+                (unsigned long long)below, (unsigned long long)eq,
+                (unsigned long long)mid, (unsigned long long)top,
+                (unsigned long long)neg);
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect(
+            "1 9223372036854775807 9223372036854775808 9223372036854777856 0 18446744073709551615");
+}
+
+// Thirteen integers stay live across a conversion of a long double below 2^63.
+// Each is increased by argc. The program is run with no arguments, so argc is 1,
+// and 1.9 truncates to 1.
+TEST(Compiler, longDoubleToUnsignedLongLongKeepsLiveIntegers) {
+    SourceProgram program{R"prg(int printf(const char *, ...);
+        int main(int argc, char **argv) {
+            long double x;
+            unsigned long long u;
+            long long a0;
+            long long a1;
+            long long a2;
+            long long a3;
+            long long a4;
+            long long a5;
+            long long a6;
+            long long a7;
+            long long a8;
+            long long a9;
+            long long a10;
+            long long a11;
+            long long a12;
+            x = 1.9L;
+            a0 = 10;
+            a1 = 11;
+            a2 = 12;
+            a3 = 13;
+            a4 = 14;
+            a5 = 15;
+            a6 = 16;
+            a7 = 17;
+            a8 = 18;
+            a9 = 19;
+            a10 = 20;
+            a11 = 21;
+            a12 = 22;
+            a0 += argc;
+            a1 += argc;
+            a2 += argc;
+            a3 += argc;
+            a4 += argc;
+            a5 += argc;
+            a6 += argc;
+            a7 += argc;
+            a8 += argc;
+            a9 += argc;
+            a10 += argc;
+            a11 += argc;
+            a12 += argc;
+            u = (unsigned long long)x;
+            printf("%lld %lld %lld %lld %lld %lld %lld %lld %lld %lld %lld %lld %lld %llu",
+                a0, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, u);
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("11 12 13 14 15 16 17 18 19 20 21 22 23 1");
+}
+
 // Seven integer parameters fill the GPRs, so the seventh is on the stack and
 // the following double is in xmm0. The first variadic int is 99, not that
 // named stack int.

@@ -81,7 +81,7 @@ bool StackMachine::tryNumericAssignConvert(Value& operand, Value& result, bool u
         return false;
     }
     if (isX87Float(operand) || isX87Float(result)) {
-        emitX87Convert(operand, result);
+        emitX87Convert(operand, result, unsignedSource);
         return true;
     }
     if (srcF && dstF && isSseFloat32(operand) == isSseFloat32(result)) {
@@ -96,8 +96,43 @@ bool StackMachine::tryNumericAssignConvert(Value& operand, Value& result, bool u
     Register& dst = residesInMemory(result) ? get64BitRegisterExcluding(src) : result.getAssignedRegister();
 
     if (srcF && !dstF) {
-        gprToXmm(src, 0, isSseFloat32(operand));
-        if (isSseFloat32(operand)) {
+        const bool srcFloat32 = isSseFloat32(operand);
+        gprToXmm(src, 0, srcFloat32);
+        // cvtt*2si is signed. At or above 2^63 it returns the indefinite
+        // integer 2^63.
+        if (unsignedSource && result.getSizeInBytes() == 8) {
+            const int id = ++wideLabel_;
+            const std::string small = "__tu" + std::to_string(id);
+            const std::string done = "__td" + std::to_string(id);
+            Register& bias = get64BitRegisterExcluding(std::vector<Register*>{&src, &dst});
+            assembly << instructionSet->mov(
+                    srcFloat32 ? "0x5f000000" : "0x43e0000000000000", bias);
+            if (srcFloat32) {
+                assembly << instructionSet->movdGprToXmm(bias, 1);
+                assembly << instructionSet->ucomiss(0, 1);
+            } else {
+                assembly << instructionSet->movqGprToXmm(bias, 1);
+                assembly << instructionSet->ucomisd(0, 1);
+            }
+            assembly << instructionSet->jb(small);
+            if (srcFloat32) {
+                assembly << instructionSet->subss(0, 1);
+                assembly << instructionSet->cvttss2si(0, dst);
+            } else {
+                assembly << instructionSet->subsd(0, 1);
+                assembly << instructionSet->cvttsd2si(0, dst);
+            }
+            assembly << instructionSet->mov("0x8000000000000000", bias);
+            assembly << instructionSet->add(bias, dst);
+            assembly << instructionSet->jmp(done);
+            assembly.label(instructionSet->label(small));
+            if (srcFloat32) {
+                assembly << instructionSet->cvttss2si(0, dst);
+            } else {
+                assembly << instructionSet->cvttsd2si(0, dst);
+            }
+            assembly.label(instructionSet->label(done));
+        } else if (srcFloat32) {
             assembly << instructionSet->cvttss2si(0, dst);
         } else {
             assembly << instructionSet->cvttsd2si(0, dst);

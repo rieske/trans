@@ -192,7 +192,7 @@ private:
     void emitX87UnaryMinus(Value& operand, Value& result);
     void emitX87Compare(Value& left, Value& right);
     void emitX87ZeroCompare(Value& symbol);
-    void emitX87Convert(Value& operand, Value& result);
+    void emitX87Convert(Value& operand, Value& result, bool unsignedSource);
     void setCompareFlagsFromTernary(Register& acc, bool signedRel);
 
     enum class WideIntegerOp { Add, Sub, And, Or, Xor };
