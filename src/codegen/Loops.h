@@ -17,14 +17,6 @@ struct DomBits {
         const std::size_t w = i / 64;
         return w < words.size() && (words[w] & (std::uint64_t { 1 } << (i % 64))) != 0;
     }
-    bool none() const {
-        for (std::uint64_t w : words) {
-            if (w != 0) {
-                return false;
-            }
-        }
-        return true;
-    }
 };
 
 bool hasBackwardJump(const std::vector<Instruction>& body);

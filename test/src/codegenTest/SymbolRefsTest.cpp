@@ -15,10 +15,10 @@ TEST(SymbolRefs, addressOfReportsUseDefAndBase) {
     Instruction op = ir::addressOf(t1, t2);
     SymbolRefs refs;
     collectSymbolRefs(op, refs);
-    ASSERT_EQ(refs.uses.size(), 1u);
-    EXPECT_EQ(refs.uses[0], t1);
-    ASSERT_EQ(refs.defs.size(), 1u);
-    EXPECT_EQ(refs.defs[0], t2);
+    ASSERT_EQ(refs.uses.end() - refs.uses.begin(), 1);
+    EXPECT_EQ(refs.uses.begin()[0], t1);
+    ASSERT_EQ(refs.defs.end() - refs.defs.begin(), 1);
+    EXPECT_EQ(refs.defs.begin()[0], t2);
     EXPECT_EQ(refs.addressOfBase, t1);
     EXPECT_FALSE(refs.isParam);
     EXPECT_FALSE(refs.isCall);
@@ -32,8 +32,8 @@ TEST(SymbolRefs, leaObjectFieldAddressReportsAddressOfBase) {
     SymbolRefs refs;
     collectSymbolRefs(op, refs);
     EXPECT_EQ(refs.addressOfBase, t1);
-    ASSERT_EQ(refs.defs.size(), 1u);
-    EXPECT_EQ(refs.defs[0], t2);
+    ASSERT_EQ(refs.defs.end() - refs.defs.begin(), 1);
+    EXPECT_EQ(refs.defs.begin()[0], t2);
 }
 
 TEST(SymbolRefs, pointerValueFieldAddressDoesNotReportAddressOfBase) {
@@ -53,9 +53,9 @@ TEST(SymbolRefs, functionAddressOnlyDefsResultNotAddressOfBase) {
     Instruction op = ir::functionAddress(foo, t9);
     SymbolRefs refs;
     collectSymbolRefs(op, refs);
-    EXPECT_TRUE(refs.uses.empty());
-    ASSERT_EQ(refs.defs.size(), 1u);
-    EXPECT_EQ(refs.defs[0], t9);
+    EXPECT_TRUE(refs.uses.begin() == refs.uses.end());
+    ASSERT_EQ(refs.defs.end() - refs.defs.begin(), 1);
+    EXPECT_EQ(refs.defs.begin()[0], t9);
     EXPECT_EQ(refs.addressOfBase, kNoSymbol);
 }
 
@@ -66,9 +66,9 @@ TEST(SymbolRefs, assignLabelAddressDefsResult) {
     Instruction op = ir::assignLabelAddress(str, t6);
     SymbolRefs refs;
     collectSymbolRefs(op, refs);
-    EXPECT_TRUE(refs.uses.empty());
-    ASSERT_EQ(refs.defs.size(), 1u);
-    EXPECT_EQ(refs.defs[0], t6);
+    EXPECT_TRUE(refs.uses.begin() == refs.uses.end());
+    ASSERT_EQ(refs.defs.end() - refs.defs.begin(), 1);
+    EXPECT_EQ(refs.defs.begin()[0], t6);
     EXPECT_EQ(refs.addressOfBase, kNoSymbol);
     EXPECT_FALSE(refs.isParam);
     EXPECT_FALSE(refs.isCall);
@@ -81,10 +81,10 @@ TEST(SymbolRefs, assignIsUseDefNotAddressOf) {
     Instruction op = ir::assign(t1, t2);
     SymbolRefs refs;
     collectSymbolRefs(op, refs);
-    ASSERT_EQ(refs.uses.size(), 1u);
-    EXPECT_EQ(refs.uses[0], t1);
-    ASSERT_EQ(refs.defs.size(), 1u);
-    EXPECT_EQ(refs.defs[0], t2);
+    ASSERT_EQ(refs.uses.end() - refs.uses.begin(), 1);
+    EXPECT_EQ(refs.uses.begin()[0], t1);
+    ASSERT_EQ(refs.defs.end() - refs.defs.begin(), 1);
+    EXPECT_EQ(refs.defs.begin()[0], t2);
     EXPECT_EQ(refs.addressOfBase, kNoSymbol);
 }
 
@@ -95,9 +95,9 @@ TEST(SymbolRefs, argumentIsParamUse) {
     SymbolRefs refs;
     collectSymbolRefs(op, refs);
     EXPECT_TRUE(refs.isParam);
-    ASSERT_EQ(refs.uses.size(), 1u);
-    EXPECT_EQ(refs.uses[0], t3);
-    EXPECT_TRUE(refs.defs.empty());
+    ASSERT_EQ(refs.uses.end() - refs.uses.begin(), 1);
+    EXPECT_EQ(refs.uses.begin()[0], t3);
+    EXPECT_TRUE(refs.defs.begin() == refs.defs.end());
 }
 
 TEST(SymbolRefs, addIsTwoUsesOneDef) {
@@ -108,11 +108,11 @@ TEST(SymbolRefs, addIsTwoUsesOneDef) {
     Instruction op = ir::add(a, b, t);
     SymbolRefs refs;
     collectSymbolRefs(op, refs);
-    ASSERT_EQ(refs.uses.size(), 2u);
-    EXPECT_EQ(refs.uses[0], a);
-    EXPECT_EQ(refs.uses[1], b);
-    ASSERT_EQ(refs.defs.size(), 1u);
-    EXPECT_EQ(refs.defs[0], t);
+    ASSERT_EQ(refs.uses.end() - refs.uses.begin(), 2);
+    EXPECT_EQ(refs.uses.begin()[0], a);
+    EXPECT_EQ(refs.uses.begin()[1], b);
+    ASSERT_EQ(refs.defs.end() - refs.defs.begin(), 1);
+    EXPECT_EQ(refs.defs.begin()[0], t);
 }
 
 TEST(SymbolRefs, callWithMemoryReturnUsesDestNotArgs) {
@@ -123,15 +123,15 @@ TEST(SymbolRefs, callWithMemoryReturnUsesDestNotArgs) {
     SymbolRefs args;
     collectSymbolRefs(ir::argument(arg), args);
     EXPECT_TRUE(args.isParam);
-    ASSERT_EQ(args.uses.size(), 1u);
-    EXPECT_EQ(args.uses[0], arg);
+    ASSERT_EQ(args.uses.end() - args.uses.begin(), 1);
+    EXPECT_EQ(args.uses.begin()[0], arg);
 
     SymbolRefs call;
     collectSymbolRefs(ir::call(foo, false, dest), call);
     EXPECT_TRUE(call.isCall);
-    ASSERT_EQ(call.uses.size(), 1u);
-    EXPECT_EQ(call.uses[0], dest);
-    EXPECT_TRUE(call.defs.empty());
+    ASSERT_EQ(call.uses.end() - call.uses.begin(), 1);
+    EXPECT_EQ(call.uses.begin()[0], dest);
+    EXPECT_TRUE(call.defs.begin() == call.defs.end());
 }
 
 TEST(SymbolRefs, callIsCallIndirectUsesTarget) {
@@ -142,14 +142,14 @@ TEST(SymbolRefs, callIsCallIndirectUsesTarget) {
     SymbolRefs d;
     collectSymbolRefs(direct, d);
     EXPECT_TRUE(d.isCall);
-    EXPECT_TRUE(d.uses.empty());
+    EXPECT_TRUE(d.uses.begin() == d.uses.end());
 
     Instruction indirect = ir::call(target, true, kNoSymbol);
     SymbolRefs n;
     collectSymbolRefs(indirect, n);
     EXPECT_TRUE(n.isCall);
-    ASSERT_EQ(n.uses.size(), 1u);
-    EXPECT_EQ(n.uses[0], target);
+    ASSERT_EQ(n.uses.end() - n.uses.begin(), 1);
+    EXPECT_EQ(n.uses.begin()[0], target);
 }
 
 } // namespace

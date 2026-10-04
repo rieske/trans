@@ -20,7 +20,6 @@ public:
     translation_unit::Context getContext() const override;
 
     Block& body() { return *body_; }
-    const Block& body() const { return *body_; }
 
     // GNU: the value is the last block item, when that item is an expression.
     Expression* valueExpression();

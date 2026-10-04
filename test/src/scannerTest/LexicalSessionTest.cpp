@@ -16,9 +16,11 @@ TEST(NameIntern, internIsIdentity) {
     EXPECT_NE(a, c);
     EXPECT_EQ(intern.find("T"), a);
     EXPECT_EQ(intern.find("missing"), kNoName);
+    EXPECT_EQ(a, 0);
+    EXPECT_EQ(c, 1);
     EXPECT_EQ(intern.intern(""), kNoName);
     EXPECT_EQ(intern.find(""), kNoName);
-    EXPECT_EQ(intern.size(), 2);
+    EXPECT_EQ(intern.intern("next"), 2);
 }
 
 TEST(LexicalSession, tablesShareIntern) {
@@ -43,11 +45,11 @@ TEST(LexicalSession, hasTypedefMissDoesNotIntern) {
 
 TEST(LexicalSession, emptyNameIsNotInterned) {
     LexicalSession session;
-    const int n = session.intern.size();
+    const int kept = session.intern.intern("kept");
     session.names.addTypedef("", type::signedInteger());
     session.types.add("", type::signedInteger());
     session.enums.add("", type::fromHostLong(1));
-    EXPECT_EQ(session.intern.size(), n);
+    EXPECT_EQ(session.intern.intern("next"), kept + 1);
     EXPECT_FALSE(session.names.hasTypedef(""));
     EXPECT_FALSE(session.types.lookup("").has_value());
     EXPECT_FALSE(session.enums.contains(""));

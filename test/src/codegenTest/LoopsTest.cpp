@@ -217,8 +217,11 @@ TEST(Loops, deadJumpAfterReturnIsNotALoop) {
     EXPECT_THAT(naturalLoops(cfg), IsEmpty());
     const auto dom = dominators(cfg);
     ASSERT_THAT(dom, SizeIs(cfg.size()));
-    EXPECT_TRUE(dom[1].none());
-    EXPECT_TRUE(dom[2].none());
+    for (const std::size_t block : { 1u, 2u }) {
+        for (std::size_t i = 0; i < cfg.size(); ++i) {
+            EXPECT_FALSE(dom[block].test(i)) << block << " " << i;
+        }
+    }
 }
 
 TEST(Loops, deadGotoIntoHeaderIsNotAnExtraLatch) {

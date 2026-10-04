@@ -77,7 +77,6 @@ public:
     std::optional<type::Type> lookupEnumTag(const std::string& tag) const;
 
     VlaExpressionTable& vlaExpressions() { return *vlas_; }
-    const VlaExpressionTable& vlaExpressions() const { return *vlas_; }
     std::shared_ptr<VlaExpressionTable> vlaExpressionsShared() const { return vlas_; }
 
 private:

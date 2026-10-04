@@ -20,9 +20,6 @@ struct SymbolIdList {
 
     const int* begin() const { return ids; }
     const int* end() const { return ids + count; }
-    std::size_t size() const { return static_cast<std::size_t>(count); }
-    bool empty() const { return count == 0; }
-    int operator[](std::size_t i) const { return ids[i]; }
 };
 
 struct SymbolRefs {

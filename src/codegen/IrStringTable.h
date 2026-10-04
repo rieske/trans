@@ -18,7 +18,6 @@ public:
     int find(std::string_view text) const;
     int require(std::string_view text) const;
     const std::string& get(int id) const;
-    int size() const { return static_cast<int>(names_.size()); }
 
 private:
     struct TransparentHash {
