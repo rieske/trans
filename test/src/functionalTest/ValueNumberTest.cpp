@@ -182,7 +182,7 @@ TEST(Compiler, reusesAddAcrossFallthroughLabel) {
     )prg", "10", 3, 2);
 }
 
-TEST(Compiler, keepsAddAcrossEmptyIf) {
+TEST(Compiler, reusesAddAcrossEmptyIf) {
     expectAdds(R"prg(int printf(const char *, ...);
         int f(int a, int b) {
             int x;
@@ -196,7 +196,7 @@ TEST(Compiler, keepsAddAcrossEmptyIf) {
             printf("%d", f(2, 3));
             return 0;
         }
-    )prg", "10", 3, 3);
+    )prg", "10", 3, 2);
 }
 
 TEST(Compiler, keepsAddWhenOperandChanges) {
@@ -1027,6 +1027,207 @@ TEST(Compiler, pointerStoreBetweenAndsIsNotReread) {
     )prg" };
     program.compile();
     program.runAndExpect("3");
+}
+
+TEST(Compiler, reusesShiftAcrossEmptyIf) {
+    expectOpcode(R"prg(int printf(const char *, ...);
+        int f(int a, int b) {
+            int x;
+            x = a << b;
+            if (a) {}
+            return x + (a << b);
+        }
+        int main(void) {
+            printf("%d", f(3, 3));
+            return 0;
+        }
+    )prg", "48", "shl", 2, 1);
+}
+
+TEST(Compiler, reusesShiftWhenOtherArmUsesDifferentDistance) {
+    expectOpcode(R"prg(int printf(const char *, ...);
+        int f(int a, int b, int d, int c) {
+            int x;
+            x = a << b;
+            if (c) {
+                x = a << d;
+            }
+            return x + (a << b);
+        }
+        int main(void) {
+            printf("%d %d", f(3, 3, 1, 0), f(3, 3, 1, 1));
+            return 0;
+        }
+    )prg", "48 30", "shl", 3, 2);
+}
+
+TEST(Compiler, keepsLiteralShiftAcrossEmptyIf) {
+    expectOpcode(R"prg(int printf(const char *, ...);
+        int f(int a) {
+            int x;
+            x = a << 3;
+            if (a) {}
+            return x + (a << 3);
+        }
+        int main(void) {
+            printf("%d", f(3));
+            return 0;
+        }
+    )prg", "48", "shl", 2, 2);
+}
+
+TEST(Compiler, reusesAddAcrossEmptyIfAfterCall) {
+    expectAdds(R"prg(int printf(const char *, ...);
+        int g(int n) {
+            int m;
+            char buf[n];
+            buf[0] = 0;
+            m = buf[0];
+            return m;
+        }
+        int f(int a, int b) {
+            int x;
+            g(1);
+            x = a + b;
+            if (a) {}
+            return x + (a + b);
+        }
+        int main(void) {
+            printf("%d", f(2, 3));
+            return 0;
+        }
+    )prg", "10", 3, 2);
+}
+
+TEST(Compiler, keepsAddWhenOneArmChangesOperand) {
+    expectAdds(R"prg(int printf(const char *, ...);
+        int f(int a, int b, int c) {
+            int x;
+            x = a + b;
+            if (c) {
+                a = a + 1;
+            }
+            return x + (a + b);
+        }
+        int main(void) {
+            printf("%d %d", f(2, 3, 0), f(2, 3, 1));
+            return 0;
+        }
+    )prg", "10 11", 4, 4);
+}
+
+TEST(Compiler, keepsAddComputedOnOneArm) {
+    expectAdds(R"prg(int printf(const char *, ...);
+        int f(int a, int b, int c) {
+            int x;
+            x = 0;
+            if (c) {
+                x = a + b;
+            }
+            return x + (a + b);
+        }
+        int main(void) {
+            printf("%d %d", f(2, 3, 0), f(2, 3, 1));
+            return 0;
+        }
+    )prg", "5 10", 3, 3);
+}
+
+TEST(Compiler, keepsLaterAddWhenArmsDisagree) {
+    expectAdds(R"prg(int printf(const char *, ...);
+        int f(int a, int b, int c) {
+            int x;
+            if (c) {
+                x = a + b;
+            } else {
+                x = a + b;
+            }
+            return x + (a + b);
+        }
+        int main(void) {
+            printf("%d %d", f(2, 3, 0), f(2, 3, 1));
+            return 0;
+        }
+    )prg", "10 10", 4, 4);
+}
+
+TEST(Compiler, keepsAddWhenOneArmCalls) {
+    expectAdds(R"prg(int printf(const char *, ...);
+        int g(int n) {
+            int m;
+            char buf[n];
+            buf[0] = 0;
+            m = buf[0];
+            return m;
+        }
+        int f(int a, int b, int c) {
+            int x;
+            x = a + b;
+            if (c) {
+                g(1);
+            }
+            return x + (a + b);
+        }
+        int main(void) {
+            printf("%d %d", f(2, 3, 0), f(2, 3, 1));
+            return 0;
+        }
+    )prg", "10 10", 3, 3);
+}
+
+TEST(Compiler, keepsVolatileAddAcrossEmptyIf) {
+    expectAdds(R"prg(int printf(const char *, ...);
+        int f(volatile int a, int b) {
+            int x;
+            int y;
+            x = a + b;
+            if (a) {}
+            y = a + b;
+            return x + y;
+        }
+        int main(void) {
+            printf("%d", f(2, 3));
+            return 0;
+        }
+    )prg", "10", 3, 3);
+}
+
+TEST(Compiler, keepsAddWhenArmTakesAddress) {
+    expectAdds(R"prg(int printf(const char *, ...);
+        int f(int a, int b) {
+            int x;
+            int *p;
+            x = a + b;
+            if (a) {
+                p = &a;
+                *p = 1;
+            }
+            return x + (a + b);
+        }
+        int main(void) {
+            printf("%d", f(2, 3));
+            return 0;
+        }
+    )prg", "9", 3, 3);
+}
+
+TEST(Compiler, keepsAddAcrossLoop) {
+    expectAdds(R"prg(int printf(const char *, ...);
+        int f(int a, int b) {
+            int x;
+            int i;
+            x = a + b;
+            i = 0;
+            while (i < a) {
+                i = i + 1;
+            }
+            return x + (a + b);
+        }
+        int main(void) {
+            printf("%d", f(2, 3));
+            return 0;
+        }
+    )prg", "10", 4, 4);
 }
 
 TEST(Compiler, volatileAndIsNotCombined) {
