@@ -20,10 +20,6 @@ void FormalArgument::accept(AbstractSyntaxTreeVisitor& visitor) {
     visitor.visit(*this);
 }
 
-void FormalArgument::visitSpecifiers(AbstractSyntaxTreeVisitor& visitor) {
-    specifiers.accept(visitor);
-}
-
 void FormalArgument::visitDeclarator(AbstractSyntaxTreeVisitor& visitor) {
     if (declarator) {
         declarator->accept(visitor);

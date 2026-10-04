@@ -71,11 +71,4 @@ Expression& GenericSelection::selectedExpression() {
     return *associations_[*selectedIndex_].expression;
 }
 
-const Expression& GenericSelection::selectedExpression() const {
-    if (!selectedIndex_ || *selectedIndex_ >= associations_.size()) {
-        throw std::logic_error { "generic selection has no selected association" };
-    }
-    return *associations_[*selectedIndex_].expression;
-}
-
 } // namespace ast

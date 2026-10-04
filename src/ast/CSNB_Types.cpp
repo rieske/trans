@@ -86,11 +86,13 @@ void restrictQualifier(AbstractSyntaxTreeBuilderContext& context) {
 }
 
 void inlineFunctionSpecifier(AbstractSyntaxTreeBuilderContext& context) {
-    context.pushFunctionSpecifier(FunctionSpecifier::INLINE(context.popTerminal().context));
+    context.popTerminal();
+    context.pushFunctionSpecifier(FunctionSpecifier::INLINE());
 }
 
 void noreturnFunctionSpecifier(AbstractSyntaxTreeBuilderContext& context) {
-    context.pushFunctionSpecifier(FunctionSpecifier::NORETURN(context.popTerminal().context));
+    context.popTerminal();
+    context.pushFunctionSpecifier(FunctionSpecifier::NORETURN());
 }
 
 void functionSpecifierOnly(AbstractSyntaxTreeBuilderContext& context) {

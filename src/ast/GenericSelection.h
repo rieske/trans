@@ -38,7 +38,6 @@ public:
     void select(std::size_t index, symbols::AnnotationStore& store);
     bool hasSelected() const { return selectedIndex_.has_value(); }
     Expression& selectedExpression();
-    const Expression& selectedExpression() const;
 
 private:
     friend class Expression;

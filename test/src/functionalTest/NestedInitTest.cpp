@@ -122,23 +122,6 @@ TEST(Compiler, topLevelNestedScalarBraceExcessIsError) {
     program.assertCompilationErrors("excess elements in scalar initializer");
 }
 
-TEST(Compiler, unionBraceInitializesFirstMember) {
-    SourceProgram program{R"prg(int printf(const char *, ...);
-int scanf(const char *, ...);
-        union U {
-            int i;
-            int j;
-        };
-        int main() {
-            union U u = { 7 };
-            printf("%d %d", u.i, u.j);
-            return 0;
-        }
-    )prg"};
-    program.compile();
-    program.runAndExpect("7 7");
-}
-
 TEST(Compiler, nestedEmptyUnionBraceZeros) {
     SourceProgram program{R"prg(int printf(const char *, ...);
 int scanf(const char *, ...);

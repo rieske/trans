@@ -20,10 +20,6 @@ std::optional<type::Type> TypeCast::typeAtParseTime(const ParseEnvironment& envi
     return typeSpecifier.typeAtParseTime(environment);
 }
 
-const TypeSpecifier& TypeCast::getTypeSpecifier() const {
-    return typeSpecifier;
-}
-
 TypeSpecifier& TypeCast::getTypeSpecifier() {
     return typeSpecifier;
 }

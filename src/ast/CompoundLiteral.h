@@ -21,9 +21,7 @@ public:
     translation_unit::Context getContext() const override;
 
     TypeSpecifier& getTypeSpecifier();
-    const TypeSpecifier& getTypeSpecifier() const;
     InitializerListExpression& initializer();
-    const InitializerListExpression& initializer() const;
 
 private:
     TypeSpecifier typeSpecifier;

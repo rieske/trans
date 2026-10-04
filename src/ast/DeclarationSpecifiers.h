@@ -19,7 +19,6 @@ public:
     DeclarationSpecifiers(type::Qualifier typeQualifier, DeclarationSpecifiers rest = { });
     DeclarationSpecifiers(StorageSpecifier storageSpecifier, DeclarationSpecifiers rest = { });
     DeclarationSpecifiers(FunctionSpecifier functionSpecifier, DeclarationSpecifiers rest = { });
-    static DeclarationSpecifiers none();
 
     void add(TypeSpecifier typeSpecifier);
     void add(type::Qualifier typeQualifier);
@@ -27,7 +26,6 @@ public:
     void add(FunctionSpecifier functionSpecifier);
 
     void accept(AbstractSyntaxTreeVisitor& visitor) override;
-    void resolveTypeof(AbstractSyntaxTreeVisitor& visitor);
     bool resolveTypeofAtParseTime(const ParseEnvironment& environment);
     std::optional<type::Type> typeAtParseTime(const ParseEnvironment& environment) const;
     bool needsSemanticResolve() const;

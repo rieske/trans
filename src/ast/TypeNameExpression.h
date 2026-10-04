@@ -18,7 +18,6 @@ public:
     translation_unit::Context getContext() const override;
 
     TypeSpecifier& typeSpecifier();
-    const TypeSpecifier& typeSpecifier() const;
 
 private:
     TypeSpecifier typeSpecifier_;

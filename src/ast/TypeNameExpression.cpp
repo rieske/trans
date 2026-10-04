@@ -29,8 +29,4 @@ TypeSpecifier& TypeNameExpression::typeSpecifier() {
     return typeSpecifier_;
 }
 
-const TypeSpecifier& TypeNameExpression::typeSpecifier() const {
-    return typeSpecifier_;
-}
-
 } // namespace ast

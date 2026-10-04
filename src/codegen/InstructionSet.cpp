@@ -390,10 +390,6 @@ std::string InstructionSet::mov(const MemoryOperand& source, const Register& to)
     return binary("mov", reg(to), mem(source), 8);
 }
 
-std::string InstructionSet::mov(std::string constant, const MemoryOperand& destination) const {
-    return binary("mov", sizedMem("qword ", destination), immText(constant), 8);
-}
-
 std::string InstructionSet::mov(std::string constant, const Register& to) const {
     return binary("mov", reg(to), immText(constant), 8);
 }

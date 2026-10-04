@@ -17,7 +17,6 @@ public:
     std::optional<type::Type> typeAtParseTime(const ParseEnvironment& environment) const override;
 
     // Target type specifier of the cast (not Expression::expressionType()).
-    const TypeSpecifier& getTypeSpecifier() const;
     TypeSpecifier& getTypeSpecifier();
     bool evaluateConstant(type::IntegerConstant& value) const override;
 

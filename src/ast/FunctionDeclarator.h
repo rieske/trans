@@ -23,7 +23,6 @@ public:
 
     std::vector<std::string> parameterNames() const;
     const FormalArguments& getFormalArguments() const { return formalArguments; }
-    bool isVariadic() const;
     const FunctionDeclarator* innermostFunctionDeclarator() const override;
 
     type::Type getFundamentalType(std::vector<Pointer> indirection, const type::Type& baseType) const override;

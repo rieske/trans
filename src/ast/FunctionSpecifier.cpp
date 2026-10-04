@@ -2,26 +2,20 @@
 
 namespace ast {
 
-FunctionSpecifier FunctionSpecifier::INLINE(translation_unit::Context context) {
-    return { FunctionSpec::INLINE, context };
+FunctionSpecifier FunctionSpecifier::INLINE() {
+    return FunctionSpecifier { FunctionSpec::INLINE };
 }
 
-FunctionSpecifier FunctionSpecifier::NORETURN(translation_unit::Context context) {
-    return { FunctionSpec::NORETURN, context };
+FunctionSpecifier FunctionSpecifier::NORETURN() {
+    return FunctionSpecifier { FunctionSpec::NORETURN };
 }
 
-FunctionSpecifier::FunctionSpecifier(FunctionSpec spec, translation_unit::Context context) :
-        spec { spec },
-        context { context }
-{
+FunctionSpecifier::FunctionSpecifier(FunctionSpec spec) :
+        spec { spec } {
 }
 
 FunctionSpec FunctionSpecifier::getSpec() const {
     return spec;
-}
-
-translation_unit::Context FunctionSpecifier::getContext() const {
-    return context;
 }
 
 } // namespace ast
