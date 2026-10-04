@@ -32,7 +32,6 @@ public:
             translation_unit::Context context = translation_unit::Context { "", 0 });
     ~TypeSpecifier();
     TypeSpecifier(TypeSpecifier&&) noexcept;
-    TypeSpecifier& operator=(TypeSpecifier&&) noexcept;
     TypeSpecifier(const TypeSpecifier&) = delete;
     TypeSpecifier& operator=(const TypeSpecifier&) = delete;
 

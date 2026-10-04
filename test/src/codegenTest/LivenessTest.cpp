@@ -30,7 +30,7 @@ Procedure makeProc(IrStringTable& strings, std::vector<Instruction> body) {
 TEST(Liveness, condJumpDiamondLiveInIsTargetUsesNotFallthroughTemp) {
     IntermediateRepresentation ir;
     IrN n { ir.strings };
-    const LabelLiveIns live = computeLabelLiveIns(makeProc(ir.strings, {
+    const ProcedureLiveness live = computeProcedureLiveness(makeProc(ir.strings, {
             ir::add(n("a"), n("a"), n("t")),
             ir::jump(n("else"), JumpCondition::IF_EQUAL),
             ir::ret(n("t")),
@@ -45,7 +45,7 @@ TEST(Liveness, condJumpDiamondLiveInIsTargetUsesNotFallthroughTemp) {
 TEST(Liveness, loopHeaderKeepsIncTarget) {
     IntermediateRepresentation ir;
     IrN n { ir.strings };
-    const LabelLiveIns live = computeLabelLiveIns(makeProc(ir.strings, {
+    const ProcedureLiveness live = computeProcedureLiveness(makeProc(ir.strings, {
             ir::label(n("L")),
             ir::inc(n("x")),
             ir::jump(n("L")),
@@ -98,7 +98,7 @@ TEST(Liveness, sparseSymbolIdsMapBackToOriginalIds) {
 TEST(Liveness, argumentStaysLiveAcrossLabelBeforeCall) {
     IntermediateRepresentation ir;
     IrN n { ir.strings };
-    const LabelLiveIns live = computeLabelLiveIns(makeProc(ir.strings, {
+    const ProcedureLiveness live = computeProcedureLiveness(makeProc(ir.strings, {
             ir::argument(n("a")),
             ir::label(n("L")),
             ir::call(n("foo")),
@@ -112,7 +112,7 @@ TEST(Liveness, argumentStaysLiveAcrossLabelBeforeCall) {
 TEST(Liveness, emptyLabelInheritsSuccessorLiveIn) {
     IntermediateRepresentation ir;
     IrN n { ir.strings };
-    const LabelLiveIns live = computeLabelLiveIns(makeProc(ir.strings, {
+    const ProcedureLiveness live = computeProcedureLiveness(makeProc(ir.strings, {
             ir::label(n("L1")),
             ir::label(n("L2")),
             ir::ret(n("x")),
@@ -127,7 +127,7 @@ TEST(Liveness, emptyLabelInheritsSuccessorLiveIn) {
 TEST(Liveness, unreachableLabelStillHasAPresentSet) {
     IntermediateRepresentation ir;
     IrN n { ir.strings };
-    const LabelLiveIns live = computeLabelLiveIns(makeProc(ir.strings, {
+    const ProcedureLiveness live = computeProcedureLiveness(makeProc(ir.strings, {
             ir::ret(n("x")),
             ir::label(n("dead")),
             ir::ret(n("y")),
@@ -140,7 +140,7 @@ TEST(Liveness, unreachableLabelStillHasAPresentSet) {
 TEST(Liveness, emptyLabeledBlockInsertsEmptySet) {
     IntermediateRepresentation ir;
     IrN n { ir.strings };
-    const LabelLiveIns live = computeLabelLiveIns(makeProc(ir.strings, {
+    const ProcedureLiveness live = computeProcedureLiveness(makeProc(ir.strings, {
             ir::label(n("L")),
             ir::voidReturn(),
     }));
@@ -152,7 +152,7 @@ TEST(Liveness, emptyLabeledBlockInsertsEmptySet) {
 TEST(Liveness, addressTakenIsLiveInAtEveryLabeledBlock) {
     IntermediateRepresentation ir;
     IrN n { ir.strings };
-    const LabelLiveIns live = computeLabelLiveIns(makeProc(ir.strings, {
+    const ProcedureLiveness live = computeProcedureLiveness(makeProc(ir.strings, {
             ir::addressOf(n("a"), n("p")),
             ir::label(n("L")),
             ir::voidReturn(),
@@ -165,7 +165,7 @@ TEST(Liveness, addressTakenIsLiveInAtEveryLabeledBlock) {
 TEST(Liveness, addressTakenUnionsIntoInheritedLiveIn) {
     IntermediateRepresentation ir;
     IrN n { ir.strings };
-    const LabelLiveIns live = computeLabelLiveIns(makeProc(ir.strings, {
+    const ProcedureLiveness live = computeProcedureLiveness(makeProc(ir.strings, {
             ir::addressOf(n("a"), n("p")),
             ir::label(n("L1")),
             ir::label(n("L2")),
@@ -181,7 +181,7 @@ TEST(Liveness, addressTakenUnionsIntoInheritedLiveIn) {
 TEST(Liveness, addressTakenIsLiveInAtJoinAfterInc) {
     IntermediateRepresentation ir;
     IrN n { ir.strings };
-    const LabelLiveIns live = computeLabelLiveIns(makeProc(ir.strings, {
+    const ProcedureLiveness live = computeProcedureLiveness(makeProc(ir.strings, {
             ir::addressOf(n("a"), n("p")),
             ir::jump(n("join"), JumpCondition::IF_EQUAL),
             ir::inc(n("a")),
@@ -197,13 +197,13 @@ TEST(Liveness, addressTakenIsLiveInAtJoinAfterInc) {
 TEST(Liveness, liveAfterCallKeepsArgUsedAfterNotSiblings) {
     IntermediateRepresentation ir;
     IrN n { ir.strings };
-    const auto after = computeLiveAfterCalls(makeProc(ir.strings, {
+    const auto after = computeProcedureLiveness(makeProc(ir.strings, {
             ir::argument(n("a")),
             ir::argument(n("b")),
             ir::argument(n("c")),
             ir::call(n("foo")),
             ir::ret(n("a")),
-    }));
+    })).afterCall;
 
     ASSERT_THAT(after.count(3), Eq(1u));
     EXPECT_THAT(after.at(3), UnorderedElementsAre(n("a")));
@@ -212,7 +212,7 @@ TEST(Liveness, liveAfterCallKeepsArgUsedAfterNotSiblings) {
 TEST(Liveness, threePendingArgsStayLiveAtLabelBeforeCall) {
     IntermediateRepresentation ir;
     IrN n { ir.strings };
-    const LabelLiveIns live = computeLabelLiveIns(makeProc(ir.strings, {
+    const ProcedureLiveness live = computeProcedureLiveness(makeProc(ir.strings, {
             ir::argument(n("a")),
             ir::argument(n("b")),
             ir::argument(n("c")),
@@ -228,11 +228,11 @@ TEST(Liveness, threePendingArgsStayLiveAtLabelBeforeCall) {
 TEST(Liveness, liveAfterCallExcludesDeadTemp) {
     IntermediateRepresentation ir;
     IrN n { ir.strings };
-    const auto after = computeLiveAfterCalls(makeProc(ir.strings, {
+    const auto after = computeProcedureLiveness(makeProc(ir.strings, {
             ir::add(n("a"), n("a"), n("t")),
             ir::call(n("foo")),
             ir::ret(n("a")),
-    }));
+    })).afterCall;
 
     ASSERT_THAT(after.count(1), Eq(1u));
     EXPECT_THAT(after.at(1), UnorderedElementsAre(n("a")));
@@ -241,11 +241,11 @@ TEST(Liveness, liveAfterCallExcludesDeadTemp) {
 TEST(Liveness, liveAfterCallIncludesTempUsedLater) {
     IntermediateRepresentation ir;
     IrN n { ir.strings };
-    const auto after = computeLiveAfterCalls(makeProc(ir.strings, {
+    const auto after = computeProcedureLiveness(makeProc(ir.strings, {
             ir::add(n("a"), n("a"), n("t")),
             ir::call(n("foo")),
             ir::ret(n("t")),
-    }));
+    })).afterCall;
 
     ASSERT_THAT(after.count(1), Eq(1u));
     EXPECT_THAT(after.at(1), UnorderedElementsAre(n("t")));
@@ -254,12 +254,12 @@ TEST(Liveness, liveAfterCallIncludesTempUsedLater) {
 TEST(Liveness, liveAfterCallKeepsValueUsedBeforeCallInLoop) {
     IntermediateRepresentation ir;
     IrN n { ir.strings };
-    const auto after = computeLiveAfterCalls(makeProc(ir.strings, {
+    const auto after = computeProcedureLiveness(makeProc(ir.strings, {
             ir::label(n("L")),
             ir::add(n("a"), n("a"), n("t")),
             ir::call(n("foo")),
             ir::jump(n("L")),
-    }));
+    })).afterCall;
 
     ASSERT_THAT(after.count(2), Eq(1u));
     EXPECT_THAT(after.at(2), UnorderedElementsAre(n("a")));

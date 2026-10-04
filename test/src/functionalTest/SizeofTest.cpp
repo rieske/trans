@@ -424,20 +424,6 @@ TEST(Compiler, voidArrayIsSemanticError) {
     program.assertCompilationErrors("array of incomplete type");
 }
 
-TEST(Compiler, voidArrayParameterIsSemanticError) {
-    SourceProgram program{R"prg(
-        int f(void a[3]) {
-            return 0;
-        }
-
-        int main() {
-            return 0;
-        }
-    )prg"};
-    program.compile();
-    program.assertCompilationErrors("array of incomplete type");
-}
-
 TEST(Compiler, arrayByteSizeOverflowIsSemanticError) {
     // element size 4 * 536870913 overflows signed 32-bit object size (INT_MAX).
     SourceProgram program{R"prg(

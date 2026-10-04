@@ -80,18 +80,6 @@ LabelEntry* AnnotationStore::label(NodeRef node, LabelSlot slot) {
     return it->second.get();
 }
 
-const LabelEntry* AnnotationStore::label(NodeRef node, LabelSlot slot) const {
-    auto* n = nodeIfAny(node);
-    if (!n) {
-        return nullptr;
-    }
-    auto it = n->labels.find(slot);
-    if (it == n->labels.end()) {
-        return nullptr;
-    }
-    return it->second.get();
-}
-
 void AnnotationStore::setAddressPlan(NodeRef node, AddressPlan plan) {
     this->node(node).addressPlan = std::move(plan);
 }
