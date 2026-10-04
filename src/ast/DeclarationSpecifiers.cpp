@@ -122,10 +122,6 @@ DeclarationSpecifiers::DeclarationSpecifiers(FunctionSpecifier functionSpecifier
     add(std::move(functionSpecifier));
 }
 
-DeclarationSpecifiers DeclarationSpecifiers::none() {
-    return {};
-}
-
 void DeclarationSpecifiers::add(TypeSpecifier typeSpecifier) {
     ingestSpecifierName(typeSpecifier.getName(), specifierKeywords_, longCount_);
     typeSpecifiers.push_back(std::move(typeSpecifier));
@@ -145,12 +141,6 @@ void DeclarationSpecifiers::add(FunctionSpecifier functionSpecifier) {
 
 void DeclarationSpecifiers::accept(AbstractSyntaxTreeVisitor& visitor) {
     visitor.visit(*this);
-}
-
-void DeclarationSpecifiers::resolveTypeof(AbstractSyntaxTreeVisitor& visitor) {
-    for (auto& specifier : typeSpecifiers) {
-        specifier.resolveTypeof(visitor);
-    }
 }
 
 bool DeclarationSpecifiers::resolveTypeofAtParseTime(const ParseEnvironment& environment) {

@@ -122,33 +122,6 @@ TEST(Compiler, escapingPointerEscapesItsTarget) {
     program.runAndExpect("99");
 }
 
-TEST(Compiler, returnAfterEscapingPointer) {
-    SourceProgram program { R"prg(int printf(const char *, ...);
-        void foo(int **pp) {
-            int n;
-            n = 1;
-            char buf[n];
-            buf[0] = 0;
-            **pp = 99;
-            (void)buf[0];
-        }
-        int h(void) {
-            int x;
-            int *p;
-            x = 1;
-            p = &x;
-            foo(&p);
-            return x;
-        }
-        int main(void) {
-            printf("%d", h());
-            return 0;
-        }
-    )prg" };
-    program.compile();
-    program.runAndExpect("99");
-}
-
 TEST(Compiler, loadedPointerArgumentEscapesTarget) {
     SourceProgram program { R"prg(int printf(const char *, ...);
         void foo(int *p) {

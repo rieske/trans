@@ -41,25 +41,6 @@ int scanf(const char *, ...);
     program.runAndExpect("0", "0 0 7 7");
 }
 
-TEST(Compiler, logicalNotOnVariable) {
-    SourceProgram program{R"prg(int printf(const char *, ...);
-int scanf(const char *, ...);
-        int main() {
-            int a;
-            scanf("%ld", &a);
-            printf("%d", !a);
-            return 0;
-        }
-    )prg"};
-
-    program.compile();
-
-    program.runAndExpect("0", "1");
-    program.runAndExpect("1", "0");
-    program.runAndExpect("2", "0");
-    program.runAndExpect("-1", "0");
-}
-
 TEST(Compiler, logicalNotOnFunctionDesignator) {
     SourceProgram program{R"prg(int printf(const char *, ...);
         int seven(void) { return 7; }

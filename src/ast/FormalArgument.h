@@ -16,7 +16,6 @@ public:
     FormalArgument(DeclarationSpecifiers specifiers, std::unique_ptr<Declarator> declarator);
 
     void accept(AbstractSyntaxTreeVisitor& visitor) override;
-    void visitSpecifiers(AbstractSyntaxTreeVisitor& visitor);
     void visitDeclarator(AbstractSyntaxTreeVisitor& visitor);
 
     type::Type declaredType() const;

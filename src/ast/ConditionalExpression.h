@@ -28,10 +28,6 @@ public:
     Expression* getTrueExpression() const { return trueExpression.get(); }
     Expression* getFalseExpression() const { return falseExpression.get(); }
 
-    symbols::ValueEntry* conditionSymbol(symbols::AnnotationStore& store) const;
-    symbols::ValueEntry* trueSymbol(symbols::AnnotationStore& store) const;
-    symbols::ValueEntry* falseSymbol(symbols::AnnotationStore& store) const;
-
     translation_unit::Context getContext() const override;
 
     void setFalsyLabel(symbols::AnnotationStore& store, symbols::LabelEntry label);

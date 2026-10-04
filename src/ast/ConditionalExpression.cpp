@@ -42,18 +42,6 @@ void ConditionalExpression::visitFalseExpression(AbstractSyntaxTreeVisitor& visi
     falseExpression->accept(visitor);
 }
 
-symbols::ValueEntry* ConditionalExpression::conditionSymbol(symbols::AnnotationStore& store) const {
-    return condition->getResultSymbol(store);
-}
-
-symbols::ValueEntry* ConditionalExpression::trueSymbol(symbols::AnnotationStore& store) const {
-    return trueExpression->getResultSymbol(store);
-}
-
-symbols::ValueEntry* ConditionalExpression::falseSymbol(symbols::AnnotationStore& store) const {
-    return falseExpression->getResultSymbol(store);
-}
-
 translation_unit::Context ConditionalExpression::getContext() const {
     return condition->getContext();
 }

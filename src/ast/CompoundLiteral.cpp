@@ -27,15 +27,7 @@ TypeSpecifier& CompoundLiteral::getTypeSpecifier() {
     return typeSpecifier;
 }
 
-const TypeSpecifier& CompoundLiteral::getTypeSpecifier() const {
-    return typeSpecifier;
-}
-
 InitializerListExpression& CompoundLiteral::initializer() {
-    return *initializer_;
-}
-
-const InitializerListExpression& CompoundLiteral::initializer() const {
     return *initializer_;
 }
 

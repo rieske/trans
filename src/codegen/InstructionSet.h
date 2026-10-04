@@ -52,7 +52,6 @@ public:
     std::string mov(const Register& from, const MemoryOperand& destination) const;
     std::string mov(const Register& from, const Register& to) const;
     std::string mov(const MemoryOperand& source, const Register& to) const;
-    std::string mov(std::string constant, const MemoryOperand& destination) const;
     std::string mov(std::string constant, const Register& to) const;
 
     // SSE float/double bits in gpr / xmm0..xmm7 (SysV floating ABI).

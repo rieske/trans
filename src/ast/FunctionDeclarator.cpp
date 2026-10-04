@@ -51,10 +51,6 @@ const FunctionDeclarator* FunctionDeclarator::innermostFunctionDeclarator() cons
     return this;
 }
 
-bool FunctionDeclarator::isVariadic() const {
-    return variadic;
-}
-
 void FunctionDeclarator::forEachArrayDeclarator(const std::function<void(ArrayDeclarator&)>& fn) {
     if (nested) {
         nested->forEachArrayDeclarator(fn);
