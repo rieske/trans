@@ -2349,4 +2349,310 @@ TEST(IrPasses, runIrPasses_keepsShiftOfSelf) {
             "ENDPROC f\n"));
 }
 
+TEST(IrPasses, runIrPasses_reusesPureAddAcrossTwoPredJoin) {
+    IntermediateRepresentation ir;
+    IrN n { ir.strings };
+    ProcedureFrame frame = exprTemps(ir.strings, { "t1", "t2", "t3" });
+    frame.locals.push_back(integral(ir.strings, "a"));
+    frame.locals.push_back(integral(ir.strings, "b"));
+    frame.locals.push_back(integral(ir.strings, "x"));
+    frame.locals.push_back(integral(ir.strings, "y"));
+    ir.procedures.push_back(makeProc(ir.strings, "f", {
+            ir::add(n("a"), n("b"), n("t1")),
+            ir::assign(n("t1"), n("x")),
+            ir::jump(n("L"), JumpCondition::IF_EQUAL),
+            ir::label(n("L")),
+            ir::add(n("a"), n("b"), n("t2")),
+            ir::assign(n("t2"), n("y")),
+            ir::add(n("x"), n("y"), n("t3")),
+            ir::ret(n("t3")),
+    }, std::move(frame)));
+
+    ir = runIrPasses(std::move(ir), 1);
+
+    EXPECT_THAT(toString(ir), StrEq(
+            "PROC f\n"
+            "\tt1 := a + b\n"
+            "\tx := t1\n"
+            "\tJE L\n"
+            "L:\n"
+            "\ty := t1\n"
+            "\tt3 := x + y\n"
+            "\tRETURN t3\n"
+            "ENDPROC f\n"));
+}
+
+TEST(IrPasses, runIrPasses_keepsAddWhenJoinEdgeDefsOperand) {
+    IntermediateRepresentation ir;
+    IrN n { ir.strings };
+    ProcedureFrame frame = exprTemps(ir.strings, { "t1", "t2", "t3" });
+    frame.locals.push_back(integral(ir.strings, "a"));
+    frame.locals.push_back(integral(ir.strings, "b"));
+    frame.locals.push_back(integral(ir.strings, "k"));
+    frame.locals.push_back(integral(ir.strings, "x"));
+    frame.locals.push_back(integral(ir.strings, "y"));
+    ir.procedures.push_back(makeProc(ir.strings, "f", {
+            ir::add(n("a"), n("b"), n("t1")),
+            ir::assign(n("t1"), n("x")),
+            ir::jump(n("L"), JumpCondition::IF_EQUAL),
+            ir::assign(n("k"), n("a")),
+            ir::label(n("L")),
+            ir::add(n("a"), n("b"), n("t2")),
+            ir::assign(n("t2"), n("y")),
+            ir::add(n("x"), n("y"), n("t3")),
+            ir::ret(n("t3")),
+    }, std::move(frame)));
+
+    ir = runIrPasses(std::move(ir), 1);
+
+    EXPECT_THAT(toString(ir), HasSubstr("\ta := k\n"));
+    EXPECT_THAT(toString(ir), HasSubstr("\tt2 := a + b\n"));
+}
+
+TEST(IrPasses, runIrPasses_keepsAddWhenJoinEdgeMissesAdd) {
+    IntermediateRepresentation ir;
+    IrN n { ir.strings };
+    ProcedureFrame frame = exprTemps(ir.strings, { "t1", "t2", "t3", "t4" });
+    frame.locals.push_back(integral(ir.strings, "a"));
+    frame.locals.push_back(integral(ir.strings, "b"));
+    frame.locals.push_back(integral(ir.strings, "k"));
+    frame.locals.push_back(integral(ir.strings, "x"));
+    frame.locals.push_back(integral(ir.strings, "y"));
+    ir.procedures.push_back(makeProc(ir.strings, "f", {
+            ir::jump(n("L"), JumpCondition::IF_EQUAL),
+            ir::add(n("a"), n("b"), n("t1")),
+            ir::assign(n("t1"), n("x")),
+            ir::assignConstant(n("1"), n("k")),
+            ir::jump(n("join")),
+            ir::label(n("L")),
+            ir::assignConstant(n("2"), n("k")),
+            ir::label(n("join")),
+            ir::add(n("a"), n("b"), n("t2")),
+            ir::assign(n("t2"), n("y")),
+            ir::add(n("y"), n("k"), n("t3")),
+            ir::add(n("x"), n("t3"), n("t4")),
+            ir::ret(n("t4")),
+    }, std::move(frame)));
+
+    ir = runIrPasses(std::move(ir), 1);
+
+    EXPECT_THAT(toString(ir), HasSubstr("\tt1 := a + b\n"));
+    EXPECT_THAT(toString(ir), HasSubstr("\tt2 := a + b\n"));
+}
+
+TEST(IrPasses, runIrPasses_keepsAddWhenJoinEdgeCalls) {
+    IntermediateRepresentation ir;
+    IrN n { ir.strings };
+    ProcedureFrame frame = exprTemps(ir.strings, { "t1", "t2", "t3" });
+    frame.locals.push_back(integral(ir.strings, "a"));
+    frame.locals.push_back(integral(ir.strings, "b"));
+    frame.locals.push_back(integral(ir.strings, "x"));
+    frame.locals.push_back(integral(ir.strings, "y"));
+    ir.procedures.push_back(makeProc(ir.strings, "f", {
+            ir::add(n("a"), n("b"), n("t1")),
+            ir::assign(n("t1"), n("x")),
+            ir::jump(n("L"), JumpCondition::IF_EQUAL),
+            ir::call(n("g")),
+            ir::label(n("L")),
+            ir::add(n("a"), n("b"), n("t2")),
+            ir::assign(n("t2"), n("y")),
+            ir::add(n("x"), n("y"), n("t3")),
+            ir::ret(n("t3")),
+    }, std::move(frame)));
+
+    ir = runIrPasses(std::move(ir), 1);
+
+    EXPECT_THAT(toString(ir), HasSubstr("\tCALL g\n"));
+    EXPECT_THAT(toString(ir), HasSubstr("\tt2 := a + b\n"));
+}
+
+TEST(IrPasses, runIrPasses_keepsAddWhenJoinEdgesDisagree) {
+    IntermediateRepresentation ir;
+    IrN n { ir.strings };
+    ProcedureFrame frame = exprTemps(ir.strings, { "t1", "t2", "t3", "t4" });
+    frame.locals.push_back(integral(ir.strings, "a"));
+    frame.locals.push_back(integral(ir.strings, "b"));
+    frame.locals.push_back(integral(ir.strings, "x"));
+    frame.locals.push_back(integral(ir.strings, "y"));
+    ir.procedures.push_back(makeProc(ir.strings, "f", {
+            ir::jump(n("L"), JumpCondition::IF_EQUAL),
+            ir::add(n("a"), n("b"), n("t1")),
+            ir::assign(n("t1"), n("x")),
+            ir::jump(n("join")),
+            ir::label(n("L")),
+            ir::add(n("a"), n("b"), n("t2")),
+            ir::assign(n("t2"), n("x")),
+            ir::label(n("join")),
+            ir::add(n("a"), n("b"), n("t3")),
+            ir::assign(n("t3"), n("y")),
+            ir::add(n("x"), n("y"), n("t4")),
+            ir::ret(n("t4")),
+    }, std::move(frame)));
+
+    ir = runIrPasses(std::move(ir), 1);
+
+    EXPECT_THAT(toString(ir), HasSubstr("\tt1 := a + b\n"));
+    EXPECT_THAT(toString(ir), HasSubstr("\tt2 := a + b\n"));
+    EXPECT_THAT(toString(ir), HasSubstr("\tt3 := a + b\n"));
+}
+
+TEST(IrPasses, runIrPasses_keepsAddAtThreePredJoin) {
+    IntermediateRepresentation ir;
+    IrN n { ir.strings };
+    ProcedureFrame frame = exprTemps(ir.strings, { "t1", "t2", "t3", "t4" });
+    frame.locals.push_back(integral(ir.strings, "a"));
+    frame.locals.push_back(integral(ir.strings, "b"));
+    frame.locals.push_back(integral(ir.strings, "k"));
+    frame.locals.push_back(integral(ir.strings, "x"));
+    frame.locals.push_back(integral(ir.strings, "y"));
+    ir.procedures.push_back(makeProc(ir.strings, "f", {
+            ir::add(n("a"), n("b"), n("t1")),
+            ir::assign(n("t1"), n("x")),
+            ir::jump(n("A"), JumpCondition::IF_EQUAL),
+            ir::jump(n("B"), JumpCondition::IF_EQUAL),
+            ir::assignConstant(n("1"), n("k")),
+            ir::jump(n("join")),
+            ir::label(n("A")),
+            ir::assignConstant(n("2"), n("k")),
+            ir::jump(n("join")),
+            ir::label(n("B")),
+            ir::assignConstant(n("3"), n("k")),
+            ir::label(n("join")),
+            ir::add(n("a"), n("b"), n("t2")),
+            ir::assign(n("t2"), n("y")),
+            ir::add(n("y"), n("k"), n("t3")),
+            ir::add(n("x"), n("t3"), n("t4")),
+            ir::ret(n("t4")),
+    }, std::move(frame)));
+
+    ir = runIrPasses(std::move(ir), 1);
+
+    EXPECT_THAT(toString(ir), HasSubstr("\tt2 := a + b\n"));
+}
+
+TEST(IrPasses, runIrPasses_keepsAddAcrossBackedge) {
+    IntermediateRepresentation ir;
+    IrN n { ir.strings };
+    ProcedureFrame frame = exprTemps(ir.strings, { "t1", "t2", "t3" });
+    frame.locals.push_back(integral(ir.strings, "a"));
+    frame.locals.push_back(integral(ir.strings, "b"));
+    frame.locals.push_back(integral(ir.strings, "x"));
+    frame.locals.push_back(integral(ir.strings, "y"));
+    ir.procedures.push_back(makeProc(ir.strings, "f", {
+            ir::add(n("a"), n("b"), n("t1")),
+            ir::assign(n("t1"), n("x")),
+            ir::label(n("L")),
+            ir::jump(n("end"), JumpCondition::IF_EQUAL),
+            ir::jump(n("L")),
+            ir::label(n("end")),
+            ir::add(n("a"), n("b"), n("t2")),
+            ir::assign(n("t2"), n("y")),
+            ir::add(n("x"), n("y"), n("t3")),
+            ir::ret(n("t3")),
+    }, std::move(frame)));
+
+    ir = runIrPasses(std::move(ir), 1);
+
+    EXPECT_THAT(toString(ir), HasSubstr("\tt2 := a + b\n"));
+}
+
+TEST(IrPasses, runIrPasses_reusesAddAcrossJumpOnlyJoin) {
+    IntermediateRepresentation ir;
+    IrN n { ir.strings };
+    ProcedureFrame frame = exprTemps(ir.strings, { "t1", "t2", "t3" });
+    frame.locals.push_back(integral(ir.strings, "a"));
+    frame.locals.push_back(integral(ir.strings, "b"));
+    frame.locals.push_back(integral(ir.strings, "x"));
+    frame.locals.push_back(integral(ir.strings, "y"));
+    ir.procedures.push_back(makeProc(ir.strings, "f", {
+            ir::jump(n("other"), JumpCondition::IF_EQUAL),
+            ir::jump(n("right"), JumpCondition::IF_EQUAL),
+            ir::add(n("a"), n("b"), n("t1")),
+            ir::assign(n("t1"), n("x")),
+            ir::jump(n("join")),
+            ir::label(n("right")),
+            ir::add(n("a"), n("b"), n("t1")),
+            ir::assign(n("t1"), n("x")),
+            ir::jump(n("join")),
+            ir::label(n("other")),
+            ir::ret(n("a")),
+            ir::label(n("join")),
+            ir::add(n("a"), n("b"), n("t2")),
+            ir::assign(n("t2"), n("y")),
+            ir::add(n("x"), n("y"), n("t3")),
+            ir::ret(n("t3")),
+    }, std::move(frame)));
+
+    ir = runIrPasses(std::move(ir), 1);
+
+    EXPECT_THAT(toString(ir), StrEq(
+            "PROC f\n"
+            "\tJE other\n"
+            "\tJE right\n"
+            "\tt1 := a + b\n"
+            "\tx := t1\n"
+            "\tGOTO join\n"
+            "right:\n"
+            "\tt1 := a + b\n"
+            "\tx := t1\n"
+            "\tGOTO join\n"
+            "other:\n"
+            "\tRETURN a\n"
+            "join:\n"
+            "\ty := t1\n"
+            "\tt3 := x + y\n"
+            "\tRETURN t3\n"
+            "ENDPROC f\n"));
+}
+
+TEST(IrPasses, runIrPasses_keepsAddWhenJumpOnlyEdgesDisagree) {
+    IntermediateRepresentation ir;
+    IrN n { ir.strings };
+    ProcedureFrame frame = exprTemps(ir.strings, { "t1", "t2", "t3", "t4" });
+    frame.locals.push_back(integral(ir.strings, "a"));
+    frame.locals.push_back(integral(ir.strings, "b"));
+    frame.locals.push_back(integral(ir.strings, "x"));
+    frame.locals.push_back(integral(ir.strings, "y"));
+    ir.procedures.push_back(makeProc(ir.strings, "f", {
+            ir::jump(n("other"), JumpCondition::IF_EQUAL),
+            ir::jump(n("right"), JumpCondition::IF_EQUAL),
+            ir::add(n("a"), n("b"), n("t1")),
+            ir::assign(n("t1"), n("x")),
+            ir::jump(n("join")),
+            ir::label(n("right")),
+            ir::add(n("a"), n("b"), n("t2")),
+            ir::assign(n("t2"), n("x")),
+            ir::jump(n("join")),
+            ir::label(n("other")),
+            ir::ret(n("a")),
+            ir::label(n("join")),
+            ir::add(n("a"), n("b"), n("t3")),
+            ir::assign(n("t3"), n("y")),
+            ir::add(n("x"), n("y"), n("t4")),
+            ir::ret(n("t4")),
+    }, std::move(frame)));
+
+    ir = runIrPasses(std::move(ir), 1);
+
+    EXPECT_THAT(toString(ir), StrEq(
+            "PROC f\n"
+            "\tJE other\n"
+            "\tJE right\n"
+            "\tt1 := a + b\n"
+            "\tx := t1\n"
+            "\tGOTO join\n"
+            "right:\n"
+            "\tt2 := a + b\n"
+            "\tx := t2\n"
+            "\tGOTO join\n"
+            "other:\n"
+            "\tRETURN a\n"
+            "join:\n"
+            "\tt3 := a + b\n"
+            "\ty := t3\n"
+            "\tt4 := x + y\n"
+            "\tRETURN t4\n"
+            "ENDPROC f\n"));
+}
+
 } // namespace

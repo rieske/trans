@@ -1601,7 +1601,9 @@ bool stableOperand(const ValueIndex& values, int id, const std::unordered_set<in
     return value && !value->isVolatile() && addressTaken.count(id) == 0;
 }
 
-void killNumber(std::unordered_map<ExprKey, int, ExprKeyHash>& number, int id) {
+using NumberMap = std::unordered_map<ExprKey, int, ExprKeyHash>;
+
+void killNumber(NumberMap& number, int id) {
     if (id == kNoSymbol) {
         return;
     }
@@ -1612,6 +1614,17 @@ void killNumber(std::unordered_map<ExprKey, int, ExprKeyHash>& number, int id) {
             ++it;
         }
     }
+}
+
+NumberMap intersectSameTemp(const NumberMap& left, const NumberMap& right) {
+    NumberMap out;
+    for (const auto& entry : left) {
+        const auto found = right.find(entry.first);
+        if (found != right.end() && found->second == entry.second) {
+            out.emplace(entry.first, entry.second);
+        }
+    }
+    return out;
 }
 
 void valueNumber(Procedure& procedure) {
@@ -1626,13 +1639,25 @@ void valueNumber(Procedure& procedure) {
     }
 
     const auto preds = labelPredCounts(procedure.body);
-    std::unordered_map<ExprKey, int, ExprKeyHash> number;
+    std::unordered_map<int, std::vector<NumberMap>> reached;
+    NumberMap number;
     bool fall = true;
     for (auto& inst : procedure.body) {
         if (inst.op == Op::Label) {
-            const bool keep = fall && preds.count(inst.arg0) != 0 && preds.at(inst.arg0) == 1;
-            if (!keep) {
-                number.clear();
+            const int predsHere = preds.count(inst.arg0) != 0 ? preds.at(inst.arg0) : 0;
+            const auto incoming = reached.find(inst.arg0);
+            const int jumps = incoming == reached.end() ? 0 : static_cast<int>(incoming->second.size());
+            const int forward = jumps + (fall ? 1 : 0);
+            if (!(fall && predsHere == 1)) {
+                if (predsHere == 2 && forward == 2 && incoming != reached.end()) {
+                    if (fall) {
+                        number = intersectSameTemp(number, incoming->second[0]);
+                    } else {
+                        number = intersectSameTemp(incoming->second[0], incoming->second[1]);
+                    }
+                } else {
+                    number.clear();
+                }
             }
             fall = true;
             continue;
@@ -1660,6 +1685,9 @@ void valueNumber(Procedure& procedure) {
         }
         if (inst.op == Op::Call) {
             number.clear();
+        }
+        if (inst.op == Op::Jump && inst.arg0 != kNoSymbol) {
+            reached[inst.arg0].push_back(number);
         }
         if (instructionTransfersControl(inst)
                 && (inst.op != Op::Jump || inst.cond == JumpCondition::UNCONDITIONAL)) {
