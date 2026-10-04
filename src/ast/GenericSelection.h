@@ -31,9 +31,7 @@ public:
     bool evaluateConstant(type::IntegerConstant& value) const override;
 
     Expression& controllingExpression() { return *controlling_; }
-    const Expression& controllingExpression() const { return *controlling_; }
     std::vector<GenericAssociation>& associations() { return associations_; }
-    const std::vector<GenericAssociation>& associations() const { return associations_; }
 
     void select(std::size_t index, symbols::AnnotationStore& store);
     bool hasSelected() const { return selectedIndex_.has_value(); }

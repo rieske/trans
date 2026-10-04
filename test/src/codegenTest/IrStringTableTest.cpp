@@ -23,7 +23,7 @@ TEST(IrStringTable, internIsStableAndDense) {
     EXPECT_THAT(a2, Eq(a));
     EXPECT_THAT(table.get(a), StrEq("t0"));
     EXPECT_THAT(table.get(b), StrEq("t1"));
-    EXPECT_THAT(table.size(), Eq(2));
+    EXPECT_THROW(table.get(2), std::logic_error);
 }
 
 TEST(IrStringTable, internLookupIsStableAcrossStringAndStringView) {
@@ -32,7 +32,7 @@ TEST(IrStringTable, internLookupIsStableAcrossStringAndStringView) {
     std::string other = "shared";
     EXPECT_THAT(table.intern(std::string_view { other }), Eq(id));
     EXPECT_THAT(table.find("shared"), Eq(id));
-    EXPECT_THAT(table.size(), Eq(1));
+    EXPECT_THROW(table.get(1), std::logic_error);
 }
 
 TEST(IrStringTable, internAcceptsStringViewWithoutOwningCallersBuffer) {
@@ -46,7 +46,7 @@ TEST(IrStringTable, internAcceptsStringViewWithoutOwningCallersBuffer) {
 TEST(IrStringTable, internEmptyIsNoSymbol) {
     IrStringTable table;
     EXPECT_THAT(table.intern(""), Eq(kNoSymbol));
-    EXPECT_THAT(table.size(), Eq(0));
+    EXPECT_THROW(table.get(0), std::logic_error);
 }
 
 TEST(IrStringTable, getRejectsMissingId) {

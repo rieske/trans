@@ -21,7 +21,6 @@ public:
     template <typename T>
     NodeRef(const T* node) : ptr_ { static_cast<const void*>(node) } {}
 
-    explicit operator bool() const { return ptr_ != nullptr; }
     const void* get() const { return ptr_; }
     bool operator==(NodeRef o) const { return ptr_ == o.ptr_; }
 

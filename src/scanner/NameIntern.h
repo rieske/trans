@@ -13,7 +13,6 @@ class NameIntern {
 public:
     int intern(std::string_view text);
     int find(std::string_view text) const;
-    int size() const { return static_cast<int>(index_.size()); }
 
 private:
     struct TransparentHash {
