@@ -71,7 +71,6 @@ public:
 
     void setLabel(NodeRef node, LabelSlot slot, LabelEntry label);
     LabelEntry* label(NodeRef node, LabelSlot slot);
-    const LabelEntry* label(NodeRef node, LabelSlot slot) const;
 
     void setAddressPlan(NodeRef node, AddressPlan plan);
     const AddressPlan* addressPlan(NodeRef node) const;

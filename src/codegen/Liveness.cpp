@@ -263,14 +263,4 @@ TempLiveness computeTempLiveness(const Procedure& procedure) {
     return out;
 }
 
-LabelLiveIns computeLabelLiveIns(const Procedure& procedure) {
-    LabelLiveIns out;
-    out.atLabel = std::move(computeProcedureLiveness(procedure).atLabel);
-    return out;
-}
-
-std::unordered_map<int, std::unordered_set<int>> computeLiveAfterCalls(const Procedure& procedure) {
-    return computeProcedureLiveness(procedure).afterCall;
-}
-
 } // namespace codegen

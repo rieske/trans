@@ -30,7 +30,6 @@ TypeSpecifier::TypeSpecifier(std::unique_ptr<Expression> typeofOperand,
 
 TypeSpecifier::~TypeSpecifier() = default;
 TypeSpecifier::TypeSpecifier(TypeSpecifier&&) noexcept = default;
-TypeSpecifier& TypeSpecifier::operator=(TypeSpecifier&&) noexcept = default;
 
 const std::string& TypeSpecifier::getName() const {
     return name;

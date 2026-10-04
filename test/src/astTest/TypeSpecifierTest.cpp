@@ -18,6 +18,7 @@
 
 #include <memory>
 #include <stdexcept>
+#include <type_traits>
 
 namespace {
 
@@ -28,6 +29,13 @@ std::unique_ptr<Declarator> unnamedPointerDeclarator() {
     std::vector<Pointer> stars;
     stars.emplace_back();
     return std::make_unique<Declarator>(std::make_unique<Identifier>(id), std::move(stars));
+}
+
+TEST(TypeSpecifier, isMoveConstructibleAndNotAssignable) {
+    EXPECT_TRUE(std::is_move_constructible_v<TypeSpecifier>);
+    EXPECT_FALSE(std::is_copy_constructible_v<TypeSpecifier>);
+    EXPECT_FALSE(std::is_copy_assignable_v<TypeSpecifier>);
+    EXPECT_FALSE(std::is_move_assignable_v<TypeSpecifier>);
 }
 
 TEST(TypeSpecifier, getTypeIsStored) {

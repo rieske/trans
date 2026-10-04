@@ -245,9 +245,6 @@ TEST(AnnotationStore, labelSlots) {
     // Overwrite same slot.
     store.setLabel(&node, symbols::LabelSlot::Falsy, symbols::LabelEntry { "Lf2" });
     EXPECT_EQ(store.label(&node, symbols::LabelSlot::Falsy)->getName(), "Lf2");
-    // Const access.
-    const symbols::AnnotationStore& cstore = store;
-    EXPECT_EQ(cstore.label(&node, symbols::LabelSlot::Exit)->getName(), "Le");
 }
 
 
