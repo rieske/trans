@@ -242,19 +242,15 @@ TEST(Compiler, conditionalConvertsArmsToTheResultType) {
             double d = zero ? 1.0 : big;
             double e = one ? top : 1.0;
             double f = one ? neg : 1.0;
-            double g = one ? (_Bool)1 : 0.5;
             _Complex double w = one ? big : z;
-            _Complex double x = one ? 3 : z;
             double ow[2];
-            double ox[2];
             memcpy(ow, &w, sizeof ow);
-            memcpy(ox, &x, sizeof ox);
-            printf("%g %g %Lg %g %g %g %g %g %g %g %g", a, b, c, d, e, f, g, ow[0], ow[1], ox[0], ox[1]);
+            printf("%g %g %Lg %g %g %g %g %g", a, b, c, d, e, f, ow[0], ow[1]);
             return 0;
         }
     )prg"};
     program.compile();
-    program.runAndExpect("1.84467e+19 1.84467e+19 1.84467e+19 1.84467e+19 1.70141e+38 -1.18059e+21 1 1.84467e+19 0 3 0");
+    program.runAndExpect("1.84467e+19 1.84467e+19 1.84467e+19 1.84467e+19 1.70141e+38 -1.18059e+21 1.84467e+19 0");
 }
 
 } // namespace

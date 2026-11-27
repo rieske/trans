@@ -152,7 +152,7 @@ void StackMachine::emitComplexX87Store(Value& symbol) {
     storeX87At(symbol, 16, 16);
 }
 
-bool StackMachine::tryComplexAssignConvert(Value& operand, Value& result, bool unsignedSource) {
+bool StackMachine::tryComplexAssignConvert(Value& operand, Value& result) {
     const bool srcC = operand.getType() == Type::COMPLEX;
     const bool dstC = result.getType() == Type::COMPLEX;
     if (!srcC && !dstC) {
@@ -162,21 +162,13 @@ bool StackMachine::tryComplexAssignConvert(Value& operand, Value& result, bool u
         return false;
     }
 
-    if (result.getType() == Type::INTEGRAL) {
-        storeInMemory(operand);
-        fisttpInteger(memoryOperand(operand), realX87Bytes(operand), result, unsignedSource);
-        return true;
-    }
-    if (operand.getType() == Type::INTEGRAL) {
-        fildInteger(operand, unsignedSource);
-    } else {
-        loadX87At(operand, 0, realX87Bytes(operand));
-    }
+    const int from = realX87Bytes(operand);
     const int part = realX87Bytes(result);
+    loadX87At(operand, 0, from);
     storeX87At(result, 0, part);
     if (dstC) {
         if (srcC) {
-            loadX87At(operand, realX87Bytes(operand), realX87Bytes(operand));
+            loadX87At(operand, from, from);
         } else {
             assembly << instructionSet->fldz();
         }

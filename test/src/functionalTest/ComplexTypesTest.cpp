@@ -207,4 +207,21 @@ TEST(Compiler, complexIdentityPassReturn) {
     program.runAndExpect("8 16 32");
 }
 
+TEST(Compiler, integerConvertsToAndFromComplex) {
+    SourceProgram program{R"prg(int printf(const char *, ...);
+        void *memcpy(void *, const void *, unsigned long);
+        int main() {
+            signed char c = -10;
+            _Complex float zf = c;
+            int i = zf;
+            float of[2];
+            memcpy(of, &zf, sizeof of);
+            printf("%g %g %d", of[0], of[1], i);
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("-10 0 -10");
+}
+
 } // namespace
