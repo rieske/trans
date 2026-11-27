@@ -574,58 +574,52 @@ void CodeGeneratingVisitor::visit(ast::AssignmentExpression& expression) {
     const type::AssignOp op = expression.op();
     const int resultName = id(*expression.getResultSymbol(store_));
     const int rightName = convertedResult(*expression.getRightOperand());
-    switch (op) {
-    case type::AssignOp::AddAssign:
-    case type::AssignOp::SubAssign: {
-        const type::Type leftType = expression.getResultSymbol(store_)->getType();
-        const type::Type rightType = expression.rightOperandSymbol(store_)->getType();
-        emitAdditive(op == type::AssignOp::AddAssign ? type::ArithmeticOp::Add : type::ArithmeticOp::Sub,
-                leftType, rightType, resultName, rightName, resultName);
-        break;
-    }
-    case type::AssignOp::MulAssign:
-        emitMulDiv(type::ArithmeticOp::Mul, resultName, rightName, resultName,
-                expression.getResultSymbol(store_)->getType());
-        break;
-    case type::AssignOp::DivAssign:
-        emitMulDiv(type::ArithmeticOp::Div, resultName, rightName, resultName,
-                expression.getResultSymbol(store_)->getType());
-        break;
-    case type::AssignOp::ModAssign:
-        emitMulDiv(type::ArithmeticOp::Mod, resultName, rightName, resultName,
-                expression.getResultSymbol(store_)->getType());
-        break;
-    case type::AssignOp::AndAssign:
-        emit(ir::andOp(resultName, rightName, resultName));
-        break;
-    case type::AssignOp::XorAssign:
-        emit(ir::xorOp(resultName, rightName, resultName));
-        break;
-    case type::AssignOp::OrAssign:
-        emit(ir::orOp(resultName, rightName, resultName));
-        break;
-    case type::AssignOp::ShlAssign:
-        emit(ir::shl(resultName, rightName, resultName));
-        break;
-    case type::AssignOp::ShrAssign:
-        emit(ir::shr(resultName, rightName, resultName,
-                type::valueIsSigned(expression.getResultSymbol(store_)->getType())));
-        break;
-    case type::AssignOp::Assign:
+    if (op == type::AssignOp::Assign) {
+        emit(ir::assign(rightName, resultName));
         if (expression.leftOperandLvalueSymbol(store_)) {
-            emit(ir::assign(rightName, resultName));
             emitLvalueStore(*expression.getLeftOperand(), resultName);
-        } else {
-            emit(ir::assign(rightName, resultName));
         }
         return;
     }
 
-    if (type::isBoolean(expression.leftOperandType())) {
-        const int normalized = addScratchValue(type::signedInteger());
-        emitBooleanConvert(resultName, normalized);
-        emit(ir::assign(normalized, resultName));
+    const type::Type leftType = expression.getResultSymbol(store_)->getType();
+    const type::Type rightType = expression.rightOperandSymbol(store_)->getType();
+    const type::Type opType = type::compoundAssignOperationType(op, leftType, rightType);
+    const int operand = convertedResult(*expression.getLeftOperand());
+    switch (op) {
+    case type::AssignOp::AddAssign:
+    case type::AssignOp::SubAssign:
+        emitAdditive(op == type::AssignOp::AddAssign ? type::ArithmeticOp::Add : type::ArithmeticOp::Sub,
+                opType, rightType, operand, rightName, operand);
+        break;
+    case type::AssignOp::MulAssign:
+        emitMulDiv(type::ArithmeticOp::Mul, operand, rightName, operand, opType);
+        break;
+    case type::AssignOp::DivAssign:
+        emitMulDiv(type::ArithmeticOp::Div, operand, rightName, operand, opType);
+        break;
+    case type::AssignOp::ModAssign:
+        emitMulDiv(type::ArithmeticOp::Mod, operand, rightName, operand, opType);
+        break;
+    case type::AssignOp::AndAssign:
+        emit(ir::andOp(operand, rightName, operand));
+        break;
+    case type::AssignOp::XorAssign:
+        emit(ir::xorOp(operand, rightName, operand));
+        break;
+    case type::AssignOp::OrAssign:
+        emit(ir::orOp(operand, rightName, operand));
+        break;
+    case type::AssignOp::ShlAssign:
+        emit(ir::shl(operand, rightName, operand));
+        break;
+    case type::AssignOp::ShrAssign:
+        emit(ir::shr(operand, rightName, operand, type::valueIsSigned(opType)));
+        break;
+    case type::AssignOp::Assign:
+        internalError("plain assignment reached the compound path");
     }
+    emitConvert(operand, resultName, opType, expression.leftOperandType());
     if (expression.leftOperandLvalueSymbol(store_)) {
         emitLvalueStore(*expression.getLeftOperand(), resultName);
     }

@@ -690,11 +690,26 @@ void SemanticAnalysisVisitor::visit(ast::AssignmentExpression& expression) {
         if (!right->holdsAggregateAddress()) {
             rejectFunctionValue(srcType, expression.getContext());
         }
-        checkAssign(left, srcType, expression.getContext(), right);
-        decayArrayValue(*right, symbolTable, annotations());
-        maybeSetConversion(right,
-                type::assignmentConvertTarget(expression.op(), left, srcType),
-                symbolTable, annotations());
+        if (srcType.isFunction()) {
+            return;
+        }
+        const type::AssignOp op = expression.op();
+        if (op == type::AssignOp::Assign) {
+            checkAssign(left, srcType, expression.getContext(), right);
+            decayArrayValue(*right, symbolTable, annotations());
+            maybeSetConversion(right, left, symbolTable, annotations());
+        } else {
+            const type::Type leftValue = expression.leftOperandSymbol(annotations())->getType();
+            const type::Type rightValue = right->valueType(annotations());
+            if (!type::compoundAssignOperandsValid(op, left, rightValue)) {
+                semanticError("invalid operands to compound assignment", expression.getContext());
+                return;
+            }
+            maybeSetConversion(expression.getLeftOperand(),
+                    type::compoundAssignOperationType(op, leftValue, rightValue), symbolTable, annotations());
+            maybeSetConversion(right, type::compoundAssignConvertTarget(op, leftValue, rightValue),
+                    symbolTable, annotations());
+        }
 
         expression.setTypeAndResult(annotations(), *expression.leftOperandSymbol(annotations()));
         expression.setType(left);

@@ -293,7 +293,7 @@ void StackMachine::assign(int operandName, int resultName, bool unsignedSource) 
     auto& operand = resolve(operandName);
     auto& result = resolve(resultName);
 
-    if (tryComplexAssignConvert(operand, result)) {
+    if (tryComplexAssignConvert(operand, result, unsignedSource)) {
         return;
     }
     if (tryNumericAssignConvert(operand, result, unsignedSource)) {

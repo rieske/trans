@@ -212,9 +212,16 @@ Type promoteBitField(const BitField& bits, const Type& declared);
 // C 6.5.2.2: integer promotions, then float -> double. Other types unchanged.
 Type defaultArgPromote(const Type& t);
 
-// Assignment RHS convert dest. <<= >>=: integer-promote the count, not the LHS type.
+// Compound assignment RHS convert target. <<= >>=: integer-promote the count, not the LHS type.
 // Pointer +=/-=: the integer stays an integer (C 6.5.16.2); do not convert it to the pointer type.
-Type assignmentConvertTarget(AssignOp op, const Type& dest, const Type& source);
+Type compoundAssignConvertTarget(AssignOp op, const Type& dest, const Type& source);
+
+// C 6.5.16.2 constraints on the operands of `dest op= source`.
+bool compoundAssignOperandsValid(AssignOp op, const Type& dest, const Type& source);
+
+// Type in which `dest op= source` computes before converting back to dest (C 6.5.16.2).
+// Pointer +=/-= and integer ops other than / and % stay in dest: the result is the same.
+Type compoundAssignOperationType(AssignOp op, const Type& dest, const Type& source);
 
 inline bool needsIntegerWiden(const Type& from, const Type& to) {
     return isIntegral(from) && isIntegral(to)

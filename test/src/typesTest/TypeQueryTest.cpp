@@ -435,28 +435,45 @@ TEST(TypeQuery, needsBoolConvert) {
     EXPECT_FALSE(type::needsBoolConvert(type::boolean(), type::signedInteger()));
 }
 
-TEST(TypeQuery, assignmentConvertTargetPromotesShiftCount) {
-    EXPECT_TRUE(type::assignmentConvertTarget(type::AssignOp::Assign, type::signedInt128(), type::signedInteger())
+TEST(TypeQuery, compoundAssignConvertTargetPromotesShiftCount) {
+    EXPECT_TRUE(type::compoundAssignConvertTarget(type::AssignOp::AddAssign, type::signedInt128(), type::signedInteger())
             .equivalentTo(type::signedInt128()));
-    EXPECT_TRUE(type::assignmentConvertTarget(type::AssignOp::AddAssign, type::signedInt128(), type::signedInteger())
-            .equivalentTo(type::signedInt128()));
-    EXPECT_TRUE(type::assignmentConvertTarget(type::AssignOp::AndAssign, type::signedLong(), type::signedCharacter())
+    EXPECT_TRUE(type::compoundAssignConvertTarget(type::AssignOp::AndAssign, type::signedLong(), type::signedCharacter())
             .equivalentTo(type::signedLong()));
-    EXPECT_TRUE(type::assignmentConvertTarget(type::AssignOp::ShlAssign, type::signedInt128(), type::signedCharacter())
+    EXPECT_TRUE(type::compoundAssignConvertTarget(type::AssignOp::ShlAssign, type::signedInt128(), type::signedCharacter())
             .equivalentTo(type::signedInteger()));
-    EXPECT_TRUE(type::assignmentConvertTarget(type::AssignOp::ShrAssign, type::signedLong(), type::unsignedCharacter())
+    EXPECT_TRUE(type::compoundAssignConvertTarget(type::AssignOp::ShrAssign, type::signedLong(), type::unsignedCharacter())
             .equivalentTo(type::signedInteger()));
-    EXPECT_TRUE(type::assignmentConvertTarget(type::AssignOp::ShlAssign, type::signedLong(), type::signedInteger())
+    EXPECT_TRUE(type::compoundAssignConvertTarget(type::AssignOp::ShlAssign, type::signedLong(), type::signedInteger())
             .equivalentTo(type::signedInteger()));
 }
 
-TEST(TypeQuery, assignmentConvertTargetPointerPlusEqualKeepsInteger) {
+TEST(TypeQuery, compoundAssignConvertTargetPointerPlusEqualKeepsInteger) {
     type::Type pi = type::pointer(type::signedInteger());
-    EXPECT_TRUE(type::assignmentConvertTarget(type::AssignOp::AddAssign, pi, type::signedInteger())
+    EXPECT_TRUE(type::compoundAssignConvertTarget(type::AssignOp::AddAssign, pi, type::signedInteger())
             .equivalentTo(type::signedInteger()));
-    EXPECT_TRUE(type::assignmentConvertTarget(type::AssignOp::SubAssign, pi, type::signedCharacter())
+    EXPECT_TRUE(type::compoundAssignConvertTarget(type::AssignOp::SubAssign, pi, type::signedCharacter())
             .equivalentTo(type::signedInteger()));
-    EXPECT_TRUE(type::assignmentConvertTarget(type::AssignOp::Assign, pi, type::signedInteger())
+}
+
+TEST(TypeQuery, compoundAssignConvertTargetIsCommonTypeForArithmeticOps) {
+    EXPECT_TRUE(type::compoundAssignConvertTarget(type::AssignOp::DivAssign, type::signedInteger(), type::unsignedInteger())
+            .equivalentTo(type::unsignedInteger()));
+}
+
+TEST(TypeQuery, compoundAssignOperationType) {
+    type::Type pi = type::pointer(type::signedInteger());
+    EXPECT_TRUE(type::compoundAssignOperationType(type::AssignOp::MulAssign, type::signedInteger(), type::doubleFloating())
+            .equivalentTo(type::doubleFloating()));
+    EXPECT_TRUE(type::compoundAssignOperationType(type::AssignOp::DivAssign, type::unsignedCharacter(), type::signedInteger())
+            .equivalentTo(type::signedInteger()));
+    EXPECT_TRUE(type::compoundAssignOperationType(type::AssignOp::AddAssign, type::unsignedCharacter(), type::signedLong())
+            .equivalentTo(type::unsignedCharacter()));
+    EXPECT_TRUE(type::compoundAssignOperationType(type::AssignOp::ShrAssign, type::unsignedCharacter(), type::signedInteger())
+            .equivalentTo(type::unsignedCharacter()));
+    EXPECT_TRUE(type::compoundAssignOperationType(type::AssignOp::AndAssign, type::boolean(), type::signedInteger())
+            .equivalentTo(type::signedInteger()));
+    EXPECT_TRUE(type::compoundAssignOperationType(type::AssignOp::AddAssign, pi, type::signedInteger())
             .equivalentTo(pi));
 }
 
