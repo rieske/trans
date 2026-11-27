@@ -914,4 +914,21 @@ int scanf(const char *, ...);
     program.runAndExpect("6");
 }
 
+TEST(Compiler, sseStructGlobalArgumentsAndReturns) {
+    SourceProgram program{R"prg(int printf(const char *, ...);
+        struct D { double a; double b; };
+        struct D gd = { 1.5, -2.25 };
+        double sum(struct D d) { return d.a + d.b; }
+        double second(struct D d) { return d.b; }
+        struct D get(void) { return gd; }
+        int main(void) {
+            struct D r = get();
+            printf("%g %g %g %g", sum(gd), second(gd), r.a, r.b);
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("-0.75 -2.25 1.5 -2.25");
+}
+
 } // namespace

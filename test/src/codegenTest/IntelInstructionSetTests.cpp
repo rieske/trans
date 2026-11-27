@@ -61,6 +61,11 @@ TEST(IntelInstructionSet, leaGlobalEscapesLabel) {
             Eq("lea rbx, [rel $neg]"));
 }
 
+TEST(IntelInstructionSet, globalOperandWithOffset) {
+    Register dest { "rbx" };
+    EXPECT_THAT(instructions.mov(MemoryOperand::global("g", 8), dest), Eq("mov rbx, [rel $g+8]"));
+}
+
 TEST(IntelInstructionSet, labelEscapesReservedWord) {
     EXPECT_THAT(instructions.label("abs"), Eq("$abs:"));
 }

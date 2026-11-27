@@ -26,12 +26,12 @@ enum class FrameBase {
 
 class Address {
 public:
-    static Address frame(FrameBase base, int offsetBytes, int sizeBytes) {
-        return Address { Kind::Frame, base, offsetBytes, sizeBytes, {} };
+    static Address frame(FrameBase base, int offsetBytes) {
+        return Address { Kind::Frame, base, offsetBytes, {} };
     }
 
-    static Address globalLabel(std::string label, int sizeBytes) {
-        return Address { Kind::Global, FrameBase::StackPointer, 0, sizeBytes, std::move(label) };
+    static Address globalLabel(std::string label) {
+        return Address { Kind::Global, FrameBase::StackPointer, 0, std::move(label) };
     }
 
     bool isGlobal() const { return kind_ == Kind::Global; }
@@ -50,8 +50,6 @@ public:
         return offsetBytes_;
     }
 
-    int sizeBytes() const { return sizeBytes_; }
-
     const std::string& label() const {
         if (!isGlobal()) {
             internalError("label() is only valid for global homes");
@@ -62,17 +60,15 @@ public:
 private:
     enum class Kind { Frame, Global };
 
-    Address(Kind kind, FrameBase frameBase, int offsetBytes, int sizeBytes, std::string label) :
+    Address(Kind kind, FrameBase frameBase, int offsetBytes, std::string label) :
             kind_ { kind },
             frameBase_ { frameBase },
             offsetBytes_ { offsetBytes },
-            sizeBytes_ { sizeBytes },
             label_ { std::move(label) } {}
 
     Kind kind_;
     FrameBase frameBase_;
     int offsetBytes_;
-    int sizeBytes_;
     std::string label_;
 };
 

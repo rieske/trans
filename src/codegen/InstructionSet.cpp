@@ -12,6 +12,13 @@
 #include <variant>
 
 namespace codegen {
+namespace {
+
+std::string withAddend(const std::string& symbol, long addend) {
+    return addend == 0 ? symbol : symbol + (addend > 0 ? "+" : "") + std::to_string(addend);
+}
+
+} // namespace
 
 InstructionSet::InstructionSet(AsmSyntax syntax) :
         syntax_ { syntax } {
@@ -47,7 +54,7 @@ std::string InstructionSet::immText(const std::string& constant) const {
 
 std::string InstructionSet::mem(const MemoryOperand& operand) const {
     if (operand.isGlobal()) {
-        const std::string symbol = asmSymbol(operand.label());
+        const std::string symbol = withAddend(asmSymbol(operand.label()), operand.offset());
         return att() ? symbol + "(%rip)" : "[rel " + symbol + "]";
     }
     const std::string base = operand.baseRegister().getName();
@@ -672,14 +679,7 @@ std::string InstructionSet::dataOperandText(const symbols::StaticInitValue& valu
         if constexpr (std::is_same_v<T, symbols::StaticWord>) {
             return util::wordImmediate(arm.bits);
         } else if constexpr (std::is_same_v<T, symbols::StaticAddress>) {
-            const std::string symbol = asmSymbol(arm.symbol);
-            if (arm.addend == 0) {
-                return symbol;
-            }
-            if (arm.addend > 0) {
-                return symbol + "+" + std::to_string(arm.addend);
-            }
-            return symbol + std::to_string(arm.addend);
+            return withAddend(asmSymbol(arm.symbol), arm.addend);
         } else {
             internalError("dataOperandText expects a storage word or address");
         }

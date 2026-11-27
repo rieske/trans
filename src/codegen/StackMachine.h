@@ -138,8 +138,7 @@ private:
     int emitCallArguments(std::size_t firstReg = 0);
     void emitCall(bool indirect, int target, int memoryReturnDest);
     void leaFrameOrGlobal(Value& symbol, Register& dest, int spDelta);
-    void loadWord(Value& symbol, int wordIndex, Register& dest, int spDelta = 0,
-            std::vector<Register*> extraExclude = {});
+    void loadWord(Value& symbol, int wordIndex, Register& dest, int spDelta = 0);
     void bindGprExtended(Value& symbol);
     void storeWord(Register& source, Value& symbol, int wordIndex);
     void copyWords(Value& source, Value& destination);
@@ -247,19 +246,18 @@ private:
 
     // Load into dest without reg.assign; required for globals (Address-only homes).
     void loadWithoutBinding(Value& symbol, Register& dest);
-    MemoryOperand memoryOperand(const Address& address) const;
-    MemoryOperand memoryOperand(const Value& symbol) const;
-    MemoryOperand memoryOperandAt(const Value& symbol, int byteOffset) const;
+    MemoryOperand memoryOperand(const Address& address, int byteOffset = 0) const;
+    MemoryOperand memoryOperand(const Value& symbol, int byteOffset = 0) const;
     void emitComplexX87Load(Value& symbol);
     void emitComplexX87Store(Value& symbol);
     void emitLoad(Value& symbol, Register& dest);
     void emitStore(Register& source, Value& symbol);
     void bindResult(Register& reg, Value& result);
     int promotedBytes(const Value& value) const;
-    MemoryOperand homeOperand(const Value& symbol, int spDelta = 0) const;
+    MemoryOperand homeOperand(const Value& symbol, int spDelta, int byteOffset = 0) const;
     void emitGprExtend(type::sysv::GprExtend ext, int size, const MemoryOperand& source, Register& dest);
     void loadPromotedFrom(const MemoryOperand& source, const Value& typed, Register& dest);
-    void loadPromoted(Value& symbol, Register& dest, int spDelta = 0);
+    void loadPromoted(Value& symbol, Register& dest);
     void storeObject(Register& source, const MemoryOperand& dest, int n);
     void storeObject(Register& source, Value& symbol, int spDelta = 0);
     void copyToRegister(Value& symbol, Register& dest);
