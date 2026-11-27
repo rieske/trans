@@ -82,8 +82,8 @@ void CodeGeneratingVisitor::emitConvert(int source, int dest,
         emitBooleanConvert(source, dest);
         return;
     }
-    if ((isWideInteger(sourceType) && type::isComplex(destType))
-            || (type::isComplex(sourceType) && isWideInteger(destType))) {
+    if ((type::isIntegral(sourceType) && type::isComplex(destType))
+            || (type::isComplex(sourceType) && type::isIntegral(destType))) {
         const type::Type real = type::correspondingReal(type::isComplex(destType) ? destType : sourceType);
         const int part = addScratchValue(real);
         emitConvert(source, part, sourceType, real);
@@ -104,9 +104,8 @@ void CodeGeneratingVisitor::emitConvert(int source, int dest,
     const auto unsigned64 = [](const type::Type& t) {
         return type::isIntegral(t) && !type::valueIsSigned(t) && t.getSize() == 8;
     };
-    const auto floatingOrComplex = [](const type::Type& t) { return type::isFloating(t) || type::isComplex(t); };
-    if ((unsigned64(sourceType) && floatingOrComplex(destType))
-            || (floatingOrComplex(sourceType) && unsigned64(destType))) {
+    if ((unsigned64(sourceType) && type::isFloating(destType))
+            || (type::isFloating(sourceType) && unsigned64(destType))) {
         Instruction cast = ir::assign(source, dest);
         cast.imm = 1;
         emit(cast);

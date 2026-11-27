@@ -173,7 +173,7 @@ private:
     bool tryComplexUnaryMinus(Value& operand, Value& result);
     bool tryComplexCompare(Value& left, Value& right);
     bool tryComplexZeroCompare(Value& symbol);
-    bool tryComplexAssignConvert(Value& operand, Value& result, bool unsignedSource);
+    bool tryComplexAssignConvert(Value& operand, Value& result);
     void emitComplexBinary(Value& left, Value& right, Value& result, X87Op op);
     void emitComplexUnaryMinus(Value& operand, Value& result);
     void emitComplexCompare(Value& left, Value& right);
@@ -191,8 +191,6 @@ private:
     void emitX87Compare(Value& left, Value& right);
     void emitX87ZeroCompare(Value& symbol);
     void emitX87Convert(Value& operand, Value& result, bool unsignedSource);
-    void fildInteger(Value& operand, bool unsignedSource);
-    void fisttpInteger(const MemoryOperand& source, int sourceBytes, Value& result, bool unsignedResult);
     void setCompareFlagsFromTernary(Register& acc, bool signedRel);
 
     enum class WideIntegerOp { Add, Sub, And, Or, Xor };

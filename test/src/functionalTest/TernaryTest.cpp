@@ -224,4 +224,33 @@ TEST(Compiler, logicalAndStructPointerAndFunctionPointer) {
     program.runAndExpect("1");
 }
 
+TEST(Compiler, conditionalConvertsArmsToTheResultType) {
+    SourceProgram program{R"prg(int printf(const char *, ...);
+        void *memcpy(void *, const void *, unsigned long);
+        volatile int one = 1;
+        volatile int zero = 0;
+        unsigned long long big = 18446744073709551516ull;
+        int main() {
+            unsigned __int128 top = (unsigned __int128)1 << 127;
+            __int128 neg = -((__int128)1 << 70);
+            double pz[2] = { 1.0, 2.0 };
+            _Complex double z;
+            memcpy(&z, pz, sizeof z);
+            double a = one ? big : 1.0;
+            float b = one ? big : 1.0f;
+            long double c = one ? big : 1.0L;
+            double d = zero ? 1.0 : big;
+            double e = one ? top : 1.0;
+            double f = one ? neg : 1.0;
+            _Complex double w = one ? big : z;
+            double ow[2];
+            memcpy(ow, &w, sizeof ow);
+            printf("%g %g %Lg %g %g %g %g %g", a, b, c, d, e, f, ow[0], ow[1]);
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("1.84467e+19 1.84467e+19 1.84467e+19 1.84467e+19 1.70141e+38 -1.18059e+21 1.84467e+19 0");
+}
+
 } // namespace
