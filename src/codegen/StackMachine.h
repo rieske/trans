@@ -167,15 +167,13 @@ private:
             std::string (InstructionSet::*sdOp)(int, int) const);
     bool involvesFloating(const Value& left, const Value& right, const Value& result) const;
     bool tryNumericAssignConvert(Value& operand, Value& result, bool unsignedSource);
-    void emitUnsigned64ToXmm(Register& src, bool destFloat32, const std::vector<Register*>& keep);
-    void emitUnsigned128ToFloat(Value& operand, Value& result);
 
     enum class X87Op { Add, Sub, Mul, Div };
     bool tryComplexBinary(Value& left, Value& right, Value& result, X87Op op);
     bool tryComplexUnaryMinus(Value& operand, Value& result);
     bool tryComplexCompare(Value& left, Value& right);
     bool tryComplexZeroCompare(Value& symbol);
-    bool tryComplexAssignConvert(Value& operand, Value& result);
+    bool tryComplexAssignConvert(Value& operand, Value& result, bool unsignedSource);
     void emitComplexBinary(Value& left, Value& right, Value& result, X87Op op);
     void emitComplexUnaryMinus(Value& operand, Value& result);
     void emitComplexCompare(Value& left, Value& right);
@@ -193,6 +191,8 @@ private:
     void emitX87Compare(Value& left, Value& right);
     void emitX87ZeroCompare(Value& symbol);
     void emitX87Convert(Value& operand, Value& result, bool unsignedSource);
+    void fildInteger(Value& operand, bool unsignedSource);
+    void fisttpInteger(const MemoryOperand& source, int sourceBytes, Value& result, bool unsignedResult);
     void setCompareFlagsFromTernary(Register& acc, bool signedRel);
 
     enum class WideIntegerOp { Add, Sub, And, Or, Xor };

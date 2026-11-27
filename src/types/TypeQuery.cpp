@@ -108,7 +108,7 @@ Type defaultArgPromote(const Type& t) {
     return integerPromote(t);
 }
 
-Type assignmentConvertTarget(AssignOp op, const Type& dest, const Type& source) {
+Type compoundAssignConvertTarget(AssignOp op, const Type& dest, const Type& source) {
     if (op == AssignOp::ShlAssign || op == AssignOp::ShrAssign) {
         return integerPromote(source);
     }
@@ -116,7 +116,28 @@ Type assignmentConvertTarget(AssignOp op, const Type& dest, const Type& source) 
             && dest.isPointer() && isIntegral(source)) {
         return integerPromote(source);
     }
-    return dest;
+    return compoundAssignOperationType(op, dest, source);
+}
+
+bool compoundAssignOperandsValid(AssignOp op, const Type& dest, const Type& source) {
+    switch (op) {
+    case AssignOp::AddAssign:
+    case AssignOp::SubAssign:
+        return (dest.isPointer() && isIntegral(source)) || productArithmeticCompatible(dest, source);
+    case AssignOp::MulAssign:
+    case AssignOp::DivAssign:
+        return productArithmeticCompatible(dest, source);
+    default:
+        return isIntegral(dest) && isIntegral(source);
+    }
+}
+
+Type compoundAssignOperationType(AssignOp op, const Type& dest, const Type& source) {
+    if (op != AssignOp::DivAssign && op != AssignOp::ModAssign
+            && (isIntegral(dest) || dest.isPointer()) && isIntegral(source) && !isBoolean(dest)) {
+        return dest;
+    }
+    return usualArithmeticResult(dest, source);
 }
 
 // Classify `left op right` for Add/Sub. Result type is the pointer type or ptrdiff_t (long).

@@ -1446,6 +1446,101 @@ world";
     EXPECT_THAT(program.getCompilationErrors(), Not(HasSubstr("Error: newline")));
 }
 
+TEST(Compiler, compoundAssignRejectsPointerOperands) {
+    SourceProgram program{R"prg(
+        int main() {
+            int a[2];
+            int i = 0;
+            int *p = a;
+            int *q = a;
+            i += p;
+            p *= 2;
+            p += q;
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    EXPECT_THAT(program.getCompilationErrors(), HasSubstr(":7: error: invalid operands to compound assignment"));
+    EXPECT_THAT(program.getCompilationErrors(), HasSubstr(":8: error: invalid operands to compound assignment"));
+    EXPECT_THAT(program.getCompilationErrors(), HasSubstr(":9: error: invalid operands to compound assignment"));
+}
+
+TEST(Compiler, compoundAssignRejectsNonIntegerOperands) {
+    SourceProgram program{R"prg(
+        int main() {
+            int i = 7;
+            double d = 1.0;
+            i %= 2.0;
+            d &= 1;
+            i <<= 1.5;
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    EXPECT_THAT(program.getCompilationErrors(), HasSubstr(":5: error: invalid operands to compound assignment"));
+    EXPECT_THAT(program.getCompilationErrors(), HasSubstr(":6: error: invalid operands to compound assignment"));
+    EXPECT_THAT(program.getCompilationErrors(), HasSubstr(":7: error: invalid operands to compound assignment"));
+}
+
+TEST(Compiler, compoundAssignRejectsArrayTarget) {
+    SourceProgram program{R"prg(
+        struct S { int arr[2]; int x; } s;
+        int m[2][2];
+        int main() {
+            s.arr += 1;
+            m[0] -= 1;
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    EXPECT_THAT(program.getCompilationErrors(), HasSubstr(":5: error: invalid operands to compound assignment"));
+    EXPECT_THAT(program.getCompilationErrors(), HasSubstr(":6: error: invalid operands to compound assignment"));
+}
+
+TEST(Compiler, compoundAssignFunctionOperandReportsOneError) {
+    SourceProgram program{R"prg(
+        int f(void);
+        int main() {
+            int i = 0;
+            i += f;
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.assertCompilationErrors("function designator used as a value is not supported");
+    EXPECT_THAT(program.getCompilationErrors(), Not(HasSubstr("invalid operands to compound assignment")));
+}
+
+TEST(Compiler, assignFunctionOperandReportsOneError) {
+    SourceProgram program{R"prg(
+        int f(void);
+        int main() {
+            int i = 0;
+            i = f;
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    const std::string errors = program.getCompilationErrors();
+    const std::string message = ":5: error: function designator used as a value is not supported";
+    program.assertCompilationErrors(message);
+    EXPECT_EQ(errors.find(message), errors.rfind(message));
+}
+
+TEST(Compiler, compoundAssignToStructReportsOneError) {
+    SourceProgram program{R"prg(
+        struct S { int x; };
+        int main() {
+            struct S s;
+            s += 1;
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.assertCompilationErrors("invalid operands to compound assignment");
+    EXPECT_THAT(program.getCompilationErrors(), Not(HasSubstr("type mismatch")));
+}
+
 TEST(Compiler, floatRemainderIsError) {
     SourceProgram program{R"prg(
         int main() { return 1.0 % 2.0; }

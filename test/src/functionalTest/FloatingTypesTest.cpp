@@ -677,4 +677,51 @@ TEST(Compiler, hexadecimalFloatingConstants) {
     program.runAndExpect("2 3 16 1 2 2 2 1 4 8 16 3 16 -8");
 }
 
+TEST(Compiler, longDoubleConvertsFromEveryIntegerWidth) {
+    SourceProgram program{R"prg(int printf(const char *, ...);
+        int main() {
+            signed char c = -10;
+            short s = -300;
+            int i = -7;
+            unsigned char uc = 200;
+            unsigned short us = 65535;
+            unsigned u = 3000000000u;
+            long l = -5;
+            unsigned long ul = 10000000000000000000UL;
+            long double a = c, b = s, d = i, e = uc, f = us, g = u, h = l, k = ul;
+            printf("%.0Lf %.0Lf %.0Lf %.0Lf %.0Lf %.0Lf %.0Lf %.0Lf", a, b, d, e, f, g, h, k);
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("-10 -300 -7 200 65535 3000000000 -5 10000000000000000000");
+}
+
+TEST(Compiler, longDoubleConvertsToEveryIntegerWidth) {
+    SourceProgram program{R"prg(int printf(const char *, ...);
+        signed char gc;
+        unsigned short gus;
+        unsigned gu;
+        int main() {
+            long double n = -10.75L;
+            long double p = 4000000000.5L;
+            signed char c = n;
+            short s = -300.5L;
+            int i = n;
+            unsigned char uc = 200.9L;
+            unsigned short us = 65535.5L;
+            unsigned u = p;
+            long l = n;
+            unsigned long ul = 10000000000000000000.0L;
+            gc = n;
+            gus = 65535.5L;
+            gu = p;
+            printf("%d %d %d %d %d %u %ld %lu %d %d %u", c, s, i, uc, us, u, l, ul, gc, gus, gu);
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("-10 -300 -10 200 65535 4000000000 -10 10000000000000000000 -10 65535 4000000000");
+}
+
 } // namespace

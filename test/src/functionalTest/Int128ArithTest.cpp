@@ -669,4 +669,95 @@ TEST(Compiler, int128NonFirstMemberViaTypedef) {
     program.runAndExpect("32 16 3 4");
 }
 
+TEST(Compiler, int128ConvertsToFloatingTypes) {
+    SourceProgram program{R"prg(int printf(const char *, ...);
+        int main() {
+            __int128 big = (__int128)1 << 70;
+            __int128 neg = -big;
+            unsigned __int128 top = (unsigned __int128)1 << 127;
+            float f = big;
+            double d = neg;
+            long double ld = big;
+            double ud = top;
+            long double uld = top;
+            printf("%.0f %.0f %.0Lf %.6e %.6Le", f, d, ld, ud, uld);
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect(
+            "1180591620717411303424 -1180591620717411303424 1180591620717411303424 1.701412e+38 1.701412e+38");
+}
+
+TEST(Compiler, int128ConvertsToAndFromComplex) {
+    SourceProgram program{R"prg(int printf(const char *, ...);
+        void *memcpy(void *, const void *, unsigned long);
+        static void show(__int128 v) { printf("%llx:%llx ", (unsigned long long)(v >> 64), (unsigned long long)v); }
+        int main() {
+            double pm[2] = { -10.0, 3.0 };
+            long double pl[2] = { 0x1p70L, 1.0L };
+            _Complex double zm;
+            _Complex long double zl;
+            memcpy(&zm, pm, sizeof zm);
+            memcpy(&zl, pl, sizeof zl);
+            __int128 a = zm;
+            __int128 b = zl;
+            unsigned __int128 u = zl;
+            _Complex double c = (__int128)1 << 70;
+            _Complex long double d = -((__int128)1 << 70);
+            double oc[2];
+            long double od[2];
+            memcpy(oc, &c, sizeof oc);
+            memcpy(od, &d, sizeof od);
+            show(a);
+            show(b);
+            show((__int128)u);
+            printf("%.0f %.0f %.0Lf %.0Lf", oc[0], oc[1], od[0], od[1]);
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("ffffffffffffffff:fffffffffffffff6 40:0 40:0 "
+            "1180591620717411303424 0 -1180591620717411303424 0");
+}
+
+TEST(Compiler, int128ImplicitArgumentConversionKeepsOtherArguments) {
+    SourceProgram program{R"prg(int printf(const char *, ...);
+        void f(int a, double d) { printf("%d %g ", a, d); }
+        void g(int a, __int128 v) { printf("%d %lld ", a, (long long)v); }
+        int main() {
+            __int128 x = 5;
+            f(7, x);
+            g(7, 9.0);
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("7 5 7 9 ");
+}
+
+TEST(Compiler, int128ConvertsFromFloatingTypes) {
+    SourceProgram program{R"prg(int printf(const char *, ...);
+        static void show(__int128 v) { printf("%llx:%llx ", (unsigned long long)(v >> 64), (unsigned long long)v); }
+        int main() {
+            __int128 a = 1e21;
+            __int128 b = -10.0;
+            __int128 c = -1.5f;
+            __int128 e = 0x1p100L;
+            unsigned __int128 u = 0x1p127;
+            unsigned __int128 uf = 0x1p100f;
+            show(a);
+            show(b);
+            show(c);
+            show(e);
+            show((__int128)u);
+            show((__int128)uf);
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("36:35c9adc5dea00000 ffffffffffffffff:fffffffffffffff6 ffffffffffffffff:ffffffffffffffff "
+            "1000000000:0 8000000000000000:0 1000000000:0 ");
+}
+
 } // namespace

@@ -10,6 +10,31 @@
 
 namespace codegen {
 
+namespace {
+
+const char* floatingSuffix(const type::Type& t) {
+    if (type::isLongDouble(t)) {
+        return "xf";
+    }
+    return type::isDouble(t) ? "df" : "sf";
+}
+
+bool isWideInteger(const type::Type& t) {
+    return type::isIntegral(t) && type::object_abi::valueWords(t.getSize()) > 1;
+}
+
+std::string wideIntegerFloatingHelper(const type::Type& from, const type::Type& to) {
+    if (isWideInteger(from) && type::isFloating(to)) {
+        return std::string("__float") + (type::valueIsSigned(from) ? "" : "un") + "ti" + floatingSuffix(to);
+    }
+    if (type::isFloating(from) && isWideInteger(to)) {
+        return std::string("__fix") + (type::valueIsSigned(to) ? "" : "uns") + floatingSuffix(from) + "ti";
+    }
+    return {};
+}
+
+} // namespace
+
 CodeGeneratingVisitor::CodeGeneratingVisitor(symbols::AnnotationStore& store,
         const ast::VlaExpressionTable* vlas) : store_ { store }, vlas_ { vlas } {
 }
@@ -57,31 +82,42 @@ void CodeGeneratingVisitor::emitConvert(int source, int dest,
         emitBooleanConvert(source, dest);
         return;
     }
+    if ((isWideInteger(sourceType) && type::isComplex(destType))
+            || (type::isComplex(sourceType) && isWideInteger(destType))) {
+        const type::Type real = type::correspondingReal(type::isComplex(destType) ? destType : sourceType);
+        const int part = addScratchValue(real);
+        emitConvert(source, part, sourceType, real);
+        emitConvert(part, dest, real, destType);
+        return;
+    }
+    if (const std::string helper = wideIntegerFloatingHelper(sourceType, destType); !helper.empty()) {
+        emit(ir::argument(source));
+        emit(ir::call(id(helper)));
+        emit(ir::retrieve(dest));
+        return;
+    }
     if (type::needsIntegerWiden(sourceType, destType)
             || type::needsIntegerToPointerExtend(sourceType, destType)) {
         emit(ir::widen(source, dest, type::valueIsSigned(sourceType)));
         return;
     }
-    if (type::isIntegral(sourceType) && !type::valueIsSigned(sourceType)
-            && sourceType.getSize() >= 8 && type::isFloating(destType)) {
+    const auto unsigned64 = [](const type::Type& t) {
+        return type::isIntegral(t) && !type::valueIsSigned(t) && t.getSize() == 8;
+    };
+    const auto floatingOrComplex = [](const type::Type& t) { return type::isFloating(t) || type::isComplex(t); };
+    if ((unsigned64(sourceType) && floatingOrComplex(destType))
+            || (floatingOrComplex(sourceType) && unsigned64(destType))) {
         Instruction cast = ir::assign(source, dest);
         cast.imm = 1;
         emit(cast);
         return;
     }
-    if (type::isFloating(sourceType) && type::isIntegral(destType)
-            && !type::valueIsSigned(destType) && destType.getSize() == 8) {
-        Instruction cast = ir::assign(source, dest);
-        cast.imm = 1;
-        emit(cast);
-        return;
-    }
-    emit(ir::assign(source, dest));
+    emitAssignUnlessSame(source, dest);
 }
 
 void CodeGeneratingVisitor::emitIntegerMulDiv(type::ArithmeticOp op, int left,
         int right, int result, const type::Type& resultType) {
-    if (type::isIntegral(resultType) && type::object_abi::valueWords(resultType.getSize()) > 1) {
+    if (isWideInteger(resultType)) {
         const char* helper = "__multi3";
         switch (op) {
         case type::ArithmeticOp::Mul:

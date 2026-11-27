@@ -3,6 +3,7 @@
 
 #include <type_traits>
 #include <variant>
+#include <vector>
 
 #include "ast/GnuBuiltinFunctions.h"
 #include "codegen/IrBuilders.h"
@@ -79,8 +80,13 @@ void CodeGeneratingVisitor::visit(ast::FunctionCall& functionCall) {
                 } else {
                     functionCall.visitOperand(*this);
                     functionCall.visitArguments(*this);
+                    // Nothing may come between a call's PARAMs, and a conversion can emit code.
+                    std::vector<int> arguments;
                     for (auto& expression : functionCall.getArgumentList()) {
-                        emit(ir::argument(convertedResult(*expression)));
+                        arguments.push_back(convertedResult(*expression));
+                    }
+                    for (const int argument : arguments) {
+                        emit(ir::argument(argument));
                     }
                     int memoryReturnDest = kNoSymbol;
                     if (functionCall.hasResultSymbol(store_) && !functionCall.expressionType().isVoid()) {
