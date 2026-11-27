@@ -220,11 +220,12 @@ void DataWordSink::placeScalar(const type::FoundMember& slot, ast::Expression* v
         word = symbols::StaticWord { wordVal };
         return;
     }
-    const auto pieces = symbols::asDataWords(*folded);
+    auto pieces = symbols::asDataWords(*folded);
     if (pieces.size() == 1) {
         storeBitsAt(words, offsetBytes, numericBits(pieces.front()), storeType.getSize());
         return;
     }
+    pieces.resize(static_cast<std::size_t>(type::object_abi::dataWords(storeType.getSize())), symbols::StaticWord {});
     int off = offsetBytes;
     for (const auto& piece : pieces) {
         storeBitsAt(words, off, numericBits(piece), type::object_abi::MACHINE_WORD_SIZE);

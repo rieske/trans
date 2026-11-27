@@ -201,6 +201,16 @@ INSTANTIATE_TEST_SUITE_P(Compiler, SemanticErrorCatalog, testing::Values(
         "global initializer is not a constant expression",
     },
     SemanticErrorCase{
+        "staticIntegerFromFloatingBeyond128Bits",
+        R"prg(
+            long x = 1e300;
+            int main(void) {
+                return 0;
+            }
+        )prg",
+        "global initializer is not a constant expression",
+    },
+    SemanticErrorCase{
         "ifOnStruct",
         R"prg(
             int main(void) {

@@ -226,7 +226,9 @@ bool setStaticScalarInit(SemanticAnalysisVisitor& visitor, SymbolTable& symbolTa
     if (!value) {
         return false;
     }
-    symbolTable.setStaticInit(name, symbols::asDataWords(*value));
+    auto words = symbols::asDataWords(*value);
+    words.resize(static_cast<std::size_t>(type::object_abi::dataWords(dest.getSize())), symbols::StaticWord {});
+    symbolTable.setStaticInit(name, std::move(words));
     return true;
 }
 

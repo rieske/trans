@@ -244,6 +244,85 @@ TEST(Compiler, fileScopeIntFromNegativeLongDouble) {
     program.runAndExpect("-3");
 }
 
+TEST(Compiler, fileScopeFloatingFromWideIntegers) {
+    SourceProgram program{R"prg(int printf(const char *, ...);
+        double gd = 18446744073709551516ull;
+        float gf = 18446744073709551516ull;
+        long double gl = 18446744073709551516ull;
+        long double gx = 9007199254740993LL;
+        double gi = -((__int128)1 << 100);
+        double gu = (unsigned __int128)1 << 127;
+        int main(void) {
+            printf("%.0f %.0f %.0Lf %.0Lf %.0f %.0f", gd, gf, gl, gx, gi, gu);
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("18446744073709551616 18446744073709551616 18446744073709551516 9007199254740993 "
+            "-1267650600228229401496703205376 170141183460469231731687303715884105728");
+}
+
+TEST(Compiler, fileScopeWideIntegersFromFloating) {
+    SourceProgram program{R"prg(int printf(const char *, ...);
+        unsigned long long gu = 1.8e19;
+        __int128 gi = -1e20;
+        unsigned __int128 gb = 2e38;
+        __int128 gm = -0x1p127;
+        int main(void) {
+            __int128 i = gi;
+            unsigned __int128 b = gb;
+            __int128 m = gm;
+            printf("%llu %lld %llu %llu %llu %lld %llu", gu, (long long)(i >> 64), (unsigned long long)i,
+                    (unsigned long long)(b >> 64), (unsigned long long)b,
+                    (long long)(m >> 64), (unsigned long long)m);
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("18000000000000000000 -6 10680464442257309696 10842021724855044096 0 "
+            "-9223372036854775808 0");
+}
+
+TEST(Compiler, fileScopeFloatFromLongDoubleRoundsOnce) {
+    SourceProgram program{R"prg(int printf(const char *, ...);
+        float gf = 1.00000005960464477625798674L;
+        int main(void) {
+            printf("%.9g", gf);
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("1.00000012");
+}
+
+TEST(Compiler, staticComplexFromRealValues) {
+    SourceProgram program{R"prg(int printf(const char *, ...);
+        void *memcpy(void *, const void *, unsigned long);
+        _Complex double gz = 7;
+        _Complex float gf = 2.5;
+        _Complex long double gl = 18446744073709551516ull;
+        struct S { int k; _Complex double z; } gs = { 1, -3 };
+        union U { long l[4]; _Complex long double z; } gn = { .l = { 1, 2, 3, 4 }, .z = 5 };
+        int main(void) {
+            double z[2];
+            float f[2];
+            long double l[2];
+            double s[2];
+            long double n[2];
+            memcpy(z, &gz, sizeof z);
+            memcpy(f, &gf, sizeof f);
+            memcpy(l, &gl, sizeof l);
+            memcpy(s, &gs.z, sizeof s);
+            memcpy(n, &gn.z, sizeof n);
+            printf("%g %g %g %g %.0Lf %Lg %d %g %g %Lg %Lg",
+                    z[0], z[1], f[0], f[1], l[0], l[1], gs.k, s[0], s[1], n[0], n[1]);
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("7 0 2.5 0 18446744073709551516 0 1 -3 0 5 0");
+}
+
 TEST(Compiler, functionScopeStaticLongDoubleLiteral) {
     SourceProgram program{R"prg(int printf(const char *, ...);
         long double get(void) {

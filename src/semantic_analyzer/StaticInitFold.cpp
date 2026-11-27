@@ -280,9 +280,10 @@ std::optional<symbols::StaticInitValue> convertToDest(
     if (type::isFloating(dest)) {
         const int destSize = dest.getSize();
         if (auto* integer = std::get_if<symbols::StaticInteger>(&value)) {
-            const util::FloatingBits bits =
-                    util::encodeFloatingBits(static_cast<double>(type::toHostLong(integer->value)),
-                            destSize);
+            const type::IntegerConstant& v = integer->value;
+            const util::FloatingBits bits = type::valueIsSigned(v.type)
+                    ? util::encodeFloatingBits(type::signedValue(v), destSize)
+                    : util::encodeFloatingBits(v.bits, destSize);
             return symbols::StaticFloat { bits.bits, bits.bitsHi, bits.sizeBytes };
         }
         if (auto* fp = std::get_if<symbols::StaticFloat>(&value)) {
@@ -291,7 +292,7 @@ std::optional<symbols::StaticInitValue> convertToDest(
             }
             const util::FloatingBits in { fp->bits, fp->bitsHi, fp->sizeBytes };
             const util::FloatingBits bits =
-                    util::encodeFloatingBits(util::decodeFloatingBits(in), destSize);
+                    util::encodeFloatingBits(util::decodeFloatingValue(in), destSize);
             return symbols::StaticFloat { bits.bits, bits.bitsHi, bits.sizeBytes };
         }
         return std::nullopt;
@@ -302,8 +303,13 @@ std::optional<symbols::StaticInitValue> convertToDest(
         if (type::isBoolean(dest)) {
             return symbols::StaticInteger { decoded != 0.0L };
         }
-        return symbols::StaticInteger {
-                type::convert(type::fromHostLong(static_cast<long>(decoded)), dest) };
+        if (!(decoded >= -0x1p127L && decoded < 0x1p128L)) {
+            return std::nullopt;
+        }
+        const type::Bits bits = decoded < 0
+                ? static_cast<type::Bits>(static_cast<type::SignedBits>(decoded))
+                : static_cast<type::Bits>(decoded);
+        return symbols::StaticInteger { type::fromLiteralBits(bits, dest) };
     }
     if (auto* integer = std::get_if<symbols::StaticInteger>(&value)) {
         integer->value = type::convert(integer->value, dest);
@@ -338,7 +344,7 @@ std::optional<symbols::StaticInitValue> evaluateStaticInit(
         visitor.semanticError("global initializer is not a constant expression", context);
         return std::nullopt;
     }
-    auto converted = convertToDest(dest, std::move(*folded));
+    auto converted = convertToDest(type::correspondingReal(dest), std::move(*folded));
     if (!converted) {
         visitor.semanticError("global initializer is not a constant expression", context);
         return std::nullopt;
