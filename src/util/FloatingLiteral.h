@@ -73,11 +73,12 @@ inline double bitsToFloat64(unsigned long long bits) {
     return value;
 }
 
-inline unsigned long long encodeFloating(double value, int sizeBytes) {
+template <typename T>
+unsigned long long encodeFloating(T value, int sizeBytes) {
     if (sizeBytes == 4) {
         return float32ToBits(static_cast<float>(value));
     }
-    return float64ToBits(value);
+    return float64ToBits(static_cast<double>(value));
 }
 
 inline FloatingBits encodeLongDouble(long double value) {
@@ -90,7 +91,8 @@ inline FloatingBits encodeLongDouble(long double value) {
     return out;
 }
 
-inline FloatingBits encodeFloatingBits(double value, int sizeBytes) {
+template <typename T>
+FloatingBits encodeFloatingBits(T value, int sizeBytes) {
     if (sizeBytes == 16) {
         return encodeLongDouble(static_cast<long double>(value));
     }
@@ -140,10 +142,6 @@ inline long double decodeFloatingValue(const FloatingBits& bits) {
         return decodeLongDouble(bits);
     }
     return static_cast<long double>(decodeFloating(bits.bits, bits.sizeBytes));
-}
-
-inline double decodeFloatingBits(const FloatingBits& bits) {
-    return static_cast<double>(decodeFloatingValue(bits));
 }
 
 inline void negateFloating(FloatingBits& bits) {
