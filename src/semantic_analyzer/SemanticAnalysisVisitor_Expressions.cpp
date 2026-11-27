@@ -667,6 +667,10 @@ void SemanticAnalysisVisitor::visit(ast::ConditionalExpression& expression) {
     }
     decayArrayValue(*trueExpr, symbolTable, annotations());
     decayArrayValue(*falseExpr, symbolTable, annotations());
+    if (type::isArithmeticType(*result)) {
+        maybeSetConversion(trueExpr, *result, symbolTable, annotations());
+        maybeSetConversion(falseExpr, *result, symbolTable, annotations());
+    }
 
     setAnalyzedType(expression, *result, symbolTable, annotations());
     expression.setFalsyLabel(annotations(), symbolTable.newLabel());
