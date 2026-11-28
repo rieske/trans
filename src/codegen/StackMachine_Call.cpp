@@ -34,12 +34,10 @@ void StackMachine::emitGprExtend(type::sysv::GprExtend ext, int size, const Memo
     }
 }
 
-MemoryOperand StackMachine::homeOperand(const Value& symbol, int spDelta) const {
-    Address home = addressOf(symbol);
-    if (!home.isGlobal() && home.frameBase() == FrameBase::StackPointer && spDelta) {
-        home = Address::frame(FrameBase::StackPointer, home.offsetBytes() + spDelta, home.sizeBytes());
-    }
-    return memoryOperand(home);
+MemoryOperand StackMachine::homeOperand(const Value& symbol, int spDelta, int byteOffset) const {
+    const Address home = addressOf(symbol);
+    const bool spRelative = !home.isGlobal() && home.frameBase() == FrameBase::StackPointer;
+    return memoryOperand(home, byteOffset + (spRelative ? spDelta : 0));
 }
 
 void StackMachine::storeObject(Register& source, const MemoryOperand& dest, int n) {
@@ -67,39 +65,17 @@ void StackMachine::loadPromotedFrom(const MemoryOperand& source, const Value& ty
     emitGprExtend(ext, typed.getSizeInBytes(), source, dest);
 }
 
-void StackMachine::loadPromoted(Value& symbol, Register& dest, int spDelta) {
-    loadPromotedFrom(homeOperand(symbol, spDelta), symbol, dest);
+void StackMachine::loadPromoted(Value& symbol, Register& dest) {
+    loadPromotedFrom(memoryOperand(symbol), symbol, dest);
 }
 
-void StackMachine::loadWord(Value& symbol, int wordIndex, Register& dest, int spDelta,
-        std::vector<Register*> extraExclude) {
+void StackMachine::loadWord(Value& symbol, int wordIndex, Register& dest, int spDelta) {
     if (wordIndex == 0 && !residesInMemory(symbol)
             && type::object_abi::valueWords(symbol.getSizeInBytes()) == 1) {
         copyToRegister(symbol, dest);
         return;
     }
-    if (wordIndex == 0 && symbol.getClassification().gprExtend != type::sysv::GprExtend::None) {
-        loadPromoted(symbol, dest, spDelta);
-        return;
-    }
-    Address home = addressOf(symbol);
-    const int byteOff = wordIndex * MACHINE_WORD_SIZE;
-    if (home.isGlobal()) {
-        extraExclude.push_back(&dest);
-        Register& addr = get64BitRegisterExcluding(extraExclude);
-        assembly << instructionSet->lea(memoryOperand(home), addr);
-        if (byteOff) {
-            assembly << instructionSet->add(addr, byteOff);
-        }
-        assembly << instructionSet->mov(MemoryOperand::at(addr, 0), dest);
-        return;
-    }
-    int offset = home.offsetBytes() + byteOff;
-    if (home.frameBase() == FrameBase::StackPointer) {
-        offset += spDelta;
-    }
-    Address wordHome = Address::frame(home.frameBase(), offset, MACHINE_WORD_SIZE);
-    assembly << instructionSet->mov(memoryOperand(wordHome), dest);
+    loadPromotedFrom(homeOperand(symbol, spDelta, wordIndex * MACHINE_WORD_SIZE), symbol, dest);
 }
 
 void StackMachine::bindGprExtended(Value& symbol) {
@@ -177,25 +153,13 @@ void StackMachine::copyToPointer(Value& src, Register& ptr, int spDelta,
 }
 
 void StackMachine::storeWord(Register& source, Value& symbol, int wordIndex) {
-    Address home = addressOf(symbol);
-    const int byteOff = wordIndex * MACHINE_WORD_SIZE;
-    if (home.isGlobal()) {
-        Register& addr = get64BitRegisterExcluding(source);
-        assembly << instructionSet->lea(memoryOperand(home), addr);
-        if (byteOff) {
-            assembly << instructionSet->add(addr, byteOff);
-        }
-        assembly << instructionSet->mov(source, MemoryOperand::at(addr, 0));
-        return;
-    }
-    Address wordHome = Address::frame(home.frameBase(), home.offsetBytes() + byteOff, MACHINE_WORD_SIZE);
-    assembly << instructionSet->mov(source, memoryOperand(wordHome));
+    assembly << instructionSet->mov(source, memoryOperand(symbol, wordIndex * MACHINE_WORD_SIZE));
 }
 
 void StackMachine::loadEightbyteToXmm(Value& symbol, int eightbyte, int xmmIndex, int spDelta,
         const std::vector<Register*>& exclude) {
     Register& tmp = get64BitRegisterExcluding(exclude);
-    loadWord(symbol, eightbyte, tmp, spDelta, exclude);
+    loadWord(symbol, eightbyte, tmp, spDelta);
     gprToXmm(tmp, xmmIndex, symbol.getSizeInBytes() == 4);
 }
 
@@ -244,7 +208,7 @@ int StackMachine::emitCallArguments(std::size_t firstReg) {
             }
             Register& dest = *integerArgRegs[ra.asgn.indices[static_cast<std::size_t>(i)]];
             storeRegisterValue(dest);
-            loadWord(*ra.value, i, dest, 0, gpArgRegs);
+            loadWord(*ra.value, i, dest);
         }
     }
     storeRegisterValue(registers->getRetrievalRegister());
@@ -271,7 +235,7 @@ int StackMachine::emitCallArguments(std::size_t firstReg) {
             const int words = narrowInteger ? 1 : n / MACHINE_WORD_SIZE;
             for (int w = 0; w < words; ++w) {
                 Register& reg = get64BitRegisterExcluding(gpArgRegs);
-                loadWord(argument, w, reg, argumentOffset, gpArgRegs);
+                loadWord(argument, w, reg, argumentOffset);
                 assembly << instructionSet->mov(reg,
                         MemoryOperand::at(rsp, slotOff + w * MACHINE_WORD_SIZE));
             }
@@ -368,7 +332,7 @@ void StackMachine::returnFromProcedure(int returnSymbolName) {
             int sseI = 0;
             for (int i = 0; i < cls.count; ++i) {
                 if (type::sysv::isInteger(cls.eightbytes[static_cast<std::size_t>(i)])) {
-                    loadWord(returnSymbol, i, integerReturnReg(gpI), 0, retRegs);
+                    loadWord(returnSymbol, i, integerReturnReg(gpI));
                     ++gpI;
                 } else {
                     loadEightbyteToXmm(returnSymbol, i, sseI, 0, retRegs);

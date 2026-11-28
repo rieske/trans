@@ -105,6 +105,11 @@ TEST(ATandTInstructionSet, emitsLoadGot) {
             Eq("movq printf@GOTPCREL(%rip), %rax"));
 }
 
+TEST(ATandTInstructionSet, globalOperandWithOffset) {
+    Register dest { "rbx" };
+    EXPECT_THAT(instructions.mov(MemoryOperand::global("g", 8), dest), Eq("movq g+8(%rip), %rbx"));
+}
+
 TEST(ATandTInstructionSet, emitsCallPlt) {
     EXPECT_THAT(instructions.callPlt("printf"), Eq("call printf@plt"));
 }

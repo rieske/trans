@@ -9,7 +9,7 @@ namespace codegen {
 class Register;
 
 // A memory location operand: either base-register-plus-offset (`[base + offset]`,
-// used for stack slots and pointer dereferences) or a global variable (a named label).
+// used for stack slots and pointer dereferences) or a global variable (`label + offset`).
 // The instruction set renders it in its own syntax, so the global/stack distinction
 // lives in one place instead of at every call site.
 class MemoryOperand {
@@ -17,8 +17,8 @@ public:
     static MemoryOperand at(const Register& base, int offset) {
         return MemoryOperand { &base, offset, {} };
     }
-    static MemoryOperand global(std::string label) {
-        return MemoryOperand { nullptr, 0, std::move(label) };
+    static MemoryOperand global(std::string label, int offset = 0) {
+        return MemoryOperand { nullptr, offset, std::move(label) };
     }
 
     bool isGlobal() const { return base_ == nullptr; }

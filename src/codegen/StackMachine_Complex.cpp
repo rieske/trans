@@ -30,13 +30,7 @@ int realX87Bytes(const Value& v) {
 
 MemoryOperand StackMachine::partOperand(Value& symbol, int byteOffset) {
     storeInMemory(symbol);
-    Address home = addressOf(symbol);
-    if (home.isGlobal()) {
-        Register& addr = get64BitRegister();
-        assembly << instructionSet->lea(memoryOperand(home), addr);
-        return MemoryOperand::at(addr, byteOffset);
-    }
-    return memoryOperandAt(symbol, byteOffset);
+    return memoryOperand(symbol, byteOffset);
 }
 
 void StackMachine::loadX87At(Value& symbol, int byteOffset, int sizeBytes) {

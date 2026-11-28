@@ -760,4 +760,56 @@ TEST(Compiler, int128ConvertsFromFloatingTypes) {
             "1000000000:0 8000000000000000:0 1000000000:0 ");
 }
 
+TEST(Compiler, int128GlobalOperands) {
+    SourceProgram program{R"prg(int printf(const char *, ...);
+        __int128 gz = 0;
+        __int128 ga = 1;
+        __int128 gb = 2;
+        unsigned __int128 gu = 0xffffffffffffffffull;
+        unsigned __int128 gv = 1;
+        unsigned __int128 gm = (unsigned __int128)0xffffffffffffffffull << 64;
+        unsigned __int128 gs;
+        int main(void) {
+            int taken = 0;
+            if (gz) {
+                taken = 1;
+            }
+            unsigned __int128 sum = gu + gv;
+            unsigned __int128 diff = gv - gu;
+            gs = gu + gv;
+            printf("%d %d %llx %llx %llx %llx %llx %llx %llx", taken, ga < gb,
+                    (unsigned long long)(sum >> 64), (unsigned long long)sum,
+                    (unsigned long long)(diff >> 64), (unsigned long long)diff,
+                    (unsigned long long)(gm >> 64),
+                    (unsigned long long)(gs >> 64), (unsigned long long)gs);
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("0 1 1 0 ffffffffffffffff 2 ffffffffffffffff 1 0");
+}
+
+TEST(Compiler, int128GlobalArgumentsAndReturns) {
+    SourceProgram program{R"prg(int printf(const char *, ...);
+        struct P { long a; long b; };
+        unsigned __int128 gw = ((unsigned __int128)3 << 64) | 5;
+        struct P gp = { 7, 9 };
+        unsigned long long high(unsigned __int128 v) { return (unsigned long long)(v >> 64); }
+        unsigned long long low(unsigned __int128 v) { return (unsigned long long)v; }
+        unsigned __int128 get(void) { return gw; }
+        long sum(struct P p) { return p.a + p.b; }
+        long last(long a, long b, long c, long d, long e, long f, unsigned __int128 v) {
+            return a + f + (long)(v >> 64);
+        }
+        int main(void) {
+            unsigned __int128 r = get();
+            printf("%llu %llu %llu %llu %ld %ld", high(gw), low(gw), (unsigned long long)(r >> 64),
+                    (unsigned long long)r, sum(gp), last(1, 2, 3, 4, 5, 6, gw));
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("3 5 3 5 16 10");
+}
+
 } // namespace

@@ -224,4 +224,59 @@ TEST(Compiler, integerConvertsToAndFromComplex) {
     program.runAndExpect("-10 0 -10");
 }
 
+TEST(Compiler, longDoubleComplexGlobalArithmetic) {
+    SourceProgram program{R"prg(int printf(const char *, ...);
+        void *memcpy(void *, const void *, unsigned long);
+        long double _Complex gc;
+        long double _Complex gd;
+        int main(void) {
+            long double p[2] = { 1.5L, -2.0L };
+            memcpy(&gc, p, sizeof gc);
+            gd = gc + gc;
+            long double s[2];
+            memcpy(s, &gd, sizeof s);
+            gd = -gc;
+            long double n[2];
+            memcpy(n, &gd, sizeof n);
+            printf("%Lg %Lg %Lg %Lg %d %d", s[0], s[1], n[0], n[1], gd == gc, gc == gc);
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("3 -4 -1.5 2 0 1");
+}
+
+TEST(Compiler, doubleAndFloatComplexGlobalArithmetic) {
+    SourceProgram program{R"prg(int printf(const char *, ...);
+        void *memcpy(void *, const void *, unsigned long);
+        double _Complex gd;
+        double _Complex ge;
+        float _Complex gf;
+        float _Complex gg;
+        int main(void) {
+            double pd[2] = { 1.5, -2.0 };
+            float pf[2] = { 0.5f, 3.0f };
+            memcpy(&gd, pd, sizeof gd);
+            memcpy(&gf, pf, sizeof gf);
+            ge = gd + gd;
+            gg = gf + gf;
+            double s[2];
+            float t[2];
+            memcpy(s, &ge, sizeof s);
+            memcpy(t, &gg, sizeof t);
+            ge = -gd;
+            gg = -gf;
+            double n[2];
+            float m[2];
+            memcpy(n, &ge, sizeof n);
+            memcpy(m, &gg, sizeof m);
+            printf("%g %g %g %g %g %g %g %g %d %d %d %d", s[0], s[1], n[0], n[1], t[0], t[1], m[0], m[1],
+                    ge == gd, gd == gd, gg == gf, gf == gf);
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("3 -4 -1.5 2 1 6 -0.5 -3 0 1 0 1");
+}
+
 } // namespace

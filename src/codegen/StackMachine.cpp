@@ -49,7 +49,7 @@ void StackMachine::generatePreamble(const std::map<std::string, std::string>& co
     assembly.raw(instructionSet->preamble(constants, globalVariables, externalSymbols));
     for (const auto& global : globalVariables) {
         const int id = strings_.require(global.name);
-        globalHomes.emplace(id, Address::globalLabel(global.name, global.sizeInBytes));
+        globalHomes.emplace(id, Address::globalLabel(global.name));
         // resolve() shell only; home is globalHomes, never register-cached.
         put(globalStorage, globalById, global.toValue(strings_));
     }
@@ -173,7 +173,7 @@ void StackMachine::startProcedure(const Procedure& procedure) {
         const Value& argument = *stackArgs[i];
         put(scopeStorage, scopeById, argument);
         registerFrameHome(argument.id(), Address::frame(FrameBase::BasePointer,
-                2 * MACHINE_WORD_SIZE + stackLayout.slots[i].offsetBytes, argument.getSizeInBytes()));
+                2 * MACHINE_WORD_SIZE + stackLayout.slots[i].offsetBytes));
     }
 
     if (variadic) {
@@ -229,7 +229,7 @@ void StackMachine::startProcedure(const Procedure& procedure) {
         emptyGeneralPurposeRegisters();
         variadicFrame = VariadicFrame {
                 addressOf(resolve(procedure.vaGpHomes[0])),
-                Address::frame(FrameBase::BasePointer, 2 * MACHINE_WORD_SIZE, MACHINE_WORD_SIZE),
+                Address::frame(FrameBase::BasePointer, 2 * MACHINE_WORD_SIZE),
                 lastNamedFormal,
                 stackLayout.endOffset,
                 sysvNamedGpOffset(argCounts),
@@ -531,11 +531,10 @@ void StackMachine::storeInMemory(Value& symbol) {
 Address StackMachine::spillSlotAddress(const Value& symbol) const {
     if (hasFrame_) {
         return Address::frame(FrameBase::BasePointer,
-                -frameLayout_.homeBytes + symbol.getIndex() * MACHINE_WORD_SIZE,
-                symbol.getSizeInBytes());
+                -frameLayout_.homeBytes + symbol.getIndex() * MACHINE_WORD_SIZE);
     }
     int offset = symbol.getIndex() * MACHINE_WORD_SIZE;
-    return Address::frame(FrameBase::StackPointer, offset, symbol.getSizeInBytes());
+    return Address::frame(FrameBase::StackPointer, offset);
 }
 
 void StackMachine::registerFrameHome(int id, Address address) {
@@ -563,28 +562,17 @@ Address StackMachine::addressOf(const Value& symbol) const {
     return spillSlotAddress(symbol);
 }
 
-MemoryOperand StackMachine::memoryOperand(const Address& address) const {
+MemoryOperand StackMachine::memoryOperand(const Address& address, int byteOffset) const {
     if (address.isGlobal()) {
-        return MemoryOperand::global(address.label());
+        return MemoryOperand::global(address.label(), byteOffset);
     }
     const Register& base = address.frameBase() == FrameBase::BasePointer ?
             registers->getBasePointer() : registers->getStackPointer();
-    return MemoryOperand::at(base, address.offsetBytes());
+    return MemoryOperand::at(base, address.offsetBytes() + byteOffset);
 }
 
-MemoryOperand StackMachine::memoryOperand(const Value& symbol) const {
-    return memoryOperand(addressOf(symbol));
-}
-
-MemoryOperand StackMachine::memoryOperandAt(const Value& symbol, int byteOffset) const {
-    Address home = addressOf(symbol);
-    if (home.isGlobal()) {
-        internalError("memoryOperandAt is frame-only; use loadX87At/storeX87At for globals");
-    }
-    return MemoryOperand::at(
-            home.frameBase() == FrameBase::BasePointer
-                    ? registers->getBasePointer() : registers->getStackPointer(),
-            home.offsetBytes() + byteOffset);
+MemoryOperand StackMachine::memoryOperand(const Value& symbol, int byteOffset) const {
+    return memoryOperand(addressOf(symbol), byteOffset);
 }
 
 bool StackMachine::allocatable(const Register& reg) const {
