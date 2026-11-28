@@ -812,4 +812,37 @@ TEST(Compiler, int128GlobalArgumentsAndReturns) {
     program.runAndExpect("3 5 3 5 16 10");
 }
 
+TEST(Compiler, int128IncrementAndDecrementCarryAcrossWords) {
+    SourceProgram program{R"prg(int printf(const char *, ...);
+        unsigned __int128 gi = 0xFFFFFFFFFFFFFFFFull;
+        __int128 gd;
+        static void show(unsigned __int128 v) { printf("%llx:%llx ", (unsigned long long)(v >> 64), (unsigned long long)v); }
+        int main(void) {
+            unsigned __int128 a = 0xFFFFFFFFFFFFFFFFull;
+            unsigned __int128 old = a++;
+            show(old);
+            show(a);
+            a--;
+            show(a);
+            unsigned __int128 b = (unsigned __int128)1 << 64;
+            show(--b);
+            show(++b);
+            __int128 c = 0;
+            c--;
+            show(c);
+            gi++;
+            show(gi);
+            gd--;
+            show(gd);
+            unsigned __int128 *p = &a;
+            (*p)++;
+            show(a);
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("0:ffffffffffffffff 1:0 0:ffffffffffffffff 0:ffffffffffffffff 1:0 "
+            "ffffffffffffffff:ffffffffffffffff 1:0 ffffffffffffffff:ffffffffffffffff 1:0 ");
+}
+
 } // namespace
