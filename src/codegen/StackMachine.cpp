@@ -156,7 +156,8 @@ void StackMachine::startProcedure(const Procedure& procedure) {
         const int argumentId = registerArgument.id();
         put(scopeStorage, scopeById, std::move(registerArgument));
         if (asgn.count == 1 && asgn.slots[0] == SysVArgSlot::IntegerReg
-                && argument.getClassification().gprExtend == type::sysv::GprExtend::None) {
+                && argument.getClassification().gprExtend == type::sysv::GprExtend::None
+                && !memoryOnly(argument)) {
             integerArgRegs[asgn.indices[0]]->assign(&resolve(argumentId));
         } else {
             incomingRegArgs.push_back({ argumentId, asgn });
@@ -368,19 +369,12 @@ bool StackMachine::mayAliasStore(int id) const {
     return addressTaken_.count(id) != 0 || globalHomes.count(id) != 0;
 }
 
-void StackMachine::spillMayAliasRegisters(int storeAddrId) {
+void StackMachine::spillAliasedRegisters(int exceptId) {
     for (auto& reg : registers->getGeneralPurposeRegisters()) {
-        if (!reg->containsUnstoredValue()) {
-            continue;
+        if (reg->containsUnstoredValue() && reg->getValue()->id() != exceptId
+                && mayAliasStore(reg->getValue()->id())) {
+            storeRegisterValue(*reg);
         }
-        const int id = reg->getValue()->id();
-        if (id == storeAddrId) {
-            continue;
-        }
-        if (reg->getValue()->isExpressionTemp() && !mayAliasStore(id)) {
-            continue;
-        }
-        storeRegisterValue(*reg);
     }
 }
 
@@ -394,8 +388,7 @@ void StackMachine::spillCallerSavedRegisters() {
         }
         const int id = reg->getValue()->id();
         Value* held = reg->getValue();
-        if (!live || live->count(id) != 0 || mayAliasStore(id)
-                || !held->isExpressionTemp()) {
+        if (!live || live->count(id) != 0 || !held->isExpressionTemp()) {
             storeRegisterValue(*reg);
         }
     }
@@ -433,14 +426,14 @@ void StackMachine::emitStore(Register& source, Value& symbol) {
     storeObject(source, symbol);
 }
 
-// Bind a freshly computed result to its destination symbol. Global homes are Address-only:
-// commit to memory; never attach a register to the global Value (loads use scratch only).
+// Bind a freshly computed result to its destination symbol. Memory-only values (globals, volatile):
+// commit to memory; never attach a register to such a Value (loads use scratch only).
 // Locals/temps use register residence and lazy write-back.
 void StackMachine::bindResult(Register& reg, Value& result) {
-    if (addressOf(result).isGlobal()) {
+    if (memoryOnly(result)) {
         emitStore(reg, result);
         if (!result.isStored()) {
-            internalError("global Value must not be register-linked");
+            internalError("memory-only Value must not be register-linked");
         }
         return;
     }
@@ -544,7 +537,11 @@ void StackMachine::registerFrameHome(int id, Address address) {
 }
 
 bool StackMachine::residesInMemory(const Value& symbol) const {
-    return addressOf(symbol).isGlobal() || symbol.isStored();
+    return memoryOnly(symbol) || symbol.isStored();
+}
+
+bool StackMachine::memoryOnly(const Value& symbol) const {
+    return addressOf(symbol).isGlobal() || (symbol.isVolatile() && !symbol.isExpressionTemp());
 }
 
 Address StackMachine::addressOf(const Value& symbol) const {
@@ -630,8 +627,8 @@ Register& StackMachine::getCounterRegister() {
 Register& StackMachine::assignRegisterTo(Value& symbol) {
     Register& reg = get64BitRegister();
     loadWithoutBinding(symbol, reg);
-    // Bind only non-global homes; globals stay Address-only (scratch in reg).
-    if (!addressOf(symbol).isGlobal()) {
+    // Memory-only values stay unbound (scratch in reg).
+    if (!memoryOnly(symbol)) {
         reg.assign(&symbol);
     }
     return reg;
@@ -640,7 +637,7 @@ Register& StackMachine::assignRegisterTo(Value& symbol) {
 Register& StackMachine::assignRegisterExcluding(Value& symbol, Register& registerToExclude) {
     Register& reg = get64BitRegisterExcluding(registerToExclude);
     loadWithoutBinding(symbol, reg);
-    if (!addressOf(symbol).isGlobal()) {
+    if (!memoryOnly(symbol)) {
         reg.assign(&symbol);
     }
     return reg;

@@ -215,7 +215,7 @@ private:
     void spillAcrossEdge(int label);
     void dropDeadBindings();
     bool mayAliasStore(int id) const;
-    void spillMayAliasRegisters(int storeAddrId);
+    void spillAliasedRegisters(int exceptId = kNoSymbol);
     void spillCallerSavedRegisters();
     void dropCallerSavedBindings();
     void emptyGeneralPurposeRegisters();
@@ -241,10 +241,11 @@ private:
     // Prefer registered object homes; fall back to the frame spill slot from Value::index.
     Address addressOf(const Value& symbol) const;
     Address spillSlotAddress(const Value& symbol) const;
-    // True if the operand should be read/written in memory (global home or no register).
+    // True if the operand should be read/written in memory (memory-only value or no register).
     bool residesInMemory(const Value& symbol) const;
+    bool memoryOnly(const Value& symbol) const;
 
-    // Load into dest without reg.assign; required for globals (Address-only homes).
+    // Load into dest without reg.assign; required for memory-only values.
     void loadWithoutBinding(Value& symbol, Register& dest);
     MemoryOperand memoryOperand(const Address& address, int byteOffset = 0) const;
     MemoryOperand memoryOperand(const Value& symbol, int byteOffset = 0) const;

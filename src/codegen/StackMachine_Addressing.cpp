@@ -151,6 +151,7 @@ void StackMachine::functionAddress(int functionName, int resultName) {
 void StackMachine::dereference(int operandName, int resultName) {
     auto& operand = resolve(operandName);
     auto& result = resolve(resultName);
+    spillAliasedRegisters(operandName);
     Register& pointerRegister = materialize(operand);
     if (!nativeMoveSize(result.getSizeInBytes())) {
         copyFromPointer(pointerRegister, result);

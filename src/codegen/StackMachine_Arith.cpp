@@ -353,8 +353,7 @@ void StackMachine::lvalueAssign(int operandName, int resultName) {
     auto& operand = resolve(operandName);
     auto& result = resolve(resultName);
 
-    // Named objects and escaped temps may alias *result. Other temps stay.
-    spillMayAliasRegisters(resultName);
+    spillAliasedRegisters(resultName);
 
     const int storeSize = operand.getSizeInBytes();
     if (!nativeMoveSize(storeSize)) {
@@ -470,7 +469,7 @@ void StackMachine::shiftBy(int leftOperandName, int rightOperandName, int result
     Register& counterRegister = getCounterRegister();
     Value& rightOperand = resolve(rightOperandName);
     copyToRegister(rightOperand, counterRegister);
-    if (!addressOf(rightOperand).isGlobal()) {
+    if (!memoryOnly(rightOperand)) {
         if (!residesInMemory(rightOperand)
                 && &rightOperand.getAssignedRegister() != &counterRegister) {
             rightOperand.getAssignedRegister().free();
