@@ -673,4 +673,69 @@ TEST(Compiler, integerSubscriptStaticArrayAddress) {
     program.runAndExpect("5");
 }
 
+TEST(Compiler, readThroughPointerSeesNewerRegisterValue) {
+    SourceProgram program{R"prg(int printf(const char *, ...);
+        int main(void) {
+            volatile long seed = 1;
+            volatile double dseed = 1.0;
+            long v = seed;
+            long *p = &v;
+            v++;
+            long r = *p;
+            v += 5;
+            long r2 = *p;
+            double d = dseed;
+            double *q = &d;
+            d += 1.5;
+            double rd = *q;
+            printf("%ld %ld %ld %g", r, r2, v, rd);
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("2 7 7 2.5");
+}
+
+TEST(Compiler, callerSeesCalleeWriteToAddressTakenLocal) {
+    SourceProgram program{R"prg(int printf(const char *, ...);
+        static long ident(long x) { return x; }
+        static void bump(long *q) { *q += 10; }
+        int main(void) {
+            long (*volatile callIdent)(long) = ident;
+            void (*volatile callBump)(long *) = bump;
+            long k = callIdent(100);
+            long c = callIdent(1);
+            long *p = &c;
+            long x = k + c;
+            callBump(p);
+            long y = k + c;
+            printf("%ld %ld %ld", x, y, c);
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("101 111 11");
+}
+
+TEST(Compiler, calleeSeesNewerValueOfAddressTakenLocal) {
+    SourceProgram program{R"prg(int printf(const char *, ...);
+        static long ident(long x) { return x; }
+        static long peek(long *q) { return *q; }
+        int main(void) {
+            long (*volatile callIdent)(long) = ident;
+            long (*volatile callPeek)(long *) = peek;
+            long a = callIdent(1);
+            long v = callIdent(2);
+            long *p = &v;
+            long t = a + v;
+            v = t + a;
+            long s = callPeek(p);
+            printf("%ld %ld %ld", t, v, s);
+            return 0;
+        }
+    )prg"};
+    program.compile();
+    program.runAndExpect("3 4 4");
+}
+
 } // namespace

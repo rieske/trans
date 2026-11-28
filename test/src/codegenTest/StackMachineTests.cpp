@@ -480,6 +480,40 @@ TEST_F(StackMachineTest, sub_reg_reg) {
     expectRegisterContains(rcx, v3);
 }
 
+TEST_F(StackMachineTest, sub_volatileExpressionTempResultStaysInRegister) {
+    rax->assign(&v1);
+    rbx->assign(&v2);
+    Value temp = v3;
+    temp.markExpressionTemp();
+    temp.markVolatile();
+
+    StackMachine stackMachine { &assemblyCode, att, *registers, names };
+    stackMachine.setScope( { v1, v2, temp });
+
+    stackMachine.sub(v1.id(), v2.id(), temp.id());
+
+    expectCode("\tmovq %rax, %rcx\n"
+            "\tsubq %rbx, %rcx\n");
+    expectRegisterContains(rcx, temp);
+}
+
+TEST_F(StackMachineTest, sub_volatileLocalResultIsStored) {
+    rax->assign(&v1);
+    rbx->assign(&v2);
+    Value local = v3;
+    local.markVolatile();
+
+    StackMachine stackMachine { &assemblyCode, att, *registers, names };
+    stackMachine.setScope( { v1, v2, local });
+
+    stackMachine.sub(v1.id(), v2.id(), local.id());
+
+    expectCode("\tmovq %rax, %rcx\n"
+            "\tsubq %rbx, %rcx\n"
+            "\tmovq %rcx, 16(%rsp)\n");
+    EXPECT_EQ(rcx->getValue(), nullptr);
+}
+
 TEST_F(StackMachineTest, sub_reg_mem) {
     // given
     rax->assign(&v1);
@@ -815,7 +849,7 @@ TEST_F(StackMachineTest, condJumpDiamondSpillsLiveArgNotDeadTemp) {
             "\tje $else\n");
 }
 
-TEST_F(StackMachineTest, storeThroughPointerDoesNotSpillNonEscapedTemp) {
+TEST_F(StackMachineTest, storeThroughPointerDoesNotSpillNonAddressTakenValues) {
     Value a = intValue("a");
     Value t = intValue("t");
     Value p = intValue("p");
@@ -836,7 +870,6 @@ TEST_F(StackMachineTest, storeThroughPointerDoesNotSpillNonEscapedTemp) {
 
     expectCode("\tmov rax, rdi\n"
             "\tadd rax, rdi\n"
-            "\tmov [rbp + -8], rdi\n"
             "\tmov rbx, [rbp + -16]\n"
             "\tmov [rbx], rax\n");
 }

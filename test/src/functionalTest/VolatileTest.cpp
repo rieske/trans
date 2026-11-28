@@ -113,4 +113,38 @@ TEST(Compiler, plainAddStillFolds) {
     program.runAndExpect("2");
 }
 
+TEST(Compiler, volatileLocalKeepsValueAcrossLongjmp) {
+    SourceProgram program { R"prg(#include <setjmp.h>
+        int printf(const char *, ...);
+        jmp_buf jb;
+        int main(void) {
+            volatile long seed = 1;
+            long a = seed + 99;
+            volatile long x = seed;
+            long y = a + x;
+            if (setjmp(jb) == 0) {
+                x = x + 41;
+                longjmp(jb, 1);
+            }
+            printf("%ld %ld", y, x);
+            return 0;
+        }
+    )prg" };
+    program.compile();
+    program.runAndExpect("101 42");
+}
+
+TEST(Compiler, volatileParameterReadsIncomingValue) {
+    SourceProgram program { R"prg(int printf(const char *, ...);
+        static long twice(volatile long x) { return x + x; }
+        int main(void) {
+            long (*volatile call)(volatile long) = twice;
+            printf("%ld", call(21));
+            return 0;
+        }
+    )prg" };
+    program.compile();
+    program.runAndExpect("42");
+}
+
 } // namespace

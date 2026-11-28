@@ -213,6 +213,7 @@ int StackMachine::emitCallArguments(std::size_t firstReg) {
     }
     storeRegisterValue(registers->getRetrievalRegister());
     spillCallerSavedRegisters();
+    spillAliasedRegisters();
     std::vector<SysVStackArg> stackSpecs;
     stackSpecs.reserve(stackArguments.size());
     for (Value* argument : stackArguments) {
