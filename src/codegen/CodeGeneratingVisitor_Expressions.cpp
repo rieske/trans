@@ -165,14 +165,14 @@ void CodeGeneratingVisitor::emitFloatingConstant(int dest, const util::FloatingB
 }
 
 void CodeGeneratingVisitor::emitIncDec(int name, const type::Type& valueType, bool increment) {
-    if (type::isFloating(valueType)) {
+    if (type::isFloating(valueType) || type::object_abi::valueWords(valueType.getSize()) > 1) {
         const int one = addScratchValue(valueType);
-        emitFloatingConstant(one, util::floatingOne(valueType.getSize()));
-        if (increment) {
-            emit(ir::add(name, one, name));
+        if (type::isFloating(valueType)) {
+            emitFloatingConstant(one, util::floatingOne(valueType.getSize()));
         } else {
-            emit(ir::sub(name, one, name));
+            emitIntegerConstant(type::fromLiteralBits(1, valueType), one);
         }
+        emit(increment ? ir::add(name, one, name) : ir::sub(name, one, name));
         return;
     }
     if (valueType.isPointer()) {
